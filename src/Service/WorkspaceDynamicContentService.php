@@ -119,7 +119,7 @@ final readonly class WorkspaceDynamicContentService
         return (string)preg_replace_callback(
             self::BLOCK_PATTERN,
             function (array $match) use ($workspace, $node, $language, $interactive): string {
-                $element = $match[0] ?? '';
+                $element = $match[0];
                 $kind = $this->attribute($element, 'data-workspace-block-kind');
                 $configuration = $this->decode(
                     $this->attribute($element, 'data-workspace-block-config'),
