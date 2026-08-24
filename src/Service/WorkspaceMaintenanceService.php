@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
+use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
+use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePermanentlyDeleting;
 use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
 use DateTimeImmutable;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 
-use function array_filter;
+use function array_map;
 use function array_unique;
 use function array_values;
 use function in_array;
@@ -29,6 +32,9 @@ final readonly class WorkspaceMaintenanceService
         private Database $database,
         private WorkspaceRepository $repository,
         private WorkspaceMaintenanceBridge $editor,
+        private WorkspaceMenuService $menus,
+        private WorkspaceThemeAssetLibrary $themeAssets,
+        private EventDispatcherInterface $events,
     ) {
     }
 
@@ -71,6 +77,7 @@ final readonly class WorkspaceMaintenanceService
         string $historyPolicy,
         int $historyValue,
         int $deletedDays,
+        int $actorUserId = 0,
     ): array {
         if (!in_array($scope, ['site', 'workspace'], true)) {
             throw new RuntimeException(__('Odaberite valjani opseg održavanja.'));
@@ -123,12 +130,83 @@ final readonly class WorkspaceMaintenanceService
                 $scope === 'workspace' ? $workspaceId : null,
                 $purgedKeys,
                 $deletedDays,
+                $actorUserId,
             );
         } else {
             $result['purged_workspace_nodes'] = 0;
         }
 
         return $result;
+    }
+
+    /**
+     * HR: Nepovratno uklanja soft-obrisano područje. Dodatni moduli prvo
+     *     dobivaju stabilan događaj za svoje podatke, zatim Editor uklanja
+     *     dokumente i datoteke, a Workspace na kraju svoje retke i theme assete.
+     * EN: Irreversibly removes a soft-deleted Workspace. Optional modules first
+     *     receive a stable event for their data, then Editor removes documents
+     *     and files, and Workspace finally removes its rows and theme assets.
+     *
+     * @return array<string, int>
+     */
+    public function permanentlyDeleteWorkspace(
+        int $workspaceId,
+        string $confirmedSlug,
+        int $actorUserId,
+    ): array {
+        $workspace = $this->repository->findWorkspaceById($workspaceId, true);
+        if (!is_array($workspace) || !(bool)($workspace['is_deleted'] ?? false)) {
+            throw new RuntimeException(__('Obrisano područje nije pronađeno.'));
+        }
+
+        $slug = WorkspaceValue::string($workspace['slug'] ?? '');
+        if ($slug === '' || $confirmedSlug !== $slug) {
+            throw new RuntimeException(__('Za potvrdu trajnog brisanja upišite točan slug područja.'));
+        }
+
+        $nodeIds = [];
+        foreach (
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+            ->select(['id'])
+            ->where('workspace_id', '=', $workspaceId)
+            ->get() as $row
+        ) {
+            $row = is_array($row) ? $row : [];
+            $nodeId = WorkspaceValue::int($row['id'] ?? 0);
+            if ($nodeId > 0) {
+                $nodeIds[] = $nodeId;
+            }
+        }
+
+        $documentKeys = $this->documentKeys($workspaceId);
+
+        $this->events->dispatch(new WorkspacePermanentlyDeleting(
+            $workspaceId,
+            $slug,
+            array_values(array_unique($nodeIds)),
+            $documentKeys,
+            $actorUserId,
+        ));
+
+        $editorResult = $this->editor->purgeDocuments($documentKeys);
+        if ($documentKeys !== [] && $editorResult === []) {
+            throw new RuntimeException(__(
+                'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.',
+            ));
+        }
+
+        $this->menus->deleteForWorkspace($workspace);
+        $this->themeAssets->purgeWorkspace($workspaceId);
+        $this->repository->permanentlyDeleteWorkspace($workspaceId);
+
+        return [
+            'purged_workspace' => 1,
+            'purged_nodes' => count($nodeIds),
+            'purged_documents' => WorkspaceValue::int($editorResult['purged_documents'] ?? 0),
+            'purged_versions' => WorkspaceValue::int($editorResult['purged_versions'] ?? 0),
+            'purged_assets' => WorkspaceValue::int($editorResult['purged_assets'] ?? 0),
+            'failed_files' => WorkspaceValue::int($editorResult['failed_files'] ?? 0),
+        ];
     }
 
     /**
@@ -218,8 +296,12 @@ final readonly class WorkspaceMaintenanceService
      *
      * @param list<string> $documentKeys
      */
-    private function purgeDisabledNodes(?int $workspaceId, array $documentKeys, int $deletedDays): int
-    {
+    private function purgeDisabledNodes(
+        ?int $workspaceId,
+        array $documentKeys,
+        int $deletedDays,
+        int $actorUserId,
+    ): int {
         if ($deletedDays <= 0 || !$this->repository->tablesReady()) {
             return 0;
         }
@@ -231,7 +313,7 @@ final readonly class WorkspaceMaintenanceService
             $query->where('workspace_id', '=', $workspaceId);
         }
 
-        $nodeIds = [];
+        $pages = [];
         foreach ($query->get() as $row) {
             $row = is_array($row) ? $row : [];
             $updatedAt = is_scalar($row['updated_at'] ?? null) ? strtotime((string)$row['updated_at']) : false;
@@ -240,11 +322,27 @@ final readonly class WorkspaceMaintenanceService
                 && $updatedAt !== false
                 && $updatedAt < $cutoff
             ) {
-                $nodeIds[] = WorkspaceValue::int($row['id'] ?? 0);
+                $nodeId = WorkspaceValue::int($row['id'] ?? 0);
+                $rowWorkspaceId = WorkspaceValue::int($row['workspace_id'] ?? 0);
+                if ($nodeId > 0 && $rowWorkspaceId > 0) {
+                    $pages[$nodeId] = [
+                        'workspace_id' => $rowWorkspaceId,
+                        'node_id' => $nodeId,
+                        'document_key' => WorkspaceValue::string($row['document_key'] ?? ''),
+                    ];
+                }
             }
         }
 
-        $nodeIds = array_values(array_filter(array_unique($nodeIds)));
+        $pages = array_values($pages);
+        if ($pages !== []) {
+            $this->events->dispatch(new WorkspacePagesPermanentlyDeleting($pages, $actorUserId));
+        }
+
+        $nodeIds = array_values(array_unique(array_map(
+            static fn (array $page): int => $page['node_id'],
+            $pages,
+        )));
         $this->database->transaction(static function (Database $database) use ($nodeIds): void {
             foreach ($nodeIds as $nodeId) {
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->where('node_id', '=', $nodeId)->delete();

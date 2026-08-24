@@ -98,8 +98,12 @@ final readonly class WorkspaceApiService
     public function getTree(string $slug, array $user, string $language = ''): array
     {
         $workspace = $this->requireWorkspace($slug, $user, 'can_view');
+        $tree = $this->access->visibleTree($workspace, $user, $language);
+        $nodeIds = $this->treeNodeIds($tree);
+        $labels = $this->repository->nodeLabelsForNodes($nodeIds);
+        $properties = $this->repository->nodePropertiesForNodes($nodeIds);
 
-        return $this->treeDtos($this->access->visibleTree($workspace, $user, $language));
+        return $this->treeDtos($tree, $labels, $properties);
     }
 
     /**
@@ -651,6 +655,14 @@ final readonly class WorkspaceApiService
             $payload,
             $this->userId($user),
         );
+        if (array_key_exists('labels', $payload)) {
+            $this->repository->replaceNodeLabels($nodeId, $this->labelList($payload['labels']));
+        }
+
+        if (array_key_exists('properties', $payload)) {
+            $this->repository->replaceNodeProperties($nodeId, $this->propertyList($payload['properties']));
+        }
+
         $this->access->clearRequestCache();
 
         return $this->nodeDto($saved);
@@ -908,9 +920,11 @@ final readonly class WorkspaceApiService
      * EN: Recursively normalizes the visible tree into stable public DTO records.
      *
      * @param list<array<string,mixed>> $nodes
+     * @param array<int,list<string>> $labels
+     * @param array<int,list<array{key:string,label:string,type:string,value:string,sort_order:int}>> $properties
      * @return list<array<string,mixed>>
      */
-    private function treeDtos(array $nodes): array
+    private function treeDtos(array $nodes, array $labels = [], array $properties = []): array
     {
         $dtos = [];
         foreach ($nodes as $node) {
@@ -924,8 +938,9 @@ final readonly class WorkspaceApiService
                 }
             }
 
-            $dto = $this->nodeDto($node);
-            $dto['children'] = $this->treeDtos($children);
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            $dto = $this->nodeDto($node, $labels[$nodeId] ?? [], $properties[$nodeId] ?? []);
+            $dto['children'] = $this->treeDtos($children, $labels, $properties);
             $dtos[] = $dto;
         }
 
@@ -938,12 +953,15 @@ final readonly class WorkspaceApiService
      * EN: Normalizes one node without exposing internal audit fields.
      *
      * @param array<string,mixed> $node
+     * @param list<string>|null $labels
+     * @param list<array{key:string,label:string,type:string,value:string,sort_order:int}>|null $properties
      * @return array<string,mixed>
      */
-    private function nodeDto(array $node): array
+    private function nodeDto(array $node, ?array $labels = null, ?array $properties = null): array
     {
+        $nodeId = WorkspaceValue::int($node['id'] ?? 0);
         return [
-            'id' => WorkspaceValue::int($node['id'] ?? 0),
+            'id' => $nodeId,
             'uuid' => WorkspaceValue::string($node['uuid'] ?? ''),
             'parent_id' => ($parentId = WorkspaceValue::int($node['parent_id'] ?? 0)) > 0
                 ? $parentId
@@ -959,8 +977,90 @@ final readonly class WorkspaceApiService
             'contents_visibility' => WorkspaceValue::string(
                 $node['contents_visibility'] ?? 'inherit',
             ),
+            'labels' => $labels ?? $this->repository->nodeLabels($nodeId),
+            'properties' => $properties ?? $this->repository->nodeProperties($nodeId),
             'permissions' => WorkspaceValue::stringKeyArray($node['permissions'] ?? []),
         ];
+    }
+
+    /**
+     * HR: Skuplja ID-e iz ugniježđenog stabla za jedan batch dohvat oznaka.
+     * EN: Collects IDs from a nested tree for one batched label lookup.
+     *
+     * @param list<array<string,mixed>> $nodes
+     * @return list<int>
+     */
+    private function treeNodeIds(array $nodes): array
+    {
+        $ids = [];
+        foreach ($nodes as $node) {
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            if ($nodeId > 0) {
+                $ids[] = $nodeId;
+            }
+
+            $children = WorkspaceValue::rows($node['children'] ?? null);
+            $ids = [...$ids, ...$this->treeNodeIds($children)];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * HR: Normalizira javni API popis oznaka i odbija neispravan oblik.
+     * EN: Normalizes a public API label list and rejects an invalid shape.
+     *
+     * @return list<string>
+     */
+    private function labelList(mixed $value): array
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            throw $this->invalid(__('Polje "labels" mora biti JSON polje tekstualnih oznaka.'));
+        }
+
+        $labels = [];
+        foreach ($value as $label) {
+            if (!is_string($label)) {
+                throw $this->invalid(__('Polje "labels" mora biti JSON polje tekstualnih oznaka.'));
+            }
+
+            $label = trim($label);
+            if ($label !== '') {
+                $labels[] = $label;
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * HR: Normalizira javni API popis strukturiranih svojstava stranice.
+     * EN: Normalizes the public API list of structured page properties.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function propertyList(mixed $value): array
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            throw $this->invalid(__('Polje "properties" mora biti JSON polje objekata.'));
+        }
+
+        $properties = [];
+        foreach ($value as $property) {
+            if (!is_array($property)) {
+                throw $this->invalid(__('Svako svojstvo stranice mora biti JSON objekt.'));
+            }
+
+            $properties[] = [
+                'key' => WorkspaceValue::string($property['key'] ?? ''),
+                'label' => WorkspaceValue::string($property['label'] ?? ''),
+                'type' => WorkspaceValue::string($property['type'] ?? 'text'),
+                'value' => WorkspaceValue::string($property['value'] ?? ''),
+                'sort_order' => WorkspaceValue::int($property['sort_order'] ?? 100),
+            ];
+        }
+
+        return $properties;
     }
 
     /**

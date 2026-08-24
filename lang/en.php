@@ -3,6 +3,19 @@
 declare(strict_types=1);
 
 return [
+    'Tablica stranica i svojstava' => 'Pages and properties table',
+    'Dinamički sadržaj područja' => 'Dynamic Workspace content',
+    'Galerija privitaka' => 'Attachment gallery',
+    'Nedavne promjene područja' => 'Recent Workspace changes',
+    'Nema nedavnih promjena.' => 'There are no recent changes.',
+    'Nema privitaka za prikaz.' => 'There are no attachments to display.',
+    'Nema stranica koje odgovaraju odabranim uvjetima.' =>
+        'No pages match the selected criteria.',
+    'Pretraga je dostupna u aplikaciji.' => 'Search is available in the application.',
+    'Pretraga područja' => 'Workspace search',
+    'Pretraži područje' => 'Search this Workspace',
+    'Pretraži' => 'Search',
+    'Stranica' => 'Page',
     'Predložak migracije backlinkova nije pronađen.' => 'The backlink migration template was not found.',
     'Kreirana je migracija Workspace backlinkova: ' => 'Created the Workspace backlink migration: ',
     'Workspaces' => 'Workspaces',
@@ -674,4 +687,47 @@ return [
     'Iz područja: %s' => 'From workspace: %s',
     'Tekst poveznice: %s' => 'Link text: %s',
     'Prati promjene ovog sadržaja' => 'Follow changes to this content',
+    'Sažmi podstranice: %s' => 'Collapse child pages: %s',
+    'Proširi podstranice: %s' => 'Expand child pages: %s',
+    'Trajno brisanje područja' => 'Permanently delete Workspaces',
+    'Trajno se mogu izbrisati samo područja koja su prethodno obrisana. Uklanjaju se stranice, povijest, privitci, ovlasti, privatna tema i povezani podaci modula.' =>
+        'Only previously deleted Workspaces can be permanently removed. Pages, history, attachments, permissions, the private theme, and related module data are removed.',
+    'Za potvrdu upišite točan slug područja' => 'Enter the exact Workspace slug to confirm',
+    'Za trajno brisanje upišite slug:' => 'Enter the slug to delete permanently:',
+    'Trajno izbriši' => 'Delete permanently',
+    'Trajno izbriši područje i sav sadržaj' => 'Permanently delete the Workspace and all content',
+    'Potvrdite da razumijete da je trajno brisanje nepovratno.' =>
+        'Confirm that you understand permanent deletion is irreversible.',
+    'Za potvrdu trajnog brisanja upišite točan slug područja.' =>
+        'Enter the exact Workspace slug to confirm permanent deletion.',
+    'Područje i njegov sadržaj trajno su uklonjeni.' =>
+        'The Workspace and its content were permanently removed.',
+    'Samo obrisano područje može se trajno ukloniti.' =>
+        'Only a deleted Workspace can be permanently removed.',
+    'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.' =>
+        'HTML Editor is unavailable, so the Workspace documents cannot be permanently removed.',
+    'Stranice:' => 'Pages:',
+    'dokumenti:' => 'documents:',
+    'privitci:' => 'attachments:',
+    'Stranica je uključena u sadržaj sljedećih stranica' =>
+        'This page is included in the content of the following pages',
+    'Izmijenjeno' => 'Modified',
+    'Polje "labels" mora biti JSON polje tekstualnih oznaka.' =>
+        'The "labels" field must be a JSON array of text labels.',
+    'Predložak migracije oznaka stranica nije pronađen.' =>
+        'The page-label migration template was not found.',
+    'Kreirana je migracija oznaka Workspace stranica: ' =>
+        'Created the Workspace page-label migration: ',
+    'Polje "properties" mora biti JSON polje objekata.' =>
+        'The "properties" field must be a JSON array of objects.',
+    'Svako svojstvo stranice mora biti JSON objekt.' =>
+        'Every page property must be a JSON object.',
+    'Predložak migracije svojstava stranica nije pronađen.' =>
+        'The page-properties migration template was not found.',
+    'Kreirana je migracija svojstava Workspace stranica: ' =>
+        'Created the Workspace page-properties migration: ',
+    'Oznake stranice' => 'Page labels',
+    'Svojstva stranice' => 'Page properties',
+    'Naziv svojstva' => 'Property name',
+    'Vrsta' => 'Type',
 ];

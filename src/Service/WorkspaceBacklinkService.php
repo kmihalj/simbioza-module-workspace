@@ -31,6 +31,7 @@ final readonly class WorkspaceBacklinkService
         private WorkspaceBacklinkIndexer $indexer,
         private WorkspaceConfig $config,
         private UrlGenerator $urlGenerator,
+        private WorkspaceEditorBridge $editor,
     ) {
     }
 
@@ -160,6 +161,76 @@ final readonly class WorkspaceBacklinkService
                 'linkText' => WorkspaceValue::string($row['link_text'] ?? ''),
                 'language' => $rowLanguage,
             ];
+        }
+
+        usort($result, static function (array $left, array $right): int {
+            $workspaceOrder = strcasecmp($left['workspaceName'], $right['workspaceName']);
+
+            return $workspaceOrder !== 0 ? $workspaceOrder : strcasecmp($left['title'], $right['title']);
+        });
+
+        return $result;
+    }
+
+    /**
+     * HR: Vraća stranice koje dinamički uključuju cilj, uz istu završnu ACL i
+     *     workflow provjeru kao za obične backlinkove.
+     * EN: Returns pages that dynamically include the target, with the same
+     *     final ACL and workflow check used for ordinary backlinks.
+     *
+     * @return list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}>
+     */
+    public function includedIn(string $targetDocumentKey, string $language): array
+    {
+        $sources = $this->editor->includeSources($targetDocumentKey, $language);
+        if ($sources === []) {
+            return [];
+        }
+
+        $sourcesByKey = [];
+        foreach ($sources as $source) {
+            $key = WorkspaceValue::string($source['documentKey'] ?? '');
+            if ($key !== '') {
+                $sourcesByKey[$key] = $source;
+            }
+        }
+
+        $result = [];
+        foreach ($this->repository->activeWorkspaces() as $workspace) {
+            $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+            $nodes = $this->repository->nodesForWorkspace($workspaceId);
+            $permissions = $this->access->nodePermissionsForNodes($workspace, $nodes);
+            foreach ($nodes as $node) {
+                $documentKey = WorkspaceValue::string($node['document_key'] ?? '');
+                $source = $sourcesByKey[$documentKey] ?? null;
+                $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+                if (!is_array($source)) {
+                    continue;
+                }
+
+                if (!($permissions[$nodeId]['can_view'] ?? false)) {
+                    continue;
+                }
+
+                $sourceLanguage = strtolower(WorkspaceValue::string($source['language'] ?? $language));
+                $workflows = $this->repository->nodeWorkflowsForNodes([$nodeId], $sourceLanguage);
+                if (!$this->workflow->isReadableWorkflow($workflows[$nodeId] ?? null)) {
+                    continue;
+                }
+
+                $result[] = [
+                    'title' => WorkspaceValue::string($source['title'] ?? '')
+                        ?: WorkspaceValue::string($node['title'] ?? ''),
+                    'href' => $this->nodePath(
+                        WorkspaceValue::string($workspace['slug'] ?? ''),
+                        WorkspaceValue::string($node['slug'] ?? ''),
+                        $sourceLanguage,
+                    ),
+                    'workspaceName' => WorkspaceValue::string($workspace['name'] ?? ''),
+                    'linkText' => '',
+                    'language' => $sourceLanguage,
+                ];
+            }
         }
 
         usort($result, static function (array $left, array $right): int {

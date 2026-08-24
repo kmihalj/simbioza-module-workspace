@@ -258,7 +258,12 @@ final class WorkspaceBacklinkIndexer
             }
 
             foreach ($versionsByLanguage as $language => $versions) {
-                foreach ($this->editor->publishedVersions($versions, $language) as $documentKey => $version) {
+                foreach (
+                    $this->editor->publishedVersionsForIndexing(
+                        $versions,
+                        $language,
+                    ) as $documentKey => $version
+                ) {
                     $source = $nodesByDocument[(string)$documentKey] ?? null;
                     if (!is_array($source)) {
                         continue;

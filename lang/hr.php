@@ -3,6 +3,19 @@
 declare(strict_types=1);
 
 return [
+    'Tablica stranica i svojstava' => 'Tablica stranica i svojstava',
+    'Dinamički sadržaj područja' => 'Dinamički sadržaj područja',
+    'Galerija privitaka' => 'Galerija privitaka',
+    'Nedavne promjene područja' => 'Nedavne promjene područja',
+    'Nema nedavnih promjena.' => 'Nema nedavnih promjena.',
+    'Nema privitaka za prikaz.' => 'Nema privitaka za prikaz.',
+    'Nema stranica koje odgovaraju odabranim uvjetima.' =>
+        'Nema stranica koje odgovaraju odabranim uvjetima.',
+    'Pretraga je dostupna u aplikaciji.' => 'Pretraga je dostupna u aplikaciji.',
+    'Pretraga područja' => 'Pretraga područja',
+    'Pretraži područje' => 'Pretraži područje',
+    'Pretraži' => 'Pretraži',
+    'Stranica' => 'Stranica',
     'Predložak migracije backlinkova nije pronađen.' => 'Predložak migracije backlinkova nije pronađen.',
     'Kreirana je migracija Workspace backlinkova: ' => 'Kreirana je migracija Workspace backlinkova: ',
     'Workspaces' => 'Područja',
@@ -673,4 +686,47 @@ return [
     'Iz područja: %s' => 'Iz područja: %s',
     'Tekst poveznice: %s' => 'Tekst poveznice: %s',
     'Prati promjene ovog sadržaja' => 'Prati promjene ovog sadržaja',
+    'Sažmi podstranice: %s' => 'Sažmi podstranice: %s',
+    'Proširi podstranice: %s' => 'Proširi podstranice: %s',
+    'Trajno brisanje područja' => 'Trajno brisanje područja',
+    'Trajno se mogu izbrisati samo područja koja su prethodno obrisana. Uklanjaju se stranice, povijest, privitci, ovlasti, privatna tema i povezani podaci modula.' =>
+        'Trajno se mogu izbrisati samo područja koja su prethodno obrisana. Uklanjaju se stranice, povijest, privitci, ovlasti, privatna tema i povezani podaci modula.',
+    'Za potvrdu upišite točan slug područja' => 'Za potvrdu upišite točan slug područja',
+    'Za trajno brisanje upišite slug:' => 'Za trajno brisanje upišite slug:',
+    'Trajno izbriši' => 'Trajno izbriši',
+    'Trajno izbriši područje i sav sadržaj' => 'Trajno izbriši područje i sav sadržaj',
+    'Potvrdite da razumijete da je trajno brisanje nepovratno.' =>
+        'Potvrdite da razumijete da je trajno brisanje nepovratno.',
+    'Za potvrdu trajnog brisanja upišite točan slug područja.' =>
+        'Za potvrdu trajnog brisanja upišite točan slug područja.',
+    'Područje i njegov sadržaj trajno su uklonjeni.' =>
+        'Područje i njegov sadržaj trajno su uklonjeni.',
+    'Samo obrisano područje može se trajno ukloniti.' =>
+        'Samo obrisano područje može se trajno ukloniti.',
+    'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.' =>
+        'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.',
+    'Stranice:' => 'Stranice:',
+    'dokumenti:' => 'dokumenti:',
+    'privitci:' => 'privitci:',
+    'Stranica je uključena u sadržaj sljedećih stranica' =>
+        'Stranica je uključena u sadržaj sljedećih stranica',
+    'Izmijenjeno' => 'Izmijenjeno',
+    'Polje "labels" mora biti JSON polje tekstualnih oznaka.' =>
+        'Polje "labels" mora biti JSON polje tekstualnih oznaka.',
+    'Predložak migracije oznaka stranica nije pronađen.' =>
+        'Predložak migracije oznaka stranica nije pronađen.',
+    'Kreirana je migracija oznaka Workspace stranica: ' =>
+        'Kreirana je migracija oznaka Workspace stranica: ',
+    'Polje "properties" mora biti JSON polje objekata.' =>
+        'Polje "properties" mora biti JSON polje objekata.',
+    'Svako svojstvo stranice mora biti JSON objekt.' =>
+        'Svako svojstvo stranice mora biti JSON objekt.',
+    'Predložak migracije svojstava stranica nije pronađen.' =>
+        'Predložak migracije svojstava stranica nije pronađen.',
+    'Kreirana je migracija svojstava Workspace stranica: ' =>
+        'Kreirana je migracija svojstava Workspace stranica: ',
+    'Oznake stranice' => 'Oznake stranice',
+    'Svojstva stranice' => 'Svojstva stranice',
+    'Naziv svojstva' => 'Naziv svojstva',
+    'Vrsta' => 'Vrsta',
 ];

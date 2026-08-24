@@ -10,6 +10,8 @@ use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Throwable;
 
+use function get_object_vars;
+use function interface_exists;
 use function is_array;
 use function is_numeric;
 use function is_object;
@@ -25,6 +27,9 @@ final readonly class WorkspaceEditorBridge
 
     private const DOCUMENT_VIEW_BUILDER =
     'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorDocumentViewBuilder';
+
+    private const PUBLISHED_VERSION_PROVIDER =
+    'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorPublishedVersionProviderInterface';
 
     /**
      * HR: Prima container i router kako bi Workspace koristio editor kao opcionalnu integraciju.
@@ -83,6 +88,67 @@ final readonly class WorkspaceEditorBridge
         }
 
         return $result;
+    }
+
+    /**
+     * HR: Vraća aktivne privitke dokumenta kao neutralne podatke za nativnu galeriju područja.
+     * EN: Returns active document attachments as neutral data for the native Workspace gallery.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function publicAssets(string $documentKey): array
+    {
+        $editor = $this->editorService();
+        if ($editor === null || !method_exists($editor, 'listPublicAssets')) {
+            return [];
+        }
+
+        try {
+            $assets = $editor->listPublicAssets(trim($documentKey));
+        } catch (Throwable) {
+            return [];
+        }
+
+        $result = [];
+        foreach (is_array($assets) ? $assets : [] as $asset) {
+            if (!is_object($asset)) {
+                continue;
+            }
+
+            $data = get_object_vars($asset);
+            $uuid = $this->scalarString($data['uuid'] ?? null);
+            $mimeType = $this->scalarString($data['mimeType'] ?? null);
+            if ($uuid === '') {
+                continue;
+            }
+
+            $displayName = $this->scalarString($data['displayName'] ?? null);
+            $originalName = $this->scalarString($data['originalName'] ?? null);
+            $kind = method_exists($asset, 'kind') ? $this->scalarString($asset->kind()) : 'file';
+            $result[] = [
+                'uuid' => $uuid,
+                'name' => $displayName !== '' ? $displayName : ($originalName !== '' ? $originalName : $uuid),
+                'alt_text' => $this->scalarString($data['altText'] ?? null),
+                'caption' => $this->scalarString($data['caption'] ?? null),
+                'mime_type' => $mimeType,
+                'kind' => $kind !== '' ? $kind : 'file',
+                'created_at' => $this->scalarString($data['createdAt'] ?? null),
+                'url' => $this->urlGenerator->namedRouteExists('editor-html.asset')
+                    ? $this->urlGenerator->getPathFor('editor-html.asset', ['assetUuid' => $uuid])
+                    : '/editor-html/asset/' . rawurlencode($uuid),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * HR: Pretvara samo skalarne vrijednosti opcionalnog modula u tekst.
+     * EN: Converts only scalar values received from an optional module to text.
+     */
+    private function scalarString(mixed $value): string
+    {
+        return is_scalar($value) ? trim((string)$value) : '';
     }
 
     /**
@@ -231,6 +297,115 @@ final readonly class WorkspaceEditorBridge
             return [];
         }
 
+        return $this->normalizedVersions($versions);
+    }
+
+    /**
+     * HR: Učitava objavljene verzije isključivo za interni izvedeni indeks.
+     *     Aktualni Editor za taj pozadinski posao preskače sesijski ACL; stvarni
+     *     Workspace ACL i dalje se obavezno primjenjuje pri prikazu backlinkova.
+     * EN: Loads published versions only for the internal derived index. The
+     *     current Editor skips session ACL for this background job; the actual
+     *     Workspace ACL is still always applied when backlinks are displayed.
+     *
+     * @param array<string, int> $versionNumbersByDocument
+     * @return array<string, array{
+     *     documentId:string,
+     *     versionNumber:int,
+     *     title:string,
+     *     html:string,
+     *     createdAt:string
+     * }>
+     */
+    public function publishedVersionsForIndexing(array $versionNumbersByDocument, string $language): array
+    {
+        $provider = $this->publishedVersionProvider();
+        if ($provider === null || !method_exists($provider, 'loadPublishedVersionsForIndexing')) {
+            return $this->publishedVersions($versionNumbersByDocument, $language);
+        }
+
+        try {
+            $versions = $provider->loadPublishedVersionsForIndexing(
+                $versionNumbersByDocument,
+                $language,
+            );
+        } catch (Throwable) {
+            return [];
+        }
+
+        return is_array($versions) ? $this->normalizedVersions($versions) : [];
+    }
+
+    /**
+     * HR: Dohvaća ACL-filtrirane izvore koji dinamički uključuju ciljnu stranicu.
+     * EN: Retrieves ACL-filtered sources that dynamically include the target page.
+     *
+     * @return list<array{documentKey:string,title:string,language:string}>
+     */
+    public function includeSources(string $targetDocumentKey, string $language): array
+    {
+        $class = self::EDITOR_SERVICE_NAMESPACE . 'EditorDocumentIncludeService';
+        if (!class_exists($class) || !$this->container->has($class)) {
+            return [];
+        }
+
+        try {
+            $service = $this->container->get($class);
+            if (!is_object($service) || !method_exists($service, 'sourcesIncluding')) {
+                return [];
+            }
+
+            $sources = $service->sourcesIncluding($targetDocumentKey, $language);
+        } catch (Throwable) {
+            return [];
+        }
+
+        if (!is_array($sources)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($sources as $source) {
+            if (!is_array($source)) {
+                continue;
+            }
+
+            $documentKey = is_scalar($source['documentKey'] ?? null)
+            ? trim((string)$source['documentKey'])
+            : '';
+            $title = is_scalar($source['title'] ?? null)
+            ? trim((string)$source['title'])
+            : '';
+            $sourceLanguage = is_scalar($source['language'] ?? null)
+            ? trim((string)$source['language'])
+            : '';
+            if ($documentKey === '') {
+                continue;
+            }
+
+            if ($title === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'documentKey' => $documentKey,
+                'title' => $title,
+                'language' => $sourceLanguage,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * HR: Normalizira Editorove modele verzija u stabilni Workspace oblik.
+     * EN: Normalizes Editor version models into the stable Workspace shape.
+     *
+     * @param array<mixed,mixed> $versions
+     * @return array<string, array{documentId:string,versionNumber:int,title:string,html:string,createdAt:string}>
+     */
+    private function normalizedVersions(array $versions): array
+    {
         $result = [];
         foreach ($versions as $documentKey => $version) {
             if (!is_object($version)) {
@@ -405,5 +580,27 @@ final readonly class WorkspaceEditorBridge
         }
 
         return is_object($builder) ? $builder : null;
+    }
+
+    /**
+     * HR: Dohvaća uski Editorov servis za izvedene indekse bez ovisnosti o sesiji.
+     * EN: Resolves the narrow Editor service for session-independent derived indexes.
+     */
+    private function publishedVersionProvider(): ?object
+    {
+        if (
+            !$this->composerBridge->isInstalled(self::EDITOR_PACKAGE)
+            || !interface_exists(self::PUBLISHED_VERSION_PROVIDER)
+        ) {
+            return null;
+        }
+
+        try {
+            $provider = $this->container->get(self::PUBLISHED_VERSION_PROVIDER);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_object($provider) ? $provider : null;
     }
 }

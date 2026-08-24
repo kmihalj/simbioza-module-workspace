@@ -16,6 +16,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var array<string, mixed>|null $workflow
  * @var list<array{label:string,href:string,current:bool,icon?:string}> $breadcrumbs
  * @var list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}> $backlinks
+ * @var list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}> $includedIn
  * @var array<string,string>|null $followUi
  * @var string $workflowTransitionPath
  * @var list<array{title:string,href:string,submittedAt:string}> $reviewQueue
@@ -60,6 +61,7 @@ $fallbackLeadingActions = is_array($fallbackLeadingActions ?? null)
     : [];
 $breadcrumbs = is_array($breadcrumbs ?? null) ? array_values($breadcrumbs) : [];
 $backlinks = is_array($backlinks ?? null) ? array_values($backlinks) : [];
+$includedIn = is_array($includedIn ?? null) ? array_values($includedIn) : [];
 $editorOutlinedDocument = is_array($editorView ?? null)
     ? ($editorView['outlinedDocument'] ?? null)
     : null;
@@ -288,6 +290,7 @@ $workflowIcon = static function (string $action): string {
                 <div
                     class="list-group list-group-flush workspace-tree"
                     data-workspace-tree-view
+                    data-workspace-tree-key="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
                 >
                     <?php if ($tree === []) : ?>
                         <p class="small text-body-secondary mb-0">
@@ -337,82 +340,84 @@ $workflowIcon = static function (string $action): string {
         <?php if ($canCreatePage) : ?>
             <div id="workspace-create-page" class="collapse">
                 <form
-                    class="workspace-page-create border rounded bg-body-tertiary p-3 mb-4"
+                    class="card shadow-sm hph-content-card workspace-page-create mb-4"
                     method="post"
                     action="<?= $this->escape($pageCreatePath) ?>"
                 >
-            <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-                    <input
-                        type="hidden"
-                        name="workspace_id"
-                        value="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
-                    >
-                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
-                        <div>
-                            <h2 class="h5 mb-1"><?= $this->escape(__('Nova stranica')) ?></h2>
-                            <p class="small text-body-secondary mb-0">
-            <?= $this->escape(__('Nakon kreiranja otvorit će se HTML editor.')) ?>
-                            </p>
-                        </div>
-                        <button
-                            class="btn btn-sm btn-secondary"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#workspace-create-page"
-                            aria-controls="workspace-create-page"
+                    <div class="card-body">
+                        <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
+                        <input
+                            type="hidden"
+                            name="workspace_id"
+                            value="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
                         >
-            <?= $this->escape(__('Odustani')) ?>
-                        </button>
-                    </div>
-                    <div class="row g-3 align-items-end">
-                        <div class="col-12 col-lg-5">
-                            <label class="form-label" for="workspace-page-title">
-            <?= $this->escape(__('Naslov stranice')) ?>
-                            </label>
-                            <input
-                                id="workspace-page-title"
-                                class="form-control"
-                                name="title"
-                                required
-                            >
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label" for="workspace-page-slug">
-            <?= $this->escape(__('Slug')) ?>
-                            </label>
-                            <input
-                                id="workspace-page-slug"
-                                class="form-control font-monospace"
-                                name="slug"
-                            >
-                            <div class="form-text">
-            <?= $this->escape(__('Ako ostane prazan, slug se izrađuje iz naslova.')) ?>
+                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                            <div>
+                                <h2 class="h5 mb-1"><?= $this->escape(__('Nova stranica')) ?></h2>
+                                <p class="small text-body-secondary mb-0">
+                                    <?= $this->escape(__('Nakon kreiranja otvorit će se HTML editor.')) ?>
+                                </p>
                             </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label" for="workspace-page-parent">
-            <?= $this->escape(__('Nadređena stranica')) ?>
-                            </label>
-                            <select id="workspace-page-parent" class="form-select" name="parent_id">
-                                <option value=""><?= $this->escape(__('Korijen stabla')) ?></option>
-            <?php foreach ($pageParentOptions as $parentOption) : ?>
-                                    <option
-                                        value="<?= WorkspaceValue::int($parentOption['id'] ?? 0) ?>"
-                <?= $defaultPageParentId === WorkspaceValue::int(
-                    $parentOption['id'] ?? 0,
-                ) ? 'selected' : '' ?>
-                                    >
-                <?= $this->escape(
-                    WorkspaceValue::string($parentOption['label'] ?? ''),
-                ) ?>
-                                    </option>
-            <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-12 d-flex justify-content-end">
-                            <button class="btn btn-primary" type="submit">
-            <?= $this->escape(__('Kreiraj i uredi')) ?>
+                            <button
+                                class="btn btn-sm btn-secondary"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#workspace-create-page"
+                                aria-controls="workspace-create-page"
+                            >
+                                <?= $this->escape(__('Odustani')) ?>
                             </button>
+                        </div>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-12 col-lg-5">
+                                <label class="form-label" for="workspace-page-title">
+                                    <?= $this->escape(__('Naslov stranice')) ?>
+                                </label>
+                                <input
+                                    id="workspace-page-title"
+                                    class="form-control"
+                                    name="title"
+                                    required
+                                >
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="form-label" for="workspace-page-slug">
+                                    <?= $this->escape(__('Slug')) ?>
+                                </label>
+                                <input
+                                    id="workspace-page-slug"
+                                    class="form-control font-monospace"
+                                    name="slug"
+                                >
+                                <div class="form-text">
+                                    <?= $this->escape(__('Ako ostane prazan, slug se izrađuje iz naslova.')) ?>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <label class="form-label" for="workspace-page-parent">
+                                    <?= $this->escape(__('Nadređena stranica')) ?>
+                                </label>
+                                <select id="workspace-page-parent" class="form-select" name="parent_id">
+                                    <option value=""><?= $this->escape(__('Korijen stabla')) ?></option>
+                                    <?php foreach ($pageParentOptions as $parentOption) : ?>
+                                        <option
+                                            value="<?= WorkspaceValue::int($parentOption['id'] ?? 0) ?>"
+                                            <?= $defaultPageParentId === WorkspaceValue::int(
+                                                $parentOption['id'] ?? 0,
+                                            ) ? 'selected' : '' ?>
+                                        >
+                                            <?= $this->escape(
+                                                WorkspaceValue::string($parentOption['label'] ?? ''),
+                                            ) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button class="btn btn-primary" type="submit">
+                                    <?= $this->escape(__('Kreiraj i uredi')) ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -496,6 +501,8 @@ $workflowIcon = static function (string $action): string {
                 </div>
             </article>
         <?php else : ?>
+            <article class="card shadow-sm hph-content-card">
+                <div class="card-body" data-hph-content-title-target>
             <button
                 class="btn btn-outline-secondary btn-sm workspace-fallback-tree-action mb-3"
                 type="button"
@@ -529,17 +536,20 @@ $workflowIcon = static function (string $action): string {
                     ) ?>
                 <?php endif; ?>
             </header>
-            <p class="text-body-secondary">
+            <p class="text-body-secondary mb-0">
             <?= $this->escape(__('Odaberite stranicu iz stabla ili postavite početnu stranicu područja.')) ?>
             </p>
+                </div>
+            </article>
         <?php endif; ?>
 
-        <?php if ($backlinks !== []) : ?>
+        <?php if ($backlinks !== [] || $includedIn !== []) : ?>
             <div class="row g-4 align-items-start workspace-backlinks-layout">
                 <div
                     class="<?= $backlinksUseNarrowColumn ? 'col-lg-9' : 'col-12' ?>"
                     data-workspace-backlinks-column
                 >
+                    <?php if ($backlinks !== []) : ?>
                     <aside
                         class="card shadow-sm hph-content-card workspace-backlinks mt-4"
                         aria-labelledby="workspace-backlinks-title"
@@ -577,6 +587,43 @@ $workflowIcon = static function (string $action): string {
                             </ul>
                         </div>
                     </aside>
+                    <?php endif; ?>
+                    <?php if ($includedIn !== []) : ?>
+                    <aside
+                        class="card shadow-sm hph-content-card workspace-backlinks mt-4"
+                        aria-labelledby="workspace-included-in-title"
+                    >
+                        <div class="card-body">
+                            <div class="workspace-backlinks-heading">
+                                <h2 id="workspace-included-in-title" class="h5 mb-0">
+                                    <?= $this->escape(__(
+                                        'Stranica je uključena u sadržaj sljedećih stranica',
+                                    )) ?>
+                                </h2>
+                                <span class="badge workspace-backlinks-count"><?= count($includedIn) ?></span>
+                            </div>
+                            <ul class="workspace-backlink-list">
+                                <?php foreach ($includedIn as $includedSource) : ?>
+                                    <li class="workspace-backlink-item">
+                                        <a class="workspace-backlink-link" href="<?= $this->escape(
+                                            WorkspaceValue::string($includedSource['href'] ?? ''),
+                                        ) ?>">
+                                            <?= $this->escape(WorkspaceValue::string(
+                                                $includedSource['title'] ?? '',
+                                            )) ?>
+                                        </a>
+                                        <div class="workspace-backlink-meta">
+                                            <?= $this->escape(sprintf(
+                                                __('Iz područja: %s'),
+                                                WorkspaceValue::string($includedSource['workspaceName'] ?? ''),
+                                            )) ?>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </aside>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>

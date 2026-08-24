@@ -213,6 +213,17 @@ final readonly class WorkspaceConfig
     }
 
     /**
+     * HR: Vraća vremensku zonu aplikacije za lokalizirani prikaz vremena.
+     * EN: Returns the application timezone for localized time rendering.
+     */
+    public function timezone(): string
+    {
+        $timezone = trim($this->config->getAsString('app.timezone', 'Europe/Zagreb') ?? '');
+
+        return $timezone !== '' ? $timezone : 'Europe/Zagreb';
+    }
+
+    /**
      * HR: Vraća najdulje razdoblje između sigurnosnih provjera izvedenog
      *     indeksa povratnih poveznica.
      * EN: Returns the maximum interval between safety checks of the derived

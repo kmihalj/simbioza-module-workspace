@@ -29,6 +29,14 @@ vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
 
+Strukturirana svojstva stranica koja koristi tablica stranica i svojstava u postojećoj
+instalaciji zahtijevaju još jednu migraciju:
+
+```bash
+vendor/bin/hph workspace:install-node-properties-migration
+vendor/bin/hph orm-migrate:up
+```
+
 English documentation: [README.md](README.md)
 
 ## Mogućnosti
@@ -39,7 +47,8 @@ English documentation: [README.md](README.md)
 - ograničenja po stranici koja nasljeđuju svi potomci
 - ACL-filtrirani Sažetci s renderiranim isječcima, razinama, brojem i redoslijedom članaka
 - hijerarhijski čvorovi za dokumente, interne i vanjske linkove
-- sakrivo i responzivno stablo stranica
+- kompaktno responzivno stablo bez okvira koje ispod prve razine otvara samo
+  putanju do aktivne stranice
 - ACL-sigurna navigacijska putanja od početne stranice kroz vidljive pretke
 - povratne poveznice s drugih objavljenih stranica uz ponovnu provjeru prava čitatelja
 - sistemski, područni i stranica-specifični zadani prikaz stabla i sadržaja
@@ -55,10 +64,13 @@ English documentation: [README.md](README.md)
 - opcionalni verzionirani REST API za podatke područja, ACL i linkove u stablu
 - opcionalna Workspace Search integracija za ACL pretragu objavljenog sadržaja
 - administratorsko održavanje cijelog sitea ili područja uz pregled prostora,
-  sigurno prorjeđivanje povijesti i trajno uklanjanje dovoljno starih obrisanih stranica i privitaka
+  sigurno prorjeđivanje povijesti, trajno uklanjanje dovoljno starih obrisanih
+  stranica/privitaka te potvrđeno trajno brisanje cijelog soft-obrisanog područja
 - neutralni događaji `WorkspaceContentChanged` nakon objave, arhiviranja, brisanja,
   promjene metapodataka stabla i životnog ciklusa Područja kako bi se opcionalni
   izvedeni indeksi sinkronizirali bez vezivanja Workspacea uz implementaciju pretrage
+- javni `WorkspaceContentChangeBatch` za velike uvoze: prikuplja pojedinačne
+  promjene i šalje jedan završni `bulk_content_changed` događaj po Području
 - prijenosna inicijalna shema za SQLite, PostgreSQL i MySQL/MariaDB
 
 Ograničenja stranice mogu samo suziti prava dodijeljena na Području. Ne mogu
@@ -168,6 +180,14 @@ vendor/bin/hph workspace:install-backlinks-migration
 vendor/bin/hph orm-migrate:up
 ```
 
+Za čuvanje prenosivih izvornih oznaka iz importa i integracija postojeća
+instalacija jednom dodaje pohranu oznaka:
+
+```bash
+vendor/bin/hph workspace:install-node-labels-migration
+vendor/bin/hph orm-migrate:up
+```
+
 Navigacijska putanja gradi se samo iz stabla koje je već filtrirano ACL-om.
 Povratne poveznice izdvajaju se iz točnih objavljenih HTML verzija, a pri
 svakom prikazu ponovno se provjeravaju ACL stranice i stanje objave. Prednost
@@ -176,6 +196,9 @@ nema zapis poveznice na aktivnom jeziku. Kada je Theme uključen, oba elementa
 koriste tematske vrijednosti za navigacijsku putanju, kartice, poveznice,
 rubove i prigušeni tekst; Bootstrap fallback održava ih uporabljivima i bez
 Theme modula.
+Pozadinska obnova koristi uski Editorov servis za čitanje objavljenih verzija
+bez web-sesije. Time CLI i skupni import mogu izgraditi izvedeni indeks, dok se
+ACL i stanje objave i dalje obavezno provjeravaju pri svakom prikazu.
 
 `workspace_backlinks` i `workspace_backlink_index_state` izvedeni su podaci.
 Ne ulaze u backup: događaji objave ih održavaju aktualnima, a periodična
@@ -343,6 +366,8 @@ postoji. Svaki stvarni prijevod dobiva jednu stabilnu samostalnu HTML datoteku,
 izrađenu istim formatterom kao Editorov izvoz jedne stranice. Može se izravno
 otvoriti kroz `file://` i namjerno sadrži samo renderirani dokument, bez
 Workspace ljuske i bez pozadine stranice iz Theme modula.
+Nativni Editor grafikoni pretvaraju se u responzivni samostalni SVG te
+zadržavaju istu širinu, poravnanje, razmak i boje teme kao pregled stranice.
 
 Sigurnosna pravila primjenjuju se prije pakiranja:
 
@@ -355,6 +380,8 @@ Sigurnosna pravila primjenjuju se prije pakiranja:
 - Calendar i Task ugradnje renderiraju se kao read-only snimke kroz postojeće
   Editor integracije koje poštuju ACL; paket nema aktivne API pozive,
   vjerodajnice, akcije uređivanja ni serversko stanje.
+- dinamički uključene stranice prerenderiraju se uz vlastiti ACL, a paket
+  prenosi i njihove slike odnosno privitke potrebne u sadržaju.
 
 Paket sadrži CSS trenutačne teme i samo odabrane svijetle/tamne logo i hero
 datoteke, Editor/Calendar/Task CSS, dopuštene privitke, filtrirano stablo,
@@ -366,6 +393,16 @@ dokumenta i privitci mogu se neovisno pokazati ili sakriti, a početno stanje
 slijedi konfiguraciju aplikacije. Theme je opcionalan i bez njega nastaju
 minimalno čitljivo zaglavlje, hero i raspored; Editor je potreban za sadržaj
 dokumenata.
+
+## Strukturirani sadržaj stranica
+
+Workspace stranice podržavaju oznake i strukturirana svojstva (`tekst`,
+`status`, `poveznica`). HTML Editor ih može koristiti u nativnom izvještaju
+stranica, a uz to nudi galeriju privitaka, pretragu trenutačnog područja i
+nedavne promjene. Svaki dinamički rezultat ponovno se filtrira kroz aktualni
+ACL; API, backup/restore i HTML izvoz čuvaju isti ugovor.
+Dinamički generirane tablice koriste standardni responzivni HTML za tablice iz
+Editora, pa slijede aktivnu temu bez posebnog Workspace vizualnog nadjačavanja.
 
 ## Dokumentacija
 

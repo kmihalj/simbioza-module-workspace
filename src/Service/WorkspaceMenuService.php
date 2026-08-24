@@ -154,6 +154,43 @@ final readonly class WorkspaceMenuService
     }
 
     /**
+     * HR: Uklanja obje privatne definicije menija područja, a ostale contexte ne mijenja.
+     * EN: Removes both private Workspace menu definitions without changing other contexts.
+     *
+     * @param array<string, mixed> $workspace
+     */
+    public function deleteForWorkspace(array $workspace): void
+    {
+        if (!$this->isAvailable()) {
+            return;
+        }
+
+        $repository = $this->requiredService(self::REPOSITORY);
+        $catalog = $this->requiredService(self::NAVIGATION_CATALOG);
+        foreach ([self::MODE_TOP, self::MODE_LEFT] as $mode) {
+            $context = $this->contextForWorkspace($repository, $workspace, $mode);
+            $context['delete'] = '1';
+            $context['original_id'] = WorkspaceValue::string($context['id'] ?? '');
+            if ($context['original_id'] === '') {
+                continue;
+            }
+
+            if (!method_exists($repository, 'saveContext')) {
+                continue;
+            }
+
+            $repository->saveContext(
+                $context,
+                $this->stringList(method_exists($catalog, 'routeNames') ? $catalog->routeNames() : []),
+                $this->stringList(
+                    method_exists($catalog, 'validationPaths') ? $catalog->validationPaths() : [],
+                ),
+                $mode,
+            );
+        }
+    }
+
+    /**
      * HR: Gradi zaključani context prije zapisa; odvojeno je radi sigurnosnog regresijskog testa.
      * EN: Builds the locked context before persistence; separated for a security regression test.
      *

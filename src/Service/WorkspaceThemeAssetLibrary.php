@@ -7,10 +7,14 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use FilesystemIterator;
 use finfo;
 use InvalidArgumentException;
 use Psr\Http\Message\UploadedFileInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
+use SplFileInfo;
 
 /**
  * HR: Upravlja sigurnim slikovnim datotekama privatne teme jednog područja.
@@ -215,6 +219,42 @@ final readonly class WorkspaceThemeAssetLibrary
             static fn(mixed $asset): bool => !is_array($asset) || ($asset['file'] ?? null) !== $file,
         ));
         $this->writeManifest($workspaceId, $manifest);
+    }
+
+    /**
+     * HR: Nepovratno uklanja isključivo privatni theme direktorij zadanog područja.
+     * EN: Irreversibly removes only the supplied Workspace's private-theme directory.
+     */
+    public function purgeWorkspace(int $workspaceId): void
+    {
+        if ($workspaceId <= 0) {
+            throw new InvalidArgumentException('Workspace theme scope is invalid.');
+        }
+
+        $directory = $this->config->workspaceThemePath($workspaceId);
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($iterator as $item) {
+            if (!$item instanceof SplFileInfo) {
+                continue;
+            }
+
+            $path = $item->getPathname();
+            $removed = $item->isDir() && !$item->isLink() ? rmdir($path) : unlink($path);
+            if (!$removed) {
+                throw new RuntimeException('Workspace theme asset cannot be permanently deleted.');
+            }
+        }
+
+        if (!rmdir($directory)) {
+            throw new RuntimeException('Workspace theme directory cannot be permanently deleted.');
+        }
     }
 
     /**

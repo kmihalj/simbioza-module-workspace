@@ -33,7 +33,7 @@ use const PATHINFO_FILENAME;
  * HR: Priprema objavljene Editor dokumente za Workspace ZIP, uključujući statičke
  *     kalendare, zadatke, sadržaj dokumenta i dopuštene privitke.
  * EN: Prepares published Editor documents for a Workspace ZIP, including static
- *     calendars, tasks, the document outline, and permitted attachments.
+ *     calendars, tasks, charts, the document outline, and permitted attachments.
  */
 final readonly class WorkspaceExportEditorBridge
 {
@@ -291,6 +291,71 @@ final readonly class WorkspaceExportEditorBridge
             }
 
             $calendar = $this->service('EditorHtmlCalendarIntegration');
+            $includes = $this->service('EditorDocumentIncludeService');
+            if ($includes !== null && method_exists($includes, 'exportDependencies')) {
+                $dependencies = $includes->exportDependencies($html, $documentKey, $language);
+                foreach (is_array($dependencies) ? $dependencies : [] as $dependency) {
+                    if (!is_array($dependency)) {
+                        continue;
+                    }
+
+                    $dependencyKey = is_scalar($dependency['documentKey'] ?? null)
+                    ? trim((string)$dependency['documentKey'])
+                    : '';
+                    $dependencyLanguage = is_scalar($dependency['language'] ?? null)
+                    ? trim((string)$dependency['language'])
+                    : $language;
+                    $dependencyVersion = is_numeric($dependency['versionNumber'] ?? null)
+                    ? (int)$dependency['versionNumber']
+                    : 0;
+                    if ($dependencyKey === '') {
+                        continue;
+                    }
+
+                    $dependencyAssets = $dependencyVersion > 0
+                    ? $editor->listVersionAssets($dependencyKey, $dependencyLanguage, $dependencyVersion)
+                    : (method_exists($editor, 'listPublicAssets')
+                            ? $editor->listPublicAssets($dependencyKey)
+                            : []);
+                    foreach (is_array($dependencyAssets) ? $dependencyAssets : [] as $dependencyAsset) {
+                        if (!is_object($dependencyAsset)) {
+                            continue;
+                        }
+
+                        $uuid = is_scalar($dependencyAsset->uuid ?? null)
+                        ? trim((string)$dependencyAsset->uuid)
+                        : '';
+                        if ($uuid === '') {
+                            continue;
+                        }
+
+                        if (isset($assetHrefs[$uuid])) {
+                            continue;
+                        }
+
+                        $content = $editor->assetContent($uuid);
+                        if (!is_string($content)) {
+                            continue;
+                        }
+
+                        $originalName = is_scalar($dependencyAsset->originalName ?? null)
+                        ? (string)$dependencyAsset->originalName
+                        : $uuid;
+                        $fileName = $this->uniqueFileName($originalName, $uuid, $usedNames);
+                        $path = trim($assetDirectory, '/') . '/' . $fileName;
+                        $assetHrefs[$uuid] = '../' . $path;
+                        $files[$path] = $content;
+                    }
+                }
+            }
+
+            if ($includes !== null && method_exists($includes, 'render')) {
+                $renderedIncludes = $includes->render($html, $documentKey, $language);
+                if (is_string($renderedIncludes)) {
+                    $html = $renderedIncludes;
+                }
+            }
+
             if ($calendar !== null && method_exists($calendar, 'renderEmbeds')) {
                 $renderedCalendar = $calendar->renderEmbeds($html, [
                     'include_ics_export' => false,
@@ -306,6 +371,18 @@ final readonly class WorkspaceExportEditorBridge
                 $renderedTasks = $tasks->renderTasks($html, $documentKey, $language, false);
                 if (is_string($renderedTasks)) {
                     $html = $renderedTasks;
+                }
+            }
+
+            // HR: Grafikon se u izvozu pretvara u samostalan inline SVG, dok
+            //     kanonska uređiva konfiguracija ostaje samo u backupu.
+            // EN: In export, a chart becomes self-contained inline SVG while
+            //     the canonical editable configuration remains in backup only.
+            $charts = $this->service('EditorHtmlChartService');
+            if ($charts !== null && method_exists($charts, 'render')) {
+                $renderedCharts = $charts->render($html);
+                if (is_string($renderedCharts)) {
+                    $html = $renderedCharts;
                 }
             }
 

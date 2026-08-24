@@ -11,6 +11,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var bool $deleted
  * @var bool $tablesReady
  * @var string $restorePath
+ * @var string $purgePath
  * @var string $settingsPath
  * @var string $allPath
  * @var string $deletedPath
@@ -74,10 +75,13 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
                         <?php
                         $name = WorkspaceValue::string($workspace['name'] ?? '');
                         $slug = WorkspaceValue::string($workspace['slug'] ?? '');
+                        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
                         $visibility = WorkspaceValue::string($workspace['visibility'] ?? 'restricted');
                         $publicPath = WorkspaceValue::string($workspace['public_path'] ?? '#');
                         $managePath = WorkspaceValue::string($workspace['manage_path'] ?? '#');
                         $exportPath = WorkspaceValue::string($workspace['export_path'] ?? '#');
+                        $purgeTitle = __('Trajno izbriši područje i sav sadržaj');
+                        $purgePrompt = __('Za trajno brisanje upišite slug:') . ' ' . $slug;
                         ?>
                                 <tr>
                                     <th scope="row"><?= $this->escape($name) ?></th>
@@ -86,14 +90,22 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
                                     <td>
                                         <div class="d-flex justify-content-end gap-2">
                         <?php if ($deleted) : ?>
-                                            <form method="post" action="<?= $this->escape($restorePath) ?>">
+                                            <div class="workspace-deleted-actions">
+                                            <form
+                                                class="workspace-deleted-actions__form"
+                                                method="post"
+                                                action="<?= $this->escape($restorePath) ?>"
+                                            >
                             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                                                 <input
                                                     type="hidden"
                                                     name="workspace_id"
-                                                    value="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
+                                                    value="<?= $workspaceId ?>"
                                                 >
-                                                <div class="input-group input-group-sm">
+                                                <div
+                                                    class="input-group input-group-sm
+                                                        workspace-deleted-actions__group"
+                                                >
                                                     <input
                                                         class="form-control font-monospace"
                                                         name="slug"
@@ -105,6 +117,48 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
                                                     </button>
                                                 </div>
                                             </form>
+                                            <form
+                                                class="workspace-deleted-actions__form"
+                                                method="post"
+                                                action="<?= $this->escape($purgePath) ?>"
+                                            >
+                            <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
+                                                <input
+                                                    type="hidden"
+                                                    name="workspace_id"
+                                                    value="<?= $workspaceId ?>"
+                                                >
+                                                <input type="hidden" name="return_to" value="deleted">
+                                                <input type="hidden" name="confirm" value="1">
+                                                <label
+                                                    class="visually-hidden"
+                                                    for="purge-slug-<?= $workspaceId ?>"
+                                                >
+                            <?= $this->escape(__('Za trajno brisanje upišite slug:')) ?>
+                                                    <strong class="font-monospace"><?= $this->escape($slug) ?></strong>
+                                                </label>
+                                                <div
+                                                    class="input-group input-group-sm
+                                                        workspace-deleted-actions__group
+                                                        workspace-deleted-actions__group--purge"
+                                                >
+                                                    <input
+                                                        id="purge-slug-<?= $workspaceId ?>"
+                                                        class="form-control font-monospace"
+                                                        name="confirm_slug"
+                                                        autocomplete="off"
+                                                        placeholder="<?= $this->escape($slug) ?>"
+                                                        title="<?= $this->escape($purgePrompt) ?>"
+                                                        required
+                                                    >
+                                                    <button
+                                                        class="btn btn-danger"
+                                                        type="submit"
+                                                        title="<?= $this->escape($purgeTitle) ?>"
+                                                    ><?= $this->escape(__('Trajno izbriši')) ?></button>
+                                                </div>
+                                            </form>
+                                            </div>
                         <?php else : ?>
                                             <a
                                                 class="btn btn-sm btn-secondary"

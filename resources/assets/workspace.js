@@ -443,6 +443,305 @@
     }
 
     /**
+     * HR: Povezuje strelice za sažimanje grana samo u read-only stablu.
+     *     Organizator poretka koristi zaseban prikaz i uvijek zadržava sve razine.
+     * EN: Connects branch-collapse arrows only in the read-only tree. The order
+     *     organizer uses a separate view and always keeps every level visible.
+     *
+     * @returns {void}
+     */
+    function initializeReadableTrees() {
+        document.querySelectorAll('[data-workspace-tree-view]').forEach((tree) => {
+            if (!(tree instanceof HTMLElement) || tree.dataset.workspaceReadableTreeReady === '1') {
+                return;
+            }
+
+            tree.dataset.workspaceReadableTreeReady = '1';
+            const treeKey = tree.dataset.workspaceTreeKey || '';
+            const storageKey = treeKey !== ''
+                ? `heartphrame.workspace.tree.v1.${treeKey}`
+                : '';
+            let storedExpandedNodes = null;
+
+            if (storageKey !== '') {
+                try {
+                    const storedValue = window.sessionStorage.getItem(storageKey);
+                    const parsedValue = storedValue === null ? null : JSON.parse(storedValue);
+                    if (Array.isArray(parsedValue)) {
+                        storedExpandedNodes = new Set(parsedValue.filter((value) => (
+                            typeof value === 'string' && value !== ''
+                        )));
+                    }
+                } catch (_error) {
+                    storedExpandedNodes = null;
+                }
+            }
+
+            /**
+             * HR: Sprema samo otvorene grane ovog područja u trenutačnu karticu
+             *     preglednika. Nedostupan sessionStorage ne prekida navigaciju.
+             * EN: Stores only this Workspace's expanded branches in the current
+             *     browser tab. Unavailable sessionStorage never blocks navigation.
+             *
+             * @returns {void}
+             */
+            const persistExpandedBranches = () => {
+                if (storageKey === '') {
+                    return;
+                }
+
+                const expandedNodeIds = [];
+                tree.querySelectorAll('[data-workspace-tree-branch-toggle][aria-expanded="true"]')
+                    .forEach((toggle) => {
+                        const node = toggle.closest('[data-workspace-tree-node]');
+                        const nodeId = node instanceof HTMLElement
+                            ? node.dataset.workspaceTreeNode || ''
+                            : '';
+                        if (nodeId !== '') {
+                            expandedNodeIds.push(nodeId);
+                        }
+                    });
+
+                try {
+                    window.sessionStorage.setItem(storageKey, JSON.stringify(expandedNodeIds));
+                } catch (_error) {
+                    // HR: Privatni način rada može zabraniti pohranu; stablo i dalje radi.
+                    // EN: Private browsing may deny storage; the tree still works.
+                }
+            };
+
+            /**
+             * HR: Bez spremljenog stanja pokazuje prvu razinu i put do aktivne
+             *     stranice. Inače vraća otvorene grane, ali uvijek prisilno
+             *     otvara pretke aktivne stranice. Stanje se priprema i kada je
+             *     cijeli mobilni panel skriven.
+             * EN: Without stored state, shows the first level and active-page
+             *     path. Otherwise restores expanded branches but always forces
+             *     active-page ancestors open. State is prepared even while the
+             *     entire mobile panel is hidden.
+             */
+            tree.querySelectorAll('[data-workspace-tree-branch-toggle]').forEach((toggle) => {
+                if (!(toggle instanceof HTMLButtonElement)) {
+                    return;
+                }
+
+                const node = toggle.closest('[data-workspace-tree-node]');
+                const branchId = toggle.getAttribute('aria-controls') || '';
+                const branch = branchId !== '' ? document.getElementById(branchId) : null;
+                if (!(node instanceof HTMLElement)
+                    || !(branch instanceof HTMLElement)
+                    || !tree.contains(branch)) {
+                    return;
+                }
+
+                const level = Number.parseInt(node.dataset.workspaceTreeLevel || '1', 10);
+                const nodeId = node.dataset.workspaceTreeNode || '';
+                const containsActivePage = branch.querySelector('[aria-current="page"]') !== null;
+                const expanded = containsActivePage || (storedExpandedNodes instanceof Set
+                    ? storedExpandedNodes.has(nodeId)
+                    : level === 1);
+                branch.hidden = !expanded;
+                toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                const label = expanded
+                    ? toggle.dataset.expandedLabel
+                    : toggle.dataset.collapsedLabel;
+                if (typeof label === 'string' && label !== '') {
+                    toggle.setAttribute('aria-label', label);
+                    toggle.setAttribute('title', label);
+                }
+            });
+
+            tree.addEventListener('click', (event) => {
+                const target = event.target instanceof Element
+                    ? event.target.closest('[data-workspace-tree-branch-toggle]')
+                    : null;
+                if (!(target instanceof HTMLButtonElement)) {
+                    return;
+                }
+
+                const branchId = target.getAttribute('aria-controls') || '';
+                const branch = branchId !== '' ? document.getElementById(branchId) : null;
+                if (!(branch instanceof HTMLElement) || !tree.contains(branch)) {
+                    return;
+                }
+
+                const nextExpanded = target.getAttribute('aria-expanded') !== 'true';
+                branch.hidden = !nextExpanded;
+                target.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+                const label = nextExpanded
+                    ? target.dataset.expandedLabel
+                    : target.dataset.collapsedLabel;
+                if (typeof label === 'string' && label !== '') {
+                    target.setAttribute('aria-label', label);
+                    target.setAttribute('title', label);
+                }
+                persistExpandedBranches();
+            });
+        });
+    }
+
+    /**
+     * HR: Pretvara CSS duljinu stabla (npr. rem) u piksele bez pretpostavke o
+     *     korisnikovoj veličini fonta. Privremeni mjerač nije vidljiv niti
+     *     utječe na raspored stranice.
+     * EN: Converts a tree CSS length (for example rem) to pixels without
+     *     assuming the user's font size. The temporary ruler is invisible and
+     *     does not affect page layout.
+     *
+     * @param {HTMLElement} context
+     * @param {string} value
+     * @returns {number}
+     */
+    function workspaceCssLengthInPixels(context, value) {
+        const ruler = document.createElement('span');
+        ruler.style.cssText = [
+            'display:block',
+            'height:0',
+            'inset:0 auto auto 0',
+            'overflow:hidden',
+            'pointer-events:none',
+            'position:fixed',
+            'visibility:hidden',
+            `width:${value}`,
+        ].join(';');
+        context.appendChild(ruler);
+        const width = ruler.getBoundingClientRect().width;
+        ruler.remove();
+
+        return width;
+    }
+
+    /**
+     * HR: Mjeri naslov u jednom retku s njegovim stvarnim fontom. Tako stablo
+     *     ostaje kompaktno za kratke nazive, ali se može proširiti prije nego
+     *     što dugi nazivi počnu stvarati nepotrebne retke od jedne riječi.
+     * EN: Measures a title on one line with its actual font. This keeps the
+     *     tree compact for short names while allowing it to grow before long
+     *     names create unnecessary one-word lines.
+     *
+     * @param {HTMLElement} title
+     * @returns {number}
+     */
+    function workspaceTreeTitleNaturalWidth(title) {
+        const style = window.getComputedStyle(title);
+        const ruler = document.createElement('span');
+        ruler.textContent = title.textContent || '';
+        ruler.style.cssText = [
+            'display:inline-block',
+            `font:${style.font}`,
+            `font-kerning:${style.fontKerning}`,
+            `letter-spacing:${style.letterSpacing}`,
+            'inset:0 auto auto 0',
+            'pointer-events:none',
+            'position:fixed',
+            'visibility:hidden',
+            'white-space:nowrap',
+        ].join(';');
+        document.body.appendChild(ruler);
+        const width = ruler.getBoundingClientRect().width;
+        ruler.remove();
+
+        return width;
+    }
+
+    /**
+     * HR: Prilagođava samo desktop stupac stabla stvarnom sadržaju unutar
+     *     zadanog kompaktnog i maksimalnog raspona. Mobilni drawer zadržava
+     *     svoju postojeću širinu, a glavni sadržaj i breadcrumb automatski
+     *     prate istu CSS varijablu.
+     * EN: Adapts only the desktop tree column to its real content within the
+     *     configured compact and maximum range. The mobile drawer keeps its
+     *     existing width, while main content and breadcrumbs automatically
+     *     follow the same CSS variable.
+     *
+     * @returns {void}
+     */
+    function initializeAdaptiveTreeWidths() {
+        const desktopQuery = window.matchMedia('(min-width: 992px)');
+
+        document.querySelectorAll('.workspace-shell').forEach((shell) => {
+            if (!(shell instanceof HTMLElement)) {
+                return;
+            }
+
+            const sidebar = shell.querySelector(':scope > .workspace-sidebar');
+            const tree = sidebar?.querySelector('[data-workspace-tree-view]');
+            const cardBody = sidebar?.querySelector('.workspace-tree-card > .card-body');
+            if (!(sidebar instanceof HTMLElement)
+                || !(tree instanceof HTMLElement)
+                || !(cardBody instanceof HTMLElement)) {
+                return;
+            }
+
+            const synchronizeWidth = () => {
+                shell.style.removeProperty('--workspace-tree-width');
+                if (!desktopQuery.matches) {
+                    return;
+                }
+
+                const shellStyle = window.getComputedStyle(shell);
+                const minimum = workspaceCssLengthInPixels(
+                    shell,
+                    shellStyle.getPropertyValue('--workspace-tree-min-width').trim() || '18rem',
+                );
+                const maximum = workspaceCssLengthInPixels(
+                    shell,
+                    shellStyle.getPropertyValue('--workspace-tree-max-width').trim() || '22rem',
+                );
+                const bodyStyle = window.getComputedStyle(cardBody);
+                const bodyPadding = Number.parseFloat(bodyStyle.paddingInlineStart || '0')
+                    + Number.parseFloat(bodyStyle.paddingInlineEnd || '0');
+                let requiredWidth = minimum;
+
+                tree.querySelectorAll('.workspace-tree-link-title').forEach((title) => {
+                    if (!(title instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const row = title.closest('.workspace-tree-row');
+                    const link = title.closest('.workspace-tree-link');
+                    if (!(row instanceof HTMLElement) || !(link instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const rowStyle = window.getComputedStyle(row);
+                    const linkStyle = window.getComputedStyle(link);
+                    const toggle = row.querySelector(
+                        '.workspace-tree-branch-toggle, .workspace-tree-branch-spacer',
+                    );
+                    const status = link.querySelector('.workspace-tree-status');
+                    const indentation = Number.parseFloat(rowStyle.paddingInlineStart || '0');
+                    const linkPadding = Number.parseFloat(linkStyle.paddingInlineStart || '0')
+                        + Number.parseFloat(linkStyle.paddingInlineEnd || '0');
+                    const toggleWidth = toggle instanceof HTMLElement
+                        ? Number.parseFloat(window.getComputedStyle(toggle).width || '0')
+                        : 0;
+                    const statusWidth = status instanceof HTMLElement
+                        ? status.getBoundingClientRect().width
+                        : 0;
+                    const titleWidth = workspaceTreeTitleNaturalWidth(title);
+
+                    // HR: Mali dodatak pokriva razmak flexa i eventualni scrollbar.
+                    // EN: A small allowance covers the flex gap and a possible scrollbar.
+                    requiredWidth = Math.max(
+                        requiredWidth,
+                        bodyPadding + indentation + toggleWidth + linkPadding
+                            + statusWidth + titleWidth + 20,
+                    );
+                });
+
+                const resolvedWidth = Math.min(maximum, Math.max(minimum, requiredWidth));
+                shell.style.setProperty('--workspace-tree-width', `${Math.ceil(resolvedWidth)}px`);
+            };
+
+            synchronizeWidth();
+            desktopQuery.addEventListener('change', synchronizeWidth);
+            window.addEventListener('resize', synchronizeWidth, { passive: true });
+            document.fonts?.ready.then(synchronizeWidth).catch(() => {});
+        });
+    }
+
+    /**
      * HR: Vraća lagani početni sadržaj zajedničkog modala dok se postavke
      * odabranog čvora učitavaju sa servera.
      *
@@ -1147,6 +1446,108 @@
     }
 
     /**
+     * HR: Dinamički prikazuje ACL-filtrirane prijedloge ugrađene pretrage
+     * područja bez napuštanja trenutačne stranice.
+     * EN: Dynamically shows ACL-filtered suggestions for embedded Workspace
+     * search without leaving the current page.
+     *
+     * @returns {void}
+     */
+    function initializeEmbeddedWorkspaceSearch() {
+        document.querySelectorAll('[data-workspace-embedded-search="1"]').forEach((form) => {
+            if (!(form instanceof HTMLFormElement) || form.dataset.workspaceSearchReady === '1') {
+                return;
+            }
+            const input = form.querySelector('[data-workspace-embedded-search-input="1"]');
+            const results = form.querySelector('[data-workspace-embedded-search-results="1"]');
+            const suggestUrl = String(form.dataset.suggestUrl || '').trim();
+            if (!(input instanceof HTMLInputElement) || !(results instanceof HTMLElement) || suggestUrl === '') {
+                return;
+            }
+
+            form.dataset.workspaceSearchReady = '1';
+            let timer = 0;
+            let request = null;
+
+            const clear = () => {
+                results.replaceChildren();
+                results.hidden = true;
+            };
+
+            const render = (items) => {
+                clear();
+                if (!Array.isArray(items) || items.length === 0) {
+                    return;
+                }
+                items.forEach((item) => {
+                    const url = typeof item.url === 'string' ? item.url : '';
+                    const title = typeof item.title === 'string' ? item.title : '';
+                    if (url === '' || title === '') {
+                        return;
+                    }
+                    const link = document.createElement('a');
+                    link.className = 'list-group-item list-group-item-action';
+                    link.href = url;
+                    link.setAttribute('role', 'option');
+                    const heading = document.createElement('span');
+                    heading.className = 'd-block fw-semibold';
+                    heading.textContent = title;
+                    link.appendChild(heading);
+                    if (typeof item.workspace === 'string' && item.workspace !== '') {
+                        const workspace = document.createElement('small');
+                        workspace.className = 'text-body-secondary';
+                        workspace.textContent = item.workspace;
+                        link.appendChild(workspace);
+                    }
+                    results.appendChild(link);
+                });
+                results.hidden = results.childElementCount === 0;
+            };
+
+            input.addEventListener('input', () => {
+                window.clearTimeout(timer);
+                if (request instanceof AbortController) {
+                    request.abort();
+                }
+                const query = input.value.trim();
+                if (query.length < 2) {
+                    clear();
+                    return;
+                }
+                timer = window.setTimeout(async () => {
+                    request = new AbortController();
+                    const url = new URL(suggestUrl, window.location.href);
+                    url.searchParams.set('q', query);
+                    url.searchParams.set('workspace', String(form.dataset.workspaceSlug || ''));
+                    url.searchParams.set('lang', String(form.dataset.searchLanguage || ''));
+                    try {
+                        const response = await window.fetch(url.toString(), {
+                            headers: { Accept: 'application/json' },
+                            signal: request.signal,
+                        });
+                        if (!response.ok) {
+                            clear();
+                            return;
+                        }
+                        const payload = await response.json();
+                        render(payload && Array.isArray(payload.data) ? payload.data : []);
+                    } catch (error) {
+                        if (!(error instanceof DOMException) || error.name !== 'AbortError') {
+                            clear();
+                        }
+                    }
+                }, 180);
+            });
+
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    clear();
+                }
+            });
+        });
+    }
+
+    /**
      * HR: Inicijalizira sve Workspace kontrole nakon što je DOM spreman.
      * EN: Initializes every Workspace control after the DOM is ready.
      *
@@ -1156,12 +1557,15 @@
         initializeModalPortals();
         initializeNodeForms();
         initializeTreeOrganizers();
+        initializeReadableTrees();
+        initializeAdaptiveTreeWidths();
         initializeTreeEditModes();
         initializeNodeDialog();
         initializeAclControls();
         initializeHomepageTargets();
         initializeMobilePanels();
         initializeBacklinkLayout();
+        initializeEmbeddedWorkspaceSearch();
     }
 
     if (document.readyState === 'loading') {

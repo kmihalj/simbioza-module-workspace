@@ -173,7 +173,11 @@ $orderOptions = [
                         <?= $this->escape(WorkspaceValue::string($workspace['name'] ?? '')) ?>
                     </h2>
                 </div>
-                <div class="list-group list-group-flush workspace-tree">
+                <div
+                    class="list-group list-group-flush workspace-tree"
+                    data-workspace-tree-view
+                    data-workspace-tree-key="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
+                >
                     <?php if ($tree === []) : ?>
                         <p class="small text-body-secondary mb-0">
                             <?= $this->escape(__('Stablo je prazno.')) ?>

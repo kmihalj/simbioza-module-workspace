@@ -82,6 +82,34 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
+     * HR: Nepovratno uklanja točno zadane dokumente preko javne Editor metode.
+     * EN: Irreversibly removes exactly the supplied documents through the public Editor method.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string, mixed>
+     */
+    public function purgeDocuments(array $documentKeys): array
+    {
+        if ($documentKeys === []) {
+            return [
+                'purged_documents' => 0,
+                'purged_versions' => 0,
+                'purged_assets' => 0,
+                'failed_files' => 0,
+            ];
+        }
+
+        $service = $this->service();
+        if (!is_object($service) || !method_exists($service, 'purgeDocuments')) {
+            return [];
+        }
+
+        $result = $service->purgeDocuments($documentKeys);
+
+        return $this->stringKeyedArray(is_array($result) ? $result : []);
+    }
+
+    /**
      * HR: Normalizira dinamički rezultat opcionalnog servisa u strogi statistički oblik.
      * EN: Normalizes an optional service's dynamic result into a strict statistics shape.
      *

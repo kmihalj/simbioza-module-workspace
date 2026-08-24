@@ -1,5 +1,7 @@
 :root {
-    --workspace-tree-width: 18rem;
+    --workspace-tree-min-width: 18rem;
+    --workspace-tree-max-width: 22rem;
+    --workspace-tree-width: var(--workspace-tree-min-width);
 }
 
 .workspace-shell {
@@ -20,6 +22,19 @@
 .workspace-tree-card {
     max-height: inherit;
     overflow: hidden;
+}
+
+/*
+ * HR: Poruke o zabrani pristupa i prazna javna stanja koriste istu neprozirnu
+ *     tematsku karticu kao sadržaj stranice.
+ * EN: Access-denied messages and empty public states use the same opaque
+ *     themed card as page content.
+ */
+.workspace-access-denied,
+.workspace-empty-state {
+    background-color: var(--hph-content-card-bg, var(--bs-body-bg, #fff));
+    border-color: var(--hph-content-card-border, var(--bs-border-color, #dee2e6));
+    color: var(--hph-content-card-text, var(--bs-body-color, #212529));
 }
 
 .workspace-tree-card .card-body {
@@ -127,20 +142,141 @@
 
 .workspace-tree-link {
     align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: .2rem;
+    color: var(--hph-workspace-tree-text, var(--bs-body-color));
     display: flex;
     gap: .35rem;
     justify-content: space-between;
+    line-height: 1.25;
+    min-width: 0;
+    padding: .32rem .35rem;
+}
+
+.workspace-tree-link:hover,
+.workspace-tree-link:focus-visible {
+    background: color-mix(
+        in srgb,
+        var(--hph-workspace-tree-accent, var(--bs-primary)) 9%,
+        transparent
+    );
+    color: var(--hph-workspace-tree-text, var(--bs-body-color));
+}
+
+.workspace-tree-link.active,
+.workspace-tree-link.active:hover,
+.workspace-tree-link.active:focus-visible {
+    background: var(--hph-workspace-tree-accent, var(--bs-primary));
+    color: var(--hph-workspace-tree-active-text, var(--bs-white));
+}
+
+.workspace-tree-row {
+    --workspace-tree-indent: calc((var(--workspace-tree-level, 1) - 1) * .9rem);
+    align-items: center;
+    display: flex;
+    padding-inline-start: var(--workspace-tree-indent);
+}
+
+.workspace-tree-branch-toggle,
+.workspace-tree-branch-spacer {
+    flex: 0 0 1.45rem;
+    width: 1.45rem;
+}
+
+.workspace-tree-branch-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--hph-workspace-tree-text, var(--bs-body-color));
+    display: inline-flex;
+    justify-content: center;
+    opacity: .62;
+    padding: 0;
+}
+
+.workspace-tree-branch-toggle:hover,
+.workspace-tree-branch-toggle:focus-visible {
+    color: var(--hph-workspace-tree-accent, var(--bs-primary));
+    opacity: 1;
+}
+
+.workspace-tree-branch-toggle svg {
+    fill: none;
+    height: .9rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.25;
+    transition: transform .18s ease;
+    width: .9rem;
+}
+
+.workspace-tree-branch-toggle[aria-expanded="false"] svg {
+    transform: rotate(-90deg);
+}
+
+[dir="rtl"] .workspace-tree-branch-toggle[aria-expanded="false"] svg {
+    transform: rotate(90deg);
+}
+
+.workspace-tree-branch[hidden] {
+    display: none !important;
 }
 
 .workspace-tree-link-title {
     min-width: 0;
     overflow-wrap: anywhere;
+    text-wrap: pretty;
 }
 
 .workspace-tree-status {
     flex: 0 0 auto;
     font-size: .62rem;
     font-weight: 600;
+}
+
+/*
+ * HR: Nativni dinamički blokovi koriste površine i obrube aktivne teme, ali
+ *     zadržavaju čitljiv fallback kada Theme modul nije instaliran.
+ * EN: Native dynamic blocks use active-theme surfaces and borders while
+ *     retaining a readable fallback when the Theme module is absent.
+ */
+.workspace-dynamic-block {
+    background: var(--hph-content-surface, var(--bs-body-bg));
+    border: 1px solid var(--hph-content-border, var(--bs-border-color));
+    border-radius: var(--hph-content-radius, var(--bs-border-radius));
+    color: var(--hph-content-text, var(--bs-body-color));
+    margin-block: 1rem;
+    padding: 1rem;
+}
+
+.workspace-dynamic-block > :last-child {
+    margin-bottom: 0;
+}
+
+.workspace-dynamic-block .list-group-item,
+.workspace-dynamic-block .card {
+    background-color: transparent;
+    color: inherit;
+}
+
+.workspace-embedded-search {
+    position: relative;
+}
+
+.workspace-embedded-search [data-workspace-embedded-search-results] {
+    box-shadow: var(--bs-box-shadow-sm);
+    max-height: min(22rem, 55vh);
+    overflow-y: auto;
+    position: absolute;
+    width: calc(100% - 2rem);
+    z-index: 20;
+}
+
+.workspace-attachment-gallery .card-img-top {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
 }
 
 .workspace-review-queue-count,
@@ -150,22 +286,12 @@
     padding: .15rem .25rem;
 }
 
-.workspace-tree-link-level-2 {
-    padding-left: 1.5rem;
-}
-
-.workspace-tree-link-level-3 {
-    padding-left: 2.25rem;
-}
-
-.workspace-tree-link-level-4 {
-    padding-left: 3rem;
-}
-
-.workspace-tree-link-level-5,
-.workspace-tree-link-level-6 {
-    padding-left: 3.75rem;
-}
+.workspace-tree-node[data-workspace-tree-level="1"] > .workspace-tree-row { --workspace-tree-level: 1; }
+.workspace-tree-node[data-workspace-tree-level="2"] > .workspace-tree-row { --workspace-tree-level: 2; }
+.workspace-tree-node[data-workspace-tree-level="3"] > .workspace-tree-row { --workspace-tree-level: 3; }
+.workspace-tree-node[data-workspace-tree-level="4"] > .workspace-tree-row { --workspace-tree-level: 4; }
+.workspace-tree-node[data-workspace-tree-level="5"] > .workspace-tree-row,
+.workspace-tree-node[data-workspace-tree-level="6"] > .workspace-tree-row { --workspace-tree-level: 5; }
 
 .workspace-main {
     min-width: 0;
@@ -876,6 +1002,43 @@
 
     .workspace-tree-editor-row .workspace-tree-order-controls {
         padding-left: 2.1rem;
+    }
+}
+
+.workspace-deleted-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.workspace-deleted-actions__form {
+    margin: 0;
+}
+
+.workspace-deleted-actions__group {
+    flex-wrap: nowrap;
+    width: 13rem;
+}
+
+.workspace-deleted-actions__group--purge {
+    width: 18rem;
+}
+
+.workspace-deleted-actions__group .btn {
+    white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+    .workspace-deleted-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .workspace-deleted-actions__group,
+    .workspace-deleted-actions__group--purge {
+        width: 100%;
     }
 }
 

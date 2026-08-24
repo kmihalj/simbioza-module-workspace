@@ -23,8 +23,10 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkIndexer;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBreadcrumbService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceContentChangeBatch;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorAccess;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceDynamicContentService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportEditorBridge;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceHomepageRepository;
@@ -68,11 +70,19 @@ $services = [
     WorkspaceConfig::class => static fn(ContainerInterface $container): WorkspaceConfig =>
         new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__)),
 
+    WorkspaceContentChangeBatch::class =>
+        static fn(ContainerInterface $container): WorkspaceContentChangeBatch =>
+            new WorkspaceContentChangeBatch(
+                $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
+                $container->get(LoggerInterface::class),
+            ),
+
     WorkspaceRepository::class => static fn(ContainerInterface $container): WorkspaceRepository =>
         new WorkspaceRepository(
             $container->get(Database::class),
             $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
             $container->get(LoggerInterface::class),
+            $container->get(WorkspaceContentChangeBatch::class),
         ),
 
     WorkspaceThemeRepository::class => static fn(ContainerInterface $container): WorkspaceThemeRepository =>
@@ -138,6 +148,7 @@ $services = [
             $container->get(WorkspaceBacklinkIndexer::class),
             $container->get(WorkspaceConfig::class),
             $container->get(UrlGenerator::class),
+            $container->get(WorkspaceEditorBridge::class),
         ),
 
     WorkspaceBreadcrumbService::class => static fn(ContainerInterface $container): WorkspaceBreadcrumbService =>
@@ -191,6 +202,17 @@ $services = [
             $container->get(UrlGenerator::class),
         ),
 
+    WorkspaceDynamicContentService::class =>
+        static fn(ContainerInterface $container): WorkspaceDynamicContentService =>
+            new WorkspaceDynamicContentService(
+                $container,
+                $container->get(WorkspaceRepository::class),
+                $container->get(WorkspaceWorkflowService::class),
+                $container->get(WorkspaceEditorBridge::class),
+                $container->get(WorkspaceConfig::class),
+                $container->get(UrlGenerator::class),
+            ),
+
     WorkspaceEditorAccess::class => static fn(ContainerInterface $container): WorkspaceEditorAccess =>
         new WorkspaceEditorAccess(
             $container->get(WorkspaceRepository::class),
@@ -199,6 +221,7 @@ $services = [
             $container->get(UrlGenerator::class),
             $container->get(WorkspaceWorkflowService::class),
             $container->get(WorkspaceNotificationBridge::class),
+            $container->get(WorkspaceDynamicContentService::class),
         ),
 
     WorkspaceExportEditorBridge::class =>
@@ -248,6 +271,9 @@ $services = [
             $container->get(Database::class),
             $container->get(WorkspaceRepository::class),
             $container->get(WorkspaceMaintenanceBridge::class),
+            $container->get(WorkspaceMenuService::class),
+            $container->get(WorkspaceThemeAssetLibrary::class),
+            $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
         ),
 
     WorkspaceShortsService::class => static fn(ContainerInterface $container): WorkspaceShortsService =>

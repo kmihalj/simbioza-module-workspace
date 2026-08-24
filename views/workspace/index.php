@@ -44,8 +44,10 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
     <?= $this->escape(__('Početna Workspace migracija još nije pokrenuta.')) ?>
     </div>
 <?php elseif ($workspaces === []) : ?>
-    <div class="border rounded p-4 text-body-secondary">
+    <div class="card shadow-sm hph-content-card workspace-empty-state">
+        <div class="card-body p-4 text-body-secondary">
     <?= $this->escape(__('Nema područja koja smijete vidjeti.')) ?>
+        </div>
     </div>
 <?php else : ?>
     <div class="list-group workspace-list">

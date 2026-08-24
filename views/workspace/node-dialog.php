@@ -92,6 +92,51 @@ $hasPermission = static function (
             ) ?>
             <?php if (WorkspaceValue::string($node['node_type'] ?? '') === 'document') : ?>
                 <div class="mt-3">
+                    <label class="form-label" for="workspace-node-labels">
+                        <?= $this->escape(__('Oznake stranice')) ?>
+                    </label>
+                    <input
+                        id="workspace-node-labels"
+                        class="form-control"
+                        name="labels"
+                        value="<?= $this->escape(implode(', ', array_values(array_filter(
+                            is_array($node['labels'] ?? null) ? $node['labels'] : [],
+                            is_string(...),
+                        )))) ?>"
+                        placeholder="2026, projekt, pristupačnost"
+                    >
+                </div>
+                <fieldset class="mt-3">
+                    <legend class="h6 mb-2"><?= $this->escape(__('Svojstva stranice')) ?></legend>
+                    <div class="vstack gap-2">
+                        <?php
+                        $properties = is_array($node['properties'] ?? null) ? $node['properties'] : [];
+                        $properties[] = ['label' => '', 'type' => 'text', 'value' => ''];
+                        ?>
+                        <?php foreach ($properties as $property) : ?>
+                            <?php $property = is_array($property) ? $property : []; ?>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small"><?= $this->escape(__('Naziv svojstva')) ?></label>
+                                    <input class="form-control" name="properties[label][]" value="<?= $this->escape(WorkspaceValue::string($property['label'] ?? '')) ?>">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label small"><?= $this->escape(__('Vrsta')) ?></label>
+                                    <select class="form-select" name="properties[type][]">
+                                        <?php foreach (['text', 'status', 'number', 'date', 'user', 'link'] as $type) : ?>
+                                            <option value="<?= $type ?>" <?= WorkspaceValue::string($property['type'] ?? 'text') === $type ? 'selected' : '' ?>><?= $this->escape(__($type)) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-5">
+                                    <label class="form-label small"><?= $this->escape(__('Vrijednost')) ?></label>
+                                    <input class="form-control" name="properties[value][]" value="<?= $this->escape(WorkspaceValue::string($property['value'] ?? '')) ?>">
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+                <div class="mt-3">
                     <label class="form-label" for="workspace-node-contents-visibility">
                         <?= $this->escape(__('Zadani prikaz sadržaja stranice')) ?>
                     </label>

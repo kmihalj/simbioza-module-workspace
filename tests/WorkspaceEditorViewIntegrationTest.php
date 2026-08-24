@@ -39,6 +39,35 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Izvoz Područja mora prerenderirati nativne grafikone jednako kao izvoz stranice.
+     * EN: Workspace export must pre-render native charts just like page export.
+     */
+    public function testWorkspaceExportPreRendersNativeEditorCharts(): void
+    {
+        $bridge = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceExportEditorBridge.php');
+
+        $this->assertIsString($bridge);
+        $this->assertStringContainsString("service('EditorHtmlChartService')", $bridge);
+        $this->assertStringContainsString("method_exists(\$charts, 'render')", $bridge);
+    }
+
+    /**
+     * HR: Backlink indeks mora koristiti Editorov interni put bez sesijskog ACL-a.
+     * EN: The backlink index must use the Editor internal path without session ACL.
+     */
+    public function testBacklinkIndexUsesDedicatedInternalEditorReadPath(): void
+    {
+        $bridge = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceEditorBridge.php');
+        $indexer = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceBacklinkIndexer.php');
+
+        $this->assertIsString($bridge);
+        $this->assertIsString($indexer);
+        $this->assertStringContainsString('publishedVersionsForIndexing(', $bridge);
+        $this->assertStringContainsString('loadPublishedVersionsForIndexing', $bridge);
+        $this->assertStringContainsString('publishedVersionsForIndexing(', $indexer);
+    }
+
+    /**
      * HR: Akcije područja moraju ostati u karticama kojima pripadaju kako ne bi
      *     stvarale zaseban prazan red iznad stabla i HTML sadržaja.
      * EN: Workspace actions must remain inside their owning cards so they do
@@ -185,6 +214,61 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Obrazac nove stranice mora koristiti istu tematsku karticu kao glavni sadržaj.
+     * EN: The new-page form must use the same theme-aware card as the main content.
+     */
+    public function testNewPageFormUsesThemeAwareContentCard(): void
+    {
+        $view = file_get_contents(dirname(__DIR__) . '/views/workspace/show.php');
+
+        $this->assertIsString($view);
+        $this->assertStringContainsString(
+            'class="card shadow-sm hph-content-card workspace-page-create mb-4"',
+            $view,
+        );
+        $this->assertStringNotContainsString(
+            'workspace-page-create border rounded bg-body-tertiary',
+            $view,
+        );
+        $this->assertStringContainsString('class="row g-3 align-items-start"', $view);
+        $this->assertStringNotContainsString('class="row g-3 align-items-end"', $view);
+    }
+
+    /**
+     * HR: Poruka o zabrani pristupa mora biti neprozirna tematska kartica, a ne prozirni okvir na hero pozadini.
+     * EN: The access-denied message must be an opaque themed card, not a transparent border over the hero.
+     */
+    public function testAccessDeniedViewUsesThemeAwareContentCard(): void
+    {
+        $view = file_get_contents(dirname(__DIR__) . '/views/workspace/access-denied.php');
+        $indexView = file_get_contents(dirname(__DIR__) . '/views/workspace/index.php');
+        $css = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.css');
+
+        $this->assertIsString($view);
+        $this->assertIsString($indexView);
+        $this->assertIsString($css);
+        $this->assertStringContainsString(
+            'class="card shadow-sm hph-content-card workspace-access-denied"',
+            $view,
+        );
+        $this->assertStringContainsString('class="card-body p-4"', $view);
+        $this->assertStringContainsString('.workspace-access-denied,', $css);
+        $this->assertStringContainsString('--hph-content-card-bg', $css);
+        $this->assertStringContainsString(
+            'class="card shadow-sm hph-content-card workspace-empty-state"',
+            $indexView,
+        );
+        $this->assertStringNotContainsString(
+            '<section class="border rounded p-4"',
+            $view,
+        );
+        $this->assertStringNotContainsString(
+            '<div class="border rounded p-4 text-body-secondary">',
+            $indexView,
+        );
+    }
+
+    /**
      * HR: Organizator i modalne postavke čvorova pripadaju prikazu Područja,
      *     dok ekran upravljanja zadržava samo podatke, članove i Workspace ACL.
      * EN: The organizer and modal node settings belong to the Workspace view,
@@ -210,6 +294,41 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('document.body.append(modal)', $workspaceScript);
         $this->assertStringNotContainsString('data-workspace-tree-order-form', $manageView);
         $this->assertStringNotContainsString("'workspace/node-fields'", $manageView);
+    }
+
+    /** HR: Pregled stabla ima sklopive grane, a organizator ostaje odvojen i potpuno otvoren. EN: The tree view has collapsible branches while the organizer remains separate and fully visible. */
+    public function testReadOnlyTreeHasBranchControlsWithoutAffectingOrganizer(): void
+    {
+        $tree = file_get_contents(dirname(__DIR__) . '/views/workspace/tree.php');
+        $organizer = file_get_contents(dirname(__DIR__) . '/views/workspace/tree-organizer.php');
+        $workspaceView = file_get_contents(dirname(__DIR__) . '/views/workspace/show.php');
+        $shortsView = file_get_contents(dirname(__DIR__) . '/views/workspace/shorts.php');
+        $javascript = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.js');
+        $css = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.css');
+
+        $this->assertIsString($tree);
+        $this->assertIsString($organizer);
+        $this->assertIsString($workspaceView);
+        $this->assertIsString($shortsView);
+        $this->assertIsString($javascript);
+        $this->assertIsString($css);
+        $this->assertStringContainsString('data-workspace-tree-branch-toggle', $tree);
+        $this->assertStringContainsString('data-workspace-tree-branch', $tree);
+        $this->assertStringContainsString('$level === 1 || $containsActiveChild', $tree);
+        $this->assertStringContainsString('aria-current="page"', $tree);
+        $this->assertStringNotContainsString('data-workspace-tree-branch-toggle', $organizer);
+        $this->assertStringContainsString('initializeReadableTrees', $javascript);
+        $this->assertStringContainsString('containsActivePage', $javascript);
+        $this->assertStringContainsString('data-workspace-tree-key', $workspaceView);
+        $this->assertStringContainsString('data-workspace-tree-key', $shortsView);
+        $this->assertStringContainsString('initializeAdaptiveTreeWidths', $javascript);
+        $this->assertStringContainsString('--workspace-tree-max-width: 22rem', $css);
+        $this->assertStringContainsString('text-wrap: pretty', $css);
+        $this->assertStringContainsString('workspaceTreeKey', $javascript);
+        $this->assertStringContainsString('window.sessionStorage', $javascript);
+        $this->assertStringContainsString('persistExpandedBranches', $javascript);
+        $this->assertStringContainsString('border: 0;', $css);
+        $this->assertStringContainsString('padding: .32rem .35rem;', $css);
     }
 
     /**

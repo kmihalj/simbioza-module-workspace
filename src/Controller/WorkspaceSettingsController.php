@@ -150,9 +150,16 @@ final readonly class WorkspaceSettingsController
             'title' => __('Održavanje'),
             'siteStatistics' => $dashboard['statistics']['site'] ?? [],
             'workspaces' => $dashboard['workspaces'],
+            'deletedWorkspaces' => $this->repository->tablesReady()
+                ? $this->repository->deletedWorkspaces()
+                : [],
             'runPath' => $this->pathFor(
                 'workspace.settings.maintenance.run',
                 '/settings/workspaces/maintenance',
+            ),
+            'purgePath' => $this->pathFor(
+                'workspace.settings.purge',
+                '/settings/workspaces/purge',
             ),
             'settingsPath' => $this->pathFor('workspace.settings', '/settings/workspaces'),
             'homepagePath' => $this->pathFor('workspace.settings.homepage', '/settings/workspaces/homepage'),
@@ -189,6 +196,7 @@ final readonly class WorkspaceSettingsController
                 WorkspaceValue::string($body['history_policy'] ?? 'none'),
                 WorkspaceValue::int($body['history_value'] ?? 0),
                 WorkspaceValue::int($body['deleted_days'] ?? 0),
+                $this->currentUserId(),
             );
             $message = __('Održavanje je dovršeno.')
             . ' '
@@ -209,6 +217,51 @@ final readonly class WorkspaceSettingsController
         return $this->responseFactory->redirect(
             $this->pathFor('workspace.settings.maintenance', '/settings/workspaces/maintenance'),
         );
+    }
+
+    /**
+     * HR: Nakon dvostruke potvrde nepovratno uklanja soft-obrisano područje i sav njegov sadržaj.
+     * EN: After double confirmation, irreversibly removes a soft-deleted Workspace and all its content.
+     */
+    public function permanentlyDelete(ServerRequestInterface $request): ResponseInterface
+    {
+        if (!$this->access->isAdministrator()) {
+            return $this->accessDenied();
+        }
+
+        $body = WorkspaceValue::stringKeyArray($request->getParsedBody());
+        $returnTo = WorkspaceValue::string($body['return_to'] ?? 'deleted');
+        $redirect = $returnTo === 'maintenance'
+        ? $this->pathFor('workspace.settings.maintenance', '/settings/workspaces/maintenance')
+        : $this->pathFor('workspace.settings.deleted', '/settings/workspaces/deleted');
+
+        try {
+            if (WorkspaceValue::string($body['confirm'] ?? '') !== '1') {
+                throw new \RuntimeException(__('Potvrdite da razumijete da je trajno brisanje nepovratno.'));
+            }
+
+            $result = $this->maintenance->permanentlyDeleteWorkspace(
+                WorkspaceValue::int($body['workspace_id'] ?? 0),
+                WorkspaceValue::string($body['confirm_slug'] ?? ''),
+                $this->currentUserId(),
+            );
+            $message = __('Područje i njegov sadržaj trajno su uklonjeni.')
+            . ' '
+            . __('Stranice:') . ' ' . WorkspaceValue::int($result['purged_nodes'] ?? 0)
+            . '; '
+            . __('dokumenti:') . ' ' . WorkspaceValue::int($result['purged_documents'] ?? 0)
+            . '; '
+            . __('privitci:') . ' ' . WorkspaceValue::int($result['purged_assets'] ?? 0) . '.';
+            if (WorkspaceValue::int($result['failed_files'] ?? 0) > 0) {
+                $message .= ' ' . __('Neke datoteke nije bilo moguće ukloniti; provjerite prava datotečnog sustava.');
+            }
+
+            $this->alertHandler->add(new Alert($message, AlertLevelEnum::Success));
+        } catch (Throwable $throwable) {
+            $this->alertHandler->add(new Alert($throwable->getMessage(), AlertLevelEnum::Danger));
+        }
+
+        return $this->responseFactory->redirect($redirect);
     }
 
     /**
@@ -241,6 +294,7 @@ final readonly class WorkspaceSettingsController
             'workspaces' => $workspaces,
             'deleted' => $deleted,
             'restorePath' => $this->pathFor('workspace.restore', '/workspaces/restore'),
+            'purgePath' => $this->pathFor('workspace.settings.purge', '/settings/workspaces/purge'),
             'settingsPath' => $this->pathFor('workspace.settings', '/settings/workspaces'),
             'homepagePath' => $this->pathFor(
                 'workspace.settings.homepage',
@@ -259,6 +313,18 @@ final readonly class WorkspaceSettingsController
             'tablesReady' => $this->repository->tablesReady(),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
         ]);
+    }
+
+    /** HR: Vraća ID prijavljenog administratora za audit. EN: Returns the signed-in administrator ID for audit. */
+    private function currentUserId(): int
+    {
+        $user = $this->access->currentUser();
+        $userId = is_array($user) ? WorkspaceValue::int($user['id'] ?? 0) : 0;
+        if ($userId <= 0) {
+            throw new \RuntimeException(__('Za ovu radnju potrebna je prijava.'));
+        }
+
+        return $userId;
     }
 
     /**

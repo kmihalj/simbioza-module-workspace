@@ -313,6 +313,13 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace.settings.maintenance.run',
                 [RequireAuthenticatedUserMiddleware::class],
             ],
+            [
+                'POST',
+                '/settings/workspaces/purge',
+                WorkspaceSettingsController::class . '@permanentlyDelete',
+                'workspace.settings.purge',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
         ];
 
         // HR: Rute se uopće ne registriraju bez opcionalnog Backup modula.
@@ -385,6 +392,14 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 ],
             ),
             new CommandDefinition(
+                'workspace:install-homepage-view-options-migration',
+                'Copy the structured Workspace homepage-options migration into the host application.',
+                [
+                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installHomepageViewOptionsMigration',
+                ],
+            ),
+            new CommandDefinition(
                 'workspace:install-themes-migration',
                 'Copy the Workspace private-theme upgrade migration into the host application.',
                 [
@@ -398,6 +413,22 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [
                     \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installBacklinksMigration',
+                ],
+            ),
+            new CommandDefinition(
+                'workspace:install-node-labels-migration',
+                'Copy the Workspace page-label upgrade migration into the host application.',
+                [
+                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installNodeLabelsMigration',
+                ],
+            ),
+            new CommandDefinition(
+                'workspace:install-node-properties-migration',
+                'Copy the Workspace structured-page-properties migration into the host application.',
+                [
+                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installNodePropertiesMigration',
                 ],
             ),
         ];

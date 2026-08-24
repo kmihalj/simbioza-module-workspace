@@ -23,6 +23,11 @@ final readonly class HpWorkspaceCommand
 
     private const BACKLINKS_TEMPLATE_FILE = 'resources/migrations/add_workspace_backlinks.php';
 
+    private const NODE_LABELS_TEMPLATE_FILE = 'resources/migrations/20260821183000_add_workspace_node_labels.php';
+
+    private const NODE_PROPERTIES_TEMPLATE_FILE =
+    'resources/migrations/20260821220000_add_workspace_node_properties.php';
+
     /**
      * HR: Prima konfiguraciju host aplikacije za određivanje cilja migracije.
      * EN: Receives host-application configuration for resolving the migration target.
@@ -54,6 +59,10 @@ final readonly class HpWorkspaceCommand
             $this->installThemesMigration($subArguments, $options),
             'backlinks', 'backlinks:install', 'install-backlinks-migration' =>
             $this->installBacklinksMigration($subArguments, $options),
+            'node-labels', 'node-labels:install', 'install-node-labels-migration' =>
+            $this->installNodeLabelsMigration($subArguments, $options),
+            'node-properties', 'node-properties:install', 'install-node-properties-migration' =>
+            $this->installNodePropertiesMigration($subArguments, $options),
             'help', '--help', '-h' => $this->help(),
             default => $this->unknownSubcommand($subcommand),
         };
@@ -257,6 +266,86 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
+     * HR: Kopira nadogradnju oznaka stranica u postojeću host aplikaciju.
+     * EN: Copies the page-label upgrade into an existing host application.
+     *
+     * @param array<int, string> $arguments
+     * @param array<string, mixed> $options
+     */
+    public function installNodeLabelsMigration(array $arguments = [], array $options = []): int
+    {
+        $targetDirectory = $this->targetDirectory($options);
+        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::NODE_LABELS_TEMPLATE_FILE;
+        if (!is_file($template)) {
+            throw new RuntimeException(__('Predložak migracije oznaka stranica nije pronađen.'));
+        }
+
+        $options['name'] = $this->option($options, ['name'])
+        ?? trim((string)($arguments[0] ?? ''))
+        ?: 'add_workspace_node_labels';
+        $suffix = $this->migrationSuffix([], $options);
+        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
+        . DIRECTORY_SEPARATOR
+        . date('YmdHis')
+        . '_'
+        . $suffix
+        . '.php';
+        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
+        }
+
+        $content = file_get_contents($template);
+        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
+            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
+        }
+
+        $this->write(__('Kreirana je migracija oznaka Workspace stranica: ') . $target);
+        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
+
+        return 0;
+    }
+
+    /**
+     * HR: Kopira nadogradnju strukturiranih svojstava stranica u postojeću aplikaciju.
+     * EN: Copies the structured-page-properties upgrade into an existing application.
+     *
+     * @param array<int, string> $arguments
+     * @param array<string, mixed> $options
+     */
+    public function installNodePropertiesMigration(array $arguments = [], array $options = []): int
+    {
+        $targetDirectory = $this->targetDirectory($options);
+        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::NODE_PROPERTIES_TEMPLATE_FILE;
+        if (!is_file($template)) {
+            throw new RuntimeException(__('Predložak migracije svojstava stranica nije pronađen.'));
+        }
+
+        $options['name'] = $this->option($options, ['name'])
+        ?? trim((string)($arguments[0] ?? ''))
+        ?: 'add_workspace_node_properties';
+        $suffix = $this->migrationSuffix([], $options);
+        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
+        . DIRECTORY_SEPARATOR
+        . date('YmdHis')
+        . '_'
+        . $suffix
+        . '.php';
+        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
+        }
+
+        $content = file_get_contents($template);
+        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
+            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
+        }
+
+        $this->write(__('Kreirana je migracija svojstava Workspace stranica: ') . $target);
+        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
+
+        return 0;
+    }
+
+    /**
      * HR: Ispisuje kratke upute za CLI helper.
      * EN: Prints brief CLI helper usage.
      */
@@ -268,6 +357,8 @@ final readonly class HpWorkspaceCommand
         $this->write('  vendor/bin/hph workspace:install-homepage-view-options-migration');
         $this->write('  vendor/bin/hph workspace:install-themes-migration');
         $this->write('  vendor/bin/hph workspace:install-backlinks-migration');
+        $this->write('  vendor/bin/hph workspace:install-node-labels-migration');
+        $this->write('  vendor/bin/hph workspace:install-node-properties-migration');
 
         return 0;
     }

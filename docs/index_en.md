@@ -144,6 +144,18 @@ theme's tree colours, border, accent, and shadow. A discreet fixed edge icon
 opens the card, while its close button, backdrop, or Escape returns focus to the
 document. Focus and `aria-expanded` state follow the open card.
 
+The reader tree is a compact list without item borders. Its first-level
+branches expose the second level, while deeper branches start collapsed. A
+direct page URL marks that page and expands only its ancestor path; the same
+prepared state is retained if the whole tree card starts hidden and is opened
+later. The management organizer remains fully expanded so ordering operations
+always expose the complete hierarchy.
+
+When a reader manually expands or collapses branches, that state is retained
+while navigating inside the same Workspace in the current browser tab. Each
+Workspace has an independent state. Active-page ancestors are always opened
+after navigation so restored preferences can never hide the selected page.
+
 The tree card and HTML card start in the same row. The tree toggle is the first
 SVG action in Editor's shared view, while SVG actions for creating a page and
 managing the Workspace live in the tree header itself. Actions therefore do
@@ -342,8 +354,12 @@ language; for a missing translation it displays the site-default Croatian
 snapshot, then the first real snapshot. That runtime fallback never creates a
 duplicate locale file.
 
-Calendar and Task placeholders are converted to static read-only HTML through
+Dynamically included pages are pre-rendered from current published content,
+and their required images and attachments enter the package after another ACL
+check. Calendar and Task placeholders are converted to static read-only HTML through
 the same ACL-aware integration methods used by Editor's single-page export.
+Native Editor charts become responsive self-contained inline SVG and retain
+their configured width, alignment, spacing, legend, and theme colours.
 Calendar edit and download actions are omitted: the calendar is a rendered
 read-only snapshot. There are no active API requests in the exported page.
 Attachments are copied from the exact published version, never from an editable
@@ -531,6 +547,12 @@ rechecked on every display. A guest therefore sees only publicly readable
 sources. The active locale is preferred; the site-default locale is used when
 the source page has no backlink record in the active locale.
 
+Below it, **This page is included in the content of the following pages** lists
+published, currently readable sources that use Editor's dynamic **Include page
+content** feature. The list starts from persistent Editor references but
+rechecks the source's current version, Workspace workflow, and ACL so a removed
+reference or newly restricted page is never disclosed.
+
 The breadcrumb sits above the complete layout, so the page tree, route-specific
 left menu, page content, and table of contents remain aligned. It inherits the
 contrasting hero text colors; a theme may override them specifically through
@@ -561,6 +583,13 @@ vendor/bin/hph orm-migrate:up
 
 Register Auth and ORM before Workspace in the enabled module list. The module
 defers loading until those required services are available.
+
+An existing installation adds page-label storage with:
+
+```bash
+vendor/bin/hph workspace:install-node-labels-migration
+vendor/bin/hph orm-migrate:up
+```
 
 Useful URLs with the default configuration:
 
@@ -625,6 +654,13 @@ these values.
 
 ## 10. API integration
 
+### Page labels
+
+Workspace can retain portable source labels supplied by trusted imports and
+integrations. A selective Workspace backup carries labels by page UUID, so
+`copy`, `merge`, and `replace` restores retain this source metadata. Labels do
+not create a page template or a dynamic user-interface component by themselves.
+
 Workspace remains independently installable. Its transport-neutral
 `WorkspaceApiService` contains the business boundary. When optional API is
 enabled, Workspace's `WorkspaceApiExtension` registers the routes and its
@@ -660,8 +696,11 @@ Missing view permission is concealed as `404`; a visible resource without
 management permission returns `403`.
 
 Workspace DTOs include `tree_visibility` and `contents_visibility`; node DTOs
-include `contents_visibility`. Accepted values are `inherit`, `shown`, and
-`hidden`. HTML export accepts an optional JSON `node_ids` list. An empty list
+include `contents_visibility`, `labels`, and `properties`. Node `PATCH` accepts
+a JSON `labels` array and a `properties` array whose objects contain `key`,
+`label`, `type`, `value`, and `sort_order`, from Workspace managers. Supported
+property types are `text`, `status`, and `link`. Accepted display values are
+`inherit`, `shown`, and `hidden`. HTML export accepts an optional JSON `node_ids` list. An empty list
 exports the complete visible Workspace; selected IDs export only those pages
 and the tree necessary to reach them.
 
@@ -743,9 +782,52 @@ file may not shrink immediately. `VACUUM`, `OPTIMIZE`, and equivalent
 administrator operations differ across SQLite, PostgreSQL, and MySQL and are
 therefore not run automatically by the portable Workspace module.
 
+An administrator can restore or permanently delete a soft-deleted Workspace
+from **Deleted Workspaces** and **Maintenance**. Permanent deletion requires
+re-entering the exact Workspace slug. Workspace tree rows, ACL, workflows, the
+private theme and its files, special menus, Editor documents, history and
+attachments, and related data owned by installed modules are removed. The
+derived search index is removed automatically. Standalone calendars remain
+preserved because the same calendar may be embedded in multiple Workspaces.
+
+Before one or more pages are permanently removed, Workspace emits the public
+`WorkspacePagesPermanentlyDeleting` event with node IDs and document keys. This
+allows optional modules to remove only their own references to those pages.
+Soft deletion does not emit this event because the content can still be restored.
+
 ## Personal following event
 
 The repository emits `WorkspaceContentChanged` with a non-sensitive reason and
 actor identifier. Simbioza User may consume it and render its own page/workspace
 controls. Disabling that optional module does not change Workspace routes,
 persistence, or ACL behavior.
+
+## 14. Labels, properties, and dynamic content
+
+A page may have multiple labels plus structured `key`, `label`, `type`,
+`value`, and `sort order` properties. The `text`, `status`, and `link` types
+remain structured across persistence, API output, and backup. Status values use
+a theme-aware badge in the view, while link values are active only when they
+contain an allowed URL. Imported Confluence Page Properties populate the same
+native properties rather than importer-specific fields.
+
+On a Workspace page the HTML Editor can insert four native blocks:
+
+- **Pages and properties table** filters published ACL-visible pages by label, shows selected
+  properties, and can sort by title, modification time, or a property value;
+- **Attachment gallery** shows images attached to the current page;
+- **Workspace search** dynamically suggests only results from the current
+  Workspace that the visitor is allowed to open;
+- **Recent changes** lists published changes from the current Workspace with
+  author and localized time.
+
+The pages and properties result uses the same bordered, striped, hoverable,
+responsive table markup as the HTML Editor. It therefore inherits the active
+theme's header, row, alternate-row, border, and text colors; without Theme it
+uses the readable Bootstrap fallback.
+
+The blocks are declarative HTML records, but their result is rebuilt on every
+view under the current Workspace and page ACL. The web API returns the same
+rendered HTML, while HTML export pre-renders a read-only result. Backup keeps
+the block configuration inside the document version and stores labels and
+properties separately, so restore preserves the dynamic behavior.

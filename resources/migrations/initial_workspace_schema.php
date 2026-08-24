@@ -137,6 +137,39 @@ return new class implements ReversibleMigrationInterface {
             );
         }
 
+        if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)) {
+            $schema->create(
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS,
+                static function (Blueprint $table): void {
+                    $table->id();
+                    $table->bigInteger('node_id')->unsigned()->index();
+                    $table->string('label', 128)->index();
+                    $table->timestamps();
+                    $table->unique(['node_id', 'label'], 'workspace_node_label_unique');
+                },
+            );
+        }
+
+        if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)) {
+            $schema->create(
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES,
+                static function (Blueprint $table): void {
+                    $table->id();
+                    $table->bigInteger('node_id')->unsigned()->index();
+                    $table->string('property_key', 128)->index();
+                    $table->string('property_label', 255);
+                    $table->string('property_type', 32)->default('text')->index();
+                    $table->text('property_value')->nullable();
+                    $table->integer('sort_order')->unsigned()->default(100)->index();
+                    $table->timestamps();
+                    $table->unique(
+                        ['node_id', 'property_key'],
+                        'workspace_node_property_unique',
+                    );
+                },
+            );
+        }
+
         if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)) {
             $schema->create(
                 ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,
@@ -250,6 +283,8 @@ return new class implements ReversibleMigrationInterface {
                 ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES,
                 ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS,
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL,
                 ModuleWorkspace::TABLE_WORKSPACE_NODES,
                 ModuleWorkspace::TABLE_WORKSPACE_ACL,

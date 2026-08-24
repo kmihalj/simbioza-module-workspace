@@ -573,6 +573,8 @@ final readonly class WorkspaceController
         $node['restrictions'] = $this->repository->nodeAclRows(
             $this->intValue($node['id'] ?? 0),
         );
+        $node['labels'] = $this->repository->nodeLabels($this->intValue($node['id'] ?? 0));
+        $node['properties'] = $this->repository->nodeProperties($this->intValue($node['id'] ?? 0));
 
         $html = $this->viewRenderer->renderPartial('workspace/node-dialog', [
             'workspace' => $workspace,
@@ -684,6 +686,18 @@ final readonly class WorkspaceController
                 $body,
                 $this->currentUserId(),
             );
+            $savedNodeId = $this->intValue($savedNode['id'] ?? 0);
+            if ($savedNodeId > 0 && $nodeType === 'document') {
+                $this->repository->replaceNodeLabels(
+                    $savedNodeId,
+                    preg_split('/[,;\r\n]+/u', $this->stringValue($body['labels'] ?? '')) ?: [],
+                );
+                $this->repository->replaceNodeProperties(
+                    $savedNodeId,
+                    $this->propertiesFromBody($body['properties'] ?? []),
+                );
+            }
+
             $savedDocumentKey = $this->stringValue($savedNode['document_key'] ?? '');
             if ($createdDocument && $savedDocumentKey !== '') {
                 $language = $this->language($request);
@@ -718,6 +732,42 @@ final readonly class WorkspaceController
         return $this->responseFactory->redirect(
             $this->actionReturnPath($workspace, $body),
         );
+    }
+
+    /**
+     * HR: Pretvara retke korisničke forme u strukturirana svojstva stranice.
+     * EN: Converts user-form rows into structured page properties.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function propertiesFromBody(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $labels = is_array($value['label'] ?? null) ? $value['label'] : [];
+        $types = is_array($value['type'] ?? null) ? $value['type'] : [];
+        $values = is_array($value['value'] ?? null) ? $value['value'] : [];
+        $properties = [];
+        foreach ($labels as $index => $label) {
+            if (!is_scalar($label)) {
+                continue;
+            }
+
+            if (trim((string)$label) === '') {
+                continue;
+            }
+
+            $properties[] = [
+                'label' => trim((string)$label),
+                'type' => is_scalar($types[$index] ?? null) ? (string)$types[$index] : 'text',
+                'value' => is_scalar($values[$index] ?? null) ? (string)$values[$index] : '',
+                'sort_order' => ((int)$index + 1) * 10,
+            ];
+        }
+
+        return $properties;
     }
 
     /**
@@ -1251,10 +1301,15 @@ final readonly class WorkspaceController
         : (is_array($node) ? $this->stringValue($node['title'] ?? '') : '');
         $breadcrumbs = $this->breadcrumbs->build($workspace, $node, $tree, $language, $currentTitle);
         $backlinks = [];
+        $includedIn = [];
         if (is_array($node)) {
             try {
                 $backlinks = $this->backlinks->forTarget(
                     $this->intValue($node['id'] ?? 0),
+                    $contentLanguage,
+                );
+                $includedIn = $this->backlinks->includedIn(
+                    $this->stringValue($node['document_key'] ?? ''),
                     $contentLanguage,
                 );
             } catch (Throwable $throwable) {
@@ -1270,6 +1325,11 @@ final readonly class WorkspaceController
             }
         }
 
+        $defaultParentId = is_array($node)
+        && $this->stringValue($node['node_type'] ?? '') === 'document'
+        && (bool)($nodePermissions['can_add'] ?? false)
+        ? $this->intValue($node['id'] ?? 0)
+        : 0;
         return $this->viewRenderer->render('workspace/show', [
             'title' => is_array($editorView)
                 ? $this->stringValue($editorView['title'] ?? '')
@@ -1283,6 +1343,7 @@ final readonly class WorkspaceController
             'workflow' => $workflowView,
             'breadcrumbs' => $breadcrumbs,
             'backlinks' => $backlinks,
+            'includedIn' => $includedIn,
             'followUi' => $followUi,
             'workflowTransitionPath' => $workflowTransitionPath,
             'reviewQueue' => $reviewQueue,
@@ -1296,11 +1357,7 @@ final readonly class WorkspaceController
             'managePath' => $this->managePath($this->stringValue($workspace['slug'] ?? '')),
             'pageCreatePath' => $this->pathFor('workspace.page.create', '/workspaces/page/create'),
             'pageParentOptions' => $this->pageParentOptions($tree),
-            'defaultPageParentId' => is_array($node)
-                && $this->stringValue($node['node_type'] ?? '') === 'document'
-                && (bool)($nodePermissions['can_add'] ?? false)
-                    ? $this->intValue($node['id'] ?? 0)
-                    : 0,
+            'defaultPageParentId' => $defaultParentId,
             'canCreatePage' => (bool)($workspacePermissions['can_add'] ?? false)
                 && $this->editor->isAvailable(),
             'canOrganizeTree' => $canOrganizeTree,

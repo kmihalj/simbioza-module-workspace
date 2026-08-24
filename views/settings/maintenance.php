@@ -12,7 +12,9 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var string $title
  * @var array<string, int> $siteStatistics
  * @var list<array<string, mixed>> $workspaces
+ * @var list<array<string, mixed>> $deletedWorkspaces
  * @var string $runPath
+ * @var string $purgePath
  * @var string $settingsPath
  * @var string $homepagePath
  * @var string $allPath
@@ -279,6 +281,66 @@ $ageDaysLabelJson = json_encode(__('Starost u danima'), $jsonFlags);
                         <button class="btn btn-danger" type="submit"><?= $tr('Pokreni održavanje') ?></button>
                     </div>
                 </form>
+            </div>
+        </section>
+
+        <section class="card border-danger mt-4">
+            <div class="card-body">
+                <h2 class="h4 mb-1"><?= $tr('Trajno brisanje područja') ?></h2>
+                <p class="text-body-secondary mb-4">
+                    <?= $tr(
+                        'Trajno se mogu izbrisati samo područja koja su prethodno obrisana. '
+                        . 'Uklanjaju se stranice, povijest, privitci, ovlasti, privatna tema i povezani podaci modula.',
+                    ) ?>
+                </p>
+                <?php if ($deletedWorkspaces === []) : ?>
+                    <div class="border rounded p-3 text-body-secondary"><?= $tr('Nema obrisanih područja.') ?></div>
+                <?php else : ?>
+                    <div class="vstack gap-3">
+                    <?php foreach ($deletedWorkspaces as $workspace) : ?>
+                        <?php
+                        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+                        $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
+                        $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
+                        ?>
+                            <form
+                                class="border border-danger rounded p-3"
+                                method="post"
+                                action="<?= $this->escape($purgePath) ?>"
+                            >
+                        <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
+                                <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
+                                <input type="hidden" name="return_to" value="maintenance">
+                                <input type="hidden" name="confirm" value="1">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-12 col-lg-4">
+                                        <div class="fw-semibold"><?= $this->escape($workspaceName) ?></div>
+                                        <div class="small text-body-secondary font-monospace">
+                        <?= $this->escape($workspaceSlug) ?>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-5">
+                                        <label class="form-label" for="maintenance-purge-slug-<?= $workspaceId ?>">
+                        <?= $tr('Za potvrdu upišite točan slug područja') ?>
+                                        </label>
+                                        <input
+                                            id="maintenance-purge-slug-<?= $workspaceId ?>"
+                                            class="form-control font-monospace"
+                                            name="confirm_slug"
+                                            autocomplete="off"
+                                            required
+                                        >
+                                    </div>
+                                    <div class="col-12 col-lg-3 d-grid">
+                                        <button class="btn btn-danger" type="submit">
+                        <?= $tr('Trajno izbriši') ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                    <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </section>
     </div>

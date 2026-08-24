@@ -18,6 +18,24 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceManifestTest extends TestCase
 {
     /**
+     * HR: Svaka dokumentirana nadogradnja Workspace sheme mora biti dostupna
+     *     kao izravna CLI naredba host aplikaciji.
+     * EN: Every documented Workspace schema upgrade must be exposed as a
+     *     direct CLI command to the host application.
+     */
+    public function testManifestRegistersHomepageViewOptionsMigrationCommand(): void
+    {
+        $manifest = require dirname(__DIR__) . '/heartphrame-manifest.php';
+        $commandNames = array_map(
+            static fn(object $command): string => $command->getName(),
+            $manifest->getCommands(),
+        );
+
+        $this->assertContains('workspace:install-homepage-view-options-migration', $commandNames);
+        $this->assertContains('workspace:install-node-properties-migration', $commandNames);
+    }
+
+    /**
      * HR: Provjerava javni ugovor početne rute bez pokretanja cijele aplikacije.
      * EN: Verifies the initial route contract without booting the complete application.
      */
@@ -31,7 +49,7 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(41, $routesByName);
+        $this->assertCount(42, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
@@ -51,6 +69,14 @@ final class WorkspaceManifestTest extends TestCase
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,
             $routesByName['workspace.settings.maintenance.run'][4],
+        );
+        $this->assertSame(
+            WorkspaceSettingsController::class . '@permanentlyDelete',
+            $routesByName['workspace.settings.purge'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.settings.purge'][4],
         );
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,

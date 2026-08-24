@@ -39,7 +39,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
 - page-level restrictions inherited by every descendant
 - ACL-filtered Workspace Shorts with rendered article excerpts, depth, count, and ordering controls
 - hierarchical document, internal-link, and external-link nodes
-- collapsible and responsive page tree
+- compact, borderless, collapsible, and responsive page tree that opens only
+  the active page's ancestor path below the first level
 - ACL-safe breadcrumbs from the application home through visible ancestors
 - backlinks from other published pages, revalidated against the viewer's current ACL
 - system, Workspace, and page-specific defaults for page-tree and outline visibility
@@ -56,10 +57,13 @@ Croatian documentation: [README_hr.md](README_hr.md)
   homepages, scoped themes, summaries, and portable HTML export
 - optional Workspace Search integration for ACL-aware published-content lookup
 - administrator maintenance for the complete site or one Workspace, with
-  storage reporting, safe history pruning, and permanent removal of old deleted pages and assets
+  storage reporting, safe history pruning, permanent removal of old deleted
+  pages/assets, and confirmed permanent removal of an entire soft-deleted Workspace
 - neutral `WorkspaceContentChanged` events after publication, archival, deletion,
   tree metadata, and Workspace lifecycle changes so optional derived indexes can
   synchronize without coupling Workspace to a search implementation
+- a public `WorkspaceContentChangeBatch` for large imports: it collects individual
+  changes and emits one final `bulk_content_changed` event per Workspace
 - portable initial schema for SQLite, PostgreSQL, and MySQL/MariaDB
 
 Page restrictions only narrow the permissions granted at Workspace level. They
@@ -170,6 +174,22 @@ vendor/bin/hph workspace:install-backlinks-migration
 vendor/bin/hph orm-migrate:up
 ```
 
+To retain portable source labels from imports and integrations, an existing
+installation adds label storage once:
+
+```bash
+vendor/bin/hph workspace:install-node-labels-migration
+vendor/bin/hph orm-migrate:up
+```
+
+Structured page properties used by dynamic reports require one additional
+migration in an existing installation:
+
+```bash
+vendor/bin/hph workspace:install-node-properties-migration
+vendor/bin/hph orm-migrate:up
+```
+
 Breadcrumbs are built only from the already ACL-filtered page tree. Backlinks
 are extracted from exact published HTML versions and are checked again against
 page ACL and publication state whenever they are displayed. The active locale
@@ -177,6 +197,9 @@ is preferred and the site-default locale is used only when that source page has
 no backlink record in the active locale. Theme-enabled applications use the
 breadcrumb, card, link, border, and muted-text theme tokens; Bootstrap
 fallbacks keep both components usable without Theme.
+Background rebuilds use the Editor's narrow published-version provider without
+a web session. This lets CLI and bulk imports construct the derived index,
+while ACL and publication state remain mandatory checks on every display.
 
 `workspace_backlinks` and `workspace_backlink_index_state` are derived data.
 They must not be included in backups; publication events keep them current and
@@ -347,6 +370,8 @@ as a physical fallback file. Every real translation receives one stable,
 standalone HTML file built with the same formatter as Editor's single-page
 export. It can be opened directly through `file://` and intentionally contains
 only the rendered document, not the Workspace shell or Theme page background.
+Native Editor charts are converted to responsive self-contained SVG and retain
+the same width, alignment, spacing, and theme colours as the page view.
 
 The export deliberately applies security before packaging:
 
@@ -359,6 +384,8 @@ The export deliberately applies security before packaging:
 - Calendar and Task embeds are rendered as read-only snapshots through their
   existing ACL-aware Editor integrations; the package contains no active API
   calls, credentials, editing actions, or server-side state.
+- dynamically included pages are pre-rendered under their own ACL, and the
+  package also carries their images and attachments required by the content.
 
 The package includes the current Theme CSS and only the selected light/dark
 logo and hero assets, Editor/Calendar/Task CSS, visible attachment files, a
@@ -370,6 +397,16 @@ not manufacture an extra file. Tree, outline, and attachment panels are
 independently toggleable and begin in the same state as their application
 configuration. Theme is optional; without it, a minimal readable header, hero,
 and layout are generated. Editor is required for document content.
+
+## Structured page content
+
+Workspace pages support labels and structured properties (`text`, `status`,
+`link`). The HTML Editor can use them in a native pages and properties table and also provides
+an attachment gallery, current-Workspace search, and recent changes. Every
+dynamic result is filtered again through the current ACL; the API,
+backup/restore, and HTML export preserve the same contract. Dynamically generated
+tables use the HTML Editor's standard responsive table markup and therefore
+follow the active theme without a Workspace-specific visual override.
 
 ## Documentation
 

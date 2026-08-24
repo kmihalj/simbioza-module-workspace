@@ -163,6 +163,35 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             'workspace-acl',
         );
         foreach ($nodeUuidById as $nodeId => $nodeUuid) {
+            foreach (
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                ->where('node_id', '=', $nodeId)
+                ->orderBy('label')
+                ->get() as $label
+            ) {
+                $writer->writeRecord(self::ID, 'node-labels', [
+                    'node_uuid' => $nodeUuid,
+                    'label' => BackupValue::string($label['label'], 'node-label.label'),
+                ]);
+            }
+
+            foreach (
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                ->where('node_id', '=', $nodeId)
+                ->orderBy('sort_order')
+                ->orderBy('property_label')
+                ->get() as $property
+            ) {
+                $writer->writeRecord(self::ID, 'node-properties', [
+                    'node_uuid' => $nodeUuid,
+                    'key' => BackupValue::string($property['property_key'], 'node-property.key'),
+                    'label' => BackupValue::string($property['property_label'], 'node-property.label'),
+                    'type' => BackupValue::string($property['property_type'], 'node-property.type'),
+                    'value' => (string)($property['property_value'] ?? ''),
+                    'sort_order' => BackupValue::integer($property['sort_order'], 'node-property.sort_order'),
+                ]);
+            }
+
             $this->exportAcl(
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL,
                 'node_id',
@@ -275,6 +304,12 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             $nodeRows,
         );
         if ($nodeIds !== []) {
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                ->whereIn('node_id', $nodeIds)
+                ->delete();
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                ->whereIn('node_id', $nodeIds)
+                ->delete();
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
                 ->whereIn('node_id', $nodeIds)
                 ->delete();
@@ -369,6 +404,8 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
 
         $this->importWorkspaceAcl($workspaceId, $reader);
         $this->importNodes($workspaceId, $context, $reader);
+        $this->importNodeLabels($context, $reader);
+        $this->importNodeProperties($context, $reader);
         $this->importNodeAcl($context, $reader);
         $this->importWorkflows($context, $reader);
         $this->importTheme($workspaceId, $context, $reader);
@@ -600,6 +637,65 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 BackupValue::string($row['node_uuid'], 'node-acl.node_uuid'),
             );
             $this->upsertAcl(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL, 'node_id', $nodeId, $row);
+        }
+    }
+
+    /** HR: Uvozi oznake stranica prema stabilnom UUID-u. EN: Imports page labels by stable UUID. */
+    private function importNodeLabels(BackupImportContext $context, BackupArchiveReader $reader): void
+    {
+        foreach ($reader->records(self::ID, 'node-labels') as $row) {
+            $nodeId = $this->mappedInteger(
+                $context,
+                'workspace.node-id',
+                BackupValue::string($row['node_uuid'], 'node-label.node_uuid'),
+            );
+            $label = BackupValue::string($row['label'], 'node-label.label');
+            $existing = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                ->where('node_id', '=', $nodeId)
+                ->where('label', '=', $label)
+                ->first();
+            if (!is_array($existing)) {
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)->insert([
+                    'node_id' => $nodeId,
+                    'label' => $label,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
+        }
+    }
+
+    /** HR: Uvozi strukturirana svojstva stranica prema stabilnom UUID-u. EN: Imports structured page properties by stable UUID. */
+    private function importNodeProperties(BackupImportContext $context, BackupArchiveReader $reader): void
+    {
+        foreach ($reader->records(self::ID, 'node-properties') as $row) {
+            $nodeId = $this->mappedInteger(
+                $context,
+                'workspace.node-id',
+                BackupValue::string($row['node_uuid'], 'node-property.node_uuid'),
+            );
+            $key = BackupValue::string($row['key'], 'node-property.key');
+            $values = [
+                'node_id' => $nodeId,
+                'property_key' => $key,
+                'property_label' => BackupValue::string($row['label'], 'node-property.label'),
+                'property_type' => BackupValue::string($row['type'], 'node-property.type'),
+                'property_value' => BackupValue::string($row['value'] ?? '', 'node-property.value'),
+                'sort_order' => BackupValue::integer($row['sort_order'] ?? 100, 'node-property.sort_order'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ];
+            $existing = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                ->where('node_id', '=', $nodeId)
+                ->where('property_key', '=', $key)
+                ->first();
+            if (is_array($existing)) {
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                    ->where('id', '=', BackupValue::integer($existing['id'], 'node-property.id'))
+                    ->update($values);
+            } else {
+                $values['created_at'] = date('Y-m-d H:i:s');
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)->insert($values);
+            }
         }
     }
 

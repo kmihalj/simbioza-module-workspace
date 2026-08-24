@@ -140,6 +140,18 @@ zalijepljena rubna ikona otvara karticu, a gumb zatvaranja, pozadina ili tipka
 Escape vraćaju čitatelja na dokument. Fokus i `aria-expanded` stanje prate
 otvorenu karticu.
 
+Stablo za čitanje je kompaktna lista bez okvira oko stavki. Grane prve razine
+prikazuju drugu razinu, dok dublje grane počinju sažete. Izravni URL označava
+otvorenu stranicu i širi samo putanju njezinih predaka; isto pripremljeno stanje
+ostaje i kada je cijela kartica stabla početno skrivena pa se naknadno otvori.
+Organizator za uređivanje ostaje potpuno proširen kako bi pri slaganju uvijek
+bila dostupna cijela hijerarhija.
+
+Kada čitatelj ručno proširi ili sažme grane, to se stanje zadržava tijekom
+navigacije unutar istog Područja u trenutačnoj kartici preglednika. Svako
+Područje ima neovisno stanje. Preci aktivne stranice uvijek se otvaraju nakon
+navigacije pa spremljeni odabir nikada ne može sakriti označenu stranicu.
+
 Kartica stabla i HTML kartica počinju u istom retku. Prekidač stabla nalazi se
 kao prva SVG akcija zajedničkog Editorova pregleda, dok su SVG akcije za novu
 stranicu i upravljanje Područjem u zaglavlju samog stabla. Tako akcije ne
@@ -334,8 +346,12 @@ prijevode. Korijenski selector svejedno nudi sve konfigurirane jezike; kada
 prijevod ne postoji, prikazuje zadanu hrvatsku snimku, a zatim prvu stvarnu
 snimku. Taj runtime fallback nikada ne stvara dupliciranu jezičnu datoteku.
 
-Calendar i Task placeholderi pretvaraju se u statični read-only HTML kroz iste
-ACL-aware integracijske metode kao Editorov izvoz jedne stranice. Izostavljaju
+Dinamički uključene stranice prerenderiraju se s aktualnim objavljenim
+sadržajem, a njihove potrebne slike i privitci prenose se u paket uz ponovnu
+ACL provjeru. Calendar i Task placeholderi pretvaraju se u statični read-only HTML kroz iste
+ACL-aware integracijske metode kao Editorov izvoz jedne stranice. Nativni
+Editor grafikoni pretvaraju se u responzivni samostalni inline SVG te
+zadržavaju zadanu širinu, poravnanje, razmak, legendu i boje teme. Izostavljaju
 se akcije uređivanja i preuzimanja kalendara: kalendar je renderirani read-only
 snapshot. Izvezena stranica nema aktivne API zahtjeve. Privitci dolaze iz točne
 objavljene verzije, nikada iz nacrta koji se uređuje. Kontrole teme, jezika,
@@ -520,6 +536,13 @@ stranični ACL te objavljeno stanje izvorne stranice. Gost zato vidi samo izvore
 koje smije javno otvoriti. Aktivni jezik ima prednost; ako na njemu nema zapisa
 izvorne stranice, koristi se zadani jezik sitea.
 
+Ispod njega blok **Stranica je uključena u sadržaj sljedećih stranica** navodi
+objavljene, trenutačno čitljive stranice koje cilj koriste kroz Editorovu
+dinamičku funkcionalnost **Uključi sadržaj stranice**. Popis se gradi iz trajnih
+Editor referenci, ali ponovno provjerava aktualnu verziju, Workspace workflow i
+ACL izvora kako uklonjena referenca ili naknadno ograničena stranica ne bi bila
+otkrivena.
+
 Navigacijska putanja nalazi se iznad cijelog rasporeda pa stablo, poseban lijevi
 meni, sadržaj stranice i tablica sadržaja ostaju u istoj ravnini. Preuzima
 kontrastne boje teksta hero elementa, a tema ih po potrebi može zasebno
@@ -550,6 +573,13 @@ vendor/bin/hph orm-migrate:up
 
 Auth i ORM moraju biti uključeni prije Workspace paketa. Modul odgađa
 učitavanje dok obavezni servisi nisu dostupni.
+
+Postojeća instalacija dodaje oznake stranica naredbama:
+
+```bash
+vendor/bin/hph workspace:install-node-labels-migration
+vendor/bin/hph orm-migrate:up
+```
 
 Korisne putanje sa zadanom konfiguracijom:
 
@@ -614,6 +644,13 @@ vrijednosti.
 
 ## 10. API integracija
 
+### Oznake stranica
+
+Workspace može čuvati prenosive izvorne oznake koje daju pouzdani importi i
+integracije. Selektivni backup područja prenosi oznake prema UUID-u stranice,
+pa ih `copy`, `merge` i `replace` povrat ne gube. Oznake same po sebi ne
+stvaraju predložak stranice ni dinamičku komponentu korisničkog sučelja.
+
 Workspace se i dalje može instalirati samostalno. Transportno neutralni
 `WorkspaceApiService` sadrži poslovnu granicu. Kada je opcionalni API uključen,
 Workspaceov `WorkspaceApiExtension` registrira rute, a
@@ -648,8 +685,11 @@ ograničenja koja koristi web sučelje. Nedostatak prava pregleda skriva se kao
 `404`, a vidljiv resurs bez prava upravljanja vraća `403`.
 
 DTO područja sadrži `tree_visibility` i `contents_visibility`, a DTO čvora
-sadrži `contents_visibility`. Prihvaćene vrijednosti su `inherit`, `shown` i
-`hidden`. HTML izvoz prihvaća opcionalnu JSON listu `node_ids`. Prazna lista
+sadrži `contents_visibility`, `labels` i `properties`. `PATCH` čvora prihvaća
+JSON polje `labels` te polje `properties` s objektima `key`, `label`, `type`,
+`value` i `sort_order`, uz pravo upravljanja područjem. Podržani tipovi
+svojstava su `text`, `status` i `link`. Prihvaćene vrijednosti prikaza su
+`inherit`, `shown` i `hidden`. HTML izvoz prihvaća opcionalnu JSON listu `node_ids`. Prazna lista
 izvozi cijelo vidljivo područje, a odabrani ID-evi izvoze samo te stranice i
 stablo potrebno za dolazak do njih.
 
@@ -730,9 +770,53 @@ koristi, pa fizička datoteka ne mora odmah postati manja. `VACUUM`, `OPTIMIZE`
 ili slična administratorska operacija ovisi o SQLiteu, PostgreSQL-u ili MySQL-u
 i zato se ne pokreće automatski iz prijenosnog Workspace modula.
 
+Soft-obrisano područje administrator može vratiti ili trajno izbrisati na
+stranicama **Obrisana područja** i **Održavanje**. Trajno brisanje zahtijeva
+ponovni unos točnog sluga. Uklanjaju se Workspace stablo, ACL, workflowi,
+privatna tema i njezine datoteke, posebni meniji, Editor dokumenti, povijest i
+privitci te povezani podaci instaliranih modula. Izvedeni indeks pretrage briše
+se automatski. Samostalni kalendari ostaju sačuvani jer isti kalendar može biti
+ugrađen u više područja.
+
+Prije trajnog uklanjanja jedne ili više stranica Workspace šalje javni događaj
+`WorkspacePagesPermanentlyDeleting` s ID-ovima čvorova i ključevima dokumenata.
+Dodatni moduli tako uklanjaju samo vlastite veze na te stranice. Soft delete ne
+šalje ovaj događaj jer se sadržaj još može vratiti.
+
 ## Događaj osobnog praćenja
 
 Repozitorij objavljuje `WorkspaceContentChanged` s neosjetljivim razlogom i
 identifikatorom izvršitelja. Simbioza User ga može obraditi i prikazati vlastite
 kontrole stranice ili područja. Isključivanje tog opcionalnog modula ne mijenja
 Workspace rute, pohranu ni ACL ponašanje.
+
+## 14. Oznake, svojstva i dinamički sadržaj
+
+Stranica može imati više oznaka te uređena svojstva `ključ`, `naziv`, `vrsta`,
+`vrijednost` i `redoslijed`. Vrste `tekst`, `status` i `poveznica` ostaju
+strukturirane u bazi, API-ju i backupu. Status se na pregledu prikazuje kao
+tematska oznaka, dok je vrijednost poveznice sigurna samo kada koristi dopušteni
+URL. Uvoz Confluence Page Properties podataka puni ista nativna svojstva; ona
+nisu posebna polja importera.
+
+HTML Editor na Workspace stranici može umetnuti četiri nativna bloka:
+
+- **Tablica stranica i svojstava** filtrira objavljene ACL-vidljive stranice po oznaci,
+  prikazuje odabrana svojstva i može ih sortirati po naslovu, vremenu izmjene
+  ili vrijednosti svojstva;
+- **Galerija privitaka** prikazuje slike koje pripadaju aktualnoj stranici;
+- **Pretraga područja** dinamično predlaže samo rezultate iz trenutačnog
+  područja koje posjetitelj smije otvoriti;
+- **Nedavne promjene** prikazuje objavljene promjene trenutačnog područja s
+  autorom i lokaliziranim vremenom.
+
+Rezultat tablice stranica i svojstava koristi isti obrubljeni, prugasti,
+responzivni HTML s hover stanjem kao HTML Editor. Zato nasljeđuje boje
+zaglavlja, redaka, alternativnih redaka, obruba i teksta iz aktivne teme, a bez
+Theme modula koristi čitljivi Bootstrap fallback.
+
+Blokovi su deklarativni HTML zapisi, ali se njihov rezultat gradi pri svakom
+pregledu uz aktualni Workspace i page ACL. Web API vraća isti renderirani HTML,
+a HTML izvoz prerenderira read-only rezultat. Backup čuva konfiguraciju bloka u
+verziji dokumenta te zasebno čuva oznake i svojstva, pa restore ne gubi
+dinamičko ponašanje.

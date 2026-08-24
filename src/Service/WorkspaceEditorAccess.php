@@ -61,6 +61,7 @@ final class WorkspaceEditorAccess
         private readonly UrlGenerator $urlGenerator,
         private readonly WorkspaceWorkflowService $workflow,
         private readonly WorkspaceNotificationBridge $notifications,
+        private readonly WorkspaceDynamicContentService $dynamicContent,
     ) {
     }
 
@@ -360,6 +361,34 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * HR: Vraća ACL-sigurne podatke područja za grupiranje stranica u
+     *     opcionalnim Editor izbornicima. Dokument bez prava čitanja ne otkriva
+     *     ni naziv ni slug svojeg područja.
+     * EN: Returns ACL-safe Workspace metadata for grouping pages in optional
+     *     Editor selectors. A document without read permission exposes neither
+     *     its Workspace name nor slug.
+     *
+     * @return array{slug:string,title:string}|null
+     */
+    public function documentWorkspace(string $documentKey): ?array
+    {
+        $context = $this->documentContext($documentKey);
+        if (!is_array($context) || !$this->canReadDocument($documentKey)) {
+            return null;
+        }
+
+        $slug = WorkspaceValue::string($context['workspace']['slug'] ?? '');
+        if ($slug === '') {
+            return null;
+        }
+
+        return [
+            'slug' => $slug,
+            'title' => WorkspaceValue::string($context['workspace']['title'] ?? $slug),
+        ];
+    }
+
+    /**
      * HR: Vraća izravnu politiku prikaza sadržaja povezane Workspace stranice.
      * EN: Returns the direct outline-visibility policy of the linked Workspace page.
      */
@@ -436,6 +465,30 @@ final class WorkspaceEditorAccess
             WorkspaceValue::int($context['node']['id'] ?? 0),
             $language,
         );
+    }
+
+    /**
+     * HR: Materijalizira nativne blokove područja u Editorovu prikazu i izvozu.
+     * EN: Materializes native Workspace blocks in Editor views and exports.
+     */
+    public function renderDynamicContent(
+        string $html,
+        string $documentKey,
+        string $language,
+        bool $interactive = true,
+    ): string {
+        return $this->dynamicContent->render($html, $documentKey, $language, $interactive);
+    }
+
+    /**
+     * HR: Gradi deklarativni element koji Editor i API mogu sigurno spremiti.
+     * EN: Builds a declarative element that Editor and API can safely persist.
+     *
+     * @param array<string,mixed> $configuration
+     */
+    public function dynamicContentPlaceholder(string $kind, array $configuration = []): string
+    {
+        return $this->dynamicContent->placeholder($kind, $configuration);
     }
 
     /**

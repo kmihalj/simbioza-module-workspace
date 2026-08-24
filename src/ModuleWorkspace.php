@@ -21,6 +21,10 @@ final class ModuleWorkspace
 
     public const TABLE_WORKSPACE_NODE_WORKFLOWS = 'workspace_node_workflows';
 
+    public const TABLE_WORKSPACE_NODE_LABELS = 'workspace_node_labels';
+
+    public const TABLE_WORKSPACE_NODE_PROPERTIES = 'workspace_node_properties';
+
     public const TABLE_WORKSPACE_HOMEPAGE_SETTINGS = 'workspace_homepage_settings';
 
     public const TABLE_WORKSPACE_USER_HOMEPAGES = 'workspace_user_homepages';

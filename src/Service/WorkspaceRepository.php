@@ -7,6 +7,7 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
@@ -62,6 +63,7 @@ final readonly class WorkspaceRepository
         private Database $database,
         private ?EventDispatcherInterface $events = null,
         private ?LoggerInterface $logger = null,
+        private ?WorkspaceContentChangeBatch $contentChangeBatch = null,
     ) {
     }
 
@@ -77,7 +79,9 @@ final readonly class WorkspaceRepository
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_ACL)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODES)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
-        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS);
+        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
+        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES);
     }
 
     /**
@@ -307,6 +311,91 @@ final readonly class WorkspaceRepository
         $this->contentChanged($workspaceId, 'workspace_restored', actorUserId: $actorUserId);
 
         return $restored;
+    }
+
+    /**
+     * HR: Nepovratno uklanja isključivo soft-obrisano područje i sve retke u
+     *     vlasništvu Workspace modula. Podatke drugih modula prethodno uklanja
+     *     orkestracijski servis preko javnog događaja.
+     * EN: Irreversibly removes only a soft-deleted Workspace and all rows owned
+     *     by the Workspace module. The orchestration service first removes data
+     *     owned by other modules through a public event.
+     */
+    public function permanentlyDeleteWorkspace(int $workspaceId): void
+    {
+        $workspace = $this->findWorkspaceById($workspaceId, true);
+        if (!is_array($workspace) || !(bool)($workspace['is_deleted'] ?? false)) {
+            throw new RuntimeException(__('Samo obrisano područje može se trajno ukloniti.'));
+        }
+
+        $nodeIds = [];
+        foreach (
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+            ->select(['id'])
+            ->where('workspace_id', '=', $workspaceId)
+            ->get() as $row
+        ) {
+            if (is_array($row) && is_numeric($row['id'] ?? null) && (int)$row['id'] > 0) {
+                $nodeIds[] = (int)$row['id'];
+            }
+        }
+
+        $this->database->transaction(function (Database $database) use ($workspaceId, $nodeIds): void {
+            if ($nodeIds !== []) {
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+            }
+
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)
+                ->where('workspace_id', '=', $workspaceId)
+                ->delete();
+            foreach (['public_node_id', 'authenticated_node_id'] as $column) {
+                if ($nodeIds !== []) {
+                    $database->table(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)
+                        ->whereIn($column, $nodeIds)
+                        ->update([$column => null]);
+                }
+            }
+
+            foreach (['public_workspace_id', 'authenticated_workspace_id'] as $column) {
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)
+                    ->where($column, '=', $workspaceId)
+                    ->update([$column => null]);
+            }
+
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_BACKLINKS)
+                ->where('source_workspace_id', '=', $workspaceId)
+                ->delete();
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_BACKLINKS)
+                ->where('target_workspace_id', '=', $workspaceId)
+                ->delete();
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
+                ->where('workspace_id', '=', $workspaceId)
+                ->delete();
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                ->where('workspace_id', '=', $workspaceId)
+                ->delete();
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)
+                ->where('workspace_id', '=', $workspaceId)
+                ->delete();
+            $database->table(ModuleWorkspace::TABLE_WORKSPACES)
+                ->where('id', '=', $workspaceId)
+                ->where('is_deleted', '=', true)
+                ->delete();
+        });
     }
 
     /**
@@ -647,6 +736,252 @@ final readonly class WorkspaceRepository
                 ->orderBy('title', 'ASC')
                 ->get(),
         );
+    }
+
+    /**
+     * HR: Vraća aktivne dokument-stranice označene zadanom poslovnom oznakom.
+     * EN: Returns active document pages carrying the requested business label.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function nodesWithLabel(int $workspaceId, string $label): array
+    {
+        $this->assertTablesReady();
+        $label = $this->nodeLabel($label);
+        if ($workspaceId <= 0 || $label === '') {
+            return [];
+        }
+
+        return $this->rows($this->database->fetchAll(
+            'SELECT n.* FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n '
+            . 'INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS . ' l ON l.node_id = n.id '
+            . 'WHERE n.workspace_id = ? AND n.node_type = ? AND n.is_enabled = ? AND l.label = ? '
+            . 'ORDER BY n.updated_at DESC, n.title ASC',
+            [$workspaceId, 'document', true, $label],
+        ));
+    }
+
+    /**
+     * HR: Vraća sve oznake jednog čvora.
+     * EN: Returns all labels assigned to one node.
+     *
+     * @return list<string>
+     */
+    public function nodeLabels(int $nodeId): array
+    {
+        return $this->nodeLabelsForNodes([$nodeId])[$nodeId] ?? [];
+    }
+
+    /**
+     * HR: Vraća oznake više čvorova jednim upitom kako stablo ne bi stvaralo N+1 upite.
+     * EN: Returns labels for multiple nodes in one query so tree rendering avoids N+1 queries.
+     *
+     * @param list<int> $nodeIds
+     * @return array<int,list<string>>
+     */
+    public function nodeLabelsForNodes(array $nodeIds): array
+    {
+        $this->assertTablesReady();
+        $nodeIds = array_values(array_unique(array_filter(array_map(
+            static fn(int $nodeId): int => max($nodeId, 0),
+            $nodeIds,
+        ))));
+        if ($nodeIds === []) {
+            return [];
+        }
+
+        $labels = [];
+        foreach (
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+            ->whereIn('node_id', $nodeIds)
+            ->orderBy('node_id', 'ASC')
+            ->orderBy('label', 'ASC')
+            ->get() as $row
+        ) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            if (!is_scalar($row['label'] ?? null)) {
+                continue;
+            }
+
+            $nodeId = WorkspaceValue::int($row['node_id'] ?? 0);
+            if ($nodeId > 0) {
+                $labels[$nodeId][] = (string)$row['label'];
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * HR: Atomarno zamjenjuje oznake stranice normaliziranim skupom bez duplikata.
+     * EN: Atomically replaces page labels with a normalized duplicate-free set.
+     *
+     * @param list<string> $labels
+     */
+    public function replaceNodeLabels(int $nodeId, array $labels): void
+    {
+        $this->assertTablesReady();
+        $normalized = [];
+        foreach ($labels as $label) {
+            $label = $this->nodeLabel($label);
+            if ($label !== '') {
+                $normalized[$label] = true;
+            }
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $this->database->transaction(static function (Database $database) use ($nodeId, $normalized, $now): void {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                ->where('node_id', '=', $nodeId)
+                ->delete();
+            foreach (array_keys($normalized) as $label) {
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)->insert([
+                    'node_id' => $nodeId,
+                    'label' => $label,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * HR: Vraća strukturirana svojstva jedne stranice.
+     * EN: Returns one page's structured properties.
+     *
+     * @return list<array{key:string,label:string,type:string,value:string,sort_order:int}>
+     */
+    public function nodeProperties(int $nodeId): array
+    {
+        return $this->nodePropertiesForNodes([$nodeId])[$nodeId] ?? [];
+    }
+
+    /**
+     * HR: Vraća strukturirana svojstva više stranica jednim upitom za dinamičke izvještaje.
+     * EN: Returns structured properties for multiple pages in one query for dynamic reports.
+     *
+     * @param list<int> $nodeIds
+     * @return array<int,list<array{key:string,label:string,type:string,value:string,sort_order:int}>>
+     */
+    public function nodePropertiesForNodes(array $nodeIds): array
+    {
+        $this->assertTablesReady();
+        $nodeIds = array_values(array_unique(array_filter(array_map(
+            static fn(int $nodeId): int => max($nodeId, 0),
+            $nodeIds,
+        ))));
+        if ($nodeIds === []) {
+            return [];
+        }
+
+        $properties = [];
+        foreach (
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+            ->whereIn('node_id', $nodeIds)
+            ->orderBy('node_id', 'ASC')
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy('property_label', 'ASC')
+            ->get() as $row
+        ) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $nodeId = $this->intValue($row['node_id'] ?? 0);
+            $key = $this->nodePropertyKey($row['property_key'] ?? '');
+            if ($nodeId <= 0) {
+                continue;
+            }
+
+            if ($key === '') {
+                continue;
+            }
+
+            $properties[$nodeId][] = [
+                'key' => $key,
+                'label' => $this->stringValue($row['property_label'] ?? $key),
+                'type' => $this->nodePropertyType($row['property_type'] ?? 'text'),
+                'value' => $this->stringValue($row['property_value'] ?? ''),
+                'sort_order' => $this->intValue($row['sort_order'] ?? 100),
+            ];
+        }
+
+        return $properties;
+    }
+
+    /**
+     * HR: Atomarno zamjenjuje sva strukturirana svojstva stranice.
+     * EN: Atomically replaces all structured properties assigned to a page.
+     *
+     * @param list<array<string,mixed>> $properties
+     */
+    public function replaceNodeProperties(int $nodeId, array $properties): void
+    {
+        $this->assertTablesReady();
+        $normalized = [];
+        foreach ($properties as $index => $property) {
+            if (!is_array($property)) {
+                continue;
+            }
+
+            $label = $this->stringValue($property['label'] ?? $property['key'] ?? '');
+            $key = $this->nodePropertyKey($property['key'] ?? $label);
+            if ($key === '') {
+                continue;
+            }
+
+            if ($label === '') {
+                continue;
+            }
+
+            $normalized[$key] = [
+                'key' => $key,
+                'label' => mb_substr($label, 0, 255),
+                'type' => $this->nodePropertyType($property['type'] ?? 'text'),
+                'value' => $this->stringValue($property['value'] ?? ''),
+                'sort_order' => max(0, $this->intValue($property['sort_order'] ?? (($index + 1) * 10))),
+            ];
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $this->database->transaction(static function (Database $database) use ($nodeId, $normalized, $now): void {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
+                ->where('node_id', '=', $nodeId)
+                ->delete();
+            foreach ($normalized as $property) {
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)->insert([
+                    'node_id' => $nodeId,
+                    'property_key' => $property['key'],
+                    'property_label' => $property['label'],
+                    'property_type' => $property['type'],
+                    'property_value' => $property['value'],
+                    'sort_order' => $property['sort_order'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * HR: Vraća javne nazive korisnika indeksirane po internom ID-u.
+     * EN: Returns public user display names indexed by internal ID.
+     *
+     * @param list<int> $userIds
+     * @return array<int,string>
+     */
+    public function userDisplayNames(array $userIds): array
+    {
+        $decorated = $this->usersByIds($userIds);
+        $names = [];
+        foreach ($decorated as $userId => $user) {
+            $names[$userId] = $this->stringValue($user['label'] ?? __('Korisnik'));
+        }
+
+        return $names;
     }
 
     /**
@@ -1200,6 +1535,14 @@ final readonly class WorkspaceRepository
 
         $parentId = $this->nullablePositiveInt($node['parent_id'] ?? null);
         $now = date('Y-m-d H:i:s');
+        if ($this->events instanceof EventDispatcherInterface) {
+            $this->events->dispatch(new WorkspacePagesPermanentlyDeleting([[
+                'workspace_id' => $workspaceId,
+                'node_id' => $nodeId,
+                'document_key' => $this->stringValue($node['document_key'] ?? ''),
+            ]], $actorUserId));
+        }
+
         $this->database->transaction(
             static function (Database $database) use (
                 $workspaceId,
@@ -1220,6 +1563,12 @@ final readonly class WorkspaceRepository
                     ->where('node_id', '=', $nodeId)
                     ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
+                    ->where('node_id', '=', $nodeId)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
+                    ->where('node_id', '=', $nodeId)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
@@ -2161,6 +2510,34 @@ final readonly class WorkspaceRepository
         return $slug !== '' ? $slug : $fallback;
     }
 
+    /** HR: Normalizira poslovnu oznaku stranice u stabilan prenosivi ključ. EN: Normalizes a page label into a stable portable key. */
+    private function nodeLabel(mixed $value): string
+    {
+        $label = strtolower($this->stringValue($value));
+        $label = preg_replace('/[^a-z0-9._-]+/u', '-', $label) ?? '';
+
+        return trim($label, '-.');
+    }
+
+    /** HR: Normalizira ključ svojstva stranice. EN: Normalizes a page-property key. */
+    private function nodePropertyKey(mixed $value): string
+    {
+        $key = mb_strtolower($this->stringValue($value));
+        $key = preg_replace('/[^\pL\pN._-]+/u', '-', $key) ?? '';
+
+        return mb_substr(trim($key, '-.'), 0, 128);
+    }
+
+    /** HR: Ograničava svojstvo na podržanu semantičku vrstu. EN: Limits a property to a supported semantic type. */
+    private function nodePropertyType(mixed $value): string
+    {
+        $type = strtolower($this->stringValue($value));
+
+        return in_array($type, ['text', 'status', 'number', 'date', 'user', 'link'], true)
+        ? $type
+        : 'text';
+    }
+
     /**
      * HR: Provjerava apsolutni HTTP(S) URL vanjskog linka.
      * EN: Validates an absolute HTTP(S) URL for an external link.
@@ -2205,14 +2582,21 @@ final readonly class WorkspaceRepository
             return;
         }
 
+        $event = new WorkspaceContentChanged(
+            $workspaceId,
+            $reason,
+            $nodeId,
+            $language,
+            $actorUserId,
+        );
+        if ($this->contentChangeBatch instanceof WorkspaceContentChangeBatch) {
+            $this->contentChangeBatch->publish($event);
+
+            return;
+        }
+
         try {
-            $this->events->dispatch(new WorkspaceContentChanged(
-                $workspaceId,
-                $reason,
-                $nodeId,
-                $language,
-                $actorUserId,
-            ));
+            $this->events->dispatch($event);
         } catch (\Throwable $throwable) {
             /*
              * HR: Ručni reindeks i periodična provjera popravljaju eventualni

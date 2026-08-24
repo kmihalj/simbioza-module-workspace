@@ -6,6 +6,8 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
+use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
@@ -14,11 +16,159 @@ use HeartPhrame\Helper\Helper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 #[CoversClass(WorkspaceRepository::class)]
+#[UsesClass(WorkspaceContentChanged::class)]
+#[UsesClass(WorkspacePagesPermanentlyDeleting::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceRepositoryTest extends TestCase
 {
+    /**
+     * HR: Dokazuje da se trajno može ukloniti samo soft-obrisano područje te
+     *     da svi Workspace odnosi nestaju bez diranja drugih područja.
+     * EN: Proves that only a soft-deleted Workspace can be permanently removed
+     *     and that all Workspace-owned relations disappear without touching another Workspace.
+     */
+    public function testPermanentlyDeletingWorkspaceRemovesOwnedRelations(): void
+    {
+        $database = $this->database();
+        $repository = new WorkspaceRepository($database);
+        $now = '2026-08-21 10:00:00';
+        foreach ([[1, 'remove', true], [2, 'keep', false]] as [$id, $slug, $deleted]) {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+                'id' => $id,
+                'uuid' => sprintf('20000000-0000-4000-8000-%012d', $id),
+                'slug' => $slug,
+                'name' => ucfirst($slug),
+                'visibility' => 'restricted',
+                'owner_user_id' => 1,
+                'is_archived' => false,
+                'is_deleted' => $deleted,
+                'deleted_at' => $deleted ? $now : null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)->insert([
+                'workspace_id' => $id,
+                'subject_type' => WorkspaceRepository::SUBJECT_USER,
+                'subject_id' => 1,
+                'can_view' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)->insert([
+                'id' => $id,
+                'uuid' => sprintf('30000000-0000-4000-8000-%012d', $id),
+                'workspace_id' => $id,
+                'node_type' => 'document',
+                'slug' => 'page-' . $id,
+                'title' => 'Page ' . $id,
+                'document_key' => 'document-' . $id,
+                'sort_order' => 100,
+                'is_homepage' => true,
+                'is_enabled' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)->insert([
+            'node_id' => 1,
+            'language_code' => 'hr',
+            'status' => 'published',
+            'current_version_number' => 1,
+            'published_version_number' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)->insert([
+            'workspace_id' => 1,
+            'selection_type' => 'default',
+            'mode_policy' => 'auto',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $database->table(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)->insert([
+            'user_id' => 9,
+            'node_id' => 1,
+            'target_type' => 'page',
+            'workspace_id' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        foreach ([1, 2] as $nodeId) {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)->insert([
+                'node_id' => $nodeId,
+                'label' => 'file-list',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $repository->permanentlyDeleteWorkspace(1);
+
+        $this->assertNull($repository->findWorkspaceById(1, true));
+        $this->assertNotNull($repository->findWorkspaceById(2));
+        $this->assertSame([], $database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)
+            ->where('workspace_id', '=', 1)->get());
+        $this->assertSame([], $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+            ->where('workspace_id', '=', 1)->get());
+        $this->assertSame([], $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
+            ->where('node_id', '=', 1)->get());
+        $this->assertSame([], $repository->nodeLabels(1));
+        $this->assertSame(['file-list'], $repository->nodeLabels(2));
+        $this->assertSame([], $database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
+            ->where('workspace_id', '=', 1)->get());
+        $this->assertSame([], $database->table(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)
+            ->where('workspace_id', '=', 1)->get());
+        $this->assertCount(1, $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+            ->where('workspace_id', '=', 2)->get());
+    }
+
+    /** HR: Oznake se normaliziraju, dohvaćaju skupno i filtriraju stranice područja. EN: Labels are normalized, batch-loaded, and filter Workspace pages. */
+    public function testStoresAndQueriesPageLabels(): void
+    {
+        $database = $this->database();
+        $repository = new WorkspaceRepository($database);
+        $now = '2026-08-21 16:00:00';
+        $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+            'id' => 1,
+            'uuid' => '40000000-0000-4000-8000-000000000001',
+            'slug' => 'test',
+            'name' => 'Test',
+            'visibility' => 'public',
+            'owner_user_id' => 1,
+            'is_archived' => false,
+            'is_deleted' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        foreach ([1, 2] as $nodeId) {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)->insert([
+                'id' => $nodeId,
+                'uuid' => sprintf('50000000-0000-4000-8000-%012d', $nodeId),
+                'workspace_id' => 1,
+                'node_type' => 'document',
+                'slug' => 'page-' . $nodeId,
+                'title' => 'Page ' . $nodeId,
+                'document_key' => 'page-' . $nodeId,
+                'sort_order' => $nodeId * 100,
+                'is_homepage' => false,
+                'is_enabled' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $repository->replaceNodeLabels(1, [' File-List ', 'file-list', 'news']);
+        $repository->replaceNodeLabels(2, ['news']);
+
+        $this->assertSame(['file-list', 'news'], $repository->nodeLabels(1));
+        $this->assertSame([1 => ['file-list', 'news'], 2 => ['news']], $repository->nodeLabelsForNodes([1, 2]));
+        $this->assertSame([1], array_column($repository->nodesWithLabel(1, 'file-list'), 'id'));
+    }
+
     /**
      * HR: Trajno brisanje neobjavljene stranice uklanja sve njezine pomoćne
      *     retke, dok izravnu djecu čuva premještanjem na istog roditelja.
@@ -28,7 +178,18 @@ final class WorkspaceRepositoryTest extends TestCase
     public function testPermanentlyDeletingUnpublishedNodeRemovesRelationsAndReparentsChildren(): void
     {
         $database = $this->database();
-        $repository = new WorkspaceRepository($database);
+        $dispatcher = new class () implements EventDispatcherInterface {
+            /** @var list<object> */
+            public array $events = [];
+
+            public function dispatch(object $event): object
+            {
+                $this->events[] = $event;
+
+                return $event;
+            }
+        };
+        $repository = new WorkspaceRepository($database, $dispatcher);
         $now = '2026-07-18 21:00:00';
         $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
             'uuid' => '00000000-0000-4000-8000-000000000001',
@@ -99,6 +260,13 @@ final class WorkspaceRepositoryTest extends TestCase
         $child = $repository->findNodeById(2);
         $this->assertIsArray($child);
         $this->assertNull($child['parent_id'] ?? null);
+        $event = $dispatcher->events[0] ?? null;
+        $this->assertInstanceOf(WorkspacePagesPermanentlyDeleting::class, $event);
+        $this->assertSame([[
+            'workspace_id' => 1,
+            'node_id' => 1,
+            'document_key' => 'novi-nacrt',
+        ]], $event->pages);
     }
 
     /**
