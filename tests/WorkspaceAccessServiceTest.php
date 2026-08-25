@@ -584,6 +584,65 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Aktivna stranica ostaje na spremljenoj poziciji iako je prozor stabla
+     *     dohvaća ranije kako bi otvorio njezinu granu.
+     * EN: The active page keeps its persisted position even when the tree window
+     *     fetches it earlier so that its branch can be expanded.
+     */
+    public function testActiveTreeNodeDoesNotChangePersistedSiblingOrder(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Stabilni poredak',
+            'visibility' => 'public',
+            'owner_user_id' => 1,
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $root = $this->repository->saveNode($workspaceId, [
+            'title' => 'Korijen',
+            'node_type' => 'document',
+            'document_key' => 'stable-tree-root',
+        ], 1);
+        $first = $this->repository->saveNode($workspaceId, [
+            'title' => 'Prva',
+            'node_type' => 'document',
+            'document_key' => 'stable-tree-first',
+            'parent_id' => $root['id'],
+        ], 1);
+        $second = $this->repository->saveNode($workspaceId, [
+            'title' => 'Druga',
+            'node_type' => 'document',
+            'document_key' => 'stable-tree-second',
+            'parent_id' => $root['id'],
+        ], 1);
+        $active = $this->repository->saveNode($workspaceId, [
+            'title' => 'Aktualno',
+            'node_type' => 'document',
+            'document_key' => 'stable-tree-active',
+            'parent_id' => $root['id'],
+        ], 1);
+        $this->repository->reorderNodes($workspaceId, [
+            ['id' => $root['id'], 'parent_id' => null, 'sort_order' => 10],
+            ['id' => $first['id'], 'parent_id' => $root['id'], 'sort_order' => 10],
+            ['id' => $second['id'], 'parent_id' => $root['id'], 'sort_order' => 10],
+            ['id' => $active['id'], 'parent_id' => $root['id'], 'sort_order' => 10],
+        ], 1);
+
+        $this->authn->login(['id' => 1, 'is_admin' => false]);
+        $tree = $this->access->visibleTreeWindowForLanguages(
+            $workspace,
+            null,
+            [],
+            (int)$active['id'],
+        );
+
+        $this->assertCount(1, $tree);
+        $this->assertSame(
+            ['Prva', 'Druga', 'Aktualno'],
+            array_column($tree[0]['children'] ?? [], 'title'),
+        );
+    }
+
+    /**
      * HR: Dokazuje da se cijeli raspored stabla sprema u jednoj transakciji te
      *     da ciklički raspored ne mijenja prethodno valjano stanje.
      * EN: Proves that the complete tree arrangement is saved in one transaction

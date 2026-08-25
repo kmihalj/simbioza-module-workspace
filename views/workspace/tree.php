@@ -9,8 +9,14 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var list<array<string, mixed>> $nodes
  * @var int|null $activeNodeId
  * @var int $level
+ * @var string $treeBranchPath
+ * @var int $workspaceId
+ * @var string $language
  */
 $level = max(1, $level ?? 1);
+$treeBranchPath = WorkspaceValue::string($treeBranchPath ?? '');
+$workspaceId = WorkspaceValue::int($workspaceId ?? 0);
+$language = WorkspaceValue::string($language ?? 'hr');
 
 /**
  * HR: Provjerava sadrži li podstablo aktivnu stranicu. Time se pri izravnom
@@ -50,16 +56,25 @@ $containsActiveNode = static function (
         <?php
         $treeNodeId = WorkspaceValue::int($treeNode['id'] ?? 0);
         $children = WorkspaceValue::rows($treeNode['children'] ?? null);
+        $hasChildren = (bool)($treeNode['has_children'] ?? ($children !== []));
+        $childrenLoaded = (bool)($treeNode['children_loaded'] ?? true);
         $isActive = $treeNodeId > 0 && $treeNodeId === ($activeNodeId ?? null);
         $workflowLabel = WorkspaceValue::string($treeNode['workflow_label'] ?? '');
         $workflowStatus = WorkspaceValue::string($treeNode['workflow_status'] ?? '');
         $title = WorkspaceValue::string($treeNode['title'] ?? '');
         $branchId = 'workspace-tree-branch-' . $treeNodeId;
         $containsActiveChild = $containsActiveNode($children, $activeNodeId ?? null);
-        $branchExpanded = $children !== [] && ($level === 1 || $containsActiveChild);
+        $branchExpanded = $hasChildren && ($level === 1 || $containsActiveChild);
         $branchActionLabel = $branchExpanded
         ? sprintf(__('Sažmi podstranice: %s'), $title)
         : sprintf(__('Proširi podstranice: %s'), $title);
+        $branchUrl = $treeBranchPath . '?' . http_build_query([
+            'workspace_id' => $workspaceId,
+            'parent_id' => $treeNodeId,
+            'active_node_id' => $activeNodeId ?? 0,
+            'level' => $level + 1,
+            'lang' => $language,
+        ]);
         ?>
         <div
             class="workspace-tree-node"
@@ -67,7 +82,7 @@ $containsActiveNode = static function (
             data-workspace-tree-level="<?= $this->escape((string)$level) ?>"
         >
             <div class="workspace-tree-row">
-        <?php if ($children !== []) : ?>
+        <?php if ($hasChildren) : ?>
                 <button
                     class="workspace-tree-branch-toggle"
                     type="button"
@@ -78,6 +93,7 @@ $containsActiveNode = static function (
                     data-collapsed-label="<?= $this->escape(sprintf(__('Proširi podstranice: %s'), $title)) ?>"
                     aria-label="<?= $this->escape($branchActionLabel) ?>"
                     title="<?= $this->escape($branchActionLabel) ?>"
+                    data-workspace-tree-branch-url="<?= $this->escape($branchUrl) ?>"
                 >
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="m8 10 4 4 4-4"/>
@@ -107,18 +123,28 @@ $containsActiveNode = static function (
         <?php endif; ?>
                 </a>
             </div>
-        <?php if ($children !== []) : ?>
+        <?php if ($hasChildren) : ?>
             <div
                 id="<?= $this->escape($branchId) ?>"
                 class="workspace-tree-branch"
                 data-workspace-tree-branch
+                data-workspace-tree-loaded="<?= $childrenLoaded ? '1' : '0' ?>"
             <?= $branchExpanded ? '' : 'hidden' ?>
             >
-            <?= $this->forModulePartial(
-                'aaieduhr/heartphrame-module-workspace',
-                'workspace/tree',
-                ['nodes' => $children, 'activeNodeId' => $activeNodeId, 'level' => $level + 1],
-            ) ?>
+            <?php if ($childrenLoaded) : ?>
+                <?= $this->forModulePartial(
+                    'aaieduhr/heartphrame-module-workspace',
+                    'workspace/tree',
+                    [
+                        'nodes' => $children,
+                        'activeNodeId' => $activeNodeId,
+                        'level' => $level + 1,
+                        'treeBranchPath' => $treeBranchPath,
+                        'workspaceId' => $workspaceId,
+                        'language' => $language,
+                    ],
+                ) ?>
+            <?php endif; ?>
             </div>
         <?php endif; ?>
         </div>

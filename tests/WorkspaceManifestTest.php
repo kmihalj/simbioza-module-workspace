@@ -49,7 +49,7 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(42, $routesByName);
+        $this->assertCount(45, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
@@ -69,6 +69,14 @@ final class WorkspaceManifestTest extends TestCase
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,
             $routesByName['workspace.settings.maintenance.run'][4],
+        );
+        $this->assertSame(
+            WorkspaceSettingsController::class . '@optimizeImages',
+            $routesByName['workspace.settings.maintenance.images'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.settings.maintenance.images'][4],
         );
         $this->assertSame(
             WorkspaceSettingsController::class . '@permanentlyDelete',
@@ -114,9 +122,22 @@ final class WorkspaceManifestTest extends TestCase
             WorkspaceController::class . '@saveTreeOrder',
             $routesByName['workspace.tree.order.save'][2],
         );
+        $this->assertSame(
+            WorkspaceController::class . '@treeBranch',
+            $routesByName['workspace.tree.branch'][2],
+        );
+        $this->assertSame([], $routesByName['workspace.tree.branch'][4]);
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,
             $routesByName['workspace.tree.order.save'][4],
+        );
+        $this->assertSame(
+            WorkspaceController::class . '@treeOrganizer',
+            $routesByName['workspace.tree.organizer'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.tree.organizer'][4],
         );
         $this->assertSame(
             WorkspaceController::class . '@createPage',

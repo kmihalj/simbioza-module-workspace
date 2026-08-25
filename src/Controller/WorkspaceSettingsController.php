@@ -22,6 +22,7 @@ use Throwable;
 
 use function is_string;
 use function rawurlencode;
+use function sprintf;
 
 final readonly class WorkspaceSettingsController
 {
@@ -157,6 +158,10 @@ final readonly class WorkspaceSettingsController
                 'workspace.settings.maintenance.run',
                 '/settings/workspaces/maintenance',
             ),
+            'imageOptimizePath' => $this->pathFor(
+                'workspace.settings.maintenance.images',
+                '/settings/workspaces/maintenance/images',
+            ),
             'purgePath' => $this->pathFor(
                 'workspace.settings.purge',
                 '/settings/workspaces/purge',
@@ -210,6 +215,36 @@ final readonly class WorkspaceSettingsController
             }
 
             $this->alertHandler->add(new Alert($message, AlertLevelEnum::Success));
+        } catch (Throwable $throwable) {
+            $this->alertHandler->add(new Alert($throwable->getMessage(), AlertLevelEnum::Danger));
+        }
+
+        return $this->responseFactory->redirect(
+            $this->pathFor('workspace.settings.maintenance', '/settings/workspaces/maintenance'),
+        );
+    }
+
+    /**
+     * HR: Izrađuje nedostajuće web-kopije slika i administratoru vraća mjerljiv rezultat.
+     * EN: Creates missing image web copies and reports measurable results to the administrator.
+     */
+    public function optimizeImages(): ResponseInterface
+    {
+        if (!$this->access->isAdministrator()) {
+            return $this->accessDenied();
+        }
+
+        try {
+            $result = $this->maintenance->optimizeImages();
+            $this->alertHandler->add(new Alert(
+                sprintf(
+                    __('Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.'),
+                    $result['documents'],
+                    $result['generated'],
+                    $result['skipped'],
+                ),
+                AlertLevelEnum::Success,
+            ));
         } catch (Throwable $throwable) {
             $this->alertHandler->add(new Alert($throwable->getMessage(), AlertLevelEnum::Danger));
         }

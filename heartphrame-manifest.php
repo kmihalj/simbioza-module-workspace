@@ -158,6 +158,20 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [RequireAuthenticatedUserMiddleware::class],
             ],
             [
+                'GET',
+                '/workspaces/tree/organizer',
+                WorkspaceController::class . '@treeOrganizer',
+                'workspace.tree.organizer',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
+                'GET',
+                '/workspaces/tree/branch',
+                WorkspaceController::class . '@treeBranch',
+                'workspace.tree.branch',
+                [],
+            ],
+            [
                 'POST',
                 '/workspaces/tree/order',
                 WorkspaceController::class . '@saveTreeOrder',
@@ -311,6 +325,13 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 '/settings/workspaces/maintenance',
                 WorkspaceSettingsController::class . '@runMaintenance',
                 'workspace.settings.maintenance.run',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
+                'POST',
+                '/settings/workspaces/maintenance/images',
+                WorkspaceSettingsController::class . '@optimizeImages',
+                'workspace.settings.maintenance.images',
                 [RequireAuthenticatedUserMiddleware::class],
             ],
             [

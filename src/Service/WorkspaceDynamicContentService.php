@@ -47,10 +47,32 @@ use const JSON_UNESCAPED_UNICODE;
  * EN: Materializes native ACL-safe Workspace blocks stored as small declarative
  *     elements in an HTML document.
  */
-final readonly class WorkspaceDynamicContentService
+final class WorkspaceDynamicContentService
 {
     private const BLOCK_PATTERN =
     '~<section\b[^>]*data-editor-html-workspace-block=(?:"1"|\'1\')[^>]*>.*?</section>~isu';
+
+    /**
+     * HR: Čitljivi kandidati dijele se između svih dinamičkih blokova u istom
+     *     HTTP zahtjevu. Provjeravaju se samo stranice koje konkretni blokovi
+     *     trebaju, a promjena stranice ili ovlasti vrijedi pri sljedećem prikazu.
+     * EN: Readable candidates are shared by every dynamic block in the same
+     *     HTTP request. Only pages needed by the actual blocks are checked, and
+     *     page or permission changes apply on the next render.
+     *
+     * @var array<string,array<int,array<string,mixed>>>
+     */
+    private array $readableNodeCache = [];
+
+    /**
+     * HR: Bilježi već provjerene kandidate kako preklapajući izvještaji ne bi
+     *     ponavljali iste skupne ACL i workflow upite.
+     * EN: Tracks checked candidates so overlapping reports do not repeat the
+     *     same batched ACL and workflow queries.
+     *
+     * @var array<string,array<int,true>>
+     */
+    private array $checkedNodeCache = [];
 
     /**
      * HR: Prima samo generičke servise; ACL servis se razrješava kasno kako se
@@ -59,12 +81,12 @@ final readonly class WorkspaceDynamicContentService
      *     circular dependency with the Editor bridge.
      */
     public function __construct(
-        private ContainerInterface $container,
-        private WorkspaceRepository $repository,
-        private WorkspaceWorkflowService $workflow,
-        private WorkspaceEditorBridge $editor,
-        private WorkspaceConfig $config,
-        private UrlGenerator $urls,
+        private readonly ContainerInterface $container,
+        private readonly WorkspaceRepository $repository,
+        private readonly WorkspaceWorkflowService $workflow,
+        private readonly WorkspaceEditorBridge $editor,
+        private readonly WorkspaceConfig $config,
+        private readonly UrlGenerator $urls,
     ) {
     }
 
@@ -438,26 +460,88 @@ final readonly class WorkspaceDynamicContentService
         }
 
         $user = $access->currentUser();
-        $result = [];
-        $language = trim($language) !== '' ? strtolower(trim($language)) : $this->config->siteDefaultLanguage();
+        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+        if ($workspaceId <= 0) {
+            return [];
+        }
+
+        $language = trim($language) !== ''
+        ? strtolower(trim($language))
+        : $this->config->siteDefaultLanguage();
+        $defaultLanguage = strtolower(trim($this->config->siteDefaultLanguage()));
+        $userId = WorkspaceValue::int($user['id'] ?? 0);
+        $cacheKey = $workspaceId . ':' . $userId . ':' . $language . ':' . $defaultLanguage;
+
+        $this->readableNodeCache[$cacheKey] ??= [];
+        $this->checkedNodeCache[$cacheKey] ??= [];
+
+        $uncheckedNodes = [];
+        $uncheckedNodeIds = [];
         foreach ($nodes as $candidate) {
             if (WorkspaceValue::string($candidate['node_type'] ?? '') !== 'document') {
                 continue;
             }
 
-            if (!(bool)($access->nodePermissions($workspace, $candidate, $user)['can_view'] ?? false)) {
+            $nodeId = WorkspaceValue::int($candidate['id'] ?? 0);
+            if ($nodeId <= 0) {
+                continue;
+            }
+
+            if (isset($this->checkedNodeCache[$cacheKey][$nodeId])) {
+                continue;
+            }
+
+            $uncheckedNodes[$nodeId] = $candidate;
+            $uncheckedNodeIds[] = $nodeId;
+        }
+
+        if ($uncheckedNodes !== []) {
+            // HR: Izvještaj s oznakom provjerava samo označene stranice. Tek
+            //     blokovi koji stvarno traže cijelo područje obrađuju sve čvorove.
+            // EN: A labelled report checks only labelled pages. Only blocks that
+            //     genuinely request the whole workspace process every node.
+            $permissionsByNode = $access->nodePermissionsForNodes(
+                $workspace,
+                array_values($uncheckedNodes),
+                $user,
+            );
+            $workflows = $this->repository->nodeWorkflowsForNodes($uncheckedNodeIds, $language);
+            $fallbackWorkflows = $defaultLanguage !== $language
+            ? $this->repository->nodeWorkflowsForNodes($uncheckedNodeIds, $defaultLanguage)
+            : $workflows;
+
+            foreach ($uncheckedNodes as $nodeId => $candidate) {
+                $this->checkedNodeCache[$cacheKey][$nodeId] = true;
+                if (!(bool)($permissionsByNode[$nodeId]['can_view'] ?? false)) {
+                    continue;
+                }
+
+                if (
+                    !$this->workflow->isReadableWorkflow($workflows[$nodeId] ?? null)
+                    && !$this->workflow->isReadableWorkflow($fallbackWorkflows[$nodeId] ?? null)
+                ) {
+                    continue;
+                }
+
+                $this->readableNodeCache[$cacheKey][$nodeId] = $candidate;
+            }
+        }
+
+        $readableById = $this->readableNodeCache[$cacheKey];
+        $result = [];
+        foreach ($nodes as $candidate) {
+            if (WorkspaceValue::string($candidate['node_type'] ?? '') !== 'document') {
                 continue;
             }
 
             $nodeId = WorkspaceValue::int($candidate['id'] ?? 0);
-            if (
-                $this->workflow->publicationVersionForNode($nodeId, $language) <= 0
-                && $this->workflow->publicationVersionForNode($nodeId, $this->config->siteDefaultLanguage()) <= 0
-            ) {
+            if ($nodeId <= 0) {
                 continue;
             }
 
-            $result[] = $candidate;
+            if (isset($readableById[$nodeId])) {
+                $result[] = $candidate;
+            }
         }
 
         return $result;

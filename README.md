@@ -91,6 +91,8 @@ restore them until they are explicitly purged after the selected retention
 period in **Settings → Workspaces → Maintenance**. See the
 [maintenance documentation](docs/index_en.md#13-storage-maintenance) for the
 safety rules.
+The same page offers **Optimize existing images**, which creates missing
+reduced web-display copies without changing the source files.
 
 ## Requirements
 

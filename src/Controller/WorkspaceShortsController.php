@@ -100,6 +100,10 @@ final readonly class WorkspaceShortsController
         // HR: Sažetci nisu naslovnica područja pa zadnji trag ostaje poveznica za izlaz iz prikaza sažetaka.
         // EN: Shorts are not the Workspace homepage, so the last crumb remains a link out of the Shorts view.
         $breadcrumbs = $this->breadcrumbs->build($workspace, null, [], $language, '', true);
+        $tree = $this->pruneReadableTree(
+            WorkspaceValue::rows($model['tree'] ?? null),
+            true,
+        );
 
         return $this->viewRenderer->render('workspace/shorts', [
             'title' => $pageTitle,
@@ -111,7 +115,7 @@ final readonly class WorkspaceShortsController
             ],
             'workspace' => $workspace,
             'breadcrumbs' => $breadcrumbs,
-            'tree' => $model['tree'],
+            'tree' => $tree,
             'articles' => $model['articles'],
             'depth' => $model['depth'],
             'limit' => $model['limit'],
@@ -122,9 +126,41 @@ final readonly class WorkspaceShortsController
             'shortsPath' => $model['shorts_path'],
             'treeVisibleByDefault' => $treeVisible,
             'displayOptionsVisibleByDefault' => $displayOptionsVisible,
+            'treeBranchPath' => $this->pathFor(
+                'workspace.tree.branch',
+                '/workspaces/tree/branch',
+            ),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
             'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
         ]);
+    }
+
+    /**
+     * HR: Za početni prikaz Sažetaka zadržava korijensku i prvu vidljivu
+     *     razinu stabla, a dublje grane ostavlja za ACL-provjereno učitavanje
+     *     tek kada ih korisnik otvori.
+     *
+     * EN: Keeps the root and first visible tree level for the initial Shorts
+     *     view, leaving deeper branches for ACL-checked loading only when the
+     *     user opens them.
+     *
+     * @param list<array<string, mixed>> $tree
+     * @return list<array<string, mixed>>
+     */
+    private function pruneReadableTree(array $tree, bool $rootLevel): array
+    {
+        foreach ($tree as &$node) {
+            $children = WorkspaceValue::rows($node['children'] ?? null);
+            $node['has_children'] = $children !== [];
+            $node['children_loaded'] = !$node['has_children'] || $rootLevel;
+            $node['children'] = $rootLevel
+            ? $this->pruneReadableTree($children, false)
+            : [];
+        }
+
+        unset($node);
+
+        return $tree;
     }
 
     /**

@@ -41,6 +41,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceNotificationBridge;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepositoryRequestCache;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRouteRegistrar;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceSettingsService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceShortsService;
@@ -77,12 +78,16 @@ $services = [
                 $container->get(LoggerInterface::class),
             ),
 
+    WorkspaceRepositoryRequestCache::class =>
+        static fn(): WorkspaceRepositoryRequestCache => new WorkspaceRepositoryRequestCache(),
+
     WorkspaceRepository::class => static fn(ContainerInterface $container): WorkspaceRepository =>
         new WorkspaceRepository(
             $container->get(Database::class),
             $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
             $container->get(LoggerInterface::class),
             $container->get(WorkspaceContentChangeBatch::class),
+            $container->get(WorkspaceRepositoryRequestCache::class),
         ),
 
     WorkspaceThemeRepository::class => static fn(ContainerInterface $container): WorkspaceThemeRepository =>

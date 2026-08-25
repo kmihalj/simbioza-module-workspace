@@ -201,7 +201,10 @@ final class WorkspaceAccessService
     {
         $user ??= $this->currentUser();
         $nodeId = WorkspaceValue::int($node['id'] ?? 0);
-        $nodes = $this->nodesForWorkspace(WorkspaceValue::int($workspace['id'] ?? 0));
+        $nodes = $this->repository->ancestorNodes(
+            WorkspaceValue::int($workspace['id'] ?? 0),
+            $nodeId,
+        );
         $permissions = $this->nodePermissionsForNodes($workspace, $nodes, $user);
 
         return $permissions[$nodeId] ?? $this->workspacePermissions($workspace, $user);
@@ -390,12 +393,86 @@ final class WorkspaceAccessService
         ?array $user,
         array $languages,
     ): array {
+        $nodes = $this->nodesForWorkspace(WorkspaceValue::int($workspace['id'] ?? 0));
+        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+
+        return $this->buildTree($visible, null);
+    }
+
+    /**
+     * HR: Vraća početni, mali prozor vidljivog stabla. Velika područja zato
+     *     ne računaju ACL i workflow za svaku skrivenu stranicu pri svakom prikazu.
+     * EN: Returns the initial compact visible-tree window. Large Workspaces no
+     *     longer calculate ACL and workflow for every hidden page on each view.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed>|null $user
+     * @param list<string> $languages
+     * @return list<array<string,mixed>>
+     */
+    public function visibleTreeWindowForLanguages(
+        array $workspace,
+        ?array $user,
+        array $languages,
+        int $activeNodeId = 0,
+    ): array {
+        $nodes = $this->repository->treeWindowNodes(
+            WorkspaceValue::int($workspace['id'] ?? 0),
+            $activeNodeId,
+        );
+        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+
+        return $this->buildTree($visible, null);
+    }
+
+    /**
+     * HR: Vraća neposrednu ACL-filtriranu djecu grane za naknadno učitavanje.
+     * EN: Returns immediate ACL-filtered branch children for on-demand loading.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed>|null $user
+     * @param list<string> $languages
+     * @return list<array<string,mixed>>
+     */
+    public function visibleTreeBranchForLanguages(
+        array $workspace,
+        ?array $user,
+        array $languages,
+        int $parentId,
+    ): array {
+        $nodes = $this->repository->treeBranchNodes(
+            WorkspaceValue::int($workspace['id'] ?? 0),
+            $parentId,
+        );
+        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+
+        return array_values(array_filter(
+            $visible,
+            static fn(array $node): bool => WorkspaceValue::int($node['parent_id'] ?? 0) === $parentId,
+        ));
+    }
+
+    /**
+     * HR: Primjenjuje paketni ACL i jezični workflow na već ciljano dohvaćene čvorove.
+     * EN: Applies batched ACL and locale workflow checks to already targeted nodes.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed>|null $user
+     * @param list<string> $languages
+     * @param list<array<string,mixed>> $nodes
+     * @return list<array<string,mixed>>
+     */
+    private function visibleNodesForLanguages(
+        array $workspace,
+        ?array $user,
+        array $languages,
+        array $nodes,
+    ): array {
         $user ??= $this->currentUser();
         $languages = array_values(array_unique(array_filter(array_map(
             static fn(string $language): string => strtolower(trim($language)),
             $languages,
         ))));
-        $nodes = $this->nodesForWorkspace(WorkspaceValue::int($workspace['id'] ?? 0));
         $permissionsByNode = $this->nodePermissionsForNodes($workspace, $nodes, $user);
         $workflowStates = $languages !== []
         ? $this->repository->nodeWorkflowsForNodesAllLanguages(
@@ -434,7 +511,7 @@ final class WorkspaceAccessService
             $visible[] = $node;
         }
 
-        return $this->buildTree($visible, null);
+        return $visible;
     }
 
     /**
@@ -865,8 +942,10 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Rekurzivno slaže ravne čvorove u stablo bez gubitka sortiranog redoslijeda.
-     * EN: Recursively turns flat nodes into a tree without losing sorted order.
+     * HR: Rekurzivno slaže ravne čvorove u stablo koristeći isključivo spremljeni
+     *     poredak, neovisno o redoslijedu kojim su dohvaćeni iz baze.
+     * EN: Recursively turns flat nodes into a tree using only their persisted
+     *     ordering, regardless of the order in which the database returned them.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -884,7 +963,34 @@ final class WorkspaceAccessService
             $branch[] = $node;
         }
 
+        // HR: Aktivni čvor smije dobiti oznaku i otvorenu granu, ali nikada novu poziciju.
+        // EN: The active node may be marked and expanded, but it must never gain a new position.
+        usort($branch, $this->compareTreeNodes(...));
+
         return $branch;
+    }
+
+    /**
+     * HR: Uspoređuje čvorove prema spremljenoj poziciji i trajnom ID-u. Naslov
+     *     nije dio poretka jer bi preimenovanje ili odabir aktivne stranice tada
+     *     moglo prividno premjestiti stavku bez izričitog uređivanja stabla.
+     * EN: Compares nodes by persisted position and durable ID. A title is not
+     *     part of the order because renaming or selecting an active page could
+     *     otherwise appear to move it without an explicit tree edit.
+     *
+     * @param array<string, mixed> $left
+     * @param array<string, mixed> $right
+     */
+    private function compareTreeNodes(array $left, array $right): int
+    {
+        $order = WorkspaceValue::int($left['sort_order'] ?? 0)
+        <=> WorkspaceValue::int($right['sort_order'] ?? 0);
+        if ($order !== 0) {
+            return $order;
+        }
+
+        return WorkspaceValue::int($left['id'] ?? 0)
+        <=> WorkspaceValue::int($right['id'] ?? 0);
     }
 
     /**

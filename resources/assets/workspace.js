@@ -2,6 +2,19 @@
     'use strict';
 
     /**
+     * HR: Kodira običan tekst prije umetanja u HTML poruke učitavanja.
+     * EN: Encodes plain text before inserting it into HTML loading messages.
+     *
+     * @param {string} value
+     * @returns {string}
+     */
+    function escapeHtml(value) {
+        const container = document.createElement('span');
+        container.textContent = String(value || '');
+        return container.innerHTML;
+    }
+
+    /**
      * HR: Prikazuje samo kontrole koje pripadaju odabranoj vrsti stavke stabla
      * i onemogućuje skrivena polja kako se ne bi slala u POST zahtjevu.
      *
@@ -425,7 +438,7 @@
                 return;
             }
 
-            toggle.addEventListener('click', () => {
+            toggle.addEventListener('click', async () => {
                 const editing = treeEditor.hidden;
                 treeEditor.hidden = !editing;
                 treeView.hidden = editing;
@@ -433,6 +446,40 @@
                 toggle.classList.toggle('active', editing);
 
                 if (editing) {
+                    if (treeEditor.dataset.workspaceTreeEditorReady !== '1') {
+                        const url = treeEditor.dataset.workspaceTreeEditorUrl || '';
+                        const loading = treeEditor.dataset.workspaceTreeEditorLoading || '';
+                        const errorMessage = treeEditor.dataset.workspaceTreeEditorError || '';
+                        treeEditor.innerHTML = `<p class="text-body-secondary mb-0">${escapeHtml(loading)}</p>`;
+
+                        try {
+                            const response = await fetch(url, {
+                                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                                credentials: 'same-origin',
+                            });
+                            const html = await response.text();
+                            if (!response.ok) {
+                                throw new Error(html || errorMessage);
+                            }
+
+                            treeEditor.innerHTML = html;
+                            treeEditor.dataset.workspaceTreeEditorReady = '1';
+                            treeEditor.querySelectorAll('[data-workspace-lazy-modal]').forEach((modal) => {
+                                if (modal instanceof HTMLElement) {
+                                    document.body.append(modal);
+                                    initializeNodeForms(modal);
+                                }
+                            });
+                            const form = treeEditor.querySelector('[data-workspace-tree-order-form]');
+                            if (form instanceof HTMLFormElement) {
+                                initializeTreeOrganizer(form);
+                            }
+                        } catch (_error) {
+                            treeEditor.innerHTML = `<div class="alert alert-danger mb-0">${escapeHtml(errorMessage)}</div>`;
+                            return;
+                        }
+                    }
+
                     const list = treeEditor.querySelector('[data-workspace-tree-order-list]');
                     if (list instanceof HTMLElement) {
                         refreshTreeOrganizer(list);
@@ -461,7 +508,11 @@
             const storageKey = treeKey !== ''
                 ? `heartphrame.workspace.tree.v1.${treeKey}`
                 : '';
+            const scrollStorageKey = treeKey !== ''
+                ? `heartphrame.workspace.tree.scroll.v1.${treeKey}`
+                : '';
             let storedExpandedNodes = null;
+            let storedScrollTop = null;
 
             if (storageKey !== '') {
                 try {
@@ -474,6 +525,20 @@
                     }
                 } catch (_error) {
                     storedExpandedNodes = null;
+                }
+            }
+
+            if (scrollStorageKey !== '') {
+                try {
+                    const storedValue = window.sessionStorage.getItem(scrollStorageKey);
+                    const parsedValue = storedValue === null
+                        ? Number.NaN
+                        : Number.parseFloat(storedValue);
+                    if (Number.isFinite(parsedValue) && parsedValue >= 0) {
+                        storedScrollTop = parsedValue;
+                    }
+                } catch (_error) {
+                    storedScrollTop = null;
                 }
             }
 
@@ -490,23 +555,176 @@
                     return;
                 }
 
-                const expandedNodeIds = [];
-                tree.querySelectorAll('[data-workspace-tree-branch-toggle][aria-expanded="true"]')
-                    .forEach((toggle) => {
-                        const node = toggle.closest('[data-workspace-tree-node]');
-                        const nodeId = node instanceof HTMLElement
-                            ? node.dataset.workspaceTreeNode || ''
-                            : '';
-                        if (nodeId !== '') {
-                            expandedNodeIds.push(nodeId);
-                        }
-                    });
+                const expandedNodeIds = storedExpandedNodes instanceof Set
+                    ? Array.from(storedExpandedNodes)
+                    : [];
 
                 try {
                     window.sessionStorage.setItem(storageKey, JSON.stringify(expandedNodeIds));
                 } catch (_error) {
                     // HR: Privatni način rada može zabraniti pohranu; stablo i dalje radi.
                     // EN: Private browsing may deny storage; the tree still works.
+                }
+            };
+
+            /**
+             * HR: Sprema vertikalni položaj stabla prije navigacije kako klik
+             *     na stranicu ne bi vratio dugačko stablo na njegov početak.
+             * EN: Stores the tree's vertical position before navigation so a
+             *     page click never returns a long tree to its beginning.
+             *
+             * @returns {void}
+             */
+            const persistTreeScrollPosition = () => {
+                if (scrollStorageKey === '') {
+                    return;
+                }
+
+                try {
+                    window.sessionStorage.setItem(
+                        scrollStorageKey,
+                        String(Math.max(0, tree.scrollTop)),
+                    );
+                } catch (_error) {
+                    // HR: Nedostupna pohrana ne smije zaustaviti navigaciju.
+                    // EN: Unavailable storage must never block navigation.
+                }
+            };
+
+            /**
+             * HR: Usklađuje vidljivost grane, stanje gumba i njegov pristupačni
+             *     opis. Ista se rutina koristi prije i nakon naknadnog učitavanja.
+             * EN: Synchronizes branch visibility, button state, and its accessible
+             *     label. The same routine is used before and after lazy loading.
+             *
+             * @param {HTMLButtonElement} toggle
+             * @param {HTMLElement} branch
+             * @param {boolean} expanded
+             * @returns {void}
+             */
+            const setBranchState = (toggle, branch, expanded) => {
+                branch.hidden = !expanded;
+                toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                const label = expanded
+                    ? toggle.dataset.expandedLabel
+                    : toggle.dataset.collapsedLabel;
+                if (typeof label === 'string' && label !== '') {
+                    toggle.setAttribute('aria-label', label);
+                    toggle.setAttribute('title', label);
+                }
+            };
+
+            const loadingText = tree.dataset.workspaceTreeLoading || '';
+            const errorText = tree.dataset.workspaceTreeError || '';
+            const branchRequests = new WeakMap();
+
+            /**
+             * HR: Učitava samo zatraženu, već ACL-filtriranu granu. Istodobni
+             *     klikovi dijele isti zahtjev kako se grana ne bi duplicirala.
+             * EN: Loads only the requested, already ACL-filtered branch. Concurrent
+             *     clicks share one request so the branch is never duplicated.
+             *
+             * @param {HTMLButtonElement} toggle
+             * @param {HTMLElement} branch
+             * @returns {Promise<boolean>}
+             */
+            const loadBranch = async (toggle, branch) => {
+                if (branch.dataset.workspaceTreeLoaded === '1') {
+                    return true;
+                }
+
+                const pendingRequest = branchRequests.get(branch);
+                if (pendingRequest instanceof Promise) {
+                    return pendingRequest;
+                }
+
+                const branchUrl = toggle.dataset.workspaceTreeBranchUrl || '';
+                if (branchUrl === '') {
+                    return false;
+                }
+
+                const request = (async () => {
+                    toggle.disabled = true;
+                    branch.setAttribute('aria-busy', 'true');
+                    if (loadingText !== '') {
+                        branch.textContent = loadingText;
+                    }
+
+                    try {
+                        const response = await window.fetch(branchUrl, {
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'text/html',
+                            },
+                        });
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        branch.innerHTML = await response.text();
+                        branch.dataset.workspaceTreeLoaded = '1';
+                        branch.removeAttribute('aria-busy');
+                        toggle.disabled = false;
+
+                        return true;
+                    } catch (_error) {
+                        branch.removeAttribute('aria-busy');
+                        branch.textContent = errorText;
+                        toggle.disabled = false;
+
+                        return false;
+                    } finally {
+                        branchRequests.delete(branch);
+                    }
+                })();
+
+                branchRequests.set(branch, request);
+
+                return request;
+            };
+
+            /**
+             * HR: Primjenjuje spremljeno stanje na već isporučene čvorove i po
+             *     potrebi slijedno vraća dublje grane iz trenutačne kartice.
+             * EN: Applies saved state to delivered nodes and, when needed,
+             *     sequentially restores deeper branches for the current tab.
+             *
+             * @param {HTMLElement} container
+             * @returns {Promise<void>}
+             */
+            const restoreBranches = async (container) => {
+                const toggles = Array.from(
+                    container.querySelectorAll('[data-workspace-tree-branch-toggle]'),
+                );
+                for (const toggle of toggles) {
+                    if (!(toggle instanceof HTMLButtonElement) || toggle.dataset.workspaceTreeReady === '1') {
+                        continue;
+                    }
+
+                    const node = toggle.closest('[data-workspace-tree-node]');
+                    const branchId = toggle.getAttribute('aria-controls') || '';
+                    const branch = branchId !== '' ? document.getElementById(branchId) : null;
+                    if (!(node instanceof HTMLElement)
+                        || !(branch instanceof HTMLElement)
+                        || !tree.contains(branch)) {
+                        continue;
+                    }
+
+                    toggle.dataset.workspaceTreeReady = '1';
+                    const level = Number.parseInt(node.dataset.workspaceTreeLevel || '1', 10);
+                    const nodeId = node.dataset.workspaceTreeNode || '';
+                    const containsActivePage = branch.querySelector('[aria-current="page"]') !== null;
+                    const expanded = containsActivePage || (storedExpandedNodes instanceof Set
+                        ? storedExpandedNodes.has(nodeId)
+                        : level === 1);
+                    setBranchState(toggle, branch, expanded);
+
+                    if (expanded && branch.dataset.workspaceTreeLoaded !== '1') {
+                        const loaded = await loadBranch(toggle, branch);
+                        if (loaded) {
+                            await restoreBranches(branch);
+                        }
+                    }
                 }
             };
 
@@ -520,38 +738,52 @@
              *     active-page ancestors open. State is prepared even while the
              *     entire mobile panel is hidden.
              */
-            tree.querySelectorAll('[data-workspace-tree-branch-toggle]').forEach((toggle) => {
-                if (!(toggle instanceof HTMLButtonElement)) {
+            /**
+             * HR: Najprije vraća otvorene i naknadno učitane grane, a zatim
+             *     u dva okvira iscrtavanja vraća spremljeni položaj stabla.
+             * EN: Restores expanded and lazy-loaded branches first, then uses
+             *     two animation frames to restore the saved tree position.
+             *
+             * @returns {Promise<void>}
+             */
+            const restoreTreeState = async () => {
+                await restoreBranches(tree);
+                if (storedScrollTop === null) {
                     return;
                 }
 
-                const node = toggle.closest('[data-workspace-tree-node]');
-                const branchId = toggle.getAttribute('aria-controls') || '';
-                const branch = branchId !== '' ? document.getElementById(branchId) : null;
-                if (!(node instanceof HTMLElement)
-                    || !(branch instanceof HTMLElement)
-                    || !tree.contains(branch)) {
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => {
+                        const maximumScrollTop = Math.max(0, tree.scrollHeight - tree.clientHeight);
+                        tree.scrollTop = Math.min(storedScrollTop, maximumScrollTop);
+                    });
+                });
+            };
+
+            void restoreTreeState();
+
+            let scrollPersistenceFrame = null;
+            tree.addEventListener('scroll', () => {
+                if (scrollPersistenceFrame !== null) {
                     return;
                 }
 
-                const level = Number.parseInt(node.dataset.workspaceTreeLevel || '1', 10);
-                const nodeId = node.dataset.workspaceTreeNode || '';
-                const containsActivePage = branch.querySelector('[aria-current="page"]') !== null;
-                const expanded = containsActivePage || (storedExpandedNodes instanceof Set
-                    ? storedExpandedNodes.has(nodeId)
-                    : level === 1);
-                branch.hidden = !expanded;
-                toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-                const label = expanded
-                    ? toggle.dataset.expandedLabel
-                    : toggle.dataset.collapsedLabel;
-                if (typeof label === 'string' && label !== '') {
-                    toggle.setAttribute('aria-label', label);
-                    toggle.setAttribute('title', label);
-                }
-            });
+                scrollPersistenceFrame = window.requestAnimationFrame(() => {
+                    scrollPersistenceFrame = null;
+                    persistTreeScrollPosition();
+                });
+            }, { passive: true });
 
-            tree.addEventListener('click', (event) => {
+            window.addEventListener('pagehide', persistTreeScrollPosition);
+
+            tree.addEventListener('click', async (event) => {
+                const link = event.target instanceof Element
+                    ? event.target.closest('a[href]')
+                    : null;
+                if (link instanceof HTMLAnchorElement && tree.contains(link)) {
+                    persistTreeScrollPosition();
+                }
+
                 const target = event.target instanceof Element
                     ? event.target.closest('[data-workspace-tree-branch-toggle]')
                     : null;
@@ -566,14 +798,29 @@
                 }
 
                 const nextExpanded = target.getAttribute('aria-expanded') !== 'true';
-                branch.hidden = !nextExpanded;
-                target.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
-                const label = nextExpanded
-                    ? target.dataset.expandedLabel
-                    : target.dataset.collapsedLabel;
-                if (typeof label === 'string' && label !== '') {
-                    target.setAttribute('aria-label', label);
-                    target.setAttribute('title', label);
+                if (nextExpanded && branch.dataset.workspaceTreeLoaded !== '1') {
+                    const loaded = await loadBranch(target, branch);
+                    if (!loaded) {
+                        setBranchState(target, branch, true);
+                        return;
+                    }
+                    await restoreBranches(branch);
+                }
+
+                setBranchState(target, branch, nextExpanded);
+                const node = target.closest('[data-workspace-tree-node]');
+                const nodeId = node instanceof HTMLElement
+                    ? node.dataset.workspaceTreeNode || ''
+                    : '';
+                if (!(storedExpandedNodes instanceof Set)) {
+                    storedExpandedNodes = new Set();
+                }
+                if (nodeId !== '') {
+                    if (nextExpanded) {
+                        storedExpandedNodes.add(nodeId);
+                    } else {
+                        storedExpandedNodes.delete(nodeId);
+                    }
                 }
                 persistExpandedBranches();
             });

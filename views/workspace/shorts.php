@@ -21,6 +21,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var string $shortsPath
  * @var bool $treeVisibleByDefault
  * @var bool $displayOptionsVisibleByDefault
+ * @var string $treeBranchPath
  * @var string $assetsCssPath
  * @var string $assetsJsPath
  */
@@ -43,8 +44,13 @@ $orderOptions = [
                 <ol class="breadcrumb workspace-breadcrumb">
                     <?php foreach ($breadcrumbs as $breadcrumb) : ?>
                         <?php if ((bool)($breadcrumb['current'] ?? false)) : ?>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                <?= $this->escape(WorkspaceValue::string($breadcrumb['label'] ?? '')) ?>
+                            <?php $breadcrumbLabel = WorkspaceValue::string($breadcrumb['label'] ?? ''); ?>
+                            <li
+                                class="breadcrumb-item active"
+                                aria-current="page"
+                                title="<?= $this->escape($breadcrumbLabel) ?>"
+                            >
+                                <?= $this->escape($breadcrumbLabel) ?>
                             </li>
                         <?php else : ?>
                             <li class="breadcrumb-item">
@@ -56,10 +62,10 @@ $orderOptions = [
                                     href="<?= $this->escape(
                                         WorkspaceValue::string($breadcrumb['href'] ?? ''),
                                     ) ?>"
+                                    title="<?= $this->escape($breadcrumbLabel) ?>"
                                     <?php if ($breadcrumbIcon === 'home') : ?>
                                         class="workspace-breadcrumb-home-link"
                                         aria-label="<?= $this->escape($breadcrumbLabel) ?>"
-                                        title="<?= $this->escape($breadcrumbLabel) ?>"
                                     <?php endif; ?>
                                 >
                                     <?php if ($breadcrumbIcon === 'home') : ?>
@@ -177,6 +183,8 @@ $orderOptions = [
                     class="list-group list-group-flush workspace-tree"
                     data-workspace-tree-view
                     data-workspace-tree-key="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
+                    data-workspace-tree-loading="<?= $this->escape(__('Učitavanje grane stabla…')) ?>"
+                    data-workspace-tree-error="<?= $this->escape(__('Granu stabla nije moguće učitati.')) ?>"
                 >
                     <?php if ($tree === []) : ?>
                         <p class="small text-body-secondary mb-0">
@@ -186,7 +194,14 @@ $orderOptions = [
                         <?= $this->forModulePartial(
                             'aaieduhr/heartphrame-module-workspace',
                             'workspace/tree',
-                            ['nodes' => $tree, 'activeNodeId' => null, 'level' => 1],
+                            [
+                                'nodes' => $tree,
+                                'activeNodeId' => null,
+                                'level' => 1,
+                                'treeBranchPath' => $treeBranchPath,
+                                'workspaceId' => WorkspaceValue::int($workspace['id'] ?? 0),
+                                'language' => $language,
+                            ],
                         ) ?>
                     <?php endif; ?>
                 </div>

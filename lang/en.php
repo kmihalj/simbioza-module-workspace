@@ -679,6 +679,14 @@ return [
     'Razumijem da je čišćenje nepovratno i da sadržaj mogu vratiti samo iz backupa.' =>
         'I understand that cleanup is irreversible and content can only be recovered from a backup.',
     'Pokreni održavanje' => 'Run maintenance',
+    'Optimizacija slika' => 'Image optimization',
+    'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.' =>
+        'Create smaller web-ready copies of existing images. Originals remain preserved and open on click.',
+    'Optimiziraj postojeće slike' => 'Optimize existing images',
+    'HTML Editor nije dostupan pa optimizacija slika nije moguća.' =>
+        'HTML Editor is unavailable, so image optimization cannot run.',
+    'Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.' =>
+        'Image optimization completed. Documents: %d; web copies: %d; skipped: %d.',
     'Broj sačuvanih verzija' => 'Number of retained versions',
     'Starost u danima' => 'Age in days',
     'Ukupno' => 'Total',
@@ -730,4 +738,11 @@ return [
     'Svojstva stranice' => 'Page properties',
     'Naziv svojstva' => 'Property name',
     'Vrsta' => 'Type',
+    'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.' =>
+        'The tree cannot be edited because you cannot view or edit every item.',
+    'Organizator stabla nije moguće učitati.' =>
+        'The tree organizer could not be loaded.',
+    'Učitavanje grane stabla…' => 'Loading tree branch…',
+    'Granu stabla nije moguće učitati.' =>
+        'The tree branch could not be loaded.',
 ];

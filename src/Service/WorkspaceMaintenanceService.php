@@ -64,6 +64,24 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
+     * HR: Pokreće izradu optimiziranih web-kopija postojećih slika.
+     * EN: Starts generation of optimized web copies for existing images.
+     *
+     * @return array{documents: int, generated: int, skipped: int}
+     */
+    public function optimizeImages(): array
+    {
+        $result = $this->editor->optimizeImages();
+        if ($result === []) {
+            throw new RuntimeException(__(
+                'HTML Editor nije dostupan pa optimizacija slika nije moguća.',
+            ));
+        }
+
+        return $result;
+    }
+
+    /**
      * HR: Validira administratorski obrazac, čisti editor i zatim uklanja
      *     metapodatke onih Workspace čvorova čiji je dokument trajno uklonjen.
      * EN: Validates the administrator form, cleans the editor, and then removes

@@ -64,6 +64,7 @@ final readonly class WorkspaceRepository
         private ?EventDispatcherInterface $events = null,
         private ?LoggerInterface $logger = null,
         private ?WorkspaceContentChangeBatch $contentChangeBatch = null,
+        private ?WorkspaceRepositoryRequestCache $requestCache = null,
     ) {
     }
 
@@ -396,6 +397,8 @@ final readonly class WorkspaceRepository
                 ->where('is_deleted', '=', true)
                 ->delete();
         });
+
+        $this->clearWorkspaceNodeCache($workspaceId);
     }
 
     /**
@@ -728,14 +731,214 @@ final readonly class WorkspaceRepository
     {
         $this->assertTablesReady();
 
-        return $this->rows(
+        if (
+            $this->requestCache instanceof WorkspaceRepositoryRequestCache
+            && array_key_exists($workspaceId, $this->requestCache->nodesByWorkspace)
+        ) {
+            return $this->requestCache->nodesByWorkspace[$workspaceId];
+        }
+
+        $nodes = $this->rows(
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
                 ->where('workspace_id', '=', $workspaceId)
                 ->where('is_enabled', '=', true)
                 ->orderBy('sort_order', 'ASC')
-                ->orderBy('title', 'ASC')
+                ->orderBy('id', 'ASC')
                 ->get(),
         );
+
+        if ($this->requestCache instanceof WorkspaceRepositoryRequestCache) {
+            $this->requestCache->nodesByWorkspace[$workspaceId] = $nodes;
+            foreach ($nodes as $node) {
+                $this->rememberNode($node);
+            }
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * HR: Vraća početnu stranicu područja bez učitavanja cijelog stabla.
+     * EN: Returns the Workspace homepage without loading the complete tree.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function homepageNode(int $workspaceId): ?array
+    {
+        $this->assertTablesReady();
+
+        return $this->row(
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                ->where('workspace_id', '=', $workspaceId)
+                ->where('node_type', '=', 'document')
+                ->where('is_homepage', '=', true)
+                ->where('is_enabled', '=', true)
+                ->first(),
+        );
+    }
+
+    /**
+     * HR: Vraća lanac aktivnih predaka od korijena do zadanog čvora koristeći
+     *     samo potrebne retke. Time ACL nasljeđivanje ostaje potpuno, a veliko
+     *     stablo se ne učitava za običan pregled stranice.
+     * EN: Returns the active ancestor chain from the root to the supplied node
+     *     using only required rows. ACL inheritance stays complete without
+     *     loading a large tree for a regular page view.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function ancestorNodes(int $workspaceId, int $nodeId): array
+    {
+        $this->assertTablesReady();
+        if (
+            $this->requestCache instanceof WorkspaceRepositoryRequestCache
+            && isset($this->requestCache->ancestorNodesByWorkspaceAndNode[$workspaceId][$nodeId])
+        ) {
+            return $this->requestCache->ancestorNodesByWorkspaceAndNode[$workspaceId][$nodeId];
+        }
+
+        $chain = [];
+        $visited = [];
+        $currentId = $nodeId;
+
+        while ($currentId > 0 && !isset($visited[$currentId]) && count($chain) < 256) {
+            $visited[$currentId] = true;
+            $node = $this->row(
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                    ->where('workspace_id', '=', $workspaceId)
+                    ->where('id', '=', $currentId)
+                    ->where('is_enabled', '=', true)
+                    ->first(),
+            );
+            if (!is_array($node)) {
+                break;
+            }
+
+            $chain[] = $node;
+            $currentId = $this->intValue($node['parent_id'] ?? 0);
+        }
+
+        $chain = array_reverse($chain);
+        if ($this->requestCache instanceof WorkspaceRepositoryRequestCache) {
+            $this->requestCache->ancestorNodesByWorkspaceAndNode[$workspaceId][$nodeId] = $chain;
+        }
+
+        return $chain;
+    }
+
+    /**
+     * HR: Dohvaća mali prozor stabla: korijene, aktivni put te neposrednu djecu
+     *     korijena i aktivnog puta. Ostale se grane učitavaju na zahtjev.
+     * EN: Loads a compact tree window: roots, the active path, and immediate
+     *     children of roots and the active path. Other branches load on demand.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function treeWindowNodes(int $workspaceId, int $activeNodeId = 0): array
+    {
+        $this->assertTablesReady();
+        $roots = $this->rows($this->database->fetchAll(
+            'SELECT * FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES
+            . ' WHERE workspace_id = ? AND is_enabled = ? AND parent_id IS NULL'
+            . ' ORDER BY sort_order ASC, id ASC',
+            [$workspaceId, true],
+        ));
+        $ancestors = $activeNodeId > 0 ? $this->ancestorNodes($workspaceId, $activeNodeId) : [];
+
+        $expandedParentIds = [];
+        foreach ([...$roots, ...$ancestors] as $node) {
+            $nodeId = $this->intValue($node['id'] ?? 0);
+            if ($nodeId > 0) {
+                $expandedParentIds[$nodeId] = $nodeId;
+            }
+        }
+
+        $nodes = [...$roots, ...$ancestors];
+        if ($expandedParentIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($expandedParentIds), '?'));
+            $children = $this->rows($this->database->fetchAll(
+                'SELECT * FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES
+                . ' WHERE workspace_id = ? AND is_enabled = ? AND parent_id IN (' . $placeholders . ')'
+                . ' ORDER BY sort_order ASC, id ASC',
+                [$workspaceId, true, ...array_values($expandedParentIds)],
+            ));
+            $nodes = [...$nodes, ...$children];
+        }
+
+        return $this->markTreeWindowNodes($workspaceId, $nodes, array_keys($expandedParentIds));
+    }
+
+    /**
+     * HR: Dohvaća roditeljski put i neposrednu djecu jedne grane radi sigurnog
+     *     ACL-filtriranog učitavanja na zahtjev.
+     * EN: Loads the parent path and immediate children of one branch for safe,
+     *     ACL-filtered on-demand rendering.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function treeBranchNodes(int $workspaceId, int $parentId): array
+    {
+        $ancestors = $this->ancestorNodes($workspaceId, $parentId);
+        if ($ancestors === []) {
+            return [];
+        }
+
+        $children = $this->rows($this->database->fetchAll(
+            'SELECT * FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES
+            . ' WHERE workspace_id = ? AND is_enabled = ? AND parent_id = ?'
+            . ' ORDER BY sort_order ASC, id ASC',
+            [$workspaceId, true, $parentId],
+        ));
+
+        return $this->markTreeWindowNodes($workspaceId, [...$ancestors, ...$children], [$parentId]);
+    }
+
+    /**
+     * HR: Uklanja duplikate i označava postoje li skrivena djeca te je li grana učitana.
+     * EN: Removes duplicates and marks hidden children and loaded branches.
+     *
+     * @param list<array<string,mixed>> $nodes
+     * @param list<int> $loadedParentIds
+     * @return list<array<string,mixed>>
+     */
+    private function markTreeWindowNodes(int $workspaceId, array $nodes, array $loadedParentIds): array
+    {
+        $byId = [];
+        foreach ($nodes as $node) {
+            $nodeId = $this->intValue($node['id'] ?? 0);
+            if ($nodeId > 0) {
+                $byId[$nodeId] = $node;
+            }
+        }
+
+        if ($byId === []) {
+            return [];
+        }
+
+        $nodeIds = array_keys($byId);
+        $placeholders = implode(',', array_fill(0, count($nodeIds), '?'));
+        $parentRows = $this->rows($this->database->fetchAll(
+            'SELECT DISTINCT parent_id FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES
+            . ' WHERE workspace_id = ? AND is_enabled = ? AND parent_id IN (' . $placeholders . ')',
+            [$workspaceId, true, ...$nodeIds],
+        ));
+        $parentsWithChildren = [];
+        foreach ($parentRows as $row) {
+            $parentId = $this->intValue($row['parent_id'] ?? 0);
+            if ($parentId > 0) {
+                $parentsWithChildren[$parentId] = true;
+            }
+        }
+
+        $loaded = array_fill_keys($loadedParentIds, true);
+        foreach ($byId as $nodeId => &$node) {
+            $node['has_children'] = isset($parentsWithChildren[$nodeId]);
+            $node['children_loaded'] = !$node['has_children'] || isset($loaded[$nodeId]);
+        }
+
+        unset($node);
+
+        return array_values($byId);
     }
 
     /**
@@ -993,12 +1196,19 @@ final readonly class WorkspaceRepository
     public function findNodeById(int $nodeId): ?array
     {
         $this->assertTablesReady();
+        if (
+            $this->requestCache instanceof WorkspaceRepositoryRequestCache
+            && array_key_exists($nodeId, $this->requestCache->nodesById)
+        ) {
+            return $this->requestCache->nodesById[$nodeId];
+        }
+
         $row = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
             ->where('id', '=', $nodeId)
             ->where('is_enabled', '=', true)
             ->first();
 
-        return $this->row($row);
+        return $this->rememberNode($this->row($row));
     }
 
     /**
@@ -1016,7 +1226,7 @@ final readonly class WorkspaceRepository
             ->where('is_enabled', '=', true)
             ->first();
 
-        return $this->row($row);
+        return $this->rememberNode($this->row($row));
     }
 
     /**
@@ -1034,7 +1244,100 @@ final readonly class WorkspaceRepository
             ->where('is_enabled', '=', true)
             ->first();
 
-        return $this->row($row);
+        return $this->rememberNode($this->row($row));
+    }
+
+    /**
+     * HR: Grupno učitava aktivne čvorove dokumenata i njihova područja. Ova
+     *     metoda služi popisima i biračima koji moraju provjeriti velik broj
+     *     dokumenata bez izvođenja zasebnih upita za svaki dokument.
+     * EN: Batch-loads active document nodes and their workspaces. This method
+     *     supports lists and pickers that must authorize many documents without
+     *     issuing separate queries for every document.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string, array{
+     *     node: array<string, mixed>,
+     *     workspace: array<string, mixed>
+     * }>
+     */
+    public function documentContextsByKeys(array $documentKeys): array
+    {
+        $this->assertTablesReady();
+
+        $normalizedKeys = [];
+        foreach ($documentKeys as $documentKey) {
+            /*
+             * HR: PHP brojčane string-ključeve polja pretvara u cijele brojeve.
+             *     Pretvorba u tekst zato mora prethoditi normalizaciji.
+             * EN: PHP converts numeric string array keys to integers. Cast to
+             *     string before normalization so imported numeric keys work too.
+             */
+            $documentKey = trim((string)$documentKey);
+            if ($documentKey !== '') {
+                $normalizedKeys[$documentKey] = true;
+            }
+        }
+
+        $documentKeys = array_keys($normalizedKeys);
+        if ($documentKeys === []) {
+            return [];
+        }
+
+        $nodes = $this->rows(
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                ->whereIn('document_key', $documentKeys)
+                ->where('node_type', '=', 'document')
+                ->where('is_enabled', '=', true)
+                ->get(),
+        );
+
+        $workspaceIds = [];
+        foreach ($nodes as $node) {
+            $workspaceId = $this->intValue($node['workspace_id'] ?? 0);
+            if ($workspaceId > 0) {
+                $workspaceIds[$workspaceId] = true;
+            }
+        }
+
+        if ($workspaceIds === []) {
+            return [];
+        }
+
+        $workspacesById = [];
+        foreach (
+            $this->rows(
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
+                    ->whereIn('id', array_keys($workspaceIds))
+                    ->where('is_deleted', '=', false)
+                    ->get(),
+            ) as $workspace
+        ) {
+            $workspaceId = $this->intValue($workspace['id'] ?? 0);
+            if ($workspaceId > 0) {
+                $workspacesById[$workspaceId] = $workspace;
+            }
+        }
+
+        $contexts = [];
+        foreach ($nodes as $node) {
+            $documentKey = trim($this->stringValue($node['document_key'] ?? ''));
+            $workspaceId = $this->intValue($node['workspace_id'] ?? 0);
+            if ($documentKey === '') {
+                continue;
+            }
+
+            if (!isset($workspacesById[$workspaceId])) {
+                continue;
+            }
+
+            $contexts[$documentKey] = [
+                'node' => $node,
+                'workspace' => $workspacesById[$workspaceId],
+            ];
+        }
+
+        return $contexts;
     }
 
     /**
@@ -1370,6 +1673,7 @@ final readonly class WorkspaceRepository
             $nodeId = (int)$this->database->lastInsertId();
         }
 
+        $this->clearWorkspaceNodeCache($workspaceId);
         $node = $this->findNodeById($nodeId);
         if (!is_array($node)) {
             throw new RuntimeException(__('Spremljeni čvor nije moguće učitati.'));
@@ -1485,6 +1789,7 @@ final readonly class WorkspaceRepository
                 }
             },
         );
+        $this->clearWorkspaceNodeCache($workspaceId);
     }
 
     /**
@@ -1507,7 +1812,7 @@ final readonly class WorkspaceRepository
                 ]);
         }
 
-
+        $this->clearWorkspaceNodeCache($workspaceId);
         $this->contentChanged($workspaceId, 'node_tree_deleted', $nodeId, actorUserId: $actorUserId);
     }
 
@@ -1577,6 +1882,7 @@ final readonly class WorkspaceRepository
                     ->delete();
             },
         );
+        $this->clearWorkspaceNodeCache($workspaceId);
 
         $this->contentChanged(
             $workspaceId,
@@ -2060,22 +2366,10 @@ final readonly class WorkspaceRepository
      */
     public function ancestorNodeIds(int $workspaceId, int $nodeId): array
     {
-        $nodes = $this->nodesForWorkspace($workspaceId);
-        $byId = [];
-        foreach ($nodes as $node) {
-            $byId[$this->intValue($node['id'] ?? 0)] = $node;
-        }
-
-        $ids = [];
-        $currentId = $nodeId;
-        $visited = [];
-        while ($currentId > 0 && isset($byId[$currentId]) && !isset($visited[$currentId])) {
-            $visited[$currentId] = true;
-            $ids[] = $currentId;
-            $currentId = $this->intValue($byId[$currentId]['parent_id'] ?? 0);
-        }
-
-        return array_reverse($ids);
+        return array_values(array_filter(array_map(
+            fn(array $node): int => $this->intValue($node['id'] ?? 0),
+            $this->ancestorNodes($workspaceId, $nodeId),
+        )));
     }
 
     /**
@@ -2158,6 +2452,52 @@ final readonly class WorkspaceRepository
                 'updated_by_user_id' => $actorUserId,
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
+
+        $node = $this->findNodeById($nodeId);
+        $workspaceId = is_array($node) ? $this->intValue($node['workspace_id'] ?? 0) : 0;
+        if ($workspaceId > 0) {
+            $this->clearWorkspaceNodeCache($workspaceId);
+        }
+    }
+
+    /**
+     * HR: Poništava request cache stabla odmah nakon promjene njegovih čvorova.
+     * EN: Invalidates the request tree cache immediately after node mutations.
+     */
+    private function clearWorkspaceNodeCache(int $workspaceId): void
+    {
+        if ($this->requestCache instanceof WorkspaceRepositoryRequestCache) {
+            unset(
+                $this->requestCache->nodesByWorkspace[$workspaceId],
+                $this->requestCache->ancestorNodesByWorkspaceAndNode[$workspaceId],
+            );
+            foreach ($this->requestCache->nodesById as $nodeId => $node) {
+                if ($this->intValue($node['workspace_id'] ?? 0) === $workspaceId) {
+                    unset($this->requestCache->nodesById[$nodeId]);
+                }
+            }
+        }
+    }
+
+    /**
+     * HR: Pamti aktivni čvor po ID-u samo tijekom aktualnog zahtjeva.
+     * EN: Remembers an active node by ID only for the current request.
+     *
+     * @param array<string, mixed>|null $node
+     * @return array<string, mixed>|null
+     */
+    private function rememberNode(?array $node): ?array
+    {
+        if (!is_array($node) || !$this->requestCache instanceof WorkspaceRepositoryRequestCache) {
+            return $node;
+        }
+
+        $nodeId = $this->intValue($node['id'] ?? 0);
+        if ($nodeId > 0) {
+            $this->requestCache->nodesById[$nodeId] = $node;
+        }
+
+        return $node;
     }
 
     /**

@@ -32,7 +32,7 @@ use RuntimeException;
 use Throwable;
 
 use function array_key_exists;
-use function count;
+use function in_array;
 use function is_array;
 use function is_numeric;
 use function is_scalar;
@@ -103,7 +103,18 @@ final readonly class WorkspaceController
 
         $language = $this->language($request);
         $workspace = $this->presentations->one($workspace, $language);
-        $visibleTree = $this->access->visibleTree($workspace, null, $language);
+        $homepageCandidate = $this->repository->homepageNode(
+            $this->intValue($workspace['id'] ?? 0),
+        );
+        $homepageId = is_array($homepageCandidate)
+        ? $this->intValue($homepageCandidate['id'] ?? 0)
+        : 0;
+        $visibleTree = $this->access->visibleTreeWindowForLanguages(
+            $workspace,
+            null,
+            [$language],
+            $homepageId,
+        );
         $workflows = $this->repository->nodeWorkflowsForNodes(
             $this->treeNodeIds($visibleTree),
             $language,
@@ -113,9 +124,9 @@ final readonly class WorkspaceController
             $workspace,
             $workflows,
         );
-        $homepage = $this->homepageNode($tree);
+        $homepage = $homepageId > 0 ? $this->treeNodeById($tree, $homepageId) : null;
 
-        return $this->renderWorkspace($request, $workspace, $tree, $homepage);
+        return $this->renderWorkspace($request, $workspace, $tree, $homepage, $workflows);
     }
 
     /**
@@ -151,7 +162,12 @@ final readonly class WorkspaceController
             return $this->redirectLinkNode($node);
         }
 
-        $visibleTree = $this->access->visibleTree($workspace, null, $language);
+        $visibleTree = $this->access->visibleTreeWindowForLanguages(
+            $workspace,
+            null,
+            [$language],
+            $this->intValue($node['id'] ?? 0),
+        );
         $workflows = $this->repository->nodeWorkflowsForNodes(
             $this->treeNodeIds($visibleTree),
             $language,
@@ -162,7 +178,7 @@ final readonly class WorkspaceController
             $workflows,
         );
 
-        return $this->renderWorkspace($request, $workspace, $tree, $node);
+        return $this->renderWorkspace($request, $workspace, $tree, $node, $workflows);
     }
 
     /**
@@ -596,6 +612,139 @@ final readonly class WorkspaceController
                 '/workspaces/node/acl',
             ),
             'returnNodeId' => $this->intValue($query['return_node_id'] ?? 0),
+        ]);
+
+        return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
+     * HR: Učitava organizator cijelog stabla tek kada ga upravitelj otvori.
+     *     Velika područja tako ne šalju stotine skrivenih redaka i ikona pri
+     *     svakom običnom pregledu stranice.
+     *
+     * EN: Loads the full tree organizer only when a manager opens it. Large
+     *     workspaces therefore do not send hundreds of hidden rows and icons
+     *     with every regular page view.
+     */
+    public function treeOrganizer(ServerRequestInterface $request): ResponseInterface
+    {
+        $query = WorkspaceValue::stringKeyArray($request->getQueryParams());
+        $workspace = $this->workspaceFromInput($query);
+        if (!is_array($workspace)) {
+            return $this->responseFactory->html('', 404);
+        }
+
+        $workspacePermissions = $this->access->workspacePermissions($workspace);
+        if (!(bool)($workspacePermissions['can_manage'] ?? false)) {
+            return $this->responseFactory->html(
+                '<div class="alert alert-danger mb-0">'
+                . htmlspecialchars(
+                    __('Nemate potrebna prava za ovo područje ili stranicu.'),
+                    ENT_QUOTES,
+                    'UTF-8',
+                )
+                . '</div>',
+                403,
+            );
+        }
+
+        $workspaceId = $this->intValue($workspace['id'] ?? 0);
+        $managementNodes = [];
+        foreach ($this->repository->nodesForWorkspace($workspaceId) as $candidate) {
+            $permissions = $this->access->nodePermissions($workspace, $candidate);
+            if (!(bool)($permissions['can_view'] ?? false) || !(bool)($permissions['can_edit'] ?? false)) {
+                return $this->responseFactory->html(
+                    '<div class="alert alert-danger mb-0">'
+                    . htmlspecialchars(
+                        __('Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.'),
+                        ENT_QUOTES,
+                        'UTF-8',
+                    )
+                    . '</div>',
+                    403,
+                );
+            }
+
+            $candidate['permissions'] = $permissions;
+            $managementNodes[] = $candidate;
+        }
+
+        $html = $this->viewRenderer->renderPartial('workspace/tree-organizer', [
+            'workspace' => $workspace,
+            'nodes' => $this->orderNodesForManagement($managementNodes),
+            'activeNodeId' => $this->intValue($query['active_node_id'] ?? 0),
+            'treeOrderSavePath' => $this->pathFor(
+                'workspace.tree.order.save',
+                '/workspaces/tree/order',
+            ),
+            'nodeDialogPath' => $this->pathFor(
+                'workspace.node.dialog',
+                '/workspaces/node/dialog',
+            ),
+            'nodeSavePath' => $this->pathFor(
+                'workspace.node.save',
+                '/workspaces/node/save',
+            ),
+            'editorAvailable' => $this->editor->isAvailable(),
+            'editorDocuments' => $this->access->isAdministrator()
+                ? $this->editor->documents($this->language($request))
+                : [],
+            'canAttachExistingDocuments' => $this->access->isAdministrator(),
+            'workspaceCanAdd' => (bool)($workspacePermissions['can_add'] ?? false),
+        ]);
+
+        return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
+     * HR: Učitava jednu ACL-filtriranu granu čitljivog stabla na zahtjev.
+     *     Velika područja zato pri svakom pregledu ne šalju cijelo skriveno
+     *     stablo, dok aktivna grana i spremljene otvorene grane ostaju dostupne.
+     *
+     * EN: Loads one ACL-filtered readable-tree branch on demand. Large
+     *     Workspaces therefore do not send the complete hidden tree with every
+     *     page view while the active and remembered expanded branches remain
+     *     available.
+     */
+    public function treeBranch(ServerRequestInterface $request): ResponseInterface
+    {
+        $query = WorkspaceValue::stringKeyArray($request->getQueryParams());
+        $workspace = $this->workspaceFromInput($query);
+        if (!is_array($workspace)) {
+            return $this->responseFactory->html('', 404, ['Cache-Control' => 'no-store']);
+        }
+
+        $workspacePermissions = $this->access->workspacePermissions($workspace);
+        if (!(bool)($workspacePermissions['can_view'] ?? false)) {
+            return $this->responseFactory->html('', 403, ['Cache-Control' => 'no-store']);
+        }
+
+        $language = $this->language($request);
+        $workspace = $this->presentations->one($workspace, $language);
+        $parentId = $this->intValue($query['parent_id'] ?? 0);
+        if ($parentId <= 0) {
+            return $this->responseFactory->html('', 404, ['Cache-Control' => 'no-store']);
+        }
+
+        $visibleTree = $this->access->visibleTreeBranchForLanguages(
+            $workspace,
+            null,
+            [$language],
+            $parentId,
+        );
+        $workflows = $this->repository->nodeWorkflowsForNodes(
+            $this->treeNodeIds($visibleTree),
+            $language,
+        );
+        $children = $this->decorateTree($visibleTree, $workspace, $workflows);
+        $activeNodeId = $this->intValue($query['active_node_id'] ?? 0);
+        $html = $this->viewRenderer->renderPartial('workspace/tree', [
+            'nodes' => $children,
+            'activeNodeId' => $activeNodeId > 0 ? $activeNodeId : null,
+            'level' => max(2, $this->intValue($query['level'] ?? 2)),
+            'treeBranchPath' => $this->pathFor('workspace.tree.branch', '/workspaces/tree/branch'),
+            'workspaceId' => $this->intValue($workspace['id'] ?? 0),
+            'language' => $language,
         ]);
 
         return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
@@ -1111,12 +1260,14 @@ final readonly class WorkspaceController
      * @param array<string, mixed> $workspace
      * @param list<array<string, mixed>> $tree
      * @param array<string, mixed>|null $node
+     * @param array<int, array<string, mixed>> $workflows
      */
     private function renderWorkspace(
         ServerRequestInterface $request,
         array $workspace,
         array $tree,
         ?array $node,
+        array $workflows,
     ): ResponseInterface {
         $workspacePermissions = $this->access->workspacePermissions($workspace);
         if (!$workspacePermissions['can_view']) {
@@ -1223,32 +1374,24 @@ final readonly class WorkspaceController
          *     global order because hidden nodes could otherwise be displaced.
          */
         $workspaceId = $this->intValue($workspace['id'] ?? 0);
-        $allNodes = $this->repository->nodesForWorkspace($workspaceId);
-        $allWorkflows = $this->repository->nodeWorkflowsForNodes(
-            array_values(array_map(
-                fn(array $candidate): int => $this->intValue($candidate['id'] ?? 0),
-                $allNodes,
-            )),
-            $language,
-        );
-        $allNodePermissions = $this->access->nodePermissionsForNodes($workspace, $allNodes);
-        $managementNodes = [];
+        $visibleNodes = $this->flattenTree($tree);
         $reviewQueue = [];
         $unpublishedPages = [];
         $canOrganizeTree = (bool)($workspacePermissions['can_manage'] ?? false);
-        foreach ($allNodes as $candidate) {
+
+        foreach ($visibleNodes as $candidate) {
             $candidateId = $this->intValue($candidate['id'] ?? 0);
-            $candidatePermissions = $allNodePermissions[$candidateId] ?? $workspacePermissions;
+            $candidatePermissions = $this->permissionArray(
+                WorkspaceValue::stringKeyArray($candidate['permissions'] ?? null),
+            );
             if (!$candidatePermissions['can_view']) {
                 $canOrganizeTree = false;
                 continue;
             }
 
-            $candidate['permissions'] = $candidatePermissions;
-            $managementNodes[] = $candidate;
             $canOrganizeTree = $canOrganizeTree && (bool)($candidatePermissions['can_edit'] ?? false);
 
-            $candidateWorkflow = $allWorkflows[$candidateId] ?? null;
+            $candidateWorkflow = $workflows[$candidateId] ?? null;
             $candidateStatus = is_array($candidateWorkflow)
             ? $this->stringValue($candidateWorkflow['status'] ?? '')
             : '';
@@ -1291,9 +1434,6 @@ final readonly class WorkspaceController
             }
         }
 
-        $canOrganizeTree = $canOrganizeTree && count($managementNodes) === count($allNodes);
-        $managementNodes = $this->orderNodesForManagement($managementNodes);
-
         $this->contentViewed($workspace, $node, $contentLanguage);
 
         $currentTitle = is_array($editorView)
@@ -1330,6 +1470,10 @@ final readonly class WorkspaceController
         && (bool)($nodePermissions['can_add'] ?? false)
         ? $this->intValue($node['id'] ?? 0)
         : 0;
+        $activeNodeId = is_array($node) ? $this->intValue($node['id'] ?? 0) : 0;
+        $activeTreePath = $this->treePathToNode($tree, $activeNodeId);
+        $readableTree = $this->pruneReadableTree($tree, $activeTreePath, true);
+
         return $this->viewRenderer->render('workspace/show', [
             'title' => is_array($editorView)
                 ? $this->stringValue($editorView['title'] ?? '')
@@ -1337,7 +1481,7 @@ final readonly class WorkspaceController
             'themeTitleContext' => 'integrated',
             'workspace' => $workspace,
             'workspacePermissions' => $workspacePermissions,
-            'tree' => $tree,
+            'tree' => $readableTree,
             'activeNode' => $node,
             'editorView' => $editorView,
             'workflow' => $workflowView,
@@ -1361,7 +1505,6 @@ final readonly class WorkspaceController
             'canCreatePage' => (bool)($workspacePermissions['can_add'] ?? false)
                 && $this->editor->isAvailable(),
             'canOrganizeTree' => $canOrganizeTree,
-            'managementNodes' => $managementNodes,
             'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
             'nodeDialogPath' => $this->pathFor(
                 'workspace.node.dialog',
@@ -1371,11 +1514,14 @@ final readonly class WorkspaceController
                 'workspace.tree.order.save',
                 '/workspaces/tree/order',
             ),
-            'editorAvailable' => $this->editor->isAvailable(),
-            'editorDocuments' => $this->access->isAdministrator()
-                ? $this->editor->documents($language)
-                : [],
-            'canAttachExistingDocuments' => $this->access->isAdministrator(),
+            'treeOrganizerPath' => $this->pathFor(
+                'workspace.tree.organizer',
+                '/workspaces/tree/organizer',
+            ),
+            'treeBranchPath' => $this->pathFor(
+                'workspace.tree.branch',
+                '/workspaces/tree/branch',
+            ),
             'fallbackLeadingActions' => $this->documentLeadingActions(
                 $workspace,
                 $node,
@@ -1776,6 +1922,133 @@ final readonly class WorkspaceController
     }
 
     /**
+     * HR: Pronalazi čvor po ID-u u već ACL-filtriranom stablu.
+     * EN: Finds a node by ID in an already ACL-filtered tree.
+     *
+     * @param list<array<string, mixed>> $tree
+     * @return array<string, mixed>|null
+     */
+    private function treeNodeById(array $tree, int $nodeId): ?array
+    {
+        if ($nodeId <= 0) {
+            return null;
+        }
+
+        foreach ($tree as $node) {
+            if ($this->intValue($node['id'] ?? 0) === $nodeId) {
+                return $node;
+            }
+
+            $found = $this->treeNodeById(WorkspaceValue::rows($node['children'] ?? null), $nodeId);
+            if (is_array($found)) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * HR: Vraća ID-eve puta od korijena do odabranog čvora.
+     * EN: Returns the IDs on the path from a root to the selected node.
+     *
+     * @param list<array<string, mixed>> $tree
+     * @return list<int>
+     */
+    private function treePathToNode(array $tree, int $nodeId): array
+    {
+        if ($nodeId <= 0) {
+            return [];
+        }
+
+        foreach ($tree as $node) {
+            $candidateId = $this->intValue($node['id'] ?? 0);
+            if ($candidateId === $nodeId) {
+                return [$candidateId];
+            }
+
+            $childPath = $this->treePathToNode(
+                WorkspaceValue::rows($node['children'] ?? null),
+                $nodeId,
+            );
+            if ($childPath !== []) {
+                return [$candidateId, ...$childPath];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * HR: Zadržava korijenske stavke, prvu vidljivu razinu i cijeli aktivni
+     *     put, a ostale potomke označava za naknadno učitavanje. Time mali
+     *     početni HTML ostaje semantički jednak punom stablu.
+     *
+     * EN: Keeps root items, the first visible level, and the complete active
+     *     path while marking other descendants for on-demand loading. This
+     *     keeps the small initial HTML semantically equivalent to the full tree.
+     *
+     * @param list<array<string, mixed>> $tree
+     * @param list<int> $activePath
+     * @return list<array<string, mixed>>
+     */
+    private function pruneReadableTree(array $tree, array $activePath, bool $rootLevel): array
+    {
+        foreach ($tree as &$node) {
+            $children = WorkspaceValue::rows($node['children'] ?? null);
+            $nodeId = $this->intValue($node['id'] ?? 0);
+            /*
+             * HR: Ciljani repozitorijski prozor već zna ima li čvor još
+             *     neučitanih potomaka. Ne smijemo tu oznaku svesti samo na
+             *     trenutno prisutne retke jer bi udaljene grane izgubile gumb
+             *     za naknadno otvaranje.
+             * EN: The targeted repository window already knows whether a node
+             *     has unloaded descendants. Do not reduce that marker to only
+             *     the rows currently present, otherwise remote branches lose
+             *     their on-demand expansion control.
+             */
+            $node['has_children'] = (bool)($node['has_children'] ?? ($children !== []));
+            $loadChildren = $rootLevel || in_array($nodeId, $activePath, true);
+            $node['children_loaded'] = !$node['has_children'] || $loadChildren;
+            $node['children'] = $loadChildren
+            ? $this->pruneReadableTree($children, $activePath, false)
+            : [];
+        }
+
+        unset($node);
+
+        return $tree;
+    }
+
+    /**
+     * HR: Pretvara već ACL-filtrirano stablo u ravni popis bez ponovnog upita
+     *     prema repozitoriju. Pregled stranice tako isti skup podataka koristi
+     *     za red čekanja, nacrte i provjeru organizatora stabla.
+     *
+     * EN: Flattens an already ACL-filtered tree without querying the repository
+     *     again. The page view can then reuse the same data set for the review
+     *     queue, drafts, and the tree-organizer permission check.
+     *
+     * @param list<array<string, mixed>> $tree
+     * @return list<array<string, mixed>>
+     */
+    private function flattenTree(array $tree): array
+    {
+        $nodes = [];
+        foreach ($tree as $node) {
+            $children = WorkspaceValue::rows($node['children'] ?? null);
+            unset($node['children']);
+            $nodes[] = $node;
+
+            foreach ($this->flattenTree($children) as $child) {
+                $nodes[] = $child;
+            }
+        }
+
+        return $nodes;
+    }
+
+    /**
      * HR: Rekurzivno prikuplja ID-eve vidljivog stabla za jedan grupni workflow upit.
      * EN: Recursively collects visible-tree IDs for one batched workflow query.
      *
@@ -1991,30 +2264,6 @@ final readonly class WorkspaceController
         }
 
         return $basePath . $target;
-    }
-
-    /**
-     * HR: Pronalazi označenu početnu stranicu u ugniježđenom stablu.
-     * EN: Finds the designated homepage in a nested tree.
-     *
-     * @param list<array<string, mixed>> $tree
-     * @return array<string, mixed>|null
-     */
-    private function homepageNode(array $tree): ?array
-    {
-        foreach ($tree as $node) {
-            if ((bool)($node['is_homepage'] ?? false)) {
-                return $node;
-            }
-
-            $children = WorkspaceValue::rows($node['children'] ?? null);
-            $found = $this->homepageNode($children);
-            if (is_array($found)) {
-                return $found;
-            }
-        }
-
-        return null;
     }
 
     /**

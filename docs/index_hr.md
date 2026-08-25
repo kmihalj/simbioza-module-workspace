@@ -174,6 +174,10 @@ se raspored sprema jednom atomskom ORM transakcijom. Repository prije prvog
 zapisa provjerava da su poslani svi aktivni čvorovi, da su roditelji
 dokument-stranice i da nema ciklusa.
 
+Cijeli organizator, popis dostupnih dokumenata i obrazac za dodavanje učitavaju
+se tek pri prvom kliku na ikonu. Običan pregled zato ne šalje veliki skriveni
+HTML obrazac, što bitno smanjuje odgovor kod uvezenih područja s mnogo stranica.
+
 Mala edit ikona uz stavku otvara Bootstrap modal s naslovom, slugom, vrstom,
 ciljem, nasljednim ograničenjima i brisanjem. Obrazac se učitava na zahtjev pa
 velika stabla ne stvaraju stotine skrivenih formi. Gumb na dnu organizatora
@@ -547,7 +551,10 @@ Navigacijska putanja nalazi se iznad cijelog rasporeda pa stablo, poseban lijevi
 meni, sadržaj stranice i tablica sadržaja ostaju u istoj ravnini. Preuzima
 kontrastne boje teksta hero elementa, a tema ih po potrebi može zasebno
 nadjačati kroz `--hph-workspace-breadcrumb-text` i
-`--hph-workspace-breadcrumb-link`. Povratne poveznice koriste iste kartične,
+`--hph-workspace-breadcrumb-link`, dok se prilagodljiva veličina teksta može
+nadjačati kroz `--hph-workspace-breadcrumb-font-size`. Na desktopu se duga
+hijerarhija skraćuje unutar širine sadržaja kako ne bi prekrivala kartice; puni
+nazivi ostaju dostupni prelaskom pokazivača. Povratne poveznice koriste iste kartične,
 rubne, link i prigušene vrijednosti kao ostale tematske kartice. Bez Theme
 modula obje komponente koriste Bootstrap vrijednosti.
 
@@ -770,6 +777,13 @@ koristi, pa fizička datoteka ne mora odmah postati manja. `VACUUM`, `OPTIMIZE`
 ili slična administratorska operacija ovisi o SQLiteu, PostgreSQL-u ili MySQL-u
 i zato se ne pokreće automatski iz prijenosnog Workspace modula.
 
+Na istoj stranici administrator može pokrenuti **Optimiziraj postojeće slike**.
+HTML Editor tada izrađuje nedostajuće, smanjene WebP kopije slika za prikaz na
+webu. Izvorne datoteke ne mijenjaju se i ostaju dostupne klikom na prikazanu
+sliku. Isti se postupak automatski primjenjuje pri objavi dokumenta i nakon
+Confluence uvoza, dok ručna radnja pokriva sadržaj koji je postojao prije
+uključivanja optimizacije ili čija je izvedena kopija uklonjena.
+
 Soft-obrisano područje administrator može vratiti ili trajno izbrisati na
 stranicama **Obrisana područja** i **Održavanje**. Trajno brisanje zahtijeva
 ponovni unos točnog sluga. Uklanjaju se Workspace stablo, ACL, workflowi,
@@ -820,3 +834,9 @@ pregledu uz aktualni Workspace i page ACL. Web API vraća isti renderirani HTML,
 a HTML izvoz prerenderira read-only rezultat. Backup čuva konfiguraciju bloka u
 verziji dokumenta te zasebno čuva oznake i svojstva, pa restore ne gubi
 dinamičko ponašanje.
+
+Stranica koja nema nativni dinamički blok ne pokreće njegove upite. Izvještaj
+filtriran oznakom skupno provjerava ACL i workflow samo stranica s tom oznakom,
+a preklapajući blokovi tijekom istog HTTP zahtjeva dijele već provjerene
+rezultate. Izvještaj bez oznake i blok nedavnih promjena namjerno obrađuju cijelo
+područje jer njihov rezultat semantički obuhvaća sve njegove stranice.

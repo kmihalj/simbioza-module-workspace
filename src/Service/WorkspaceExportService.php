@@ -16,6 +16,7 @@ use function array_merge;
 use function array_unique;
 use function array_values;
 use function class_exists;
+use function count;
 use function date;
 use function file_get_contents;
 use function htmlspecialchars;
@@ -26,7 +27,9 @@ use function json_encode;
 use function max;
 use function number_format;
 use function preg_replace;
+use function preg_split;
 use function rawurlencode;
+use function strlen;
 use function strtolower;
 use function strtoupper;
 use function sys_get_temp_dir;
@@ -40,6 +43,7 @@ use const JSON_PRETTY_PRINT;
 use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
 use const JSON_UNESCAPED_UNICODE;
+use const PREG_SPLIT_NO_EMPTY;
 
 /**
  * HR: Gradi samostalnu, ACL-filtriranu offline aplikaciju jednog područja.
@@ -722,8 +726,26 @@ final readonly class WorkspaceExportService
     {
         return '<section class="hph-hero hph-hero--medium hph-hero--with-text"><div class="hph-hero__stage">'
         . '<div class="container-fluid hph-container-wide px-4 hph-hero__text-frame"><div class="hph-hero__content">'
-        . '<h1 class="hph-hero__title">' . $this->escape($title) . '</h1>'
+        . '<h1 class="hph-hero__title ' . $this->heroTitleLengthClass($title) . '">'
+        . $this->escape($title) . '</h1>'
         . $exportNote . '</div></div></div></section>';
+    }
+
+    /**
+     * HR: Odabire isti profil duljine hero naslova koji koristi Theme modul.
+     * EN: Selects the same hero-title length profile used by the Theme module.
+     */
+    private function heroTitleLengthClass(string $title): string
+    {
+        $characters = preg_split('//u', trim($title), -1, PREG_SPLIT_NO_EMPTY);
+        $length = is_array($characters) ? count($characters) : strlen($title);
+
+        return match (true) {
+            $length > 140 => 'hph-hero__title--extreme',
+            $length > 96 => 'hph-hero__title--very-long',
+            $length > 60 => 'hph-hero__title--long',
+            default => 'hph-hero__title--regular',
+        };
     }
 
     /**
@@ -1435,6 +1457,26 @@ CSS;
         }
     }
 
+    /**
+     * HR: Nakon promjene stranice obnavlja profil duljine i tekst hero naslova.
+     * EN: After a page change, refreshes the hero-title length profile and text.
+     */
+    function applyHeroTitleProfile(heroTitle, title) {
+        const profiles = [
+            'hph-hero__title--regular',
+            'hph-hero__title--long',
+            'hph-hero__title--very-long',
+            'hph-hero__title--extreme',
+        ];
+        const length = Array.from(title.trim()).length;
+        const profile = length > 140
+            ? profiles[3]
+            : (length > 96 ? profiles[2] : (length > 60 ? profiles[1] : profiles[0]));
+        heroTitle.classList.remove(...profiles);
+        heroTitle.classList.add(profile);
+        heroTitle.textContent = title;
+    }
+
     function syncToggleState() {
         document.querySelectorAll('[data-export-toggle]').forEach((button) => {
             const targetName = button.dataset.exportToggle;
@@ -1465,7 +1507,7 @@ CSS;
         }
 
         const heroTitle = document.querySelector('.hph-hero__title');
-        if (heroTitle) heroTitle.textContent = title;
+        if (heroTitle) applyHeroTitleProfile(heroTitle, title);
         document.title = `Simbioza - ${title}`;
         currentPage = Number(pageId);
         currentLanguage = language;

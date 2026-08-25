@@ -23,6 +23,9 @@ final readonly class WorkspaceMaintenanceBridge
 {
     private const SERVICE = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorMaintenanceService';
 
+    private const IMAGE_VARIANT_SERVICE
+    = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorImageVariantService';
+
     /** HR: Prima spremnik za opcionalno razrješavanje Editor servisa. EN: Receives the container for optional Editor-service resolution. */
     public function __construct(private ContainerInterface $container)
     {
@@ -110,6 +113,37 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
+     * HR: Izrađuje nedostajuće web-varijante svih postojećih slika bez
+     *     mijenjanja ili uklanjanja izvornih datoteka.
+     * EN: Creates missing web variants for all existing images without
+     *     changing or removing the source files.
+     *
+     * @return array{documents: int, generated: int, skipped: int}|array{}
+     */
+    public function optimizeImages(): array
+    {
+        $service = $this->optionalService(self::IMAGE_VARIANT_SERVICE);
+        if (!is_object($service) || !method_exists($service, 'prewarmAllDocuments')) {
+            return [];
+        }
+
+        try {
+            $result = $service->prewarmAllDocuments();
+            if (!is_array($result)) {
+                return [];
+            }
+
+            return [
+                'documents' => is_int($result['documents'] ?? null) ? $result['documents'] : 0,
+                'generated' => is_int($result['generated'] ?? null) ? $result['generated'] : 0,
+                'skipped' => is_int($result['skipped'] ?? null) ? $result['skipped'] : 0,
+            ];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * HR: Normalizira dinamički rezultat opcionalnog servisa u strogi statistički oblik.
      * EN: Normalizes an optional service's dynamic result into a strict statistics shape.
      *
@@ -166,8 +200,17 @@ final readonly class WorkspaceMaintenanceBridge
      */
     private function service(): ?object
     {
+        return $this->optionalService(self::SERVICE);
+    }
+
+    /**
+     * HR: Sigurno razrješava opcionalni servis po nazivu klase.
+     * EN: Safely resolves an optional service by its class name.
+     */
+    private function optionalService(string $serviceClass): ?object
+    {
         try {
-            $service = $this->container->get(self::SERVICE);
+            $service = $this->container->get($serviceClass);
             return is_object($service) ? $service : null;
         } catch (Throwable) {
             return null;

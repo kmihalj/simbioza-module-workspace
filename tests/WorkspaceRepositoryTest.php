@@ -6,10 +6,12 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
+use AaiEduHr\HeartPhrameModuleOrm\Database\QueryExecuted;
 use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
 use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepositoryRequestCache;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
@@ -24,6 +26,78 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceRepositoryTest extends TestCase
 {
+    /**
+     * HR: Pronalaženje po slugu puni request cache po ID-u, a promjena ga odmah poništava.
+     * EN: A slug lookup primes the request cache by ID, and a mutation invalidates it immediately.
+     */
+    public function testNodeRequestCacheAvoidsRepeatedReadsAndInvalidatesAfterMutation(): void
+    {
+        $database = $this->database();
+        $repository = new WorkspaceRepository(
+            $database,
+            requestCache: new WorkspaceRepositoryRequestCache(),
+        );
+        $now = '2026-08-25 16:00:00';
+        $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+            'id' => 1,
+            'uuid' => '10000000-0000-4000-8000-000000000001',
+            'slug' => 'cache',
+            'name' => 'Cache',
+            'visibility' => 'public',
+            'owner_user_id' => 1,
+            'is_archived' => false,
+            'is_deleted' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)->insert([
+            'id' => 1,
+            'uuid' => '10000000-0000-4000-8000-000000000002',
+            'workspace_id' => 1,
+            'node_type' => 'document',
+            'slug' => 'page',
+            'title' => 'Page',
+            'document_key' => 'page',
+            'sort_order' => 100,
+            'is_homepage' => true,
+            'is_enabled' => true,
+            'contents_visibility' => 'inherit',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $nodeSelects = 0;
+        $ancestorSelects = 0;
+        $database->listen(static function (QueryExecuted $query) use (&$nodeSelects, &$ancestorSelects): void {
+            if (str_starts_with($query->sql, 'SELECT * FROM "workspace_nodes"')) {
+                ++$nodeSelects;
+            }
+
+            if (
+                str_contains($query->sql, '"workspace_id" = ?')
+                && str_contains($query->sql, '"id" = ?')
+            ) {
+                ++$ancestorSelects;
+            }
+        });
+
+        $this->assertIsArray($repository->findNodeBySlug(1, 'page'));
+        $this->assertIsArray($repository->findNodeById(1));
+        $this->assertIsArray($repository->findNodeById(1));
+        $this->assertSame(1, $nodeSelects);
+        $this->assertCount(1, $repository->ancestorNodes(1, 1));
+        $this->assertCount(1, $repository->ancestorNodes(1, 1));
+        $this->assertSame(1, $ancestorSelects);
+
+        $repository->updateNodeContentsVisibility(1, 'shown', 1);
+        $updated = $repository->findNodeById(1);
+        $this->assertIsArray($updated);
+        $this->assertSame('shown', $updated['contents_visibility']);
+        $this->assertCount(1, $repository->ancestorNodes(1, 1));
+        $this->assertSame(4, $nodeSelects);
+        $this->assertSame(2, $ancestorSelects);
+    }
+
     /**
      * HR: Dokazuje da se trajno može ukloniti samo soft-obrisano područje te
      *     da svi Workspace odnosi nestaju bez diranja drugih područja.

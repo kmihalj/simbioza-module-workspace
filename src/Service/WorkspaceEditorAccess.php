@@ -100,6 +100,130 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
+     *     za trenutačnog korisnika. Rezultat izričito razlikuje samostalni
+     *     dokument od Workspace dokumenta kojem je pristup odbijen.
+     * EN: Batch-checks ownership and read access for a list of Editor documents
+     *     for the current user. The result explicitly distinguishes a standalone
+     *     document from a Workspace document whose access was denied.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string, array{owned: bool, can_read: bool}>
+     */
+    public function documentReadAccessMap(array $documentKeys): array
+    {
+        $user = $this->access->currentUser();
+
+        return $this->documentReadAccessMapForUser(
+            $documentKeys,
+            is_array($user) ? $user : [],
+        );
+    }
+
+    /**
+     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
+     *     za eksplicitno zadanog API korisnika. Čvorovi, područja i ACL zapisi
+     *     učitavaju se paketno kako veliki birači ne bi stvarali N+1 upite.
+     * EN: Batch-checks ownership and read access for a list of Editor documents
+     *     for an explicit API user. Nodes, workspaces, and ACL rows are loaded
+     *     in batches so large pickers do not create N+1 queries.
+     *
+     * @param list<string> $documentKeys
+     * @param array<string,mixed> $user
+     * @return array<string, array{owned: bool, can_read: bool}>
+     */
+    public function documentReadAccessMapForUser(array $documentKeys, array $user): array
+    {
+        $normalizedKeys = [];
+        foreach ($documentKeys as $documentKey) {
+            /*
+             * HR: Uvezeni dokument može imati brojčanu oznaku koju PHP kao ključ
+             *     polja pretvara u cijeli broj; ovdje je vraćamo u tekst.
+             * EN: An imported document may have a numeric key which PHP casts to
+             *     an integer array key; normalize it back to text here.
+             */
+            $documentKey = trim((string)$documentKey);
+            if ($documentKey !== '') {
+                $normalizedKeys[$documentKey] = true;
+            }
+        }
+
+        $result = [];
+        foreach (array_keys($normalizedKeys) as $documentKey) {
+            $result[$documentKey] = ['owned' => false, 'can_read' => false];
+        }
+
+        if ($result === []) {
+            return [];
+        }
+
+        $contexts = $this->repository->documentContextsByKeys(array_keys($result));
+        $workspacesById = [];
+        $documentNodesByWorkspace = [];
+        foreach ($contexts as $documentKey => $context) {
+            $node = $context['node'] ?? null;
+            $workspace = $context['workspace'] ?? null;
+            if (!is_array($node)) {
+                continue;
+            }
+
+            if (!is_array($workspace)) {
+                continue;
+            }
+
+            $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            if ($workspaceId <= 0) {
+                continue;
+            }
+
+            if ($nodeId <= 0) {
+                continue;
+            }
+
+            $this->documentContextCache[$documentKey] = $context;
+            $workspacesById[$workspaceId] = $workspace;
+            $documentNodesByWorkspace[$workspaceId][$documentKey] = $node;
+            $result[$documentKey] = [
+                'owned' => true,
+                'can_read' => $result[$documentKey]['can_read'],
+            ];
+        }
+
+        $userId = WorkspaceValue::int($user['id'] ?? 0);
+        $isAdministrator = $this->access->isAdministrator($user);
+        foreach ($documentNodesByWorkspace as $workspaceId => $documentNodes) {
+            $workspace = $workspacesById[$workspaceId];
+
+            /*
+             * HR: Cijelo stablo potrebno je za naslijeđena ograničenja roditelja.
+             *     Repository ga učitava jednom po području, ne jednom po dokumentu.
+             * EN: The complete tree is required for inherited parent restrictions.
+             *     The repository loads it once per workspace, not once per document.
+             */
+            $allNodes = $this->repository->nodesForWorkspace($workspaceId);
+            $permissionsByNode = $this->access->nodePermissionsForNodes(
+                $workspace,
+                $allNodes,
+                $user,
+            );
+
+            foreach ($documentNodes as $documentKey => $node) {
+                $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+                $permissions = $permissionsByNode[$nodeId] ?? [];
+                $result[$documentKey] = [
+                    'owned' => $result[$documentKey]['owned'],
+                    'can_read' => (bool)($permissions['can_view'] ?? false),
+                ];
+                $cacheKey = $documentKey . '|' . $userId . '|' . (int)$isAdministrator;
+                $this->documentPermissionCache[$cacheKey] = $permissions;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * HR: Provjerava nasljedno pravo uređivanja editor dokumenta.
      * EN: Checks inherited edit permission for an editor document.
      */

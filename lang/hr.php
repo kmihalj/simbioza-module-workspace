@@ -678,6 +678,14 @@ return [
     'Razumijem da je čišćenje nepovratno i da sadržaj mogu vratiti samo iz backupa.' =>
         'Razumijem da je čišćenje nepovratno i da sadržaj mogu vratiti samo iz backupa.',
     'Pokreni održavanje' => 'Pokreni održavanje',
+    'Optimizacija slika' => 'Optimizacija slika',
+    'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.' =>
+        'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.',
+    'Optimiziraj postojeće slike' => 'Optimiziraj postojeće slike',
+    'HTML Editor nije dostupan pa optimizacija slika nije moguća.' =>
+        'HTML Editor nije dostupan pa optimizacija slika nije moguća.',
+    'Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.' =>
+        'Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.',
     'Broj sačuvanih verzija' => 'Broj sačuvanih verzija',
     'Starost u danima' => 'Starost u danima',
     'Ukupno' => 'Ukupno',
@@ -729,4 +737,11 @@ return [
     'Svojstva stranice' => 'Svojstva stranice',
     'Naziv svojstva' => 'Naziv svojstva',
     'Vrsta' => 'Vrsta',
+    'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.' =>
+        'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.',
+    'Organizator stabla nije moguće učitati.' =>
+        'Organizator stabla nije moguće učitati.',
+    'Učitavanje grane stabla…' => 'Učitavanje grane stabla…',
+    'Granu stabla nije moguće učitati.' =>
+        'Granu stabla nije moguće učitati.',
 ];

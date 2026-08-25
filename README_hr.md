@@ -97,6 +97,8 @@ Obrisani dokumenti nisu odmah fizički uklonjeni: administrator ih može vratiti
 sve dok ih izričito ne ukloni kroz **Postavke → Područja → Održavanje** nakon
 odabranog razdoblja čuvanja. Detalji i sigurnosna pravila opisani su u
 [dokumentaciji održavanja](docs/index_hr.md#13-održavanje-prostora).
+Na istoj stranici radnja **Optimiziraj postojeće slike** izrađuje nedostajuće
+smanjene kopije za web-prikaz, bez mijenjanja izvornih datoteka.
 
 ## Preduvjeti
 

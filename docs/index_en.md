@@ -179,6 +179,11 @@ and the complete arrangement is saved by one atomic ORM transaction. Before
 the first write, the repository verifies that every active node is present,
 all parents are document pages, and the resulting tree contains no cycle.
 
+The complete organizer, available-document list, and add-item form load only
+after the first click on its icon. A normal page view therefore does not ship a
+large hidden HTML form, substantially reducing responses for imported
+Workspaces with many pages.
+
 A small edit icon beside an item opens a Bootstrap modal with title, slug,
 type, target, inherited restrictions, and deletion. The form is loaded on
 demand so large trees do not create hundreds of hidden forms. The organizer
@@ -556,7 +561,11 @@ reference or newly restricted page is never disclosed.
 The breadcrumb sits above the complete layout, so the page tree, route-specific
 left menu, page content, and table of contents remain aligned. It inherits the
 contrasting hero text colors; a theme may override them specifically through
-`--hph-workspace-breadcrumb-text` and `--hph-workspace-breadcrumb-link`.
+`--hph-workspace-breadcrumb-text` and `--hph-workspace-breadcrumb-link`, while
+the responsive text size can be overridden with
+`--hph-workspace-breadcrumb-font-size`. On desktop, long hierarchies are
+truncated within the content width so they cannot cover the cards; full labels
+remain available on hover.
 Backlinks use the same themed card, border, link, and muted-text values as other
 cards. Both components fall back to Bootstrap values when Theme is not
 installed.
@@ -782,6 +791,13 @@ file may not shrink immediately. `VACUUM`, `OPTIMIZE`, and equivalent
 administrator operations differ across SQLite, PostgreSQL, and MySQL and are
 therefore not run automatically by the portable Workspace module.
 
+The same page provides **Optimize existing images**. The HTML Editor creates
+missing, reduced WebP display copies for the web without changing the source
+files; opening the displayed image still reaches its original. The same process
+runs automatically when a document is published and after a Confluence import.
+The manual action covers content that predates image optimization or whose
+derived display copy has been removed.
+
 An administrator can restore or permanently delete a soft-deleted Workspace
 from **Deleted Workspaces** and **Maintenance**. Permanent deletion requires
 re-entering the exact Workspace slug. Workspace tree rows, ACL, workflows, the
@@ -831,3 +847,10 @@ view under the current Workspace and page ACL. The web API returns the same
 rendered HTML, while HTML export pre-renders a read-only result. Backup keeps
 the block configuration inside the document version and stores labels and
 properties separately, so restore preserves the dynamic behavior.
+
+A page without a native dynamic block does not execute any dynamic-block
+queries. A label-filtered report batch-checks ACL and workflow only for pages
+carrying that label, and overlapping blocks share already checked results for
+the current HTTP request. An unfiltered report and the recent-changes block
+intentionally process the whole Workspace because their result semantically
+covers all of its pages.

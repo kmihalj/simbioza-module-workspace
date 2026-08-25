@@ -14,6 +14,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var list<array<string, mixed>> $workspaces
  * @var list<array<string, mixed>> $deletedWorkspaces
  * @var string $runPath
+ * @var string $imageOptimizePath
  * @var string $purgePath
  * @var string $settingsPath
  * @var string $homepagePath
@@ -185,6 +186,30 @@ $ageDaysLabelJson = json_encode(__('Starost u danima'), $jsonFlags);
                         <?php endforeach; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-lg">
+                        <h2 class="h4 mb-1"><?= $tr('Optimizacija slika') ?></h2>
+                        <p class="text-body-secondary mb-0">
+                            <?= $tr(
+                                'Izradite smanjene web-kopije postojećih slika. '
+                                . 'Originali ostaju sačuvani i dostupni otvaranjem slike.',
+                            ) ?>
+                        </p>
+                    </div>
+                    <div class="col-12 col-lg-auto">
+                        <form method="post" action="<?= $this->escape($imageOptimizePath) ?>">
+                            <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
+                            <button class="btn btn-primary" type="submit">
+                                <?= $tr('Optimiziraj postojeće slike') ?>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>

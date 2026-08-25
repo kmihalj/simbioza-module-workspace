@@ -284,7 +284,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertIsString($manageView);
         $this->assertIsString($workspaceScript);
         $this->assertStringContainsString('data-workspace-tree-edit-toggle', $workspaceView);
-        $this->assertStringContainsString("'workspace/tree-organizer'", $workspaceView);
+        $this->assertStringContainsString('data-workspace-tree-editor-url', $workspaceView);
+        $this->assertStringContainsString('$treeOrganizerPath', $workspaceView);
+        $this->assertStringContainsString('data-workspace-lazy-modal', $workspaceScript);
         $this->assertStringContainsString('data-workspace-node-editor-modal', $workspaceView);
         $this->assertStringContainsString('initializeModalPortals', $workspaceScript);
         $this->assertStringContainsString(
@@ -314,6 +316,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertIsString($css);
         $this->assertStringContainsString('data-workspace-tree-branch-toggle', $tree);
         $this->assertStringContainsString('data-workspace-tree-branch', $tree);
+        $this->assertStringContainsString('data-workspace-tree-branch-url', $tree);
+        $this->assertStringContainsString('loadBranch', $javascript);
+        $this->assertStringContainsString('window.fetch', $javascript);
         $this->assertStringContainsString('$level === 1 || $containsActiveChild', $tree);
         $this->assertStringContainsString('aria-current="page"', $tree);
         $this->assertStringNotContainsString('data-workspace-tree-branch-toggle', $organizer);
@@ -327,6 +332,10 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('workspaceTreeKey', $javascript);
         $this->assertStringContainsString('window.sessionStorage', $javascript);
         $this->assertStringContainsString('persistExpandedBranches', $javascript);
+        $this->assertStringContainsString('heartphrame.workspace.tree.scroll.v1', $javascript);
+        $this->assertStringContainsString('persistTreeScrollPosition', $javascript);
+        $this->assertStringContainsString('restoreTreeState', $javascript);
+        $this->assertStringContainsString("window.addEventListener('pagehide'", $javascript);
         $this->assertStringContainsString('border: 0;', $css);
         $this->assertStringContainsString('padding: .32rem .35rem;', $css);
     }

@@ -31,13 +31,11 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var int $defaultPageParentId
  * @var bool $canCreatePage
  * @var bool $canOrganizeTree
- * @var list<array<string, mixed>> $managementNodes
  * @var string $nodeSavePath
  * @var string $nodeDialogPath
  * @var string $treeOrderSavePath
- * @var list<array{id:string,title:string}> $editorDocuments
- * @var bool $editorAvailable
- * @var bool $canAttachExistingDocuments
+ * @var string $treeOrganizerPath
+ * @var string $treeBranchPath
  * @var string $assetsCssPath
  * @var string $assetsJsPath
  */
@@ -106,8 +104,13 @@ $workflowIcon = static function (string $action): string {
             <ol class="breadcrumb workspace-breadcrumb">
                 <?php foreach ($breadcrumbs as $breadcrumb) : ?>
                     <?php if ((bool)($breadcrumb['current'] ?? false)) : ?>
-                        <li class="breadcrumb-item active" aria-current="page">
-                            <?= $this->escape(WorkspaceValue::string($breadcrumb['label'] ?? '')) ?>
+                        <?php $breadcrumbLabel = WorkspaceValue::string($breadcrumb['label'] ?? ''); ?>
+                        <li
+                            class="breadcrumb-item active"
+                            aria-current="page"
+                            title="<?= $this->escape($breadcrumbLabel) ?>"
+                        >
+                            <?= $this->escape($breadcrumbLabel) ?>
                         </li>
                     <?php else : ?>
                         <li class="breadcrumb-item">
@@ -117,10 +120,10 @@ $workflowIcon = static function (string $action): string {
                             ?>
                             <a
                                 href="<?= $this->escape(WorkspaceValue::string($breadcrumb['href'] ?? '')) ?>"
+                                title="<?= $this->escape($breadcrumbLabel) ?>"
                                 <?php if ($breadcrumbIcon === 'home') : ?>
                                     class="workspace-breadcrumb-home-link"
                                     aria-label="<?= $this->escape($breadcrumbLabel) ?>"
-                                    title="<?= $this->escape($breadcrumbLabel) ?>"
                                 <?php endif; ?>
                             >
                                 <?php if ($breadcrumbIcon === 'home') : ?>
@@ -291,6 +294,8 @@ $workflowIcon = static function (string $action): string {
                     class="list-group list-group-flush workspace-tree"
                     data-workspace-tree-view
                     data-workspace-tree-key="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
+                    data-workspace-tree-loading="<?= $this->escape(__('Učitavanje...')) ?>"
+                    data-workspace-tree-error="<?= $this->escape(__('Granu stabla nije moguće učitati.')) ?>"
                 >
                     <?php if ($tree === []) : ?>
                         <p class="small text-body-secondary mb-0">
@@ -300,24 +305,32 @@ $workflowIcon = static function (string $action): string {
                         <?= $this->forModulePartial(
                             'aaieduhr/heartphrame-module-workspace',
                             'workspace/tree',
-                            ['nodes' => $tree, 'activeNodeId' => $activeNodeId, 'level' => 1],
+                            [
+                                'nodes' => $tree,
+                                'activeNodeId' => $activeNodeId,
+                                'level' => 1,
+                                'treeBranchPath' => $treeBranchPath,
+                                'workspaceId' => WorkspaceValue::int($workspace['id'] ?? 0),
+                                'language' => $language,
+                            ],
                         ) ?>
                     <?php endif; ?>
                 </div>
                 <?php if ($canOrganizeTree) : ?>
-                    <div data-workspace-tree-editor hidden>
-                        <?= $this->forModulePartial(
-                            'aaieduhr/heartphrame-module-workspace',
-                            'workspace/tree-organizer',
-                            [
-                                'workspace' => $workspace,
-                                'nodes' => $managementNodes,
-                                'activeNodeId' => $activeNodeId,
-                                'treeOrderSavePath' => $treeOrderSavePath,
-                                'nodeDialogPath' => $nodeDialogPath,
-                            ],
-                        ) ?>
-                    </div>
+                    <div
+                        data-workspace-tree-editor
+                        data-workspace-tree-editor-url="<?= $this->escape(
+                            $treeOrganizerPath . '?' . http_build_query([
+                                'workspace_id' => WorkspaceValue::int($workspace['id'] ?? 0),
+                                'active_node_id' => $activeNodeId ?? 0,
+                            ]),
+                        ) ?>"
+                        data-workspace-tree-editor-loading="<?= $this->escape(__('Učitavanje...')) ?>"
+                        data-workspace-tree-editor-error="<?= $this->escape(
+                            __('Organizator stabla nije moguće učitati.'),
+                        ) ?>"
+                        hidden
+                    ></div>
                 <?php endif; ?>
             </div>
         </nav>
@@ -744,72 +757,6 @@ $workflowIcon = static function (string $action): string {
 <?php endif; ?>
 
 <?php if ($canOrganizeTree) : ?>
-    <div
-        class="modal fade"
-        id="workspace-add-tree-item-modal"
-        tabindex="-1"
-        aria-labelledby="workspace-add-tree-item-title"
-        aria-hidden="true"
-    >
-        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div>
-                        <h2 id="workspace-add-tree-item-title" class="modal-title fs-5 mb-0">
-                            <?= $this->escape(__('Dodaj poveznicu ili postojeći dokument')) ?>
-                        </h2>
-                        <p class="small text-body-secondary mb-0">
-                            <?= $this->escape(__('Nova stavka bit će dodana u stablo ovog područja.')) ?>
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="<?= $this->escape(__('Zatvori')) ?>"
-                    ></button>
-                </div>
-                <form method="post" action="<?= $this->escape($nodeSavePath) ?>">
-                    <div class="modal-body">
-                        <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-                        <input
-                            type="hidden"
-                            name="workspace_id"
-                            value="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>"
-                        >
-                        <input type="hidden" name="return_context" value="workspace">
-                        <input
-                            type="hidden"
-                            name="return_node_id"
-                            value="<?= WorkspaceValue::int($activeNodeId ?? 0) ?>"
-                        >
-                        <?= $this->forModulePartial(
-                            'aaieduhr/heartphrame-module-workspace',
-                            'workspace/node-fields',
-                            [
-                                'node' => ['node_type' => 'internal_link'],
-                                'nodes' => $managementNodes,
-                                'editorDocuments' => $editorDocuments,
-                                'editorAvailable' => $editorAvailable,
-                                'canAttachExistingDocuments' => $canAttachExistingDocuments,
-                                'workspaceCanAdd' => (bool)($workspacePermissions['can_add'] ?? false),
-                                'treeOrganizerAvailable' => true,
-                            ],
-                        ) ?>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <?= $this->escape(__('Odustani')) ?>
-                        </button>
-                        <button class="btn btn-primary" type="submit">
-                            <?= $this->escape(__('Dodaj stavku')) ?>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <div
         class="modal fade"
         id="workspace-node-editor-modal"
