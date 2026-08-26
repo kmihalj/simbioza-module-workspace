@@ -679,24 +679,74 @@
     width: .85rem;
 }
 
-.workspace-acl-legend-inherited,
-.workspace-acl-checkbox-inherited:checked {
+.workspace-acl-legend-inherited {
     background-color: var(--bs-success);
     border-color: var(--bs-success);
     color: var(--bs-success);
-    opacity: 1;
 }
 
-.workspace-acl-legend-direct,
-.workspace-acl-checkbox-direct:checked {
+.workspace-acl-legend-denied {
     background-color: var(--bs-danger);
     border-color: var(--bs-danger);
     color: var(--bs-danger);
 }
 
-.workspace-acl-checkbox-direct:focus {
+.workspace-acl-legend-unavailable {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-border-color);
+}
+
+.workspace-node-restriction-toggle,
+.workspace-node-restriction-unavailable {
+    align-items: center;
+    display: inline-flex;
+    height: 1.15rem;
+    justify-content: center;
+    margin: 0;
+    vertical-align: middle;
+    width: 1.15rem;
+}
+
+.workspace-node-restriction-toggle {
+    cursor: pointer;
+}
+
+.workspace-node-restriction-toggle > span,
+.workspace-node-restriction-unavailable {
+    background: var(--bs-body-bg);
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: .2rem;
+    height: 100%;
+    position: relative;
+    transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
+    width: 100%;
+}
+
+.workspace-node-restriction-toggle > input:checked + span {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+}
+
+.workspace-node-restriction-toggle > input:checked + span::after {
+    color: var(--bs-white);
+    content: '✓';
+    font-size: .8rem;
+    font-weight: 700;
+    left: 50%;
+    line-height: 1;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -52%);
+}
+
+.workspace-node-restriction-toggle > input:not(:checked) + span {
+    background-color: var(--bs-danger);
     border-color: var(--bs-danger);
-    box-shadow: 0 0 0 .25rem rgba(var(--bs-danger-rgb), .25);
+}
+
+.workspace-node-restriction-toggle > input:focus-visible + span {
+    box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
 }
 
 .workspace-acl-remove {

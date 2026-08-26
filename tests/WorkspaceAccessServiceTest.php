@@ -128,6 +128,65 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Kreator novog područja dobiva upravljanje preko običnog korisničkog ACL-a.
+     * EN: A new Workspace creator receives management through a regular user ACL entry.
+     */
+    public function testWorkspaceCreatorReceivesManagePermissionThroughAcl(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Kreator',
+            'slug' => 'kreator',
+            'visibility' => 'restricted',
+        ], 2);
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+
+        $permissions = $this->access->workspacePermissions($workspace);
+
+        $this->assertTrue($permissions['can_view']);
+        $this->assertTrue($permissions['can_manage']);
+    }
+
+    /**
+     * HR: Kreiranje područja dopušta administratoru te konfiguriranim korisnicima i grupama.
+     * EN: Workspace creation allows administrators and configured users or groups.
+     */
+    public function testWorkspaceCreationUsesConfiguredUsersAndGroups(): void
+    {
+        $appRoot = sys_get_temp_dir() . '/workspace_creators_' . uniqid();
+        mkdir($appRoot . '/config', 0777, true);
+        file_put_contents(
+            $appRoot . '/config/workspace.php',
+            "<?php return ['creation' => ['users' => [3], 'groups' => [10]]];",
+        );
+        $config = new class (new Helper(), [], $appRoot) extends Config {
+            public function __construct(Helper $helper, array $data, private readonly string $appRoot)
+            {
+                parent::__construct($helper, $data);
+            }
+
+            public function getAppRootDir(): string
+            {
+                return $this->appRoot;
+            }
+        };
+        $access = new WorkspaceAccessService(
+            $this->repository,
+            $this->authn,
+            new WorkspaceConfig($config, dirname(__DIR__)),
+            new WorkspaceWorkflowService($this->repository),
+        );
+
+        $this->assertTrue($access->canCreateWorkspace(['id' => 3, 'is_admin' => false]));
+        $this->assertTrue($access->canCreateWorkspace(['id' => 2, 'is_admin' => false]));
+        $this->assertFalse($access->canCreateWorkspace(['id' => 4, 'is_admin' => false]));
+        $this->assertTrue($access->canCreateWorkspace(['id' => 4, 'is_admin' => true]));
+
+        unlink($appRoot . '/config/workspace.php');
+        rmdir($appRoot . '/config');
+        rmdir($appRoot);
+    }
+
+    /**
      * HR: Dokazuje da se prava korisnika i grupa zbrajaju, a ograničenje roditelja sužava prava potomka.
      * EN: Proves that user and group grants are combined while a parent restriction narrows descendants.
      */
@@ -137,7 +196,6 @@ final class WorkspaceAccessServiceTest extends TestCase
             'name' => 'Projekt',
             'slug' => 'projekt',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
 
@@ -179,6 +237,10 @@ final class WorkspaceAccessServiceTest extends TestCase
                 3 => ['can_view' => true, 'can_edit' => true],
             ],
         ]);
+        $storedRestrictions = $this->repository->nodeAclRows((int)$root['id']);
+        $this->assertCount(1, $storedRestrictions);
+        $this->assertSame(WorkspaceRepository::SUBJECT_USER, $storedRestrictions[0]['subject_type']);
+        $this->assertSame(2, (int)$storedRestrictions[0]['subject_id']);
 
         $restricted = $this->access->nodePermissions($workspace, $child);
         $this->assertTrue($restricted['can_view']);
@@ -195,10 +257,11 @@ final class WorkspaceAccessServiceTest extends TestCase
 
         $this->authn->login(['id' => 4, 'is_admin' => false]);
         $this->assertTrue($this->access->workspacePermissions($workspace)['can_view']);
-        $this->assertSame([], $this->access->visibleTree($workspace));
+        $this->assertCount(1, $this->access->visibleTree($workspace));
+        $this->assertTrue($this->access->nodePermissions($workspace, $child)['can_view']);
 
         $this->authn->login(['id' => 1, 'is_admin' => false]);
-        $this->assertTrue($this->access->nodePermissions($workspace, $child)['can_manage']);
+        $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_manage']);
     }
 
     /**
@@ -213,7 +276,6 @@ final class WorkspaceAccessServiceTest extends TestCase
             'name' => 'Paketna prava',
             'slug' => 'paketna-prava',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -252,12 +314,51 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Uređivač čvora prikazuje zeleno samo stvarno naslijeđena prava
-     *     nakon ograničenja predaka, dok ograničenje trenutačnog čvora ostaje
-     *     odvojeno za crveni prikaz i uređivanje.
-     * EN: The node editor shows only actually inherited rights in green after
-     *     ancestor restrictions, while the current node restriction remains
-     *     separate for red display and editing.
+     * HR: Stari grupni red ograničenja više ne može oduzeti prava članovima grupe.
+     * EN: A legacy group-restriction row can no longer remove rights from group members.
+     */
+    public function testLegacyGroupRestrictionsAreIgnored(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Korisnička ograničenja',
+            'slug' => 'korisnicka-ogranicenja',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            'group' => [10 => ['can_view' => true, 'can_edit' => true]],
+        ]);
+        $node = $this->repository->saveNode($workspaceId, [
+            'title' => 'Stranica',
+            'node_type' => 'document',
+            'document_key' => 'legacy-group-restriction',
+        ], 1);
+        $this->database->table('workspace_node_acl')->insert([
+            'node_id' => $node['id'],
+            'subject_type' => WorkspaceRepository::SUBJECT_GROUP,
+            'subject_id' => 10,
+            'can_view' => true,
+            'can_add' => false,
+            'can_edit' => false,
+            'can_publish' => false,
+            'can_delete' => false,
+            'can_manage' => false,
+            'created_at' => '2026-01-01 00:00:00',
+            'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+
+        $permissions = $this->access->nodePermissions($workspace, $node);
+
+        $this->assertTrue($permissions['can_view']);
+        $this->assertTrue($permissions['can_edit']);
+    }
+
+    /**
+     * HR: Picker ograničenja vraća korisnika s ujedinjenim izravnim i grupnim
+     *     pravima te s već primijenjenim ograničenjima predaka.
+     * EN: The restriction picker returns a user with merged direct and group
+     *     permissions and with ancestor restrictions already applied.
      */
     public function testNodeEditorSubjectsSeparateInheritedAndDirectRestrictions(): void
     {
@@ -265,7 +366,6 @@ final class WorkspaceAccessServiceTest extends TestCase
             'name' => 'Nasljedna prava',
             'slug' => 'nasljedna-prava',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -273,7 +373,7 @@ final class WorkspaceAccessServiceTest extends TestCase
                 2 => ['can_view' => true, 'can_edit' => true],
             ],
             'group' => [
-                10 => ['can_view' => true],
+                10 => ['can_view' => true, 'can_add' => true],
             ],
         ]);
         $root = $this->repository->saveNode($workspaceId, [
@@ -292,36 +392,141 @@ final class WorkspaceAccessServiceTest extends TestCase
                 2 => ['can_view' => true],
             ],
         ]);
-        $this->repository->replaceNodeAcl($workspaceId, (int)$child['id'], [
-            'group' => [
-                10 => ['can_view' => true],
-            ],
-        ]);
-
-        $rootSubjects = $this->repository->inheritedAclSubjectsAtNode(
+        $rootSubjects = $this->repository->restrictionUserSubjectsAtNode(
             $workspaceId,
             (int)$root['id'],
+            [2],
         );
-        $rootUser = array_values(array_filter(
-            $rootSubjects,
-            static fn(array $subject): bool =>
-                ($subject['subject_type'] ?? '') === WorkspaceRepository::SUBJECT_USER
-                && (int)($subject['subject_id'] ?? 0) === 2,
-        ))[0];
+        $rootUser = $rootSubjects[0];
+        $this->assertTrue((bool)$rootUser['can_add']);
         $this->assertTrue((bool)$rootUser['can_edit']);
 
-        $childSubjects = $this->repository->inheritedAclSubjectsAtNode(
+        $childSubjects = $this->repository->restrictionUserSubjectsAtNode(
             $workspaceId,
             (int)$child['id'],
+            [2],
         );
-        $childUser = array_values(array_filter(
-            $childSubjects,
-            static fn(array $subject): bool =>
-                ($subject['subject_type'] ?? '') === WorkspaceRepository::SUBJECT_USER
-                && (int)($subject['subject_id'] ?? 0) === 2,
-        ))[0];
+        $childUser = $childSubjects[0];
         $this->assertTrue((bool)$childUser['can_view']);
+        $this->assertFalse((bool)$childUser['can_add']);
         $this->assertFalse((bool)$childUser['can_edit']);
+
+        $search = $this->repository->searchRestrictionUsers(
+            $workspaceId,
+            (int)$child['id'],
+            'Ana',
+        );
+        $this->assertSame('Ana Horvat', $search[0]['label'] ?? null);
+        $this->assertTrue((bool)($search[0]['can_view'] ?? false));
+        $this->assertSame([], $this->repository->searchRestrictionUsers(
+            $workspaceId,
+            (int)$child['id'],
+            'user3',
+        ));
+    }
+
+    /**
+     * HR: Izravno pravo otvara samo ciljnu stranicu i njezino područje, bez
+     *     otkrivanja roditelja ili nasljeđivanja prava na potomke.
+     * EN: A direct grant opens only its target page and Workspace without
+     *     revealing parents or inheriting the grant to descendants.
+     */
+    public function testDirectPermissionExposesOnlyTheGrantedPageAndWorkspace(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Izravni pristup',
+            'slug' => 'izravni-pristup',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $root = $this->repository->saveNode($workspaceId, [
+            'title' => 'Skriveni roditelj',
+            'slug' => 'skriveni-roditelj',
+            'node_type' => 'document',
+            'document_key' => 'direct-hidden-parent',
+        ], 1);
+        $page = $this->repository->saveNode($workspaceId, [
+            'title' => 'Dopuštena stranica',
+            'slug' => 'dopustena-stranica',
+            'node_type' => 'document',
+            'document_key' => 'direct-granted-page',
+            'parent_id' => $root['id'],
+        ], 1);
+        $child = $this->repository->saveNode($workspaceId, [
+            'title' => 'Nedopušteni potomak',
+            'slug' => 'nedopusteni-potomak',
+            'node_type' => 'document',
+            'document_key' => 'direct-hidden-child',
+            'parent_id' => $page['id'],
+        ], 1);
+        $this->repository->replaceNodeDirectPermissions($workspaceId, (int)$page['id'], [
+            3 => ['can_edit' => true],
+        ]);
+        $this->authn->login(['id' => 3, 'is_admin' => false]);
+
+        $this->assertFalse($this->access->workspacePermissions($workspace)['can_view']);
+        $this->assertTrue($this->access->canAccessWorkspace($workspace));
+        $this->assertCount(1, $this->access->visibleWorkspaces());
+        $this->assertFalse($this->access->nodePermissions($workspace, $root)['can_view']);
+        $pagePermissions = $this->access->nodePermissions($workspace, $page);
+        $this->assertTrue($pagePermissions['can_view']);
+        $this->assertTrue($pagePermissions['can_edit']);
+        $this->assertFalse($pagePermissions['can_publish']);
+        $this->assertFalse($pagePermissions['can_manage']);
+        $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_view']);
+
+        $tree = $this->access->visibleTreeWindowForLanguages($workspace, null, []);
+        $this->assertCount(1, $tree);
+        $this->assertSame((int)$page['id'], (int)$tree[0]['id']);
+        $this->assertNull($tree[0]['parent_id']);
+        $this->assertSame([], $tree[0]['children']);
+    }
+
+    /**
+     * HR: Ograničenja sužavaju naslijeđena prava, ali ne mijenjaju zasebno
+     *     izravno pravo na ciljnoj stranici.
+     * EN: Restrictions narrow inherited permissions but do not alter a separate
+     *     direct grant on the target page.
+     */
+    public function testInheritedRestrictionDoesNotConsumeDirectPermission(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Odvojena prava',
+            'slug' => 'odvojena-prava',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            'user' => [2 => ['can_view' => true, 'can_edit' => true]],
+        ]);
+        $root = $this->repository->saveNode($workspaceId, [
+            'title' => 'Ograničeni roditelj',
+            'node_type' => 'document',
+            'document_key' => 'restricted-direct-root',
+        ], 1);
+        $page = $this->repository->saveNode($workspaceId, [
+            'title' => 'Izravno uređivanje',
+            'node_type' => 'document',
+            'document_key' => 'restricted-direct-page',
+            'parent_id' => $root['id'],
+        ], 1);
+        $child = $this->repository->saveNode($workspaceId, [
+            'title' => 'Naslijeđeni potomak',
+            'node_type' => 'document',
+            'document_key' => 'restricted-direct-child',
+            'parent_id' => $page['id'],
+        ], 1);
+        $this->repository->replaceNodeAcl($workspaceId, (int)$root['id'], [
+            'user' => [2 => ['can_view' => true]],
+        ]);
+        $this->repository->replaceNodeDirectPermissions($workspaceId, (int)$page['id'], [
+            2 => ['can_edit' => true],
+        ]);
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+
+        $this->assertFalse($this->access->nodePermissions($workspace, $root)['can_edit']);
+        $this->assertTrue($this->access->nodePermissions($workspace, $page)['can_edit']);
+        $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_edit']);
     }
 
     /**
@@ -336,7 +541,6 @@ final class WorkspaceAccessServiceTest extends TestCase
             'name' => 'Promjena prava',
             'slug' => 'promjena-prava',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -367,7 +571,6 @@ final class WorkspaceAccessServiceTest extends TestCase
                 'name' => 'Paketno područje ' . $index,
                 'slug' => 'paketno-podrucje-' . $index,
                 'visibility' => 'restricted',
-                'owner_user_id' => 1,
             ], 1);
             $this->repository->replaceWorkspaceAcl((int)$workspace['id'], [
                 'user' => [2 => ['can_view' => true]],
@@ -375,42 +578,96 @@ final class WorkspaceAccessServiceTest extends TestCase
         }
 
         $aclQueries = [];
-        $this->database->listen(static function (QueryExecuted $query) use (&$aclQueries): void {
+        $directQueries = [];
+        $this->database->listen(static function (QueryExecuted $query) use (&$aclQueries, &$directQueries): void {
             if (str_contains($query->sql, 'FROM "workspace_acl"')) {
                 $aclQueries[] = $query->sql;
+            }
+
+            if (str_contains($query->sql, 'workspace_node_direct_permissions')) {
+                $directQueries[] = $query->sql;
             }
         });
         $this->authn->login(['id' => 2, 'is_admin' => false]);
 
         $this->assertCount(3, $this->access->visibleWorkspaces());
         $this->assertCount(1, $aclQueries);
+        $this->assertCount(1, $directQueries);
         $this->assertStringContainsString('"workspace_id" IN (?, ?, ?)', $aclQueries[0]);
 
         $this->database->forgetQueryListeners();
         $this->access->clearRequestCache();
         $administratorAclQueries = [];
-        $this->database->listen(static function (QueryExecuted $query) use (&$administratorAclQueries): void {
+        $administratorDirectQueries = [];
+        $this->database->listen(static function (QueryExecuted $query) use (
+            &$administratorAclQueries,
+            &$administratorDirectQueries,
+        ): void {
             if (str_contains($query->sql, 'FROM "workspace_acl"')) {
                 $administratorAclQueries[] = $query->sql;
+            }
+
+            if (str_contains($query->sql, 'workspace_node_direct_permissions')) {
+                $administratorDirectQueries[] = $query->sql;
             }
         });
         $this->authn->login(['id' => 3, 'is_admin' => true]);
 
         $this->assertCount(3, $this->access->visibleWorkspaces());
         $this->assertSame([], $administratorAclQueries);
+        $this->assertSame([], $administratorDirectQueries);
     }
 
     /**
-     * HR: Dokazuje da arhiva ostavlja pregled i upravljanje postavkama, ali zaključava sadržaj i vlasniku i adminu.
-     * EN: Proves that archive keeps viewing and settings management while locking content for owner and admin.
+     * HR: Paketni izračun stabla čita izravna prava svih stranica jednim upitom.
+     * EN: Batched tree permission calculation reads all direct page grants in one query.
      */
-    public function testArchivedWorkspaceIsReadOnlyForOwnerAndAdministrator(): void
+    public function testBatchedNodePermissionsReadDirectGrantsOnce(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Paketne izravne dozvole',
+            'slug' => 'paketne-izravne-dozvole',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            'user' => [2 => ['can_view' => true]],
+        ]);
+        for ($index = 1; $index <= 3; ++$index) {
+            $this->repository->saveNode($workspaceId, [
+                'title' => 'Stranica ' . $index,
+                'node_type' => 'document',
+                'document_key' => 'batch-direct-' . $index,
+            ], 1);
+        }
+
+        $directQueries = [];
+        $this->database->listen(static function (QueryExecuted $query) use (&$directQueries): void {
+            if (str_contains($query->sql, 'FROM "workspace_node_direct_permissions"')) {
+                $directQueries[] = $query->sql;
+            }
+        });
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+
+        $permissions = $this->access->nodePermissionsForNodes(
+            $workspace,
+            $this->repository->nodesForWorkspace($workspaceId),
+        );
+
+        $this->assertCount(3, $permissions);
+        $this->assertCount(1, $directQueries);
+    }
+
+    /**
+     * HR: Dokazuje da arhiva ostavlja pregled i upravljanje postavkama, ali zaključava sadržaj manageru i adminu.
+     * EN: Proves that archive keeps viewing and settings management while locking content for a manager and admin.
+     */
+    public function testArchivedWorkspaceIsReadOnlyForManagerAndAdministrator(): void
     {
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Arhiva',
             'slug' => 'arhiva',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
             'is_archived' => true,
         ], 1);
         $node = $this->repository->saveNode((int)$workspace['id'], [
@@ -448,7 +705,6 @@ final class WorkspaceAccessServiceTest extends TestCase
             'name' => 'Publike',
             'slug' => 'publike',
             'visibility' => 'restricted',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -496,6 +752,14 @@ final class WorkspaceAccessServiceTest extends TestCase
             ['id', 'label', 'type', 'category', 'is_builtin', 'is_read_only'],
             array_keys($users[0]),
         );
+        $sortedUsers = $this->repository->searchDirectorySubjects(
+            WorkspaceRepository::SUBJECT_USER,
+            'user',
+        );
+        $this->assertSame(
+            ['Sara Babic', 'Ana Horvat', 'Borna Kovac', 'Alen Zec'],
+            array_column($sortedUsers, 'label'),
+        );
 
         $groups = $this->repository->searchDirectorySubjects(
             WorkspaceRepository::SUBJECT_GROUP,
@@ -513,7 +777,6 @@ final class WorkspaceAccessServiceTest extends TestCase
     {
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Linkovi',
-            'owner_user_id' => 1,
         ], 1);
 
         $this->expectException(RuntimeException::class);
@@ -533,7 +796,6 @@ final class WorkspaceAccessServiceTest extends TestCase
     {
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Stablo',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $internalLink = $this->repository->saveNode($workspaceId, [
@@ -594,7 +856,6 @@ final class WorkspaceAccessServiceTest extends TestCase
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Stabilni poredak',
             'visibility' => 'public',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $root = $this->repository->saveNode($workspaceId, [
@@ -652,7 +913,6 @@ final class WorkspaceAccessServiceTest extends TestCase
     {
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Organizator',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $first = $this->repository->saveNode($workspaceId, [
@@ -749,10 +1009,26 @@ final class WorkspaceAccessServiceTest extends TestCase
             'user_id' => 2,
             'group_id' => 10,
         ]);
-        $this->database->table('auth_user_attribute_values')->insert([
-            'user_id' => 2,
-            'field_key' => 'display_name',
-            'value_text' => 'Ana Horvat',
-        ]);
+        foreach (
+            [
+                1 => ['Alen Zec', 'Alen', 'Zec'],
+                2 => ['Ana Horvat', 'Ana', 'Horvat'],
+                3 => ['Borna Kovac', 'Borna', 'Kovac'],
+                4 => ['Sara Babic', 'Sara', 'Babic'],
+            ] as $userId => [$displayName, $firstName, $lastName]
+        ) {
+            $nameAttributes = [
+                'display_name' => $displayName,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ];
+            foreach ($nameAttributes as $fieldKey => $value) {
+                $this->database->table('auth_user_attribute_values')->insert([
+                    'user_id' => $userId,
+                    'field_key' => $fieldKey,
+                    'value_text' => $value,
+                ]);
+            }
+        }
     }
 }

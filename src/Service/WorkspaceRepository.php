@@ -47,6 +47,8 @@ final readonly class WorkspaceRepository
 
     private const DIRECTORY_RESULT_LIMIT = 20;
 
+    private const RESTRICTION_CANDIDATE_LIMIT = 100;
+
     private const AUTH_USERS_TABLE = 'auth_users';
 
     private const AUTH_GROUPS_TABLE = 'auth_groups';
@@ -80,6 +82,7 @@ final readonly class WorkspaceRepository
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_ACL)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODES)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
+        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES);
@@ -194,11 +197,6 @@ final readonly class WorkspaceRepository
         $visibility = $this->visibility(
             $data['visibility'] ?? (is_array($existing) ? $existing['visibility'] ?? 'restricted' : 'restricted'),
         );
-        $ownerUserId = $this->intValue($data['owner_user_id'] ?? $actorUserId);
-        if ($ownerUserId <= 0 || !$this->userExists($ownerUserId)) {
-            throw new RuntimeException(__('Vlasnik područja nije valjan.'));
-        }
-
         $now = date('Y-m-d H:i:s');
         $values = [
             'slug' => $slug,
@@ -213,7 +211,6 @@ final readonly class WorkspaceRepository
                 $data['contents_visibility']
                     ?? (is_array($existing) ? $existing['contents_visibility'] ?? 'inherit' : 'inherit'),
             ),
-            'owner_user_id' => $ownerUserId,
             'is_archived' => $this->boolValue($data['is_archived'] ?? false),
             'updated_by_user_id' => $actorUserId,
             'updated_at' => $now,
@@ -238,6 +235,7 @@ final readonly class WorkspaceRepository
 
         if ($isNew) {
             $this->insertBuiltInVisibilityAcl($workspaceId, $visibility, $now);
+            $this->insertWorkspaceManagerAcl($workspaceId, $actorUserId, $now);
         }
 
         $workspace = $this->findWorkspaceById($workspaceId);
@@ -350,6 +348,9 @@ final readonly class WorkspaceRepository
                     ->whereIn('node_id', $nodeIds)
                     ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
+                    ->whereIn('node_id', $nodeIds)
+                    ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                     ->whereIn('node_id', $nodeIds)
                     ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
@@ -605,10 +606,84 @@ final readonly class WorkspaceRepository
     }
 
     /**
+     * HR: Vraća korisnike koji već imaju pravo na područje izravno ili
+     *     članstvom u grupi, s pravima naslijeđenima do odabranog čvora.
+     *     Administratori nisu ponuđeni jer njihova prava nije moguće ograničiti
+     *     na stranici.
+     * EN: Returns users who already hold Workspace rights directly or through
+     *     group membership, with permissions inherited up to the selected node.
+     *     Administrators are excluded because page restrictions cannot narrow
+     *     their rights.
+     *
+     * @param list<int> $userIds
+     * @return list<array<string, mixed>>
+     */
+    public function restrictionUserSubjectsAtNode(
+        int $workspaceId,
+        int $nodeId,
+        array $userIds,
+    ): array {
+        $users = $this->usersByIds($userIds);
+
+        return $this->restrictionUserSubjectsFromUsers(
+            $workspaceId,
+            $nodeId,
+            array_values($users),
+        );
+    }
+
+    /**
+     * HR: Vraća trenutačno spremljena korisnička ograničenja jednoga čvora
+     *     zajedno s pravima koja su vrijedila neposredno prije toga čvora.
+     * EN: Returns the currently stored user restrictions for one node together
+     *     with the permissions inherited immediately before that node.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function nodeRestrictionSubjects(int $workspaceId, int $nodeId): array
+    {
+        $userIds = [];
+        foreach ($this->nodeAclRows($nodeId) as $row) {
+            if ($this->stringValue($row['subject_type'] ?? '') !== self::SUBJECT_USER) {
+                continue;
+            }
+
+            $userId = $this->intValue($row['subject_id'] ?? 0);
+            if ($userId > 0) {
+                $userIds[] = $userId;
+            }
+        }
+
+        return $this->restrictionUserSubjectsAtNode($workspaceId, $nodeId, $userIds);
+    }
+
+    /**
+     * HR: Pretražuje samo korisnike kojima se na odabranoj stranici stvarno
+     *     mogu dodatno ograničiti prava. Kandidati i rezultat su strogo ograničeni.
+     * EN: Searches only users whose existing permissions can actually be narrowed
+     *     on the selected page. Both candidates and results are strictly bounded.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchRestrictionUsers(
+        int $workspaceId,
+        int $nodeId,
+        string $search,
+    ): array {
+        $users = $this->searchUsers(trim($search), self::RESTRICTION_CANDIDATE_LIMIT);
+
+        return array_slice(
+            $this->restrictionUserSubjectsFromUsers($workspaceId, $nodeId, $users),
+            0,
+            self::DIRECTORY_RESULT_LIMIT,
+        );
+    }
+
+    /**
      * HR: Pretražuje aktivne korisnike ili grupe u malom, ograničenom skupu
-     *     rezultata za asinkroni ACL i owner picker.
+     *     rezultata za asinkrone ACL i administracijske pickere.
      * EN: Searches active users or groups in a small, bounded result set for
-     *     asynchronous ACL and owner pickers.
+     *     asynchronous ACL and administration pickers.
      *
      * @return list<array<string, mixed>>
      */
@@ -627,16 +702,53 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća jedan aktivni korisnički subjekt za početnu vrijednost owner pickera.
-     * EN: Returns one active user subject for the initial owner-picker value.
+     * HR: Učitava samo zadane aktivne korisnike ili grupe za spremljene postavke.
+     * EN: Loads only the supplied active users or groups for persisted settings.
      *
-     * @return array<string, mixed>|null
+     * @param list<int> $ids
+     * @return list<array<string, mixed>>
      */
-    public function userSubject(int $userId): ?array
+    public function directorySubjectsByIds(string $category, array $ids): array
     {
-        $users = $this->usersByIds([$userId]);
+        if ($category === self::SUBJECT_USER) {
+            return $this->sortPickerUsers(array_values($this->usersByIds($ids, true)));
+        }
 
-        return $users[$userId] ?? null;
+        if ($category !== self::SUBJECT_GROUP) {
+            return [];
+        }
+
+        $subjects = [];
+        foreach ($this->groupsByIds($ids) as $group) {
+            $id = $this->intValue($group['id'] ?? 0);
+            $label = $this->stringValue($group['group_name'] ?? '');
+            if ($id <= 0) {
+                continue;
+            }
+
+            if ($label === '') {
+                continue;
+            }
+
+            $subjects[] = [
+                'id' => $id,
+                'type' => self::SUBJECT_GROUP,
+                'category' => self::SUBJECT_GROUP,
+                'label' => $label,
+                'is_builtin' => false,
+                'is_read_only' => false,
+            ];
+        }
+
+        usort(
+            $subjects,
+            fn(array $left, array $right): int => strcasecmp(
+                $this->stringValue($left['label'] ?? ''),
+                $this->stringValue($right['label'] ?? ''),
+            ),
+        );
+
+        return $subjects;
     }
 
     /**
@@ -1867,6 +1979,9 @@ final readonly class WorkspaceRepository
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                    ->where('node_id', '=', $nodeId)
+                    ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
@@ -1951,6 +2066,191 @@ final readonly class WorkspaceRepository
     }
 
     /**
+     * HR: Vraća izravna korisnička prava za skup stranica u jednom upitu.
+     * EN: Returns direct user grants for a set of pages in one query.
+     *
+     * @param list<int> $nodeIds
+     * @return list<array<string, mixed>>
+     */
+    public function nodeDirectPermissionRowsForNodes(array $nodeIds, int $userId = 0): array
+    {
+        $nodeIds = array_values(array_unique(array_filter(
+            $nodeIds,
+            static fn(int $nodeId): bool => $nodeId > 0,
+        )));
+        if ($nodeIds === []) {
+            return [];
+        }
+
+        $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+            ->whereIn('node_id', $nodeIds);
+        if ($userId > 0) {
+            $query->where('user_id', '=', $userId);
+        }
+
+        return $this->rows($query->get());
+    }
+
+    /**
+     * HR: Vraća izravna prava jednog čvora s javnim oznakama aktivnih korisnika.
+     * EN: Returns one node's direct grants with public labels of active users.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function nodeDirectPermissionSubjects(int $nodeId): array
+    {
+        $rows = $this->nodeDirectPermissionRowsForNodes([$nodeId]);
+        $users = $this->usersByIds(array_values(array_map(
+            fn(array $row): int => $this->intValue($row['user_id'] ?? 0),
+            $rows,
+        )));
+        $subjects = [];
+        foreach ($rows as $row) {
+            $userId = $this->intValue($row['user_id'] ?? 0);
+            if (!isset($users[$userId])) {
+                continue;
+            }
+
+            $subjects[] = [
+                ...$row,
+                'label' => $this->stringValue($users[$userId]['label'] ?? ''),
+            ];
+        }
+
+        usort(
+            $subjects,
+            fn(array $left, array $right): int => strcasecmp(
+                $this->stringValue($left['label'] ?? ''),
+                $this->stringValue($right['label'] ?? ''),
+            ),
+        );
+
+        return $subjects;
+    }
+
+    /**
+     * HR: Vraća područja u kojima korisnik ima barem jednu izravno dopuštenu stranicu.
+     * EN: Returns Workspaces in which the user has at least one directly granted page.
+     *
+     * @param list<int> $workspaceIds
+     * @return list<int>
+     */
+    public function workspaceIdsWithDirectPermissionForUser(array $workspaceIds, int $userId): array
+    {
+        $workspaceIds = array_values(array_unique(array_filter(
+            $workspaceIds,
+            static fn(int $workspaceId): bool => $workspaceId > 0,
+        )));
+        if ($workspaceIds === [] || $userId <= 0) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($workspaceIds), '?'));
+        $rows = $this->rows($this->database->fetchAll(
+            'SELECT DISTINCT n.workspace_id FROM '
+            . ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS . ' p'
+            . ' INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n ON n.id = p.node_id'
+            . ' WHERE p.user_id = ? AND n.workspace_id IN (' . $placeholders . ')'
+            . ' AND n.is_enabled = ? AND (p.can_view = ? OR p.can_edit = ? OR p.can_publish = ?)',
+            [$userId, ...$workspaceIds, true, true, true, true],
+        ));
+
+        return array_values(array_unique(array_filter(array_map(
+            fn(array $row): int => $this->intValue($row['workspace_id'] ?? 0),
+            $rows,
+        ))));
+    }
+
+    /**
+     * HR: Učitava samo izravno dopuštene aktivne stranice jednog korisnika u području.
+     * EN: Loads only a user's directly granted active pages in one Workspace.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function directPermissionNodesForUser(int $workspaceId, int $userId): array
+    {
+        if ($workspaceId <= 0 || $userId <= 0) {
+            return [];
+        }
+
+        return $this->rows($this->database->fetchAll(
+            'SELECT n.* FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n'
+            . ' INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS
+            . ' p ON p.node_id = n.id'
+            . ' WHERE n.workspace_id = ? AND n.is_enabled = ? AND p.user_id = ?'
+            . ' AND (p.can_view = ? OR p.can_edit = ? OR p.can_publish = ?)'
+            . ' ORDER BY n.sort_order ASC, n.id ASC',
+            [$workspaceId, true, $userId, true, true, true],
+        ));
+    }
+
+    /**
+     * HR: Zamjenjuje izravna prava stranice aktivnim korisnicima i samo dopuštenim operacijama.
+     * EN: Replaces a page's direct grants with active users and the allowed operations only.
+     *
+     * @param array<int|string, mixed> $permissions
+     */
+    public function replaceNodeDirectPermissions(
+        int $workspaceId,
+        int $nodeId,
+        array $permissions,
+    ): void {
+        $node = $this->findNodeById($nodeId);
+        if (!is_array($node) || $this->intValue($node['workspace_id'] ?? 0) !== $workspaceId) {
+            throw new RuntimeException(__('Sadržaj nije pronađen'));
+        }
+
+        $requested = [];
+        foreach ($permissions as $userId => $values) {
+            $userId = $this->intValue($userId);
+            if ($userId <= 0) {
+                continue;
+            }
+
+            if (!is_array($values)) {
+                continue;
+            }
+
+            $view = (bool)($values['can_view'] ?? false);
+            $edit = (bool)($values['can_edit'] ?? false);
+            $publish = (bool)($values['can_publish'] ?? false);
+            if (!$view && !$edit && !$publish) {
+                continue;
+            }
+
+            $requested[$userId] = [
+                'can_view' => $view || $edit || $publish,
+                'can_edit' => $edit,
+                'can_publish' => $publish,
+            ];
+        }
+
+        $activeUsers = $this->usersByIds(array_keys($requested));
+        $now = date('Y-m-d H:i:s');
+        $this->database->transaction(
+            function (Database $database) use ($nodeId, $requested, $activeUsers, $now): void {
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                    ->where('node_id', '=', $nodeId)
+                    ->delete();
+
+                foreach ($requested as $userId => $values) {
+                    if (!isset($activeUsers[$userId])) {
+                        continue;
+                    }
+
+                    $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)->insert([
+                        'node_id' => $nodeId,
+                        'user_id' => $userId,
+                        ...$values,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
+            },
+        );
+    }
+
+    /**
      * HR: Zamjenjuje ograničenja čvora samo subjektima koji već imaju Workspace ACL zapis.
      * EN: Replaces node restrictions only for subjects already present in the Workspace ACL.
      *
@@ -1958,12 +2258,23 @@ final readonly class WorkspaceRepository
      */
     public function replaceNodeAcl(int $workspaceId, int $nodeId, array $acl): void
     {
-        $allowedSubjects = [];
-        foreach ($this->workspaceAclRows($workspaceId) as $row) {
-            $allowedSubjects[$this->subjectKey(
-                $this->stringValue($row['subject_type'] ?? ''),
-                $this->intValue($row['subject_id'] ?? 0),
-            )] = true;
+        $requested = is_array($acl[self::SUBJECT_USER] ?? null) ? $acl[self::SUBJECT_USER] : [];
+        $requestedUserIds = [];
+        foreach (array_keys($requested) as $subjectId) {
+            $subjectId = $this->intValue($subjectId);
+            if ($subjectId > 0) {
+                $requestedUserIds[] = $subjectId;
+            }
+        }
+
+        $eligible = [];
+        $eligibleSubjects = $this->restrictionUserSubjectsAtNode(
+            $workspaceId,
+            $nodeId,
+            $requestedUserIds,
+        );
+        foreach ($eligibleSubjects as $subject) {
+            $eligible[$this->intValue($subject['subject_id'] ?? 0)] = $subject;
         }
 
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
@@ -1971,56 +2282,175 @@ final readonly class WorkspaceRepository
             ->delete();
         $now = date('Y-m-d H:i:s');
 
-        foreach (
-            [
-                self::SUBJECT_USER,
-                self::SUBJECT_GROUP,
-                self::SUBJECT_PUBLIC,
-                self::SUBJECT_AUTHENTICATED,
-            ] as $subjectType
-        ) {
-            $subjects = is_array($acl[$subjectType] ?? null) ? $acl[$subjectType] : [];
-            foreach ($subjects as $subjectId => $permissions) {
-                $subjectId = $this->intValue($subjectId);
-                $key = $this->subjectKey($subjectType, $subjectId);
-                if ($subjectId <= 0) {
-                    continue;
-                }
+        foreach ($requested as $subjectId => $permissions) {
+            $subjectId = $this->intValue($subjectId);
+            if ($subjectId <= 0) {
+                continue;
+            }
 
-                if (!isset($allowedSubjects[$key])) {
-                    continue;
-                }
+            if (!isset($eligible[$subjectId])) {
+                continue;
+            }
 
-                if (!is_array($permissions)) {
-                    continue;
-                }
+            if (!is_array($permissions)) {
+                continue;
+            }
 
-                $normalized = $this->permissionValues(WorkspaceValue::stringKeyArray($permissions));
-                if ($subjectType === self::SUBJECT_PUBLIC) {
-                    $normalized = [
-                        'can_view' => $normalized['can_view'],
-                        'can_add' => false,
-                        'can_edit' => false,
-                        'can_publish' => false,
-                        'can_delete' => false,
-                        'can_manage' => false,
-                    ];
-                }
+            $normalized = $this->permissionValues(WorkspaceValue::stringKeyArray($permissions));
+            $inherited = $this->permissionValues($eligible[$subjectId]);
+            foreach (array_keys($normalized) as $permission) {
+                $normalized[$permission] = $normalized[$permission] && $inherited[$permission];
+            }
 
-                if (!$this->hasAnyPermission($normalized)) {
-                    continue;
-                }
+            // HR: Ne spremamo red koji ništa ne mijenja; uklanjanje svih
+            //     uskraćivanja vraća potpuno nasljeđivanje.
+            // EN: A row that changes nothing is omitted; removing every denial
+            //     restores complete inheritance.
+            if ($normalized === $inherited) {
+                continue;
+            }
 
-                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->insert([
-                    'node_id' => $nodeId,
-                    'subject_type' => $subjectType,
-                    'subject_id' => $subjectId,
-                    ...$normalized,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->insert([
+                'node_id' => $nodeId,
+                'subject_type' => self::SUBJECT_USER,
+                'subject_id' => $subjectId,
+                ...$normalized,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+    }
+
+    /**
+     * HR: Paketno spaja izravna korisnička i grupna prava područja te na njih
+     *     primjenjuje samo korisnička ograničenja predaka.
+     * EN: Batch-merges direct-user and group Workspace rights, then applies only
+     *     user-specific ancestor restrictions.
+     *
+     * @param list<array<string, mixed>> $users
+     * @return list<array<string, mixed>>
+     */
+    private function restrictionUserSubjectsFromUsers(
+        int $workspaceId,
+        int $nodeId,
+        array $users,
+    ): array {
+        if ($users === []) {
+            return [];
+        }
+
+        $workspace = $this->findWorkspaceById($workspaceId);
+        if (!is_array($workspace)) {
+            return [];
+        }
+
+        $userIds = [];
+        foreach ($users as $user) {
+            $userId = $this->intValue($user['id'] ?? 0);
+            if ($userId > 0) {
+                $userIds[] = $userId;
             }
         }
+
+        if ($userIds === []) {
+            return [];
+        }
+
+        $administratorIds = [];
+        if (
+            $this->database->schema()->hasTable(self::AUTH_USERS_TABLE)
+            && $this->database->schema()->hasColumn(self::AUTH_USERS_TABLE, 'is_admin')
+        ) {
+            foreach (
+                $this->rows(
+                    $this->database->table(self::AUTH_USERS_TABLE)
+                        ->select(['id'])
+                        ->where('is_active', '=', true)
+                        ->where('is_admin', '=', true)
+                        ->whereIn('id', array_values(array_unique($userIds)))
+                        ->get(),
+                ) as $administrator
+            ) {
+                $administratorIds[$this->intValue($administrator['id'] ?? 0)] = true;
+            }
+        }
+
+        $groupsByUser = $this->groupIdsForUsers($userIds);
+        $workspaceRows = $this->workspaceAclRows($workspaceId);
+        $ancestorIds = $this->ancestorNodeIds($workspaceId, $nodeId);
+        if ($ancestorIds !== [] && end($ancestorIds) === $nodeId) {
+            array_pop($ancestorIds);
+        }
+
+        $restrictions = [];
+        foreach ($this->nodeAclRowsForNodes($ancestorIds) as $row) {
+            if ($this->stringValue($row['subject_type'] ?? '') !== self::SUBJECT_USER) {
+                continue;
+            }
+
+            $restrictionNodeId = $this->intValue($row['node_id'] ?? 0);
+            $restrictionUserId = $this->intValue($row['subject_id'] ?? 0);
+            $restrictions[$restrictionNodeId][$restrictionUserId] = $row;
+        }
+
+        $subjects = [];
+        foreach ($users as $user) {
+            $userId = $this->intValue($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+
+            if (isset($administratorIds[$userId])) {
+                continue;
+            }
+
+            $permissions = $this->permissionValues([]);
+            foreach ($workspaceRows as $row) {
+                $subjectType = $this->stringValue($row['subject_type'] ?? '');
+                $subjectId = $this->intValue($row['subject_id'] ?? 0);
+                $matches = ($subjectType === self::SUBJECT_USER && $subjectId === $userId)
+                || ($subjectType === self::SUBJECT_GROUP
+                    && in_array($subjectId, $groupsByUser[$userId] ?? [], true));
+                if (!$matches) {
+                    continue;
+                }
+
+                $rowPermissions = $this->permissionValues($row);
+                foreach (array_keys($permissions) as $permission) {
+                    $permissions[$permission] = $permissions[$permission]
+                    || $rowPermissions[$permission];
+                }
+            }
+
+            if (!$this->hasAnyPermission($permissions)) {
+                continue;
+            }
+
+            foreach ($ancestorIds as $ancestorId) {
+                $row = $restrictions[$ancestorId][$userId] ?? null;
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $allowed = $this->permissionValues($row);
+                foreach (array_keys($permissions) as $permission) {
+                    $permissions[$permission] = $permissions[$permission] && $allowed[$permission];
+                }
+            }
+
+            if (!$this->hasAnyPermission($permissions)) {
+                continue;
+            }
+
+            $subjects[] = [
+                ...$user,
+                'subject_type' => self::SUBJECT_USER,
+                'subject_id' => $userId,
+                ...$permissions,
+            ];
+        }
+
+        return $subjects;
     }
 
     /**
@@ -2081,16 +2511,46 @@ final readonly class WorkspaceRepository
             }
         }
 
-        $users = array_values($this->decorateUsers(array_values($usersById)));
+        return array_slice(
+            $this->sortPickerUsers(array_values($this->decorateUsers(array_values($usersById), true))),
+            0,
+            $limit,
+        );
+    }
+
+    /**
+     * HR: Sortira picker korisnike po prezimenu i imenu te uklanja interna polja sortiranja.
+     * EN: Sorts picker users by last and first name and removes internal sort fields.
+     *
+     * @param list<array<string, mixed>> $users
+     * @return list<array<string, mixed>>
+     */
+    private function sortPickerUsers(array $users): array
+    {
         usort(
             $users,
-            fn(array $left, array $right): int => strcasecmp(
-                $this->stringValue($left['label'] ?? ''),
-                $this->stringValue($right['label'] ?? ''),
-            ),
+            function (array $left, array $right): int {
+                foreach (['_picker_last_name', '_picker_first_name', 'label'] as $key) {
+                    $comparison = strcasecmp(
+                        $this->stringValue($left[$key] ?? ''),
+                        $this->stringValue($right[$key] ?? ''),
+                    );
+                    if ($comparison !== 0) {
+                        return $comparison;
+                    }
+                }
+
+                return $this->intValue($left['id'] ?? 0) <=> $this->intValue($right['id'] ?? 0);
+            },
         );
 
-        return array_slice($users, 0, $limit);
+        foreach ($users as &$user) {
+            unset($user['_picker_last_name'], $user['_picker_first_name']);
+        }
+
+        unset($user);
+
+        return $users;
     }
 
     /**
@@ -2156,7 +2616,7 @@ final readonly class WorkspaceRepository
      * @param list<int> $userIds
      * @return array<int, array<string, mixed>>
      */
-    private function usersByIds(array $userIds): array
+    private function usersByIds(array $userIds, bool $includePickerSort = false): array
     {
         $userIds = array_values(array_unique(array_filter($userIds, static fn(int $id): bool => $id > 0)));
         if ($userIds === [] || !$this->database->schema()->hasTable(self::AUTH_USERS_TABLE)) {
@@ -2168,7 +2628,7 @@ final readonly class WorkspaceRepository
                 ->where('is_active', '=', true)
                 ->whereIn('id', $userIds)
                 ->get(),
-        ));
+        ), $includePickerSort);
     }
 
     /**
@@ -2201,13 +2661,15 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno dodaje display name korisnicima i indeksira rezultat po ID-u.
-     * EN: Adds display names to users in one batch and indexes the result by ID.
+     * HR: Grupno dodaje javne atribute imena korisnicima i indeksira rezultat po
+     *     ID-u. Sortirna polja dodaje samo privremeno za korisnički picker.
+     * EN: Adds public name attributes to users in one batch and indexes the
+     *     result by ID. Sort fields are added only temporarily for user pickers.
      *
      * @param list<array<string, mixed>> $users
      * @return array<int, array<string, mixed>>
      */
-    private function decorateUsers(array $users): array
+    private function decorateUsers(array $users, bool $includePickerSort = false): array
     {
         $ids = [];
         foreach ($users as $user) {
@@ -2217,20 +2679,21 @@ final readonly class WorkspaceRepository
             }
         }
 
-        $displayNames = [];
+        $nameAttributes = [];
         if ($ids !== [] && $this->database->schema()->hasTable(self::AUTH_ATTRIBUTE_VALUES_TABLE)) {
             $attributes = $this->rows(
                 $this->database->table(self::AUTH_ATTRIBUTE_VALUES_TABLE)
-                    ->select(['user_id', 'value_text'])
-                    ->where('field_key', '=', 'display_name')
+                    ->select(['user_id', 'field_key', 'value_text'])
+                    ->whereIn('field_key', ['display_name', 'first_name', 'last_name'])
                     ->whereIn('user_id', array_values(array_unique($ids)))
                     ->get(),
             );
             foreach ($attributes as $attribute) {
                 $userId = $this->intValue($attribute['user_id'] ?? 0);
-                $label = $this->stringValue($attribute['value_text'] ?? '');
-                if ($userId > 0 && $label !== '') {
-                    $displayNames[$userId] = $label;
+                $fieldKey = $this->stringValue($attribute['field_key'] ?? '');
+                $value = $this->stringValue($attribute['value_text'] ?? '');
+                if ($userId > 0 && $fieldKey !== '' && $value !== '') {
+                    $nameAttributes[$userId][$fieldKey] = $value;
                 }
             }
         }
@@ -2244,15 +2707,24 @@ final readonly class WorkspaceRepository
 
             // HR: Imenik vraća samo javna picker polja jer Auth red može sadržavati tajne.
             // EN: The directory returns only public picker fields because an Auth row may contain secrets.
+            $label = $this->stringValue($nameAttributes[$userId]['display_name'] ?? '')
+            ?: $this->stringValue($user['login_identifier'] ?? __('Korisnik'));
             $decorated[$userId] = [
                 'id' => $userId,
-                'label' => $displayNames[$userId]
-                    ?? $this->stringValue($user['login_identifier'] ?? __('Korisnik')),
+                'label' => $label,
                 'type' => self::SUBJECT_USER,
                 'category' => self::SUBJECT_USER,
                 'is_builtin' => false,
                 'is_read_only' => false,
             ];
+            if ($includePickerSort) {
+                $decorated[$userId]['_picker_last_name'] = $this->stringValue(
+                    $nameAttributes[$userId]['last_name'] ?? $label,
+                );
+                $decorated[$userId]['_picker_first_name'] = $this->stringValue(
+                    $nameAttributes[$userId]['first_name'] ?? $label,
+                );
+            }
         }
 
         return $decorated;
@@ -2703,6 +3175,28 @@ final readonly class WorkspaceRepository
     }
 
     /**
+     * HR: Kreatoru novog područja dodjeljuje upravljanje kroz isti ACL model
+     *     koji se poslije uređuje u postavkama područja.
+     * EN: Grants the new Workspace creator management through the same ACL
+     *     model that is later edited in Workspace settings.
+     */
+    private function insertWorkspaceManagerAcl(int $workspaceId, int $userId, string $now): void
+    {
+        if ($workspaceId <= 0 || $userId <= 0 || !$this->userExists($userId)) {
+            return;
+        }
+
+        $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)->insert([
+            'workspace_id' => $workspaceId,
+            'subject_type' => self::SUBJECT_USER,
+            'subject_id' => $userId,
+            ...$this->permissionValues(['can_manage' => true]),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    /**
      * HR: Normalizira polja ovlasti i osigurava da manage uključuje sva niža prava.
      * EN: Normalizes permission fields and ensures manage includes every lower permission.
      *
@@ -2737,15 +3231,6 @@ final readonly class WorkspaceRepository
     private function hasAnyPermission(array $permissions): bool
     {
         return in_array(true, $permissions, true);
-    }
-
-    /**
-     * HR: Gradi stabilni ključ tipa i ID-a ACL subjekta.
-     * EN: Builds a stable ACL subject type-and-ID key.
-     */
-    private function subjectKey(string $type, int $id): string
-    {
-        return $type . ':' . $id;
     }
 
     /**

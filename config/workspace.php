@@ -14,7 +14,10 @@ return [
         'contents_visible' => false,
     ],
     'creation' => [
-        'authenticated_users' => false,
+        // HR: Administratori uvijek smiju kreirati područja; ovdje se dodaju ostali subjekti.
+        // EN: Administrators may always create workspaces; other subjects are added here.
+        'users' => [],
+        'groups' => [],
     ],
     'shorts' => [
         // HR: Zadane vrijednosti javnog popisa sažetaka unutar svakog područja.

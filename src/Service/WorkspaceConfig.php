@@ -7,6 +7,7 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
 use HeartPhrame\Config\ConfigInterface;
 
 use function array_replace_recursive;
+use function array_values;
 use function in_array;
 use function is_array;
 use function is_file;
@@ -138,14 +139,46 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Određuje smiju li svi prijavljeni korisnici kreirati nova područja.
-     * EN: Determines whether every authenticated user may create new workspaces.
+     * HR: Vraća aktivne Auth korisnike koji smiju kreirati područja.
+     * EN: Returns active Auth users allowed to create Workspaces.
+     *
+     * @return list<int>
      */
-    public function authenticatedUsersMayCreate(): bool
+    public function creatorUserIds(): array
+    {
+        return $this->creationSubjectIds('users');
+    }
+
+    /**
+     * HR: Vraća Auth grupe čiji članovi smiju kreirati područja.
+     * EN: Returns Auth groups whose members may create Workspaces.
+     *
+     * @return list<int>
+     */
+    public function creatorGroupIds(): array
+    {
+        return $this->creationSubjectIds('groups');
+    }
+
+    /**
+     * HR: Normalizira trajno spremljene Auth identifikatore ovlaštenih kreatora.
+     * EN: Normalizes persisted Auth identifiers for authorized creators.
+     *
+     * @return list<int>
+     */
+    private function creationSubjectIds(string $key): array
     {
         $creation = $this->section('creation');
+        $values = is_array($creation[$key] ?? null) ? $creation[$key] : [];
+        $ids = [];
+        foreach ($values as $value) {
+            $id = WorkspaceValue::int($value);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
 
-        return (bool)($creation['authenticated_users'] ?? false);
+        return array_values($ids);
     }
 
     /**

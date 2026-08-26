@@ -21,6 +21,7 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupValue;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
 
 /**
  * HR: Prenosivi backup jednog područja, njegova stabla, workflowa, ACL-a i
@@ -199,7 +200,39 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 $nodeUuid,
                 $writer,
                 'node-acl',
+                true,
             );
+            foreach (
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                ->where('node_id', '=', $nodeId)
+                ->orderBy('user_id')
+                ->get() as $directPermission
+            ) {
+                $userKey = $this->identities->userKeyForId($directPermission['user_id'] ?? null);
+                if ($userKey === null) {
+                    throw new BackupException('Unable to serialize direct page-permission user.');
+                }
+
+                $writer->writeRecord(self::ID, 'node-direct-permissions', [
+                    'node_uuid' => $nodeUuid,
+                    'user_key' => $userKey,
+                    'can_view' => BackupValue::booleanInteger(
+                        $directPermission['can_view'],
+                        'node-direct-permission.can_view',
+                    ),
+                    'can_edit' => BackupValue::booleanInteger(
+                        $directPermission['can_edit'],
+                        'node-direct-permission.can_edit',
+                    ),
+                    'can_publish' => BackupValue::booleanInteger(
+                        $directPermission['can_publish'],
+                        'node-direct-permission.can_publish',
+                    ),
+                    'created_at' => $directPermission['created_at'] ?? null,
+                    'updated_at' => $directPermission['updated_at'] ?? null,
+                ]);
+            }
+
             $workflows = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
                 ->where('node_id', '=', $nodeId)
                 ->orderBy('language_code')
@@ -253,6 +286,10 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         foreach (['workspace-acl', 'node-acl'] as $dataset) {
             foreach ($reader->records(self::ID, $dataset) as $acl) {
                 $subjectType = BackupValue::string($acl['subject_type'], $dataset . '.subject_type');
+                if ($dataset === 'node-acl' && $subjectType !== WorkspaceRepository::SUBJECT_USER) {
+                    continue;
+                }
+
                 $subjectKey = BackupValue::string($acl['subject_key'], $dataset . '.subject_key');
                 if ($this->identities->subjectId($subjectType, $subjectKey) === null) {
                     $errors[] = sprintf(
@@ -261,6 +298,16 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                         $subjectKey,
                     );
                 }
+            }
+        }
+
+        foreach ($reader->records(self::ID, 'node-direct-permissions') as $permission) {
+            $userKey = BackupValue::string(
+                $permission['user_key'],
+                'node-direct-permission.user_key',
+            );
+            if ($this->identities->userIdForKey($userKey) === null) {
+                $errors[] = sprintf('Direct page-permission user is unavailable: %s.', $userKey);
             }
         }
 
@@ -316,6 +363,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
                 ->whereIn('node_id', $nodeIds)
                 ->delete();
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                ->whereIn('node_id', $nodeIds)
+                ->delete();
         }
 
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
@@ -357,11 +407,6 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             'contents_visibility' => BackupValue::string(
                 $record['contents_visibility'],
                 'workspace.contents_visibility',
-            ),
-            'owner_user_id' => $this->identities->userIdForKey(
-                BackupValue::string($record['owner_user'] ?? '', 'workspace.owner_user'),
-                $context->actorUserId,
-                true,
             ),
             'is_archived' => BackupValue::booleanInteger($record['is_archived'], 'workspace.is_archived'),
             'is_deleted' => BackupValue::booleanInteger($record['is_deleted'], 'workspace.is_deleted'),
@@ -407,6 +452,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         $this->importNodeLabels($context, $reader);
         $this->importNodeProperties($context, $reader);
         $this->importNodeAcl($context, $reader);
+        $this->importNodeDirectPermissions($context, $reader);
         $this->importWorkflows($context, $reader);
         $this->importTheme($workspaceId, $context, $reader);
     }
@@ -503,7 +549,6 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 $row['contents_visibility'],
                 'workspace.contents_visibility',
             ),
-            'owner_user' => $this->identities->userKeyForId($row['owner_user_id'] ?? null),
             'is_archived' => BackupValue::booleanInteger($row['is_archived'], 'workspace.is_archived'),
             'is_deleted' => BackupValue::booleanInteger($row['is_deleted'], 'workspace.is_deleted'),
             'created_by_user' => $this->identities->userKeyForId($row['created_by_user_id'] ?? null),
@@ -523,8 +568,14 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         ?string $nodeUuid,
         BackupArchiveWriter $writer,
         string $dataset,
+        bool $userOnly = false,
     ): void {
-        foreach ($this->database->table($table)->where($foreignKey, '=', $foreignId)->orderBy('id')->get() as $row) {
+        $query = $this->database->table($table)->where($foreignKey, '=', $foreignId);
+        if ($userOnly) {
+            $query->where('subject_type', '=', WorkspaceRepository::SUBJECT_USER);
+        }
+
+        foreach ($query->orderBy('id')->get() as $row) {
             $subject = $this->identities->subjectReference($row['subject_type'] ?? null, $row['subject_id'] ?? null);
             if ($subject === null) {
                 throw new BackupException('Unable to serialize workspace ACL subject.');
@@ -631,12 +682,69 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     private function importNodeAcl(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'node-acl') as $row) {
+            if (
+                BackupValue::string($row['subject_type'], 'node-acl.subject_type')
+                    !== WorkspaceRepository::SUBJECT_USER
+            ) {
+                continue;
+            }
+
             $nodeId = $this->mappedInteger(
                 $context,
                 'workspace.node-id',
                 BackupValue::string($row['node_uuid'], 'node-acl.node_uuid'),
             );
             $this->upsertAcl(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL, 'node_id', $nodeId, $row);
+        }
+    }
+
+    /** HR: Uvozi izravna korisnička prava stranica. EN: Imports direct page user grants. */
+    private function importNodeDirectPermissions(
+        BackupImportContext $context,
+        BackupArchiveReader $reader,
+    ): void {
+        foreach ($reader->records(self::ID, 'node-direct-permissions') as $row) {
+            $nodeId = $this->mappedInteger(
+                $context,
+                'workspace.node-id',
+                BackupValue::string($row['node_uuid'], 'node-direct-permission.node_uuid'),
+            );
+            $userKey = BackupValue::string($row['user_key'], 'node-direct-permission.user_key');
+            $userId = $this->identities->userIdForKey($userKey);
+            if ($userId === null) {
+                throw new BackupException('Unable to resolve imported direct page-permission user.');
+            }
+
+            $values = [
+                'node_id' => $nodeId,
+                'user_id' => $userId,
+                'can_view' => BackupValue::booleanInteger(
+                    $row['can_view'],
+                    'node-direct-permission.can_view',
+                ),
+                'can_edit' => BackupValue::booleanInteger(
+                    $row['can_edit'],
+                    'node-direct-permission.can_edit',
+                ),
+                'can_publish' => BackupValue::booleanInteger(
+                    $row['can_publish'],
+                    'node-direct-permission.can_publish',
+                ),
+                'updated_at' => $row['updated_at'] ?? date('Y-m-d H:i:s'),
+            ];
+            $existing = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                ->where('node_id', '=', $nodeId)
+                ->where('user_id', '=', $userId)
+                ->first();
+            if (is_array($existing)) {
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                    ->where('id', '=', BackupValue::integer($existing['id'], 'node-direct-permission.id'))
+                    ->update($values);
+            } else {
+                $values['created_at'] = $row['created_at'] ?? date('Y-m-d H:i:s');
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                    ->insert($values);
+            }
         }
     }
 

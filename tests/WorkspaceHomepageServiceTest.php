@@ -251,7 +251,6 @@ final class WorkspaceHomepageServiceTest extends TestCase
             'name' => 'Portal',
             'slug' => 'portal',
             'visibility' => 'public',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $ids = [];

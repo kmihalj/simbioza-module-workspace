@@ -29,7 +29,6 @@ return new class implements ReversibleMigrationInterface {
                 $table->string('visibility', 32)->default('restricted')->index();
                 $table->string('tree_visibility', 16)->default('inherit');
                 $table->string('contents_visibility', 16)->default('inherit');
-                $table->bigInteger('owner_user_id')->unsigned()->index();
                 $table->boolean('is_archived')->default(false)->index();
                 $table->boolean('is_deleted')->default(false)->index();
                 $table->bigInteger('created_by_user_id')->unsigned()->nullable()->index();
@@ -108,6 +107,30 @@ return new class implements ReversibleMigrationInterface {
                     'workspace_node_acl_subject_unique',
                 );
             });
+        }
+
+        if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)) {
+            $schema->create(
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
+                static function (Blueprint $table): void {
+                    $table->id();
+                    $table->bigInteger('node_id')->unsigned()->index();
+                    $table->bigInteger('user_id')->unsigned()->index();
+                    $table->boolean('can_view')->default(true);
+                    $table->boolean('can_edit')->default(false);
+                    $table->boolean('can_publish')->default(false);
+                    $table->timestamps();
+
+                    $table->unique(
+                        ['node_id', 'user_id'],
+                        'workspace_node_direct_user_unique',
+                    );
+                    $table->index(
+                        ['user_id', 'node_id'],
+                        'workspace_node_direct_user_node_idx',
+                    );
+                },
+            );
         }
 
         if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)) {
@@ -285,6 +308,7 @@ return new class implements ReversibleMigrationInterface {
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES,
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL,
                 ModuleWorkspace::TABLE_WORKSPACE_NODES,
                 ModuleWorkspace::TABLE_WORKSPACE_ACL,

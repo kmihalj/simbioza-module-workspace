@@ -9,7 +9,9 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
 /**
  * @var \HeartPhrame\View\View $this
  * @var array<string, mixed> $workspace
- * @var list<array<string, mixed>> $workspaceAclSubjects
+ * @var list<array<string, mixed>> $restrictionSubjects
+ * @var list<array<string, mixed>> $directPermissionSubjects
+ * @var bool $canManagePagePermissions
  * @var array<string, mixed> $node
  * @var list<array<string, mixed>> $nodes
  * @var list<array{id:string,title:string}> $editorDocuments
@@ -18,14 +20,20 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var string $nodeSavePath
  * @var string $nodeDeletePath
  * @var string $nodeAclSavePath
+ * @var string $nodeDirectPermissionSavePath
+ * @var string $subjectSearchPath
  * @var int $returnNodeId
  */
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
 $nodeId = WorkspaceValue::int($node['id'] ?? 0);
 $permissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
 $restrictions = WorkspaceValue::rows($node['restrictions'] ?? null);
-$canManageRestrictions = (bool)($permissions['can_manage'] ?? false);
-$hasDirectRestrictions = $restrictions !== [];
+$canManageRestrictions = $canManagePagePermissions;
+$hasDirectRestrictions = array_filter(
+    $restrictions,
+    static fn(array $row): bool =>
+        WorkspaceValue::string($row['subject_type'] ?? '') === 'user',
+) !== [];
 
 /**
  * HR: Provjerava jedno spremljeno pravo u ACL recima čvora.
@@ -169,27 +177,40 @@ $hasPermission = static function (
         </form>
     <?php endif; ?>
 
-    <?php if ($workspaceAclSubjects !== []) : ?>
+    <?php if ($canManageRestrictions) : ?>
         <hr class="my-4">
-        <?php if ($canManageRestrictions) : ?>
-            <form method="post" action="<?= $this->escape($nodeAclSavePath) ?>">
+        <section aria-labelledby="workspace-node-acl-title">
+            <form
+                method="post"
+                action="<?= $this->escape($nodeAclSavePath) ?>"
+                data-workspace-restriction-form
+                data-workspace-remove-label="<?= $this->escape(__('Ukloni')) ?>"
+                <?php foreach (['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'] as $permission) : ?>
+                    data-workspace-permission-<?= str_replace('_', '-', $permission) ?>-label="<?= $this->escape(__($permission)) ?>"
+                <?php endforeach; ?>
+            >
             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
             <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
             <input type="hidden" name="node_id" value="<?= $nodeId ?>">
             <input type="hidden" name="return_context" value="workspace">
             <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
-        <?php else : ?>
-            <section aria-labelledby="workspace-node-acl-title">
-        <?php endif; ?>
             <h3 id="workspace-node-acl-title" class="h6">
-                <?= $this->escape(__('Nasljedna ograničenja')) ?>
+                <?= $this->escape(__('Ograničenja naslijeđenih prava')) ?>
             </h3>
-            <p class="small text-body-secondary">
+            <p class="small text-body-secondary mb-2">
                 <?= $this->escape(
                     __(
-                        'Zeleno prikazuje pravo naslijeđeno iz područja i nadređenih stranica. '
-                        . 'Crveno prikazuje pravo '
-                        . 'koje je zadržano izravnim ograničenjem ove stranice.',
+                        'Ovdje se odabranom korisniku mogu uskratiti prava koja već ima na području '
+                        . 'izravno ili članstvom u grupi. Ograničenje vrijedi na ovoj stranici i svim '
+                        . 'njezinim podređenim stranicama; njime se ne mogu dodijeliti nova prava.',
+                    ),
+                ) ?>
+            </p>
+            <p class="small text-body-secondary mb-3">
+                <?= $this->escape(
+                    __(
+                        'U popisu su samo korisnici s postojećim pravima na područje. Grupe se ovdje '
+                        . 'ne ograničavaju: ograničenje se uvijek odnosi na odabranog korisnika.',
                     ),
                 ) ?>
             </p>
@@ -198,130 +219,329 @@ $hasPermission = static function (
             ) ?>">
                 <span>
                     <span class="workspace-acl-legend-swatch workspace-acl-legend-inherited"></span>
-                    <?= $this->escape(__('Naslijeđeno iz područja i predaka')) ?>
+                    <?= $this->escape(__('Pravo je naslijeđeno i zadržano')) ?>
                 </span>
                 <span>
-                    <span class="workspace-acl-legend-swatch workspace-acl-legend-direct"></span>
-                    <?= $this->escape(__('Izravno ograničenje stranice')) ?>
+                    <span class="workspace-acl-legend-swatch workspace-acl-legend-denied"></span>
+                    <?= $this->escape(__('Naslijeđeno pravo je uskraćeno')) ?>
+                </span>
+                <span>
+                    <span class="workspace-acl-legend-swatch workspace-acl-legend-unavailable"></span>
+                    <?= $this->escape(__('Korisnik nema to naslijeđeno pravo')) ?>
                 </span>
             </div>
-            <?php if (!$canManageRestrictions) : ?>
-                <div class="alert alert-secondary py-2" role="note">
-                    <?= $this->escape(
-                        __('Ovlasti su prikazane samo za čitanje. Za promjenu je potrebno pravo upravljanja.'),
-                    ) ?>
-                </div>
-            <?php elseif (!$hasDirectRestrictions) : ?>
+            <?php if (!$hasDirectRestrictions) : ?>
                 <div class="alert alert-success py-2" role="note">
                     <?= $this->escape(
-                        __('Stranica trenutačno potpuno nasljeđuje ovlasti područja.'),
+                        __('Na ovoj stranici trenutačno nema korisničkih ograničenja.'),
                     ) ?>
                 </div>
             <?php endif; ?>
-            <?php foreach (['user', 'group'] as $category) : ?>
-                <?php
-                $eligibleSubjects = array_values(array_filter(
-                    $workspaceAclSubjects,
-                    static fn(array $subject): bool =>
-                        WorkspaceValue::string($subject['category'] ?? '') === $category,
-                ));
-                ?>
-                <?php if ($eligibleSubjects !== []) : ?>
-                    <div class="table-responsive mb-2">
-                        <table class="table table-sm align-middle workspace-acl-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">
-                                        <?= $this->escape(
-                                            $category === 'user' ? __('Korisnici') : __('Grupe'),
-                                        ) ?>
-                                    </th>
-                                    <?php foreach (['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'] as $permission) : ?>
-                                        <th scope="col" class="text-center">
-                                            <?= $this->escape(__($permission)) ?>
-                                        </th>
-                                    <?php endforeach; ?>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($eligibleSubjects as $subject) : ?>
-                                    <?php
-                                    $subjectType = WorkspaceValue::string($subject['subject_type'] ?? '');
-                                    $subjectId = WorkspaceValue::int($subject['subject_id'] ?? 0);
-                                    $label = WorkspaceValue::string($subject['label'] ?? '');
-                                    $publicReadOnly = (bool)($subject['is_read_only'] ?? false);
-                                    ?>
-                                    <tr>
-                                        <th scope="row"><?= $this->escape($label) ?></th>
-                                        <?php foreach (['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'] as $permission) : ?>
-                                            <?php
-                                            $inherited = (bool)($subject[$permission] ?? false);
-                                            $direct = $hasPermission(
-                                                $restrictions,
-                                                $subjectType,
-                                                $subjectId,
-                                                $permission,
-                                            );
-                                            ?>
-                                            <td class="text-center">
-                                                <span class="workspace-node-acl-cell">
-                                                    <input
-                                                        class="form-check-input workspace-acl-checkbox-inherited"
-                                                        type="checkbox"
-                                                        <?= $inherited ? 'checked' : '' ?>
-                                                        disabled
-                                                        aria-label="<?= $this->escape(
-                                                            __('Naslijeđeno iz područja i predaka')
-                                                            . ' - '
-                                                            . __($permission)
-                                                            . ': '
-                                                            . $label,
-                                                        ) ?>"
-                                                    >
-                                                    <input
-                                                        class="form-check-input workspace-acl-checkbox-direct"
-                                                        type="checkbox"
-                                                        name="acl[<?= $subjectType ?>][<?= $subjectId ?>][<?= $permission ?>]"
-                                                        value="1"
-                                                        <?= (!$canManageRestrictions
-                                                            || !$inherited
-                                                            || ($publicReadOnly && $permission !== 'can_view'))
-                                                            ? 'disabled'
-                                                            : '' ?>
-                                                        aria-label="<?= $this->escape(
-                                                            __('Izravno ograničenje stranice')
-                                                            . ' - '
-                                                            . __($permission)
-                                                            . ': '
-                                                            . $label,
-                                                        ) ?>"
-                                                        <?= $direct ? 'checked' : '' ?>
-                                                    >
-                                                </span>
-                                            </td>
-                                        <?php endforeach; ?>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+
+            <div class="row g-2 align-items-end mb-2">
+                <div class="col-12 col-lg-6">
+                    <label class="form-label" for="workspace-restriction-user-search">
+                        <?= $this->escape(__('Dodaj korisnika')) ?>
+                    </label>
+                    <div
+                        class="workspace-subject-picker"
+                        data-workspace-subject-picker
+                        data-workspace-picker-mode="restriction"
+                        data-workspace-min-query-length="2"
+                        data-workspace-subject-type="user"
+                        data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
+                        data-workspace-id="<?= $workspaceId ?>"
+                        data-workspace-node-id="<?= $nodeId ?>"
+                        data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                        data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
+                    >
+                        <input
+                            id="workspace-restriction-user-search"
+                            class="form-control"
+                            type="search"
+                            role="combobox"
+                            autocomplete="off"
+                            aria-autocomplete="list"
+                            aria-expanded="false"
+                            aria-controls="workspace-restriction-user-results"
+                            placeholder="<?= $this->escape(__('Pretraži korisnike s pravima na području')) ?>"
+                            data-workspace-subject-search
+                        >
+                        <div
+                            id="workspace-restriction-user-results"
+                            class="workspace-subject-results list-group"
+                            role="listbox"
+                            data-workspace-subject-results
+                            hidden
+                        ></div>
                     </div>
-                <?php endif; ?>
-            <?php endforeach; ?>
-            <?php if ($canManageRestrictions) : ?>
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <p class="small text-body-secondary mb-0">
+                </div>
+                <div class="col-12 col-lg-6">
+                    <p class="small text-body-secondary mb-1">
                         <?= $this->escape(
-                            __('Uklonite sve crvene oznake za potpuno nasljeđivanje ovlasti područja.'),
+                            __('Odaberite korisnika pa isključite prava koja mu želite uskratiti.'),
                         ) ?>
                     </p>
-                    <button class="btn btn-secondary" type="submit">
-                        <?= $this->escape(__('Spremi ograničenja')) ?>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-2">
+                <table class="table table-sm align-middle workspace-acl-table">
+                    <thead>
+                        <tr>
+                            <th scope="col"><?= $this->escape(__('Korisnik')) ?></th>
+                            <?php foreach (['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'] as $permission) : ?>
+                                <th scope="col" class="text-center"><?= $this->escape(__($permission)) ?></th>
+                            <?php endforeach; ?>
+                            <th scope="col" class="workspace-acl-action-column">
+                                <span class="visually-hidden"><?= $this->escape(__('Radnje')) ?></span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody data-workspace-restriction-rows>
+                        <?php foreach ($restrictionSubjects as $subject) : ?>
+                            <?php
+                            $subjectId = WorkspaceValue::int($subject['subject_id'] ?? 0);
+                            $label = WorkspaceValue::string($subject['label'] ?? '');
+                            ?>
+                            <tr data-workspace-restriction-row="<?= $subjectId ?>">
+                                <th scope="row">
+                                    <?= $this->escape($label) ?>
+                                    <input type="hidden" name="acl[user][<?= $subjectId ?>][_selected]" value="1">
+                                </th>
+                                <?php foreach (['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'] as $permission) : ?>
+                                    <?php
+                                    $inherited = (bool)($subject[$permission] ?? false);
+                                    $allowed = $hasPermission(
+                                        $restrictions,
+                                        'user',
+                                        $subjectId,
+                                        $permission,
+                                    );
+                                    ?>
+                                    <td class="text-center">
+                                        <?php if ($inherited) : ?>
+                                            <label class="workspace-node-restriction-toggle">
+                                                <input
+                                                    class="visually-hidden"
+                                                    type="checkbox"
+                                                    name="acl[user][<?= $subjectId ?>][<?= $permission ?>]"
+                                                    value="1"
+                                                    data-workspace-restriction-permission="<?= $permission ?>"
+                                                    <?= $allowed ? 'checked' : '' ?>
+                                                    aria-label="<?= $this->escape(
+                                                        __($permission) . ': ' . $label,
+                                                    ) ?>"
+                                                >
+                                                <span aria-hidden="true"></span>
+                                            </label>
+                                        <?php else : ?>
+                                            <span
+                                                class="workspace-node-restriction-unavailable"
+                                                title="<?= $this->escape(__('Korisnik nema to naslijeđeno pravo')) ?>"
+                                                aria-label="<?= $this->escape(
+                                                    __('Korisnik nema to naslijeđeno pravo')
+                                                    . ' - '
+                                                    . __($permission)
+                                                    . ': '
+                                                    . $label,
+                                                ) ?>"
+                                            ></span>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endforeach; ?>
+                                <td class="text-end">
+                                    <button
+                                        class="btn btn-sm btn-link text-danger workspace-acl-remove"
+                                        type="button"
+                                        title="<?= $this->escape(__('Ukloni')) ?>"
+                                        aria-label="<?= $this->escape(__('Ukloni') . ': ' . $label) ?>"
+                                        data-workspace-restriction-remove
+                                    >
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path d="M6 6l12 12M18 6L6 18"></path>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <tr
+                            class="workspace-acl-empty"
+                            data-workspace-restriction-empty
+                            <?= $restrictionSubjects !== [] ? 'hidden' : '' ?>
+                        >
+                            <td colspan="8" class="text-body-secondary">
+                                <?= $this->escape(__('Nema korisničkih ograničenja.')) ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <p class="small text-body-secondary mb-0">
+                    <?= $this->escape(
+                        __('Uklonite korisnika iz tablice za potpuno vraćanje njegovih naslijeđenih prava.'),
+                    ) ?>
+                </p>
+                <button class="btn btn-secondary" type="submit">
+                    <?= $this->escape(__('Spremi ograničenja')) ?>
+                </button>
+            </div>
+            </form>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($canManagePagePermissions) : ?>
+        <hr class="my-4">
+        <section aria-labelledby="workspace-node-direct-permissions-title">
+            <h3 id="workspace-node-direct-permissions-title" class="h6">
+                <?= $this->escape(__('Izravna dopuštenja korisnicima')) ?>
+            </h3>
+            <p class="small text-body-secondary mb-2">
+                <?= $this->escape(
+                    __(
+                        'Izravno dopuštenje vrijedi samo za ovu stranicu i ne nasljeđuju ga '
+                        . 'podređene stranice. Korisniku bez pristupa području područje će se '
+                        . 'pojaviti na popisu, ali će u njemu vidjeti samo izravno dopuštene stranice.',
+                    ),
+                ) ?>
+            </p>
+            <p class="small text-body-secondary mb-3">
+                <?= $this->escape(
+                    __(
+                        'Ovdje se dodaju samo korisnici, ne i grupe. Uređivanje i objavljivanje '
+                        . 'automatski uključuju čitanje.',
+                    ),
+                ) ?>
+            </p>
+            <form
+                method="post"
+                action="<?= $this->escape($nodeDirectPermissionSavePath) ?>"
+                data-workspace-direct-permission-form
+                data-workspace-remove-label="<?= $this->escape(__('Ukloni')) ?>"
+                data-workspace-permission-can-view-label="<?= $this->escape(__('Čitanje')) ?>"
+                data-workspace-permission-can-edit-label="<?= $this->escape(__('Uređivanje')) ?>"
+                data-workspace-permission-can-publish-label="<?= $this->escape(__('Objavljivanje')) ?>"
+            >
+                <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
+                <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
+                <input type="hidden" name="node_id" value="<?= $nodeId ?>">
+                <input type="hidden" name="return_context" value="workspace">
+                <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
+
+                <div class="row g-2 align-items-end mb-2">
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label" for="workspace-direct-permission-user-search">
+                            <?= $this->escape(__('Dodaj korisnika')) ?>
+                        </label>
+                        <div
+                            class="workspace-subject-picker"
+                            data-workspace-subject-picker
+                            data-workspace-picker-mode="direct-permission"
+                            data-workspace-min-query-length="2"
+                            data-workspace-subject-type="user"
+                            data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
+                            data-workspace-id="<?= $workspaceId ?>"
+                            data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                            data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
+                        >
+                            <input
+                                id="workspace-direct-permission-user-search"
+                                class="form-control"
+                                type="search"
+                                role="combobox"
+                                autocomplete="off"
+                                aria-autocomplete="list"
+                                aria-expanded="false"
+                                aria-controls="workspace-direct-permission-user-results"
+                                placeholder="<?= $this->escape(__('Pretraži korisnike')) ?>"
+                                data-workspace-subject-search
+                            >
+                            <div
+                                id="workspace-direct-permission-user-results"
+                                class="workspace-subject-results list-group"
+                                role="listbox"
+                                data-workspace-subject-results
+                                hidden
+                            ></div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <p class="small text-body-secondary mb-1">
+                            <?= $this->escape(__('Pretražite po imenu ili korisničkoj oznaci.')) ?>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle workspace-acl-table">
+                        <thead>
+                            <tr>
+                                <th scope="col"><?= $this->escape(__('Korisnik')) ?></th>
+                                <?php foreach (['can_view' => __('Čitanje'), 'can_edit' => __('Uređivanje'), 'can_publish' => __('Objavljivanje')] as $permission => $label) : ?>
+                                    <th scope="col" class="text-center">
+                                        <?= $this->escape($label) ?>
+                                    </th>
+                                <?php endforeach; ?>
+                                <th scope="col" class="workspace-acl-action-column">
+                                    <span class="visually-hidden"><?= $this->escape(__('Radnje')) ?></span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody data-workspace-direct-permission-rows>
+                            <?php foreach ($directPermissionSubjects as $subject) : ?>
+                                <?php
+                                $userId = WorkspaceValue::int($subject['user_id'] ?? 0);
+                                $label = WorkspaceValue::string($subject['label'] ?? '');
+                                ?>
+                                <tr data-workspace-direct-permission-row="<?= $userId ?>">
+                                    <th scope="row"><?= $this->escape($label) ?></th>
+                                    <?php foreach (['can_view', 'can_edit', 'can_publish'] as $permission) : ?>
+                                        <td class="text-center">
+                                            <input
+                                                class="form-check-input"
+                                                type="checkbox"
+                                                name="direct_permissions[<?= $userId ?>][<?= $permission ?>]"
+                                                value="1"
+                                                <?= (bool)($subject[$permission] ?? false) ? 'checked' : '' ?>
+                                                aria-label="<?= $this->escape(__($permission) . ': ' . $label) ?>"
+                                            >
+                                        </td>
+                                    <?php endforeach; ?>
+                                    <td class="text-end">
+                                        <button
+                                            class="btn btn-sm btn-link text-danger workspace-acl-remove"
+                                            type="button"
+                                            title="<?= $this->escape(__('Ukloni')) ?>"
+                                            aria-label="<?= $this->escape(__('Ukloni') . ': ' . $label) ?>"
+                                            data-workspace-direct-permission-remove
+                                        >
+                                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                                                <path d="M6 6l12 12M18 6L6 18"></path>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <tr
+                                class="workspace-acl-empty"
+                                data-workspace-direct-permission-empty
+                                <?= $directPermissionSubjects !== [] ? 'hidden' : '' ?>
+                            >
+                                <td colspan="5" class="text-body-secondary">
+                                    <?= $this->escape(__('Nema izravnih dopuštenja.')) ?>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button class="btn btn-primary" type="submit">
+                        <?= $this->escape(__('Spremi izravna dopuštenja')) ?>
                     </button>
                 </div>
             </form>
-            <?php else : ?>
-            </section>
-            <?php endif; ?>
+        </section>
     <?php endif; ?>
 
     <?php if ((bool)($permissions['can_delete'] ?? false)) : ?>

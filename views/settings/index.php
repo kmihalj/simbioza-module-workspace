@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
 
+// phpcs:disable Generic.WhiteSpace.ScopeIndent,Squiz.ControlStructures.ControlSignature,Generic.Files.LineLength
+
 /**
  * @var \HeartPhrame\View\View $this
  * @var string $title
@@ -14,10 +16,17 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var string $deletedPath
  * @var string $settingsMenuActiveSection
  * @var object|null $menuRenderer
+ * @var string $subjectSearchPath
  * @var string $assetsCssPath
+ * @var string $assetsJsPath
  */
+$creatorSubjects = [
+    'user' => is_array($settings['creator_users'] ?? null) ? $settings['creator_users'] : [],
+    'group' => is_array($settings['creator_groups'] ?? null) ? $settings['creator_groups'] : [],
+];
 ?>
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
+<script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
 
 <div class="row g-4">
     <aside class="col-lg-3">
@@ -25,7 +34,12 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
     </aside>
 
     <div class="col-lg-9">
-        <form method="post" action="<?= $this->escape($savePath) ?>">
+        <form
+            method="post"
+            action="<?= $this->escape($savePath) ?>"
+            data-workspace-creator-form
+            data-workspace-remove-label="<?= $this->escape(__('Ukloni')) ?>"
+        >
             <section class="card">
                 <div class="card-body">
                     <header class="mb-4">
@@ -109,25 +123,130 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
                                     <?= $this->escape(__('Sadržaj stranice je početno prikazan')) ?>
                                 </label>
                             </div>
-                            <div class="form-check form-switch">
-                                <input
-                                    id="workspace-authenticated-create"
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    name="authenticated_users_may_create"
-                                    value="1"
-                                    <?= (bool)($settings['authenticated_users_may_create'] ?? false)
-                                    ? 'checked'
-                                    : '' ?>
-                                >
-                                <label class="form-check-label" for="workspace-authenticated-create">
-                                    <?= $this->escape(
-                                        __('Svaki prijavljeni korisnik smije kreirati područje'),
-                                    ) ?>
-                                </label>
-                            </div>
                         </div>
                     </div>
+
+                    <hr class="my-4">
+                    <section aria-labelledby="workspace-creator-settings-title">
+                        <h2 id="workspace-creator-settings-title" class="h5 mb-1">
+                            <?= $this->escape(__('Kreiranje područja')) ?>
+                        </h2>
+                        <p class="text-body-secondary mb-3">
+                            <?= $this->escape(
+                                __(
+                                    'Administratori uvijek smiju kreirati područja. Ovdje dodajte ostale '
+                                    . 'korisnike ili grupe kojima to želite dopustiti.',
+                                ),
+                            ) ?>
+                        </p>
+                        <div class="row g-4">
+                            <?php foreach (['user', 'group'] as $category) : ?>
+                                <?php
+                                $inputName = $category === 'user' ? 'creator_users' : 'creator_groups';
+                                $subjects = $creatorSubjects[$category];
+                                ?>
+                                <div class="col-12 col-xl-6">
+                                    <section data-workspace-creator-section="<?= $category ?>">
+                                        <label
+                                            class="form-label"
+                                            for="workspace-creator-search-<?= $category ?>"
+                                        >
+                                            <?= $this->escape(
+                                                $category === 'user' ? __('Dodaj korisnika') : __('Dodaj grupu'),
+                                            ) ?>
+                                        </label>
+                                        <div
+                                            class="workspace-subject-picker"
+                                            data-workspace-subject-picker
+                                            data-workspace-picker-mode="creator"
+                                            data-workspace-subject-type="<?= $category ?>"
+                                            data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
+                                            data-workspace-min-query-length="2"
+                                            data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                                            data-workspace-search-error="<?= $this->escape(
+                                                __('Pretraživanje nije uspjelo.'),
+                                            ) ?>"
+                                        >
+                                            <input
+                                                id="workspace-creator-search-<?= $category ?>"
+                                                class="form-control"
+                                                type="search"
+                                                role="combobox"
+                                                autocomplete="off"
+                                                aria-autocomplete="list"
+                                                aria-expanded="false"
+                                                aria-controls="workspace-creator-results-<?= $category ?>"
+                                                placeholder="<?= $this->escape(
+                                                    $category === 'user'
+                                                    ? __('Upišite najmanje dva znaka korisnika')
+                                                    : __('Upišite najmanje dva znaka grupe'),
+                                                ) ?>"
+                                                data-workspace-subject-search
+                                            >
+                                            <div
+                                                id="workspace-creator-results-<?= $category ?>"
+                                                class="workspace-subject-results list-group"
+                                                role="listbox"
+                                                data-workspace-subject-results
+                                                hidden
+                                            ></div>
+                                        </div>
+                                        <div class="table-responsive mt-2">
+                                            <table class="table table-sm align-middle mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col"><?= $this->escape(__('Naziv')) ?></th>
+                                                        <th scope="col" class="workspace-acl-action-column">
+                                                            <span class="visually-hidden">
+                                                                <?= $this->escape(__('Radnje')) ?>
+                                                            </span>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody data-workspace-creator-rows="<?= $category ?>">
+                                                    <?php foreach ($subjects as $subject) : ?>
+                                                        <?php
+                                                        if (!is_array($subject)) {
+                                                            continue;
+                                                        }
+                                                        $subjectId = WorkspaceValue::int($subject['id'] ?? 0);
+                                                        $label = WorkspaceValue::string($subject['label'] ?? '');
+                                                        ?>
+                                                        <tr data-workspace-creator-row="<?= $category ?>:<?= $subjectId ?>">
+                                                            <th scope="row">
+                                                                <?= $this->escape($label) ?>
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="<?= $inputName ?>[]"
+                                                                    value="<?= $subjectId ?>"
+                                                                >
+                                                            </th>
+                                                            <td class="text-end">
+                                                                <button
+                                                                    class="btn btn-sm btn-link text-danger workspace-acl-remove"
+                                                                    type="button"
+                                                                    data-workspace-creator-remove
+                                                                    aria-label="<?= $this->escape(__('Ukloni') . ': ' . $label) ?>"
+                                                                >×</button>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                    <tr
+                                                        data-workspace-creator-empty
+                                                        <?= $subjects !== [] ? 'hidden' : '' ?>
+                                                    >
+                                                        <td colspan="2" class="text-body-secondary">
+                                                            <?= $this->escape(__('Nema dodijeljenih subjekata.')) ?>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </section>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
 
                     <hr class="my-4">
                     <section aria-labelledby="workspace-shorts-settings-title">

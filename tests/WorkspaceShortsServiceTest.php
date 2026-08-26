@@ -139,7 +139,6 @@ final class WorkspaceShortsServiceTest extends TestCase
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Sažetci',
             'slug' => 'sazetci',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -202,8 +201,7 @@ final class WorkspaceShortsServiceTest extends TestCase
             'limit' => 10,
             'order' => 'hierarchy',
         ]);
-        $this->assertSame(['Korijen', 'Dijete'], $this->titles($hierarchy));
-        $this->assertNotContains('Ograničeno', $this->titles($hierarchy));
+        $this->assertSame(['Korijen', 'Dijete', 'Ograničeno'], $this->titles($hierarchy));
         $this->assertNotContains('Nacrt', $this->titles($hierarchy));
         $this->assertNotContains('Duboko', $this->titles($hierarchy));
 
@@ -228,7 +226,6 @@ final class WorkspaceShortsServiceTest extends TestCase
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Veliki sažetci',
             'slug' => 'veliki-sazetci',
-            'owner_user_id' => 1,
         ], 1);
         $workspaceId = (int)$workspace['id'];
         $this->repository->replaceWorkspaceAcl($workspaceId, [
@@ -268,7 +265,6 @@ final class WorkspaceShortsServiceTest extends TestCase
             'name' => 'Višejezični sažetci',
             'slug' => 'multilingual-summaries',
             'visibility' => 'public',
-            'owner_user_id' => 1,
         ], 1);
         $node = $this->node((int)$workspace['id'], 'Default language', 'root-doc');
         $this->repository->saveNodeWorkflow((int)$node['id'], 'en', [

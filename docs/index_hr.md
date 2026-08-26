@@ -29,7 +29,7 @@ Jedina inicijalna migracija kroz ORM kreira osam tablica:
 
 | Tablica | Odgovornost |
 | --- | --- |
-| `workspaces` | Identitet, slug, vidljivost, vlasnik, arhiva i soft delete |
+| `workspaces` | Identitet, slug, vidljivost, arhiva i soft delete |
 | `workspace_acl` | Prava korisnika/grupa na razini Područja |
 | `workspace_nodes` | Uređena hijerarhija dokumenata i linkova |
 | `workspace_node_acl` | Dodatna ograničenja naslijeđena kroz stablo |
@@ -55,14 +55,14 @@ korisničkih grupa:
 - **Svi prijavljeni** (`authenticated`) obuhvaća svakog prijavljenog korisnika
   i može dobiti pregled te šira prava koja odabere upravitelj Područja.
 - Kada nije dodana nijedna ugrađena publika, Područje je `restricted` i vide ga
-  samo vlasnik, administratori te izričito ovlašteni korisnici ili Auth grupe.
+  samo administratori te izričito ovlašteni korisnici ili Auth grupe.
 
 Stupac `workspaces.visibility` čuva sažeto stanje radi brzog filtriranja
 Područja, ali se automatski sinkronizira iz ugrađenih ACL redaka. Zato obrazac
 nema drugi, odvojeni odabir vidljivosti koji bi se mogao razići s pravima.
 
 Arhivirano Područje ostaje čitljivo ovlaštenim korisnicima, ali su promjene
-sadržaja isključene i vlasniku i administratoru. Njihovo `can_manage` pravo
+sadržaja isključene i upravitelju i administratoru. Njihovo `can_manage` pravo
 ostaje aktivno kako bi mogli ponovno uključiti Područje. Brisanje Područja je
 soft delete. Administratori mogu vidjeti i vratiti obrisana Područja te riješiti
 konflikt sluga.
@@ -80,8 +80,9 @@ publika kojima pripada i svih njegovih grupa se zbrajaju:
 - `can_delete`
 - `can_manage`
 
-`can_manage` uključuje sva ostala prava. Vlasnik Područja i administratori
-aplikacije dobivaju potpuni skup prava.
+`can_manage` uključuje sva ostala prava. Administratori aplikacije dobivaju
+potpuni skup prava. Kreator novog Područja dobiva običan korisnički ACL red s
+`can_manage`, bez posebnog statusa vlasnika.
 
 Ekran ne učitava sve korisnike i grupe. Prikazuje samo već dodijeljene ACL
 retke, a novi se subjekt dodaje pretraživačem. Pretraga se izvršava na serveru,
@@ -90,8 +91,7 @@ prihvaća dio prikaznog imena, korisničke oznake ili naziva grupe i vraća najv
 pisati. Takav obrazac ostaje uporabiv i kada Auth imenik sadrži tisuće
 korisnika i stotine grupa, bez slanja cijelog imenika u HTML.
 
-Promjena vlasnika koristi isti ograničeni pretraživač korisnika. Uklanjanje
-retka iz tablice uklanja samo dodjelu prava nakon spremanja; ne briše korisnika
+Uklanjanje retka iz tablice uklanja samo dodjelu prava nakon spremanja; ne briše korisnika
 ni grupu iz Auth modula.
 
 ACL čvora namjerno samo ograničava:
@@ -449,7 +449,8 @@ return [
         'contents_visible' => false,
     ],
     'creation' => [
-        'authenticated_users' => false,
+        'users' => [],
+        'groups' => [],
     ],
     'menu' => [
         'auto_register_top' => true,
@@ -457,6 +458,9 @@ return [
     ],
 ];
 ```
+
+Administratori uvijek smiju kreirati Područja. Ostali se kreatori odabiru u
+Postavkama područja kao pojedinačni Auth korisnici ili postojeće Auth grupe.
 
 `tree_visible` i `contents_visible` su sistemske rezervne vrijednosti. Svako
 područje može za stablo i sadržaj odabrati nasljeđivanje, prikaz ili skrivanje,

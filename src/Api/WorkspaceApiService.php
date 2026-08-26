@@ -439,25 +439,20 @@ final readonly class WorkspaceApiService
             throw $this->forbidden(__('Nemate pravo kreirati područja.'));
         }
 
-        $actorUserId = $this->userId($user);
-        if (!$this->access->isAdministrator($user)) {
-            $payload['owner_user_id'] = $actorUserId;
-        }
-
         if (!array_key_exists('visibility', $payload)) {
             $payload['visibility'] = $this->config->defaultVisibility();
         }
 
-        $saved = $this->repository->saveWorkspace($payload, $actorUserId);
+        $saved = $this->repository->saveWorkspace($payload, $this->userId($user));
         $this->access->clearRequestCache();
 
         return $this->workspaceDtoWithPermissions($saved, $user);
     }
 
     /**
-     * HR: Djelomično mijenja područje uz can_manage i čuva vlasnika neadministratoru.
+     * HR: Djelomično mijenja područje uz efektivno can_manage pravo.
      *
-     * EN: Partially updates a Workspace with can_manage and preserves ownership for non-admins.
+     * EN: Partially updates a Workspace with the effective can_manage permission.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -468,10 +463,6 @@ final readonly class WorkspaceApiService
         $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
         $payload = $this->mergeWorkspacePayload($workspace, $payload);
         $payload['id'] = WorkspaceValue::int($workspace['id'] ?? 0);
-        if (!$this->access->isAdministrator($user)) {
-            $payload['owner_user_id'] = WorkspaceValue::int($workspace['owner_user_id'] ?? 0);
-        }
-
         $saved = $this->repository->saveWorkspace($payload, $this->userId($user));
         $this->access->clearRequestCache();
 
@@ -739,6 +730,13 @@ final readonly class WorkspaceApiService
 
         $subjects = [];
         foreach ($this->repository->nodeAclRows($nodeId) as $row) {
+            if (
+                WorkspaceValue::string($row['subject_type'] ?? '')
+                    !== WorkspaceRepository::SUBJECT_USER
+            ) {
+                continue;
+            }
+
             $key = WorkspaceValue::string($row['subject_type'] ?? '')
             . ':'
             . WorkspaceValue::int($row['subject_id'] ?? 0);
@@ -769,7 +767,12 @@ final readonly class WorkspaceApiService
         $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
         $this->requireNode($workspace, $nodeId);
-        $this->repository->replaceNodeAcl($workspaceId, $nodeId, $this->aclMap($payload));
+        $acl = $this->aclMap($payload);
+        if (array_diff(array_keys($acl), [WorkspaceRepository::SUBJECT_USER]) !== []) {
+            throw $this->invalid(__('Ograničenja stranice mogu se zadati samo korisnicima.'));
+        }
+
+        $this->repository->replaceNodeAcl($workspaceId, $nodeId, $acl);
         $this->access->clearRequestCache();
 
         return $this->getNodeAcl($slug, $nodeId, $user);
@@ -889,7 +892,6 @@ final readonly class WorkspaceApiService
             'contents_visibility' => WorkspaceValue::string(
                 $workspace['contents_visibility'] ?? 'inherit',
             ),
-            'owner_user_id' => WorkspaceValue::int($workspace['owner_user_id'] ?? 0),
             'is_archived' => (bool)($workspace['is_archived'] ?? false),
             'is_deleted' => (bool)($workspace['is_deleted'] ?? false),
             'created_at' => WorkspaceValue::string($workspace['created_at'] ?? ''),
@@ -1160,7 +1162,6 @@ final readonly class WorkspaceApiService
                 'slug',
                 'description',
                 'visibility',
-                'owner_user_id',
                 'is_archived',
                 'tree_visibility',
                 'contents_visibility',

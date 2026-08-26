@@ -3,7 +3,7 @@
 [Hrvatska verzija](README_hr.md)
 
 The Workspace module organizes related content into **Workspaces** (`Područja`
-in Croatian). Each Workspace has its own URL, owner, visibility, members,
+in Croatian). Each Workspace has its own URL, visibility, members,
 permissions, and hierarchical page tree.
 
 ## Dependencies
@@ -68,7 +68,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
 
 Page restrictions only narrow the permissions granted at Workspace level. They
 never grant access to a user or group that is not already a Workspace member.
-The Workspace owner and application administrators retain management access.
+Application administrators retain management access. The creator receives
+`can_manage` through a regular user ACL row, which can later be changed like any other grant.
 In an archived Workspace, add, edit, and delete are disabled for them as well
 until they reactivate it.
 

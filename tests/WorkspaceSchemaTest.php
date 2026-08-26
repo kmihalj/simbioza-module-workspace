@@ -45,6 +45,7 @@ final class WorkspaceSchemaTest extends TestCase
                 ModuleWorkspace::TABLE_WORKSPACE_ACL,
                 ModuleWorkspace::TABLE_WORKSPACE_NODES,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL,
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
                 ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,
                 ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES,
@@ -70,7 +71,6 @@ final class WorkspaceSchemaTest extends TestCase
                     'visibility',
                     'tree_visibility',
                     'contents_visibility',
-                    'owner_user_id',
                     'is_archived',
                     'is_deleted',
                 ],
@@ -134,6 +134,12 @@ final class WorkspaceSchemaTest extends TestCase
         );
         $this->assertTrue(
             $schema->hasColumns(
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
+                ['node_id', 'user_id', 'can_view', 'can_edit', 'can_publish'],
+            ),
+        );
+        $this->assertTrue(
+            $schema->hasColumns(
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
                 [
                     'node_id',
@@ -147,6 +153,39 @@ final class WorkspaceSchemaTest extends TestCase
 
         $migration->down($database);
         $this->assertFalse($schema->hasTable(ModuleWorkspace::TABLE_WORKSPACES));
+    }
+
+    /**
+     * HR: Provjerava samostalnu nadogradnju za izravna prava postojećih instalacija.
+     * EN: Verifies the standalone direct-permission upgrade for existing installations.
+     */
+    public function testDirectPermissionUpgradeMigrationIsPortableAndReversible(): void
+    {
+        $helper = new Helper();
+        $config = new Config($helper, [
+            'database' => [
+                'connections' => [
+                    'default' => [
+                        'driver' => 'sqlite',
+                        'database' => ':memory:',
+                    ],
+                ],
+            ],
+        ]);
+        $database = new Database($config, $helper);
+        $migration = require dirname(__DIR__)
+        . '/resources/migrations/20260826130000_add_workspace_node_direct_permissions.php';
+
+        $this->assertInstanceOf(ReversibleMigrationInterface::class, $migration);
+        $migration->up($database);
+        $this->assertTrue(
+            $database->schema()->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS),
+        );
+
+        $migration->down($database);
+        $this->assertFalse(
+            $database->schema()->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS),
+        );
     }
 
     /**

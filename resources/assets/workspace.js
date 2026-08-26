@@ -1110,6 +1110,7 @@
 
                 content.innerHTML = html;
                 initializeNodeForms(modal);
+                initializeAclControls(modal);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') {
                     return;
@@ -1242,6 +1243,296 @@
     }
 
     /**
+     * HR: Dodaje korisnika ili grupu u popis subjekata koji smiju kreirati područja.
+     * EN: Adds a user or group to the subjects allowed to create workspaces.
+     *
+     * @param {HTMLFormElement} form
+     * @param {Object} subject
+     * @returns {void}
+     */
+    function addCreatorSubjectRow(form, subject) {
+        const category = String(subject.category || '');
+        const id = String(subject.id || '');
+        const label = String(subject.label || '');
+        const key = category + ':' + id;
+        if (
+            !['user', 'group'].includes(category)
+            || String(subject.type || '') !== category
+            || id === ''
+            || label === ''
+            || form.querySelector('[data-workspace-creator-row="' + CSS.escape(key) + '"]')
+        ) {
+            return;
+        }
+
+        const section = form.querySelector('[data-workspace-creator-section="' + category + '"]');
+        const body = section?.querySelector('[data-workspace-creator-rows="' + category + '"]');
+        if (!(body instanceof HTMLTableSectionElement)) {
+            return;
+        }
+
+        const row = document.createElement('tr');
+        const heading = document.createElement('th');
+        const hidden = document.createElement('input');
+        const actionCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        const removeLabel = String(form.dataset.workspaceRemoveLabel || 'Remove');
+        row.dataset.workspaceCreatorRow = key;
+        heading.scope = 'row';
+        heading.append(document.createTextNode(label));
+        hidden.type = 'hidden';
+        hidden.name = category === 'user' ? 'creator_users[]' : 'creator_groups[]';
+        hidden.value = id;
+        heading.append(hidden);
+        row.append(heading);
+
+        actionCell.className = 'text-end';
+        removeButton.className = 'btn btn-sm btn-link text-danger workspace-acl-remove';
+        removeButton.type = 'button';
+        removeButton.title = removeLabel;
+        removeButton.setAttribute('aria-label', removeLabel + ': ' + label);
+        removeButton.dataset.workspaceCreatorRemove = '';
+        removeButton.append(aclRemoveIcon());
+        actionCell.append(removeButton);
+        row.append(actionCell);
+
+        const emptyRow = body.querySelector('[data-workspace-creator-empty]');
+        body.insertBefore(row, emptyRow);
+        if (emptyRow instanceof HTMLTableRowElement) {
+            emptyRow.hidden = true;
+        }
+    }
+
+    /**
+     * HR: Osvježava prazno stanje tablice korisničkih ograničenja.
+     * EN: Refreshes the user-restriction table's empty state.
+     *
+     * @param {HTMLFormElement} form
+     * @returns {void}
+     */
+    function refreshRestrictionEmptyState(form) {
+        const emptyRow = form.querySelector('[data-workspace-restriction-empty]');
+        const assignedRows = form.querySelectorAll('[data-workspace-restriction-row]');
+        if (emptyRow instanceof HTMLTableRowElement) {
+            emptyRow.hidden = assignedRows.length > 0;
+        }
+    }
+
+    /**
+     * HR: Dodaje korisnika s njegovim stvarno naslijeđenim pravima u tablicu
+     *     ograničenja. Zelena kvačica može se isključiti u crveno uskraćivanje.
+     * EN: Adds a user with their actually inherited rights to the restriction
+     *     table. A green check can be switched off into a red denial.
+     *
+     * @param {HTMLFormElement} form
+     * @param {Object} subject
+     * @returns {void}
+     */
+    function addRestrictionUserRow(form, subject) {
+        const userId = String(subject.id || subject.subject_id || '');
+        const label = String(subject.label || '');
+        if (
+            String(subject.type || '') !== 'user'
+            || userId === ''
+            || label === ''
+            || form.querySelector('[data-workspace-restriction-row="' + CSS.escape(userId) + '"]')
+        ) {
+            return;
+        }
+
+        const body = form.querySelector('[data-workspace-restriction-rows]');
+        if (!(body instanceof HTMLTableSectionElement)) {
+            return;
+        }
+
+        const row = document.createElement('tr');
+        row.dataset.workspaceRestrictionRow = userId;
+        const heading = document.createElement('th');
+        const selected = document.createElement('input');
+        heading.scope = 'row';
+        heading.append(document.createTextNode(label));
+        selected.type = 'hidden';
+        selected.name = 'acl[user][' + userId + '][_selected]';
+        selected.value = '1';
+        heading.append(selected);
+        row.append(heading);
+
+        ['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'].forEach((permission) => {
+            const cell = document.createElement('td');
+            const inherited = Boolean(subject[permission]);
+            const permissionLabel = form.getAttribute(
+                'data-workspace-permission-' + permission.replaceAll('_', '-') + '-label',
+            ) || permission;
+            cell.className = 'text-center';
+            if (inherited) {
+                const toggle = document.createElement('label');
+                const checkbox = document.createElement('input');
+                const state = document.createElement('span');
+                toggle.className = 'workspace-node-restriction-toggle';
+                checkbox.className = 'visually-hidden';
+                checkbox.type = 'checkbox';
+                checkbox.name = 'acl[user][' + userId + '][' + permission + ']';
+                checkbox.value = '1';
+                checkbox.checked = true;
+                checkbox.dataset.workspaceRestrictionPermission = permission;
+                checkbox.setAttribute('aria-label', permissionLabel + ': ' + label);
+                state.setAttribute('aria-hidden', 'true');
+                toggle.append(checkbox, state);
+                cell.append(toggle);
+            } else {
+                const unavailable = document.createElement('span');
+                unavailable.className = 'workspace-node-restriction-unavailable';
+                unavailable.setAttribute('aria-label', permissionLabel + ': ' + label);
+                cell.append(unavailable);
+            }
+            row.append(cell);
+        });
+
+        const actionCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        const removeLabel = String(form.dataset.workspaceRemoveLabel || 'Remove');
+        actionCell.className = 'text-end';
+        removeButton.className = 'btn btn-sm btn-link text-danger workspace-acl-remove';
+        removeButton.type = 'button';
+        removeButton.title = removeLabel;
+        removeButton.setAttribute('aria-label', removeLabel + ': ' + label);
+        removeButton.dataset.workspaceRestrictionRemove = '';
+        removeButton.append(aclRemoveIcon());
+        actionCell.append(removeButton);
+        row.append(actionCell);
+
+        const emptyRow = body.querySelector('[data-workspace-restriction-empty]');
+        body.insertBefore(row, emptyRow);
+        refreshRestrictionEmptyState(form);
+    }
+
+    /**
+     * HR: Održava ovisnosti prava u jednom retku ograničenja.
+     * EN: Keeps permission dependencies consistent in one restriction row.
+     *
+     * @param {HTMLTableRowElement} row
+     * @param {HTMLInputElement} changed
+     * @returns {void}
+     */
+    function normalizeRestrictionRow(row, changed) {
+        const inputs = {};
+        row.querySelectorAll('[data-workspace-restriction-permission]').forEach((input) => {
+            if (input instanceof HTMLInputElement) {
+                inputs[String(input.dataset.workspaceRestrictionPermission || '')] = input;
+            }
+        });
+        const setChecked = (permissions, checked) => {
+            permissions.forEach((permission) => {
+                if (inputs[permission] instanceof HTMLInputElement) {
+                    inputs[permission].checked = checked;
+                }
+            });
+        };
+        const permission = String(changed.dataset.workspaceRestrictionPermission || '');
+
+        if (changed.checked) {
+            if (permission === 'can_manage') {
+                setChecked(['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete'], true);
+            } else if (permission === 'can_delete') {
+                setChecked(['can_view', 'can_edit'], true);
+            } else if (['can_add', 'can_edit', 'can_publish'].includes(permission)) {
+                setChecked(['can_view'], true);
+            }
+            return;
+        }
+
+        if (permission === 'can_view') {
+            setChecked(['can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'], false);
+        } else if (permission === 'can_edit') {
+            setChecked(['can_delete', 'can_manage'], false);
+        } else if (['can_add', 'can_publish', 'can_delete'].includes(permission)) {
+            setChecked(['can_manage'], false);
+        }
+    }
+
+    /**
+     * HR: Osvježava prazno stanje tablice izravnih korisničkih prava.
+     * EN: Refreshes the direct-user-grant table's empty state.
+     *
+     * @param {HTMLFormElement} form
+     * @returns {void}
+     */
+    function refreshDirectPermissionEmptyState(form) {
+        const emptyRow = form.querySelector('[data-workspace-direct-permission-empty]');
+        const assignedRows = form.querySelectorAll('[data-workspace-direct-permission-row]');
+        if (emptyRow instanceof HTMLTableRowElement) {
+            emptyRow.hidden = assignedRows.length > 0;
+        }
+    }
+
+    /**
+     * HR: Dodaje aktivnog korisnika u tablicu izravnih prava i zadano uključuje čitanje.
+     * EN: Adds an active user to the direct-grant table and enables reading by default.
+     *
+     * @param {HTMLFormElement} form
+     * @param {Object} subject
+     * @returns {void}
+     */
+    function addDirectPermissionRow(form, subject) {
+        const userId = String(subject.id || '');
+        const label = String(subject.label || '');
+        if (
+            String(subject.type || '') !== 'user'
+            || userId === ''
+            || label === ''
+            || form.querySelector('[data-workspace-direct-permission-row="' + CSS.escape(userId) + '"]')
+        ) {
+            return;
+        }
+
+        const body = form.querySelector('[data-workspace-direct-permission-rows]');
+        if (!(body instanceof HTMLTableSectionElement)) {
+            return;
+        }
+
+        const row = document.createElement('tr');
+        row.dataset.workspaceDirectPermissionRow = userId;
+        const heading = document.createElement('th');
+        heading.scope = 'row';
+        heading.textContent = label;
+        row.append(heading);
+
+        ['can_view', 'can_edit', 'can_publish'].forEach((permission) => {
+            const cell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            const permissionLabel = form.getAttribute(
+                'data-workspace-permission-' + permission.replaceAll('_', '-') + '-label',
+            ) || permission;
+            cell.className = 'text-center';
+            checkbox.className = 'form-check-input';
+            checkbox.type = 'checkbox';
+            checkbox.name = 'direct_permissions[' + userId + '][' + permission + ']';
+            checkbox.value = '1';
+            checkbox.checked = permission === 'can_view';
+            checkbox.setAttribute('aria-label', permissionLabel + ': ' + label);
+            cell.append(checkbox);
+            row.append(cell);
+        });
+
+        const actionCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        const removeLabel = String(form.dataset.workspaceRemoveLabel || 'Remove');
+        actionCell.className = 'text-end';
+        removeButton.className = 'btn btn-sm btn-link text-danger workspace-acl-remove';
+        removeButton.type = 'button';
+        removeButton.title = removeLabel;
+        removeButton.setAttribute('aria-label', removeLabel + ': ' + label);
+        removeButton.dataset.workspaceDirectPermissionRemove = '';
+        removeButton.append(aclRemoveIcon());
+        actionCell.append(removeButton);
+        row.append(actionCell);
+
+        const emptyRow = body.querySelector('[data-workspace-direct-permission-empty]');
+        body.insertBefore(row, emptyRow);
+        refreshDirectPermissionEmptyState(form);
+    }
+
+    /**
      * HR: Zatvara jedan popis rezultata i vraća ispravno ARIA stanje comboboxa.
      * EN: Closes one result list and restores the correct combobox ARIA state.
      *
@@ -1270,7 +1561,29 @@
         results.replaceChildren();
 
         const visibleSubjects = subjects.filter((subject) => {
-            if (mode !== 'acl' || !(form instanceof HTMLFormElement)) {
+            if (!(form instanceof HTMLFormElement)) {
+                return true;
+            }
+
+            if (mode === 'direct-permission') {
+                const userId = String(subject.id || '');
+                return !form.querySelector(
+                    '[data-workspace-direct-permission-row="' + CSS.escape(userId) + '"]',
+                );
+            }
+            if (mode === 'restriction') {
+                const userId = String(subject.id || subject.subject_id || '');
+                return !form.querySelector(
+                    '[data-workspace-restriction-row="' + CSS.escape(userId) + '"]',
+                );
+            }
+            if (mode === 'creator') {
+                const key = String(subject.category || '') + ':' + String(subject.id || '');
+                return !form.querySelector(
+                    '[data-workspace-creator-row="' + CSS.escape(key) + '"]',
+                );
+            }
+            if (mode !== 'acl') {
                 return true;
             }
 
@@ -1291,13 +1604,15 @@
                 option.role = 'option';
                 option.textContent = String(subject.label || '');
                 option.addEventListener('click', () => {
-                    if (mode === 'owner') {
-                        const value = picker.querySelector('[data-workspace-owner-value]');
-                        if (value instanceof HTMLInputElement) {
-                            value.value = String(subject.id || '');
-                        }
-                        input.value = String(subject.label || '');
-                        input.setCustomValidity('');
+                    if (mode === 'direct-permission' && form instanceof HTMLFormElement) {
+                        addDirectPermissionRow(form, subject);
+                        input.value = '';
+                    } else if (mode === 'restriction' && form instanceof HTMLFormElement) {
+                        addRestrictionUserRow(form, subject);
+                        input.value = '';
+                    } else if (mode === 'creator' && form instanceof HTMLFormElement) {
+                        addCreatorSubjectRow(form, subject);
+                        input.value = '';
                     } else if (form instanceof HTMLFormElement) {
                         addAclSubjectRow(form, subject);
                         input.value = '';
@@ -1328,6 +1643,15 @@
         if (state.controller instanceof AbortController) {
             state.controller.abort();
         }
+        const minimumLength = Number.parseInt(
+            String(picker.dataset.workspaceMinQueryLength || '0'),
+            10,
+        );
+        if (input.value.trim().length < minimumLength) {
+            results.replaceChildren();
+            closeSubjectResults(input, results);
+            return;
+        }
         state.controller = new AbortController();
 
         const url = new URL(String(picker.dataset.workspaceSearchUrl || ''), window.location.href);
@@ -1336,6 +1660,14 @@
         const workspaceId = String(picker.dataset.workspaceId || '');
         if (workspaceId !== '' && workspaceId !== '0') {
             url.searchParams.set('workspace_id', workspaceId);
+        }
+        const mode = String(picker.dataset.workspacePickerMode || '');
+        if (mode !== '') {
+            url.searchParams.set('mode', mode);
+        }
+        const nodeId = String(picker.dataset.workspaceNodeId || '');
+        if (nodeId !== '' && nodeId !== '0') {
+            url.searchParams.set('node_id', nodeId);
         }
 
         try {
@@ -1365,18 +1697,23 @@
     }
 
     /**
-     * HR: Povezuje jedan owner ili ACL picker s odgođenom serverskom pretragom.
-     * EN: Connects one owner or ACL picker to debounced server-side search.
+     * HR: Povezuje imenik picker s odgođenom serverskom pretragom.
+     * EN: Connects a directory picker to debounced server-side search.
      *
      * @param {HTMLElement} picker
      * @returns {void}
      */
     function initializeSubjectPicker(picker) {
+        if (picker.dataset.workspaceSubjectPickerReady === '1') {
+            return;
+        }
+
         const input = picker.querySelector('[data-workspace-subject-search]');
         const results = picker.querySelector('[data-workspace-subject-results]');
         if (!(input instanceof HTMLInputElement) || !(results instanceof HTMLElement)) {
             return;
         }
+        picker.dataset.workspaceSubjectPickerReady = '1';
 
         const state = {controller: null};
         let timer = 0;
@@ -1389,12 +1726,6 @@
 
         input.addEventListener('focus', schedule);
         input.addEventListener('input', () => {
-            if (picker.dataset.workspacePickerMode === 'owner') {
-                const value = picker.querySelector('[data-workspace-owner-value]');
-                if (value instanceof HTMLInputElement) {
-                    value.value = '';
-                }
-            }
             schedule();
         });
         input.addEventListener('keydown', (event) => {
@@ -1408,38 +1739,30 @@
                 closeSubjectResults(input, results);
             }
         });
-
-        const form = picker.closest('form');
-        if (picker.dataset.workspacePickerMode === 'owner' && form instanceof HTMLFormElement) {
-            form.addEventListener('submit', (event) => {
-                const value = picker.querySelector('[data-workspace-owner-value]');
-                const valid = value instanceof HTMLInputElement && value.value !== '';
-                input.setCustomValidity(valid ? '' : String(picker.dataset.workspaceNoResults || 'Select a user.'));
-                if (!valid) {
-                    event.preventDefault();
-                    input.reportValidity();
-                }
-            });
-        }
     }
 
     /**
      * HR: Povezuje uklanjanje ACL redaka i sve asinkrone pickere na stranici.
      * EN: Connects ACL-row removal and every asynchronous picker on the page.
      *
+     * @param {ParentNode} [root=document]
      * @returns {void}
      */
-    function initializeAclControls() {
-        document.querySelectorAll('[data-workspace-subject-picker]').forEach((picker) => {
+    function initializeAclControls(root = document) {
+        root.querySelectorAll('[data-workspace-subject-picker]').forEach((picker) => {
             if (picker instanceof HTMLElement) {
                 initializeSubjectPicker(picker);
             }
         });
 
-        document.querySelectorAll('[data-workspace-acl-form]').forEach((form) => {
+        root.querySelectorAll('[data-workspace-acl-form]').forEach((form) => {
             if (!(form instanceof HTMLFormElement)) {
                 return;
             }
+            if (form.dataset.workspaceAclFormReady === '1') {
+                return;
+            }
+            form.dataset.workspaceAclFormReady = '1';
 
             form.addEventListener('click', (event) => {
                 const target = event.target;
@@ -1456,6 +1779,122 @@
 
                 row.remove();
                 refreshAclEmptyState(section);
+            });
+        });
+
+        root.querySelectorAll('[data-workspace-direct-permission-form]').forEach((form) => {
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            if (form.dataset.workspaceDirectPermissionFormReady === '1') {
+                return;
+            }
+            form.dataset.workspaceDirectPermissionFormReady = '1';
+
+            form.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const button = target.closest('[data-workspace-direct-permission-remove]');
+                const row = button?.closest('[data-workspace-direct-permission-row]');
+                if (!(row instanceof HTMLTableRowElement)) {
+                    return;
+                }
+
+                row.remove();
+                refreshDirectPermissionEmptyState(form);
+            });
+
+            form.addEventListener('change', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+                    return;
+                }
+
+                const row = target.closest('[data-workspace-direct-permission-row]');
+                if (!(row instanceof HTMLTableRowElement)) {
+                    return;
+                }
+
+                const view = row.querySelector('input[name$="[can_view]"]');
+                const edit = row.querySelector('input[name$="[can_edit]"]');
+                const publish = row.querySelector('input[name$="[can_publish]"]');
+                if (
+                    view instanceof HTMLInputElement
+                    && edit instanceof HTMLInputElement
+                    && publish instanceof HTMLInputElement
+                    && (edit.checked || publish.checked)
+                ) {
+                    view.checked = true;
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-workspace-creator-form]').forEach((form) => {
+            if (!(form instanceof HTMLFormElement) || form.dataset.workspaceCreatorFormReady === '1') {
+                return;
+            }
+            form.dataset.workspaceCreatorFormReady = '1';
+            form.addEventListener('click', (event) => {
+                const target = event.target;
+                const button = target instanceof Element
+                    ? target.closest('[data-workspace-creator-remove]')
+                    : null;
+                const row = button?.closest('[data-workspace-creator-row]');
+                const body = row?.closest('[data-workspace-creator-rows]');
+                if (!(row instanceof HTMLTableRowElement) || !(body instanceof HTMLTableSectionElement)) {
+                    return;
+                }
+
+                row.remove();
+                const emptyRow = body.querySelector('[data-workspace-creator-empty]');
+                if (emptyRow instanceof HTMLTableRowElement) {
+                    emptyRow.hidden = body.querySelector('[data-workspace-creator-row]') !== null;
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-workspace-restriction-form]').forEach((form) => {
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            if (form.dataset.workspaceRestrictionFormReady === '1') {
+                return;
+            }
+            form.dataset.workspaceRestrictionFormReady = '1';
+
+            form.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const button = target.closest('[data-workspace-restriction-remove]');
+                const row = button?.closest('[data-workspace-restriction-row]');
+                if (!(row instanceof HTMLTableRowElement)) {
+                    return;
+                }
+
+                row.remove();
+                refreshRestrictionEmptyState(form);
+            });
+
+            form.addEventListener('change', (event) => {
+                const target = event.target;
+                const row = target instanceof Element
+                    ? target.closest('[data-workspace-restriction-row]')
+                    : null;
+                if (
+                    !(target instanceof HTMLInputElement)
+                    || !(row instanceof HTMLTableRowElement)
+                    || !target.matches('[data-workspace-restriction-permission]')
+                ) {
+                    return;
+                }
+
+                normalizeRestrictionRow(row, target);
             });
         });
     }

@@ -3,7 +3,7 @@
 [English version](README.md)
 
 Workspace modul organizira povezani sadržaj u **Područja** (`Workspaces` na
-engleskom). Svako Područje ima svoju putanju, vlasnika, vidljivost, članove,
+engleskom). Svako Područje ima svoju putanju, vidljivost, članove,
 prava i hijerarhijsko stablo stranica.
 
 ## Ovisnosti
@@ -74,9 +74,10 @@ English documentation: [README.md](README.md)
 - prijenosna inicijalna shema za SQLite, PostgreSQL i MySQL/MariaDB
 
 Ograničenja stranice mogu samo suziti prava dodijeljena na Području. Ne mogu
-dati pristup korisniku ili grupi koji već nemaju prava na Području. Vlasnik
-Područja i administratori aplikacije zadržavaju pravo upravljanja. U
-arhiviranom Području i njima su isključeni dodavanje, uređivanje i brisanje
+dati pristup korisniku ili grupi koji već nemaju prava na Području.
+Administratori aplikacije zadržavaju pravo upravljanja, a kreator novog
+Područja dobiva `can_manage` kroz običan korisnički ACL red. U
+arhiviranom Području upraviteljima su isključeni dodavanje, uređivanje i brisanje
 sadržaja dok ga ponovno ne aktiviraju.
 
 Za pregled ograničenja uključite **Uredi stablo** i odaberite olovku uz

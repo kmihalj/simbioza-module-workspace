@@ -33,6 +33,8 @@ final class WorkspaceManifestTest extends TestCase
 
         $this->assertContains('workspace:install-homepage-view-options-migration', $commandNames);
         $this->assertContains('workspace:install-node-properties-migration', $commandNames);
+        $this->assertContains('workspace:install-node-direct-permissions-migration', $commandNames);
+        $this->assertContains('workspace:install-remove-owner-migration', $commandNames);
     }
 
     /**
@@ -49,10 +51,18 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(45, $routesByName);
+        $this->assertCount(46, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
+        );
+        $this->assertSame(
+            WorkspaceController::class . '@saveNodeDirectPermissions',
+            $routesByName['workspace.node.direct-permissions.save'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.node.direct-permissions.save'][4],
         );
         $this->assertSame(
             WorkspaceSettingsController::class . '@index',

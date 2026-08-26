@@ -12,9 +12,6 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var array<string, mixed>|null $workspace
  * @var array<string, bool> $workspacePermissions
  * @var list<array<string, mixed>> $workspaceAclSubjects
- * @var array<string, mixed>|null $ownerSubject
- * @var bool $isAdministrator
- * @var array<string, mixed>|null $currentUser
  * @var string $savePath
  * @var string $deletePath
  * @var string $aclSavePath
@@ -32,11 +29,6 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  */
 $workspaceId = is_array($workspace ?? null) ? WorkspaceValue::int($workspace['id'] ?? 0) : 0;
 $canManage = (bool)($workspacePermissions['can_manage'] ?? false);
-$currentUserId = is_array($currentUser ?? null) ? WorkspaceValue::int($currentUser['id'] ?? 0) : 0;
-$ownerUserId = WorkspaceValue::int($workspace['owner_user_id'] ?? $currentUserId);
-$ownerLabel = is_array($ownerSubject ?? null)
-? WorkspaceValue::string($ownerSubject['label'] ?? '')
-: WorkspaceValue::string($currentUser['login_identifier'] ?? '');
 $subjectsByCategory = ['user' => [], 'group' => []];
 foreach ($workspaceAclSubjects as $subject) {
     $category = WorkspaceValue::string($subject['category'] ?? '');
@@ -77,7 +69,7 @@ foreach ($workspaceAclSubjects as $subject) {
                 <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                 <input type="hidden" name="id" value="<?= $workspaceId ?>">
                 <div class="row g-3">
-                    <div class="col-12 col-lg-5">
+                    <div class="col-12 col-lg-7">
                         <label class="form-label" for="workspace-name">
                             <?= $this->escape(__('Naziv')) ?>
                         </label>
@@ -89,7 +81,7 @@ foreach ($workspaceAclSubjects as $subject) {
                             required
                         >
                     </div>
-                    <div class="col-12 col-md-6 col-lg-3">
+                    <div class="col-12 col-lg-5">
                         <label class="form-label" for="workspace-slug">
                             <?= $this->escape(__('Slug')) ?>
                         </label>
@@ -99,60 +91,6 @@ foreach ($workspaceAclSubjects as $subject) {
                             name="slug"
                             value="<?= $this->escape(WorkspaceValue::string($workspace['slug'] ?? '')) ?>"
                         >
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <label class="form-label" for="workspace-owner">
-                            <?= $this->escape(__('Vlasnik')) ?>
-                        </label>
-                        <?php if ($isAdministrator) : ?>
-                            <div
-                                class="workspace-subject-picker"
-                                data-workspace-subject-picker
-                                data-workspace-picker-mode="owner"
-                                data-workspace-subject-type="user"
-                                data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
-                                data-workspace-id="<?= $workspaceId ?>"
-                                data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
-                                data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="owner_user_id"
-                                    value="<?= $ownerUserId ?>"
-                                    data-workspace-owner-value
-                                >
-                                <input
-                                    id="workspace-owner"
-                                    class="form-control"
-                                    value="<?= $this->escape($ownerLabel) ?>"
-                                    type="search"
-                                    role="combobox"
-                                    autocomplete="off"
-                                    aria-autocomplete="list"
-                                    aria-expanded="false"
-                                    aria-controls="workspace-owner-results"
-                                    data-workspace-subject-search
-                                    required
-                                >
-                                <div
-                                    id="workspace-owner-results"
-                                    class="workspace-subject-results list-group"
-                                    role="listbox"
-                                    data-workspace-subject-results
-                                    hidden
-                                ></div>
-                            </div>
-                        <?php else : ?>
-                            <input type="hidden" name="owner_user_id" value="<?= $currentUserId ?>">
-                            <input
-                                id="workspace-owner"
-                                class="form-control"
-                                value="<?= $this->escape(
-                                    WorkspaceValue::string($currentUser['login_identifier'] ?? ''),
-                                ) ?>"
-                                disabled
-                            >
-                        <?php endif; ?>
                     </div>
                     <div class="col-12">
                         <label class="form-label" for="workspace-description">
@@ -392,6 +330,7 @@ foreach ($workspaceAclSubjects as $subject) {
                                         class="workspace-subject-picker"
                                         data-workspace-subject-picker
                                         data-workspace-picker-mode="acl"
+                                        data-workspace-min-query-length="2"
                                         data-workspace-subject-type="<?= $category ?>"
                                         data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
                                         data-workspace-id="<?= $workspaceId ?>"

@@ -79,6 +79,22 @@ return [
     'Kreiraj novi dokument ako je tip Dokument' => 'Create a new document when the type is Document',
     'Nadređena stranica' => 'Parent page',
     'Nasljedna ograničenja' => 'Inherited restrictions',
+    'Ograničenja naslijeđenih prava' => 'Restrictions on inherited permissions',
+    'Izravna dopuštenja korisnicima' => 'Direct user permissions',
+    'Upravljaj stranicom i dozvolama' => 'Manage page and permissions',
+    'Čitanje' => 'Read',
+    'Uređivanje' => 'Editing',
+    'Nema izravnih dopuštenja.' => 'There are no direct permissions.',
+    'Spremi izravna dopuštenja' => 'Save direct permissions',
+    'Izravna dopuštenja stranice su spremljena.' => 'The page direct permissions were saved.',
+    'Predložak migracije izravnih prava stranica nije pronađen.' =>
+        'The direct page-permissions migration template was not found.',
+    'Kreirana je migracija izravnih prava Workspace stranica: ' =>
+        'Created the Workspace direct page-permissions migration: ',
+    'Predložak migracije uklanjanja vlasnika područja nije pronađen.' =>
+        'The Workspace owner-removal migration template was not found.',
+    'Kreirana je migracija uklanjanja vlasnika područja: ' =>
+        'Created the Workspace owner-removal migration: ',
     'Naslov' => 'Title',
     'Naslov stranice' => 'Page title',
     'Naslov čvora je obavezan.' => 'The item title is required.',
@@ -203,8 +219,11 @@ return [
         'A page cannot be moved into its own subtree.',
     'Sva područja' => 'All workspaces',
     'Svi prijavljeni' => 'All signed-in users',
-    'Svaki prijavljeni korisnik smije kreirati područje' =>
-        'Every signed-in user may create a workspace',
+    'Kreiranje područja' => 'Workspace creation',
+    'Administratori uvijek smiju kreirati područja. Ovdje dodajte ostale korisnike ili grupe kojima to želite dopustiti.' =>
+        'Administrators may always create workspaces. Add other users or groups that should be allowed to do so here.',
+    'Upišite najmanje dva znaka korisnika' => 'Enter at least two characters of a user name',
+    'Upišite najmanje dva znaka grupe' => 'Enter at least two characters of a group name',
     'Tip čvora' => 'Node type',
     'Traženo područje ili stranica ne postoji.' => 'The requested workspace or page does not exist.',
     'Upravljaj' => 'Manage',
@@ -223,8 +242,6 @@ return [
     'Vidljivost' => 'Visibility',
     'Vidljivo stablo stranica' => 'Show page tree',
     'Vidljive opcije prikaza' => 'Show display options',
-    'Vlasnik' => 'Owner',
-    'Vlasnik područja nije valjan.' => 'The workspace owner is invalid.',
     'Vrsta stavke' => 'Item type',
     'Vrati' => 'Restore',
     'Vraćanje prethodno obrisanih područja.' => 'Restore previously deleted workspaces.',
@@ -331,6 +348,29 @@ return [
         'Green shows a permission inherited from the Workspace and parent pages. Red shows a permission retained by this page’s direct restriction.',
     'Naslijeđeno iz područja i predaka' => 'Inherited from Workspace and ancestors',
     'Izravno ograničenje stranice' => 'Direct page restriction',
+    'Pravo je naslijeđeno i zadržano' => 'Permission inherited and retained',
+    'Naslijeđeno pravo je uskraćeno' => 'Inherited permission denied',
+    'Korisnik nema to naslijeđeno pravo' => 'The user does not inherit this permission',
+    'Ovdje se odabranom korisniku mogu uskratiti prava koja već ima na području izravno ili članstvom u grupi. Ograničenje vrijedi na ovoj stranici i svim njezinim podređenim stranicama; njime se ne mogu dodijeliti nova prava.' =>
+        'Here you can deny permissions that the selected user already has on the Workspace directly or through group membership. The restriction applies to this page and all of its child pages; it cannot grant new permissions.',
+    'U popisu su samo korisnici s postojećim pravima na područje. Grupe se ovdje ne ograničavaju: ograničenje se uvijek odnosi na odabranog korisnika.' =>
+        'Only users with existing Workspace permissions appear in the list. Groups are not restricted here: a restriction always applies to the selected user.',
+    'Na ovoj stranici trenutačno nema korisničkih ograničenja.' =>
+        'This page currently has no user restrictions.',
+    'Pretraži korisnike s pravima na području' => 'Search users with Workspace permissions',
+    'Odaberite korisnika pa isključite prava koja mu želite uskratiti.' =>
+        'Select a user, then turn off the permissions you want to deny.',
+    'Nema korisničkih ograničenja.' => 'No user restrictions.',
+    'Ograničenja stranice mogu se zadati samo korisnicima.' =>
+        'Page restrictions can be assigned only to users.',
+    'Uklonite korisnika iz tablice za potpuno vraćanje njegovih naslijeđenih prava.' =>
+        'Remove a user from the table to fully restore their inherited permissions.',
+    'Ovdje se postojeća prava iz područja i nadređenih stranica mogu samo zadržati ili dodatno ograničiti. Ovaj odjeljak ne dodjeljuje nova prava. Ograničenje ove stranice nasljeđuju sve njezine podređene stranice.' =>
+        'Existing permissions inherited from the Workspace and parent pages can only be retained or further restricted here. This section does not grant new permissions. A restriction on this page is inherited by all of its child pages.',
+    'Izravno dopuštenje vrijedi samo za ovu stranicu i ne nasljeđuju ga podređene stranice. Korisniku bez pristupa području područje će se pojaviti na popisu, ali će u njemu vidjeti samo izravno dopuštene stranice.' =>
+        'A direct permission applies only to this page and is not inherited by child pages. A user without Workspace access will see the Workspace in the list, but only the directly permitted pages inside it.',
+    'Ovdje se dodaju samo korisnici, ne i grupe. Uređivanje i objavljivanje automatski uključuju čitanje.' =>
+        'Only users can be added here, not groups. Editing and publishing automatically include read access.',
     'Ovlasti su prikazane samo za čitanje. Za promjenu je potrebno pravo upravljanja.' =>
         'Permissions are read-only. Manage permission is required to change them.',
     'Stranica trenutačno potpuno nasljeđuje ovlasti područja.' =>

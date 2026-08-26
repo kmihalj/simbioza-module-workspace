@@ -32,10 +32,10 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
 
     /**
      * HR: Provjerava jesu li auth i ORM instalirani i uključeni prije Workspace
-     * modula. Područja će uvijek imati vlasništvo, članove i prenosivi ACL model.
+     * modula. Područja će uvijek imati članove i prenosivi ACL model.
      *
      * EN: Verifies that auth and ORM are installed and enabled before the
-     * Workspace module. Workspaces will always have ownership, members, and a portable ACL model.
+     * Workspace module. Workspaces will always have members and a portable ACL model.
      */
     public function canLoad(ContainerInterface $container): bool
     {
@@ -197,6 +197,13 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 '/workspaces/node/acl',
                 WorkspaceController::class . '@saveNodeAcl',
                 'workspace.node.acl.save',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
+                'POST',
+                '/workspaces/node/direct-permissions',
+                WorkspaceController::class . '@saveNodeDirectPermissions',
+                'workspace.node.direct-permissions.save',
                 [RequireAuthenticatedUserMiddleware::class],
             ],
             [
@@ -450,6 +457,22 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [
                     \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installNodePropertiesMigration',
+                ],
+            ),
+            new CommandDefinition(
+                'workspace:install-node-direct-permissions-migration',
+                'Copy the Workspace direct-page-permissions migration into the host application.',
+                [
+                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installNodeDirectPermissionsMigration',
+                ],
+            ),
+            new CommandDefinition(
+                'workspace:install-remove-owner-migration',
+                'Copy the migration that removes the obsolete Workspace owner.',
+                [
+                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installRemoveOwnerMigration',
                 ],
             ),
         ];

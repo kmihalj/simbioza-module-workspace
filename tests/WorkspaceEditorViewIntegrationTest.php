@@ -11,6 +11,32 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceEditorViewIntegrationTest extends TestCase
 {
     /**
+     * HR: Ograničenja stranice koriste jedan korisnički picker i jedno
+     *     trostanje po pravu, bez grupnih redaka i dvostrukih kvačica.
+     * EN: Page restrictions use one user picker and one three-state control per
+     *     permission, without group rows or duplicate checkboxes.
+     */
+    public function testNodeRestrictionsUseUserPickerAndSingleStateCells(): void
+    {
+        $view = file_get_contents(dirname(__DIR__) . '/views/workspace/node-dialog.php');
+        $script = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.js');
+        $css = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.css');
+
+        $this->assertIsString($view);
+        $this->assertIsString($script);
+        $this->assertIsString($css);
+        $this->assertStringContainsString('data-workspace-picker-mode="restriction"', $view);
+        $this->assertStringContainsString('data-workspace-restriction-row', $view);
+        $this->assertStringNotContainsString("foreach (['user', 'group']", $view);
+        $this->assertStringNotContainsString('workspace-acl-checkbox-inherited', $view);
+        $this->assertStringNotContainsString('workspace-acl-checkbox-direct', $view);
+        $this->assertStringContainsString('addRestrictionUserRow', $script);
+        $this->assertStringContainsString('normalizeRestrictionRow', $script);
+        $this->assertStringContainsString('.workspace-node-restriction-toggle', $css);
+        $this->assertStringContainsString('.workspace-node-restriction-unavailable', $css);
+    }
+
+    /**
      * HR: Workspace mora ugraditi službeni Editorov pregled umjesto vlastitog ispisa sirovog HTML-a.
      * EN: Workspace must embed Editor's official view instead of rendering raw HTML itself.
      */
@@ -288,6 +314,15 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('$treeOrganizerPath', $workspaceView);
         $this->assertStringContainsString('data-workspace-lazy-modal', $workspaceScript);
         $this->assertStringContainsString('data-workspace-node-editor-modal', $workspaceView);
+        $this->assertStringContainsString('$canOpenNodeDialog', $workspaceView);
+        $this->assertStringContainsString('data-workspace-node-dialog-url', $workspaceView);
+        $this->assertStringContainsString('data-workspace-direct-permission-form', (string) file_get_contents(
+            dirname(__DIR__) . '/views/workspace/node-dialog.php',
+        ));
+        $this->assertStringContainsString('data-workspace-picker-mode="direct-permission"', (string) file_get_contents(
+            dirname(__DIR__) . '/views/workspace/node-dialog.php',
+        ));
+        $this->assertStringContainsString('initializeAclControls(modal)', $workspaceScript);
         $this->assertStringContainsString('initializeModalPortals', $workspaceScript);
         $this->assertStringContainsString(
             "document.querySelectorAll('.workspace-shell ~ .modal, .workspace-shell .modal')",

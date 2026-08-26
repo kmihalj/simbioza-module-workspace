@@ -28,7 +28,10 @@ final class WorkspaceConfigTest extends TestCase
         mkdir($this->appRoot . '/config', 0777, true);
         file_put_contents(
             $this->appRoot . '/config/workspace.php',
-            "<?php return ['defaults' => ['tree_visible' => false, 'contents_visible' => true]];",
+            "<?php return ["
+            . "'defaults' => ['tree_visible' => false, 'contents_visible' => true],"
+            . "'creation' => ['users' => [7, '8', 7, 0], 'groups' => [11, 'bad', 12]],"
+            . "];",
         );
     }
 
@@ -66,6 +69,8 @@ final class WorkspaceConfigTest extends TestCase
         };
         $workspaceConfig = new WorkspaceConfig($config, dirname(__DIR__));
 
+        $this->assertSame([7, 8], $workspaceConfig->creatorUserIds());
+        $this->assertSame([11, 12], $workspaceConfig->creatorGroupIds());
         $this->assertFalse($workspaceConfig->treeVisibleForWorkspace([]));
         $this->assertTrue($workspaceConfig->treeVisibleForWorkspace(['tree_visibility' => 'shown']));
         $this->assertFalse($workspaceConfig->treeVisibleForWorkspace(['tree_visibility' => 'hidden']));

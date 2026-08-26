@@ -79,6 +79,22 @@ return [
     'Kreiraj novi dokument ako je tip Dokument' => 'Kreiraj novi dokument ako je tip Dokument',
     'Nadređena stranica' => 'Nadređena stranica',
     'Nasljedna ograničenja' => 'Nasljedna ograničenja',
+    'Ograničenja naslijeđenih prava' => 'Ograničenja naslijeđenih prava',
+    'Izravna dopuštenja korisnicima' => 'Izravna dopuštenja korisnicima',
+    'Upravljaj stranicom i dozvolama' => 'Upravljaj stranicom i dozvolama',
+    'Čitanje' => 'Čitanje',
+    'Uređivanje' => 'Uređivanje',
+    'Nema izravnih dopuštenja.' => 'Nema izravnih dopuštenja.',
+    'Spremi izravna dopuštenja' => 'Spremi izravna dopuštenja',
+    'Izravna dopuštenja stranice su spremljena.' => 'Izravna dopuštenja stranice su spremljena.',
+    'Predložak migracije izravnih prava stranica nije pronađen.' =>
+        'Predložak migracije izravnih prava stranica nije pronađen.',
+    'Kreirana je migracija izravnih prava Workspace stranica: ' =>
+        'Kreirana je migracija izravnih prava Workspace stranica: ',
+    'Predložak migracije uklanjanja vlasnika područja nije pronađen.' =>
+        'Predložak migracije uklanjanja vlasnika područja nije pronađen.',
+    'Kreirana je migracija uklanjanja vlasnika područja: ' =>
+        'Kreirana je migracija uklanjanja vlasnika područja: ',
     'Naslov' => 'Naslov',
     'Naslov stranice' => 'Naslov stranice',
     'Naslov čvora je obavezan.' => 'Naslov stavke je obavezan.',
@@ -203,8 +219,11 @@ return [
         'Stranicu nije moguće premjestiti u vlastitu podgranu.',
     'Sva područja' => 'Sva područja',
     'Svi prijavljeni' => 'Svi prijavljeni',
-    'Svaki prijavljeni korisnik smije kreirati područje' =>
-        'Svaki prijavljeni korisnik smije kreirati područje',
+    'Kreiranje područja' => 'Kreiranje područja',
+    'Administratori uvijek smiju kreirati područja. Ovdje dodajte ostale korisnike ili grupe kojima to želite dopustiti.' =>
+        'Administratori uvijek smiju kreirati područja. Ovdje dodajte ostale korisnike ili grupe kojima to želite dopustiti.',
+    'Upišite najmanje dva znaka korisnika' => 'Upišite najmanje dva znaka korisnika',
+    'Upišite najmanje dva znaka grupe' => 'Upišite najmanje dva znaka grupe',
     'Tip čvora' => 'Tip čvora',
     'Traženo područje ili stranica ne postoji.' => 'Traženo područje ili stranica ne postoji.',
     'Upravljaj' => 'Upravljaj',
@@ -223,8 +242,6 @@ return [
     'Vidljivost' => 'Vidljivost',
     'Vidljivo stablo stranica' => 'Vidljivo stablo stranica',
     'Vidljive opcije prikaza' => 'Vidljive opcije prikaza',
-    'Vlasnik' => 'Vlasnik',
-    'Vlasnik područja nije valjan.' => 'Vlasnik područja nije valjan.',
     'Vrsta stavke' => 'Vrsta stavke',
     'Vrati' => 'Vrati',
     'Vraćanje prethodno obrisanih područja.' => 'Vraćanje prethodno obrisanih područja.',
@@ -331,6 +348,29 @@ return [
         'Zeleno prikazuje pravo naslijeđeno iz područja i nadređenih stranica. Crveno prikazuje pravo koje je zadržano izravnim ograničenjem ove stranice.',
     'Naslijeđeno iz područja i predaka' => 'Naslijeđeno iz područja i predaka',
     'Izravno ograničenje stranice' => 'Izravno ograničenje stranice',
+    'Pravo je naslijeđeno i zadržano' => 'Pravo je naslijeđeno i zadržano',
+    'Naslijeđeno pravo je uskraćeno' => 'Naslijeđeno pravo je uskraćeno',
+    'Korisnik nema to naslijeđeno pravo' => 'Korisnik nema to naslijeđeno pravo',
+    'Ovdje se odabranom korisniku mogu uskratiti prava koja već ima na području izravno ili članstvom u grupi. Ograničenje vrijedi na ovoj stranici i svim njezinim podređenim stranicama; njime se ne mogu dodijeliti nova prava.' =>
+        'Ovdje se odabranom korisniku mogu uskratiti prava koja već ima na području izravno ili članstvom u grupi. Ograničenje vrijedi na ovoj stranici i svim njezinim podređenim stranicama; njime se ne mogu dodijeliti nova prava.',
+    'U popisu su samo korisnici s postojećim pravima na područje. Grupe se ovdje ne ograničavaju: ograničenje se uvijek odnosi na odabranog korisnika.' =>
+        'U popisu su samo korisnici s postojećim pravima na područje. Grupe se ovdje ne ograničavaju: ograničenje se uvijek odnosi na odabranog korisnika.',
+    'Na ovoj stranici trenutačno nema korisničkih ograničenja.' =>
+        'Na ovoj stranici trenutačno nema korisničkih ograničenja.',
+    'Pretraži korisnike s pravima na području' => 'Pretraži korisnike s pravima na području',
+    'Odaberite korisnika pa isključite prava koja mu želite uskratiti.' =>
+        'Odaberite korisnika pa isključite prava koja mu želite uskratiti.',
+    'Nema korisničkih ograničenja.' => 'Nema korisničkih ograničenja.',
+    'Ograničenja stranice mogu se zadati samo korisnicima.' =>
+        'Ograničenja stranice mogu se zadati samo korisnicima.',
+    'Uklonite korisnika iz tablice za potpuno vraćanje njegovih naslijeđenih prava.' =>
+        'Uklonite korisnika iz tablice za potpuno vraćanje njegovih naslijeđenih prava.',
+    'Ovdje se postojeća prava iz područja i nadređenih stranica mogu samo zadržati ili dodatno ograničiti. Ovaj odjeljak ne dodjeljuje nova prava. Ograničenje ove stranice nasljeđuju sve njezine podređene stranice.' =>
+        'Ovdje se postojeća prava iz područja i nadređenih stranica mogu samo zadržati ili dodatno ograničiti. Ovaj odjeljak ne dodjeljuje nova prava. Ograničenje ove stranice nasljeđuju sve njezine podređene stranice.',
+    'Izravno dopuštenje vrijedi samo za ovu stranicu i ne nasljeđuju ga podređene stranice. Korisniku bez pristupa području područje će se pojaviti na popisu, ali će u njemu vidjeti samo izravno dopuštene stranice.' =>
+        'Izravno dopuštenje vrijedi samo za ovu stranicu i ne nasljeđuju ga podređene stranice. Korisniku bez pristupa području područje će se pojaviti na popisu, ali će u njemu vidjeti samo izravno dopuštene stranice.',
+    'Ovdje se dodaju samo korisnici, ne i grupe. Uređivanje i objavljivanje automatski uključuju čitanje.' =>
+        'Ovdje se dodaju samo korisnici, ne i grupe. Uređivanje i objavljivanje automatski uključuju čitanje.',
     'Ovlasti su prikazane samo za čitanje. Za promjenu je potrebno pravo upravljanja.' =>
         'Ovlasti su prikazane samo za čitanje. Za promjenu je potrebno pravo upravljanja.',
     'Stranica trenutačno potpuno nasljeđuje ovlasti područja.' =>

@@ -69,7 +69,12 @@ final readonly class WorkspaceSettingsController
                 '/settings/workspaces/maintenance',
             ),
             'settingsMenuActiveSection' => 'workspace.settings',
+            'subjectSearchPath' => $this->pathFor(
+                'workspace.acl.subjects',
+                '/workspaces/acl/subjects',
+            ),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
+            'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
         ]);
     }
 

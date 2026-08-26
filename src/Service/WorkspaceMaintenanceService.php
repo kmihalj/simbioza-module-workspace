@@ -364,6 +364,9 @@ final readonly class WorkspaceMaintenanceService
         $this->database->transaction(static function (Database $database) use ($nodeIds): void {
             foreach ($nodeIds as $nodeId) {
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->where('node_id', '=', $nodeId)->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+                    ->where('node_id', '=', $nodeId)
+                    ->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
                     ->where('node_id', '=', $nodeId)
                     ->delete();

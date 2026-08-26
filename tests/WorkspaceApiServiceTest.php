@@ -90,7 +90,6 @@ final class WorkspaceApiServiceTest extends TestCase
             'name' => 'API područje',
             'slug' => 'api-podrucje',
             'description' => 'Workspace API test',
-            'owner_user_id' => 1,
             'tree_visibility' => 'hidden',
             'contents_visibility' => 'shown',
         ], $admin);
@@ -166,13 +165,13 @@ final class WorkspaceApiServiceTest extends TestCase
                 'subjects' => [[
                     'type' => WorkspaceRepository::SUBJECT_USER,
                     'id' => 2,
-                    'permissions' => ['can_view' => true],
+                    'permissions' => ['can_view' => false],
                 ]],
             ],
             $admin,
         );
         $this->assertSame('Ana Horvat', $nodeAcl[0]['label'] ?? null);
-        $this->assertTrue((bool)($nodeAcl[0]['permissions']['can_view'] ?? false));
+        $this->assertFalse((bool)($nodeAcl[0]['permissions']['can_view'] ?? true));
 
         $subjects = $this->service->searchAclSubjects(
             'api-podrucje',
@@ -216,7 +215,6 @@ final class WorkspaceApiServiceTest extends TestCase
         $this->service->createWorkspace([
             'name' => 'Ograničeno područje',
             'slug' => 'ograniceno-podrucje',
-            'owner_user_id' => 1,
         ], $admin);
         $this->service->replaceWorkspaceAcl('ograniceno-podrucje', [
             'subjects' => [[

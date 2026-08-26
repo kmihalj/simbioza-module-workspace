@@ -266,6 +266,7 @@ $services = [
         new WorkspaceSettingsService(
             $container->get(WorkspaceConfig::class),
             $container->get(Routes::class),
+            $container->get(WorkspaceRepository::class),
         ),
 
     WorkspaceMaintenanceBridge::class => static fn(ContainerInterface $container): WorkspaceMaintenanceBridge =>
@@ -463,7 +464,6 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                 ),
                 [
                     ['dataset' => 'workspaces', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACES, 'primary_key' => 'id', 'conflict_keys' => ['uuid'], 'preserve_primary_key' => false, 'identity_namespace' => 'workspace.workspace', 'foreign_keys' => [
-                        ['column' => 'owner_user_id', 'namespace' => 'auth.user'],
                         ['column' => 'created_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'deleted_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],

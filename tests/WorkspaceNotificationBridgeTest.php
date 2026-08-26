@@ -44,7 +44,6 @@ final class WorkspaceNotificationBridgeTest extends TestCase
         $workspace = $repository->saveWorkspace([
             'name' => 'Team',
             'slug' => 'team',
-            'owner_user_id' => 3,
             'visibility' => 'restricted',
         ], 3);
         $node = $repository->saveNode((int)$workspace['id'], [
@@ -159,7 +158,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
 
         $this->assertCount(1, $recorder->calls);
         $call = $recorder->calls[0];
-        $this->assertSame([3, 11], $call['user_ids']);
+        $this->assertSame([11], $call['user_ids']);
         $this->assertSame('workspace.review_requested', $call['key']);
         $this->assertSame('/hfc/workspace/team/roadmap?lang=hr&draft=preview', $call['link']);
         $this->assertSame(

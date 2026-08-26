@@ -29,7 +29,7 @@ The single initial migration creates eight tables through the ORM:
 
 | Table | Responsibility |
 | --- | --- |
-| `workspaces` | Identity, slug, visibility, owner, archive and soft-delete state |
+| `workspaces` | Identity, slug, visibility, archive and soft-delete state |
 | `workspace_acl` | User/group grants at Workspace level |
 | `workspace_nodes` | Ordered hierarchy of documents and links |
 | `workspace_node_acl` | Additional restrictions inherited through the tree |
@@ -57,7 +57,7 @@ groups and are never created in the user-group directory:
   and may receive view plus the broader permissions selected by a Workspace
   manager.
 - When neither built-in audience is assigned, the Workspace is `restricted`
-  and is visible only to its owner, administrators, and explicitly authorized
+  and is visible only to administrators and explicitly authorized
   users or Auth groups.
 
 The `workspaces.visibility` column retains a summarized value for efficient
@@ -66,7 +66,7 @@ ACL rows. The form therefore has no second visibility selector that could
 drift away from the actual permissions.
 
 An archived Workspace remains readable to authorized users, but content
-changes are disabled for the owner and administrator as well. Their
+changes are disabled for managers and administrators as well. Their
 `can_manage` permission remains active so they can reactivate the Workspace.
 Deleting a Workspace is a soft delete. Administrators can list and restore
 deleted Workspaces, including resolving a slug conflict.
@@ -84,8 +84,9 @@ built-in audience they belong to, and all their groups are combined:
 - `can_delete`
 - `can_manage`
 
-`can_manage` implies every other permission. The owner and application
-administrators receive the complete permission set.
+`can_manage` implies every other permission. Application administrators receive
+the complete permission set. A new Workspace creator receives a regular user
+ACL row with `can_manage`, without a special owner status.
 
 The management screen does not load every user and group. It renders assigned
 ACL rows only, while a searchable picker adds new subjects. Search runs on the
@@ -94,8 +95,7 @@ returns at most 20 results per request. The previous request is cancelled when
 the operator keeps typing. This remains usable with thousands of users and
 hundreds of groups without embedding the complete Auth directory in HTML.
 
-Changing the owner uses the same bounded user picker. Removing a table row
-removes only the permission assignment after save; it never deletes the user
+Removing a table row removes only the permission assignment after save; it never deletes the user
 or group from the Auth module.
 
 Node ACL is deliberately restrictive:
@@ -463,7 +463,8 @@ return [
         'contents_visible' => false,
     ],
     'creation' => [
-        'authenticated_users' => false,
+        'users' => [],
+        'groups' => [],
     ],
     'menu' => [
         'auto_register_top' => true,
@@ -471,6 +472,9 @@ return [
     ],
 ];
 ```
+
+Administrators may always create Workspaces. Other creators are selected in
+Workspace settings as individual Auth users or existing Auth groups.
 
 `tree_visible` and `contents_visible` are the system fallbacks. Each Workspace
 may inherit, show, or hide its tree and page outline, while an individual page
@@ -752,7 +756,7 @@ composer on-commit
 The command runs PHPCS, Rector dry-run, PHPStan for source and tests, and
 PHPUnit. Every method is documented in Croatian and English. Views use
 escaped output, forms use the framework CSRF field, and controllers validate
-Workspace ownership before write operations.
+effective Workspace permissions before write operations.
 
 ## 12. Backup and restore
 

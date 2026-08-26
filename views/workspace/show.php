@@ -31,6 +31,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var int $defaultPageParentId
  * @var bool $canCreatePage
  * @var bool $canOrganizeTree
+ * @var bool $canOpenNodeDialog
  * @var string $nodeSavePath
  * @var string $nodeDialogPath
  * @var string $treeOrderSavePath
@@ -57,6 +58,7 @@ $hasTreeActions = WorkspaceValue::string($shortsPath ?? '') !== ''
 $fallbackLeadingActions = is_array($fallbackLeadingActions ?? null)
     ? array_values($fallbackLeadingActions)
     : [];
+$canOpenNodeDialog = (bool)($canOpenNodeDialog ?? $canOrganizeTree);
 $breadcrumbs = is_array($breadcrumbs ?? null) ? array_values($breadcrumbs) : [];
 $backlinks = is_array($backlinks ?? null) ? array_values($backlinks) : [];
 $includedIn = is_array($includedIn ?? null) ? array_values($includedIn) : [];
@@ -85,6 +87,9 @@ $workflowIcon = static function (string $action): string {
         'tree' => '<path d="M10 3H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>'
             . '<path d="M19 14h-5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2z"/>'
             . '<path d="M7 10v2a2 2 0 0 0 2 2h5"/>',
+        'page-access' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
+            . '<path d="M14 2v6h6"/><circle cx="10" cy="15" r="2"/>'
+            . '<path d="M12 15h6M16 15v2M18 15v2"/>',
         default => '<circle cx="12" cy="12" r="9"/>',
     };
 
@@ -478,6 +483,22 @@ $workflowIcon = static function (string $action): string {
                             >
                                 <?= $workflowIcon(WorkspaceValue::string($action['icon'] ?? 'draft')) ?>
                             </a>
+                        <?php elseif ($actionType === 'modal') : ?>
+                            <button
+                                class="btn btn-outline-secondary btn-sm workspace-tree-card-action"
+                                type="button"
+                                data-bs-toggle="modal"
+                                data-bs-target="<?= $this->escape(
+                                    WorkspaceValue::string($action['target'] ?? ''),
+                                ) ?>"
+                                data-workspace-node-dialog-url="<?= $this->escape(
+                                    WorkspaceValue::string($action['url'] ?? ''),
+                                ) ?>"
+                                title="<?= $this->escape(WorkspaceValue::string($action['label'] ?? '')) ?>"
+                                aria-label="<?= $this->escape(WorkspaceValue::string($action['label'] ?? '')) ?>"
+                            >
+                                <?= $workflowIcon(WorkspaceValue::string($action['icon'] ?? 'page-access')) ?>
+                            </button>
                         <?php elseif ($actionType === 'form') : ?>
                             <form method="post" action="<?= $this->escape(
                                 WorkspaceValue::string($action['path'] ?? ''),
@@ -756,7 +777,7 @@ $workflowIcon = static function (string $action): string {
     </div>
 <?php endif; ?>
 
-<?php if ($canOrganizeTree) : ?>
+<?php if ($canOpenNodeDialog) : ?>
     <div
         class="modal fade"
         id="workspace-node-editor-modal"

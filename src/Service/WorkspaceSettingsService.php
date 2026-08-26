@@ -7,6 +7,8 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
 use HeartPhrame\Routing\Routes;
 use RuntimeException;
 
+use function array_values;
+use function is_array;
 use function is_dir;
 use function is_scalar;
 use function ltrim;
@@ -27,6 +29,7 @@ final readonly class WorkspaceSettingsService
     public function __construct(
         private WorkspaceConfig $config,
         private Routes $routes,
+        private WorkspaceRepository $repository,
     ) {
     }
 
@@ -43,7 +46,14 @@ final readonly class WorkspaceSettingsService
             'default_visibility' => $this->config->defaultVisibility(),
             'tree_visible' => $this->config->treeVisibleByDefault(),
             'contents_visible' => $this->config->contentsVisibleByDefault(),
-            'authenticated_users_may_create' => $this->config->authenticatedUsersMayCreate(),
+            'creator_users' => $this->repository->directorySubjectsByIds(
+                WorkspaceRepository::SUBJECT_USER,
+                $this->config->creatorUserIds(),
+            ),
+            'creator_groups' => $this->repository->directorySubjectsByIds(
+                WorkspaceRepository::SUBJECT_GROUP,
+                $this->config->creatorGroupIds(),
+            ),
             'shorts_depth' => $this->config->shortsDefaultDepth(),
             'shorts_limit' => $this->config->shortsDefaultLimit(),
             'shorts_order' => $this->config->shortsDefaultOrder(),
@@ -79,8 +89,13 @@ final readonly class WorkspaceSettingsService
                 'contents_visible' => $this->boolValue($input['contents_visible'] ?? false),
             ],
             'creation' => [
-                'authenticated_users' => $this->boolValue(
-                    $input['authenticated_users_may_create'] ?? false,
+                'users' => $this->validCreatorIds(
+                    WorkspaceRepository::SUBJECT_USER,
+                    $input['creator_users'] ?? [],
+                ),
+                'groups' => $this->validCreatorIds(
+                    WorkspaceRepository::SUBJECT_GROUP,
+                    $input['creator_groups'] ?? [],
                 ),
             ],
             'shorts' => [
@@ -117,6 +132,33 @@ final readonly class WorkspaceSettingsService
         if (file_put_contents($path, $content) === false) {
             throw new RuntimeException(__('Nije moguće zapisati postavke područja.'));
         }
+    }
+
+    /**
+     * HR: Zadržava samo postojeće aktivne Auth korisnike ili grupe.
+     * EN: Keeps only existing active Auth users or groups.
+     *
+     * @return list<int>
+     */
+    private function validCreatorIds(string $category, mixed $values): array
+    {
+        $ids = [];
+        foreach (is_array($values) ? $values : [] as $value) {
+            $id = WorkspaceValue::int($value);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        $valid = [];
+        foreach ($this->repository->directorySubjectsByIds($category, array_values($ids)) as $subject) {
+            $id = WorkspaceValue::int($subject['id'] ?? 0);
+            if ($id > 0) {
+                $valid[] = $id;
+            }
+        }
+
+        return $valid;
     }
 
     /**
