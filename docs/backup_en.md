@@ -14,4 +14,10 @@ A workspace manager may export the workspace and may restore it back into the wo
 
 Shared calendars are referenced and reused when they already exist; document content, versions, ACL, dynamic included-page references, comments, tasks, scoped menus, and private theme files are carried by their owning providers. Copy restore rewrites include-reference keys and UUIDs inside copied versions, while a target outside the Workspace stays connected to an existing document with the same key. The search index is never copied and is rebuilt after a successful transaction.
 
+Formatted-content tabs need no special backup record: their canonical HTML is
+part of every Editor version. Merge, copy, replace, restore into an existing
+Workspace, and restore as a new Workspace therefore retain all tab titles and
+formatted panel content. Workspace and theme providers separately retain the
+private theme and its light/dark tab colors.
+
 Use preflight before restore. A missing required provider, checksum mismatch, unknown module/schema version, ACL problem, or unresolved identity blocks the operation before target content is changed.

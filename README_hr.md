@@ -371,6 +371,10 @@ otvoriti kroz `file://` i namjerno sadrži samo renderirani dokument, bez
 Workspace ljuske i bez pozadine stranice iz Theme modula.
 Nativni Editor grafikoni pretvaraju se u responzivni samostalni SVG te
 zadržavaju istu širinu, poravnanje, razmak i boje teme kao pregled stranice.
+Editorovi tabovi s formatiranim sadržajem ostaju interaktivni u korijenskoj
+offline ljusci i svakoj samostalnoj datoteci stranice. Paneli rastu sa
+sadržajem, kod se po potrebi vodoravno pomiče, a miš i tipkovnica rade bez
+poslužitelja.
 
 Sigurnosna pravila primjenjuju se prije pakiranja:
 

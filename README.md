@@ -375,6 +375,9 @@ export. It can be opened directly through `file://` and intentionally contains
 only the rendered document, not the Workspace shell or Theme page background.
 Native Editor charts are converted to responsive self-contained SVG and retain
 the same width, alignment, spacing, and theme colours as the page view.
+Editor formatted-content tabs remain interactive in both the root offline shell
+and every standalone page file. Their panels grow with content, code may scroll
+horizontally, and mouse plus keyboard navigation require no server.
 
 The export deliberately applies security before packaging:
 

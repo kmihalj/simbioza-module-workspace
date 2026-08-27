@@ -1349,6 +1349,34 @@ body {
     min-width: 7rem;
 }
 
+/* HR: Strukturni fallback za sadržajne tabove. EN: Structural fallback for content tabs. */
+.editor-html-tabs__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+}
+.editor-html-tabs__tab {
+    background: var(--hph-editor-tab-bg, var(--hph-surface-bg, #fff));
+    border: 1px solid var(--hph-editor-tab-border, var(--hph-border, #dee2e6));
+    color: var(--hph-editor-tab-text, var(--hph-surface-text, #212529));
+    font: inherit;
+    margin-bottom: -1px;
+    padding: .55rem .9rem;
+}
+.editor-html-tabs__tab--active {
+    background: var(--hph-editor-tab-active-bg, var(--hph-surface-bg, #fff));
+    border-top: 3px solid var(--hph-editor-tab-active-accent, var(--hph-primary, #0d6efd));
+    color: var(--hph-editor-tab-active-text, var(--hph-surface-text, #212529));
+}
+.editor-html-tabs__panels {
+    background: var(--hph-editor-tab-panel-bg, var(--hph-surface-bg, #fff));
+    border: 1px solid var(--hph-editor-tab-border, var(--hph-border, #dee2e6));
+    color: var(--hph-editor-tab-panel-text, var(--hph-surface-text, #212529));
+}
+.editor-html-tabs__panel { min-width: 0; padding: 1rem; }
+.editor-html-tabs__panel[hidden] { display: none !important; }
+.editor-html-tabs__panel pre { max-width: 100%; overflow-x: auto; overflow-y: visible; }
+
 @media (max-width: 1199.98px) {
     .workspace-export-layout {
         grid-template-columns: minmax(0, 1fr);
@@ -1487,12 +1515,45 @@ CSS;
         });
     }
 
+    function tabParts(collection) {
+        return {
+            tabs: Array.from(collection.querySelectorAll(':scope > .editor-html-tabs__list > [role="tab"]')),
+            panels: Array.from(collection.querySelectorAll(':scope > .editor-html-tabs__panels > [role="tabpanel"]')),
+        };
+    }
+
+    /* HR: Offline paket aktivira tabove bez poslužitelja. EN: The offline package activates tabs without a server. */
+    function activateTab(collection, requestedIndex, focusTab) {
+        const group = tabParts(collection);
+        if (group.tabs.length < 2 || group.tabs.length !== group.panels.length) return;
+        const index = Math.max(0, Math.min(group.tabs.length - 1, requestedIndex));
+        group.tabs.forEach((tab, currentIndex) => {
+            const active = currentIndex === index;
+            tab.classList.toggle('editor-html-tabs__tab--active', active);
+            tab.setAttribute('aria-selected', String(active));
+            tab.tabIndex = active ? 0 : -1;
+        });
+        group.panels.forEach((panel, currentIndex) => {
+            const active = currentIndex === index;
+            panel.classList.toggle('editor-html-tabs__panel--active', active);
+            panel.hidden = !active;
+        });
+        if (focusTab) group.tabs[index].focus();
+    }
+
+    function initializeTabs(container) {
+        container?.querySelectorAll('[data-editor-html-tabs="1"]').forEach((collection) => {
+            activateTab(collection, 0, false);
+        });
+    }
+
     function renderPage(pageId, language) {
         if (!pageHost) return;
         const pageTemplate = matchingTemplate('page', pageId, language);
         if (!(pageTemplate instanceof HTMLTemplateElement)) return;
         const title = pageTemplate.dataset.pageTitle || 'Simbioza';
         pageHost.replaceChildren(pageTemplate.content.cloneNode(true));
+        initializeTabs(pageHost);
 
         const outlineTemplate = matchingTemplate('outline', pageId, language);
         if (tocPanel) {
@@ -1526,6 +1587,12 @@ CSS;
         renderPage(currentPage, languageSelect.value);
     });
     document.addEventListener('click', (event) => {
+        const contentTab = event.target.closest('[data-editor-html-tabs="1"] [role="tab"]');
+        if (contentTab) {
+            const collection = contentTab.closest('[data-editor-html-tabs="1"]');
+            activateTab(collection, tabParts(collection).tabs.indexOf(contentTab), false);
+            return;
+        }
         const pageLink = event.target.closest('[data-export-page-link], [data-export-home]');
         if (pageLink) {
             const match = (pageLink.getAttribute('href') || '').match(/^#page-(\d+)$/);
@@ -1550,6 +1617,19 @@ CSS;
         if (layout && ['tree', 'toc'].includes(targetName)) {
             layout.classList.toggle(`workspace-export-${targetName}-visible`, !target.hidden);
         }
+    });
+    document.addEventListener('keydown', (event) => {
+        const tab = event.target.closest('[data-editor-html-tabs="1"] [role="tab"]');
+        if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const collection = tab.closest('[data-editor-html-tabs="1"]');
+        const tabs = tabParts(collection).tabs;
+        if (tabs.length < 2) return;
+        event.preventDefault();
+        const current = Math.max(0, tabs.indexOf(tab));
+        const next = event.key === 'Home' ? 0 : (event.key === 'End'
+            ? tabs.length - 1
+            : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length);
+        activateTab(collection, next, true);
     });
     addEventListener('hashchange', () => {
         const match = location.hash.match(/^#page-(\d+)$/);

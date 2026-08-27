@@ -14,4 +14,10 @@ Upravitelj područja smije izvesti područje i vratiti ga u područje za koje im
 
 Dijeljeni kalendari povezuju se i ponovno koriste ako već postoje; dokumente, verzije, ACL, dinamičke reference uključenih stranica, komentare, zadatke, scoped menije i datoteke privatne teme prenose njihovi vlasnički provideri. Povrat kao kopija prepisuje ključeve i UUID-eve include referenci unutar kopiranih verzija, dok cilj izvan područja ostaje povezan s postojećim dokumentom jednakog ključa. Indeks pretrage nikada se ne kopira nego se ponovno izgrađuje nakon uspješne transakcije.
 
+Tabovi s formatiranim sadržajem ne trebaju poseban backup zapis: njihov
+kanonski HTML dio je svake Editorove verzije. Merge, copy, replace, povrat u
+postojeće područje i povrat kao novo područje zato čuvaju sve naslove tabova i
+formatirani sadržaj panela. Workspace i Theme provideri zasebno čuvaju privatnu
+temu i njezine light/dark boje tabova.
+
 Prije povrata koristite preflight. Nedostajući obvezni provider, pogrešan checksum, nepoznata verzija modula/sheme, ACL problem ili nerazriješen identitet prekidaju radnju prije promjene sadržaja cilja.
