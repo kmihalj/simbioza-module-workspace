@@ -510,6 +510,7 @@ return [
     'Automatski' => 'Automatic',
     'Svijetlo' => 'Light',
     'Tamno' => 'Dark',
+    'Jezik' => 'Language',
     'Tema' => 'Theme',
     'Preskoči na glavni sadržaj' => 'Skip to main content',
     'Tema područja' => 'Workspace theme',

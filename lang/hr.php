@@ -509,6 +509,7 @@ return [
     'Automatski' => 'Automatski',
     'Svijetlo' => 'Svijetlo',
     'Tamno' => 'Tamno',
+    'Jezik' => 'Jezik',
     'Tema' => 'Tema',
     'Preskoči na glavni sadržaj' => 'Preskoči na glavni sadržaj',
     'Tema područja' => 'Tema područja',

@@ -33,5 +33,7 @@ final class WorkspaceExportTabsTest extends TestCase
         $this->assertStringContainsString('initializeTabs(pageHost)', $javascript);
         $this->assertStringContainsString('[data-editor-html-tabs="1"] [role="tab"]', $javascript);
         $this->assertStringContainsString("['ArrowLeft', 'ArrowRight', 'Home', 'End']", $javascript);
+        $this->assertStringContainsString('[data-export-theme] option', $javascript);
+        $this->assertStringContainsString('data-export-label-${language}', $javascript);
     }
 }

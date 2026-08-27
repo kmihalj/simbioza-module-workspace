@@ -343,7 +343,7 @@ final readonly class WorkspaceExportService
         $initialTitle = WorkspaceValue::string($initialSnapshot['title'] ?? '');
         $homeHref = '#page-' . $initialPageId;
         $languageControl = $this->languageControl($locale, $languages);
-        $themeControl = $this->themeControl($locale);
+        $themeControl = $this->themeControl($locale, $languages);
         $assetSources = $this->stringMap($themeBundle['sources'] ?? null);
         $themeEnabled = (bool)($themeBundle['enabled'] ?? false);
         $headerEnabled = (bool)($themeBundle['header_enabled'] ?? false);
@@ -426,7 +426,7 @@ final readonly class WorkspaceExportService
         . "    <link rel=\"stylesheet\" href=\"assets/css/workspace-export.css\">\n"
         . "</head>\n<body>\n"
         . '<a class="hph-skip-link" href="#main-content">'
-        . $this->escape($this->t('Preskoči na glavni sadržaj', $locale)) . '</a>'
+        . $this->localizedText('Preskoči na glavni sadržaj', $languages, $locale) . '</a>'
         . $header
         . ($navigationInHero ? '' : $navigation)
         . '<div class="' . $this->escape($presentation['stage_classes']) . '">' . $hero . $main . '</div>'
@@ -658,23 +658,49 @@ final readonly class WorkspaceExportService
         }
 
         return '<li class="nav-item"><label class="visually-hidden" for="workspace-export-language">'
-        . $this->escape($this->t('Jezik', $locale)) . '</label><select id="workspace-export-language"'
+        . $this->localizedText('Jezik', $languages, $locale) . '</label><select id="workspace-export-language"'
         . ' class="form-select form-select-sm" data-export-language>' . $options . '</select></li>';
     }
 
     /**
      * HR: Gradi select za automatsku, svijetlu ili tamnu varijantu teme.
      * EN: Builds the select for automatic, light, or dark theme variants.
+     *
+     * @param list<string> $languages
      */
-    private function themeControl(string $locale): string
+    private function themeControl(string $locale, array $languages): string
     {
         return '<li class="nav-item"><label class="visually-hidden" for="workspace-export-theme">'
-        . $this->escape($this->t('Tema', $locale)) . '</label><select id="workspace-export-theme"'
+        . $this->localizedText('Tema', $languages, $locale) . '</label><select id="workspace-export-theme"'
         . ' class="form-select form-select-sm" data-export-theme>'
-        . '<option value="auto">' . $this->escape($this->t('Automatski', $locale)) . '</option>'
-        . '<option value="light">' . $this->escape($this->t('Svijetlo', $locale)) . '</option>'
-        . '<option value="dark">' . $this->escape($this->t('Tamno', $locale)) . '</option>'
+        . $this->localizedOption('auto', 'Automatski', $languages, $locale)
+        . $this->localizedOption('light', 'Svijetlo', $languages, $locale)
+        . $this->localizedOption('dark', 'Tamno', $languages, $locale)
         . '</select></li>';
+    }
+
+    /**
+     * HR: U opciju ugrađuje prijevode svih jezika kako bi offline izvoz mogao
+     *     promijeniti tekst bez ponovnog učitavanja ili poslužitelja.
+     * EN: Embeds every locale label in an option so the offline export can update
+     *     its copy without a reload or a server.
+     *
+     * @param list<string> $languages
+     */
+    private function localizedOption(
+        string $value,
+        string $key,
+        array $languages,
+        string $activeLocale,
+    ): string {
+        $attributes = '';
+        foreach ($languages as $language) {
+            $attributes .= ' data-export-label-' . $this->escape($language) . '="'
+            . $this->escape($this->t($key, $language)) . '"';
+        }
+
+        return '<option value="' . $this->escape($value) . '"' . $attributes . '>'
+        . $this->escape($this->t($key, $activeLocale)) . '</option>';
     }
 
     /**
@@ -1467,6 +1493,10 @@ CSS;
     function applyLocalizedUi(language) {
         document.querySelectorAll('[data-export-localized], [data-export-tree-label]').forEach((item) => {
             item.hidden = item.dataset.language !== language;
+        });
+        document.querySelectorAll('[data-export-theme] option').forEach((option) => {
+            const label = option.getAttribute(`data-export-label-${language}`);
+            if (label) option.textContent = label;
         });
         root.lang = language;
         if (languageSelect) languageSelect.value = language;
