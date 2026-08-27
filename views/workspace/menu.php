@@ -32,11 +32,15 @@ $workspaceName = WorkspaceValue::string($workspace['name'] ?? $workspace['slug']
     </div>
 </header>
 
-<p class="text-body-secondary mb-4">
-    <?= $this->escape(__(
-        'Gornji i lijevi meni uređuju se odvojeno. Promjena ili uklanjanje jednoga ne mijenja drugi meni.',
-    )) ?>
-</p>
+<div class="card shadow-sm hph-content-card workspace-special-menu-intro mb-4" role="note">
+    <div class="card-body py-3">
+        <p class="mb-0">
+            <?= $this->escape(__(
+                'Gornji i lijevi meni uređuju se odvojeno. Promjena ili uklanjanje jednoga ne mijenja drugi meni.',
+            )) ?>
+        </p>
+    </div>
+</div>
 
 <section class="mb-4" aria-labelledby="workspace-special-top-menu-title">
     <h2 id="workspace-special-top-menu-title" class="h4 mb-3">

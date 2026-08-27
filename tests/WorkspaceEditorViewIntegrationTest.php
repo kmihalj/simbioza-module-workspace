@@ -295,6 +295,31 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Uvod u posebne menije mora biti na neprozirnoj tematskoj površini
+     *     kako tekst ne bi nestao na hero pozadini prilagođene teme.
+     * EN: The special-menu introduction must use an opaque themed surface so
+     *     its text cannot disappear over a custom theme's hero background.
+     */
+    public function testSpecialMenuIntroductionUsesThemeAwareContentCard(): void
+    {
+        $view = file_get_contents(dirname(__DIR__) . '/views/workspace/menu.php');
+        $css = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.css');
+
+        $this->assertIsString($view);
+        $this->assertIsString($css);
+        $this->assertStringContainsString(
+            'class="card shadow-sm hph-content-card workspace-special-menu-intro mb-4"',
+            $view,
+        );
+        $this->assertStringContainsString('.workspace-special-menu-intro {', $css);
+        $this->assertStringContainsString('--hph-content-card-bg', $css);
+        $this->assertStringNotContainsString(
+            '<p class="text-body-secondary mb-4">',
+            $view,
+        );
+    }
+
+    /**
      * HR: Organizator i modalne postavke čvorova pripadaju prikazu Područja,
      *     dok ekran upravljanja zadržava samo podatke, članove i Workspace ACL.
      * EN: The organizer and modal node settings belong to the Workspace view,

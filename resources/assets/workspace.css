@@ -31,7 +31,8 @@
  *     themed card as page content.
  */
 .workspace-access-denied,
-.workspace-empty-state {
+.workspace-empty-state,
+.workspace-special-menu-intro {
     background-color: var(--hph-content-card-bg, var(--bs-body-bg, #fff));
     border-color: var(--hph-content-card-border, var(--bs-border-color, #dee2e6));
     color: var(--hph-content-card-text, var(--bs-body-color, #212529));
