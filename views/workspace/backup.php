@@ -27,11 +27,20 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
 $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
 $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
+$noFileSelectedJson = json_encode(__('Nije odabrana datoteka'), JSON_UNESCAPED_UNICODE);
 $this->addToPlaceholder('head', <<<'HTML'
 <style>
     .workspace-backup-grid{display:grid;gap:1rem;grid-template-columns:repeat(2,minmax(0,1fr))}
     .workspace-backup-result{white-space:pre-wrap;overflow-wrap:anywhere}
     .workspace-backup-progress{height:.65rem}
+    .workspace-backup-file-control{display:flex;align-items:stretch;min-width:0}
+    .workspace-backup-file-control .btn{border-radius:.375rem 0 0 .375rem;white-space:nowrap}
+    .workspace-backup-file-name{
+        display:flex;align-items:center;min-width:0;flex:1;padding:.375rem .75rem;
+        border:1px solid var(--bs-border-color);border-left:0;border-radius:0 .375rem .375rem 0;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+        background:var(--bs-body-bg);color:var(--bs-body-color)
+    }
     @media(max-width:900px){.workspace-backup-grid{grid-template-columns:1fr}}
 </style>
 HTML);
@@ -104,7 +113,16 @@ HTML);
                 <label class="form-label" for="workspace-backup-file">
                     <?= $this->escape(__('Backup datoteka')) ?>
                 </label>
-                <input id="workspace-backup-file" class="form-control" type="file" accept=".zip,application/zip">
+                <div class="workspace-backup-file-control">
+                    <label class="btn btn-secondary mb-0" for="workspace-backup-file">
+                        <?= $this->escape(__('Odaberi datoteku')) ?>
+                    </label>
+                    <span id="workspace-backup-file-name" class="workspace-backup-file-name" aria-live="polite">
+                        <?= $this->escape(__('Nije odabrana datoteka')) ?>
+                    </span>
+                    <input id="workspace-backup-file" class="visually-hidden" type="file"
+                           accept=".zip,application/zip">
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="workspace-backup-passphrase">
@@ -173,8 +191,14 @@ HTML);
     const element = (id) => document.getElementById(id);
     const result = element('workspace-backup-result');
     const restoreButton = element('workspace-backup-restore');
+    const fileInput = element('workspace-backup-file');
+    const fileName = element('workspace-backup-file-name');
     let upload = null;
     let preflightPassed = false;
+
+    fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files[0]?.name || <?= $noFileSelectedJson ?>;
+    });
 
     const show = (value) => {
         result.classList.remove('d-none');
@@ -220,7 +244,7 @@ HTML);
 
     element('workspace-backup-upload').addEventListener('click', async () => {
         try {
-            const file = element('workspace-backup-file').files[0];
+            const file = fileInput.files[0];
             if (!file) throw new Error(config.selectFile);
             if (file.size > config.maxSize) throw new Error(config.requestFailed);
             upload = await request(config.start, {workspace: config.workspace, name: file.name, size: file.size});

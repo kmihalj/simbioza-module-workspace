@@ -174,14 +174,21 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Kreira ili ažurira područje nakon što je business sloj provjerio ovlasti.
-     * EN: Creates or updates a workspace after the business layer has checked permissions.
+     * HR: Kreira ili ažurira područje nakon što je poslovni sloj provjerio
+     *     ovlasti. Opcionalni početni upravitelj omogućuje sustavskom izvršitelju
+     *     da zadrži audit, a sva prava dodijeli drugom korisniku.
+     * EN: Creates or updates a Workspace after the business layer has checked
+     *     permissions. An optional initial manager lets a system actor retain
+     *     the audit record while granting every permission to another user.
      *
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    public function saveWorkspace(array $data, int $actorUserId): array
-    {
+    public function saveWorkspace(
+        array $data,
+        int $actorUserId,
+        ?int $initialManagerUserId = null,
+    ): array {
         $this->assertTablesReady();
         $workspaceId = $this->intValue($data['id'] ?? 0);
         $existing = $workspaceId > 0 ? $this->findWorkspaceById($workspaceId) : null;
@@ -235,7 +242,16 @@ final readonly class WorkspaceRepository
 
         if ($isNew) {
             $this->insertBuiltInVisibilityAcl($workspaceId, $visibility, $now);
-            $this->insertWorkspaceManagerAcl($workspaceId, $actorUserId, $now);
+            // HR: Sustavski servis može evidentirati stvarnog izvršitelja, a
+            //     početno upravljanje dodijeliti korisniku za kojega stvara
+            //     područje. Obično korisničko stvaranje i dalje koristi isti ID.
+            // EN: A system service may retain the real actor for auditing while
+            //     granting initial management to the user for whom it creates
+            //     the Workspace. Regular creation still uses the same ID.
+            $this->grantWorkspaceManagement(
+                $workspaceId,
+                $initialManagerUserId ?? $actorUserId,
+            );
         }
 
         $workspace = $this->findWorkspaceById($workspaceId);
@@ -3175,25 +3191,36 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Kreatoru novog područja dodjeljuje upravljanje kroz isti ACL model
-     *     koji se poslije uređuje u postavkama područja.
-     * EN: Grants the new Workspace creator management through the same ACL
-     *     model that is later edited in Workspace settings.
+     * HR: Korisniku idempotentno dodjeljuje upravljanje i svih pet uključenih
+     *     operativnih prava kroz isti ACL model koji uređuju postavke područja.
+     * EN: Idempotently grants a user Manage and all five implied operational
+     *     permissions through the same ACL model edited in Workspace settings.
      */
-    private function insertWorkspaceManagerAcl(int $workspaceId, int $userId, string $now): void
+    public function grantWorkspaceManagement(int $workspaceId, int $userId): void
     {
-        if ($workspaceId <= 0 || $userId <= 0 || !$this->userExists($userId)) {
+        if (
+            $workspaceId <= 0
+            || $userId <= 0
+            || !is_array($this->findWorkspaceById($workspaceId))
+            || !$this->userExists($userId)
+        ) {
             return;
         }
 
-        $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)->insert([
-            'workspace_id' => $workspaceId,
-            'subject_type' => self::SUBJECT_USER,
-            'subject_id' => $userId,
-            ...$this->permissionValues(['can_manage' => true]),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $now = date('Y-m-d H:i:s');
+        $permissions = $this->permissionValues(['can_manage' => true]);
+        $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)->upsert(
+            [[
+                'workspace_id' => $workspaceId,
+                'subject_type' => self::SUBJECT_USER,
+                'subject_id' => $userId,
+                ...$permissions,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]],
+            ['workspace_id', 'subject_type', 'subject_id'],
+            [...array_keys($permissions), 'updated_at'],
+        );
     }
 
     /**

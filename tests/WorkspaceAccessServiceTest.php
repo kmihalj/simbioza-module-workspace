@@ -147,6 +147,36 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Sistemski izvršitelj ostaje u auditu, dok zasebni početni upravitelj
+     *     dobiva svih šest prava kroz jedan korisnički ACL redak.
+     * EN: The system actor remains in the audit trail while a separate initial
+     *     manager receives all six permissions through one user ACL row.
+     */
+    public function testWorkspaceMayGrantInitialManagementToAnotherUser(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Osobno područje',
+            'slug' => 'osobno-podrucje',
+            'visibility' => 'restricted',
+        ], 1, 3);
+        $this->authn->login(['id' => 3, 'is_admin' => false]);
+
+        $this->assertSame(1, (int)$workspace['created_by_user_id']);
+        $this->assertSame([
+            'can_view' => true,
+            'can_add' => true,
+            'can_edit' => true,
+            'can_publish' => true,
+            'can_delete' => true,
+            'can_manage' => true,
+        ], $this->access->workspacePermissions($workspace));
+
+        $acl = $this->repository->workspaceAclRows((int)$workspace['id']);
+        $this->assertCount(1, $acl);
+        $this->assertSame(3, (int)$acl[0]['subject_id']);
+    }
+
+    /**
      * HR: Kreiranje područja dopušta administratoru te konfiguriranim korisnicima i grupama.
      * EN: Workspace creation allows administrators and configured users or groups.
      */

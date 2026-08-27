@@ -641,6 +641,10 @@ return [
     'Upravljaj područjem' => 'Upravljaj područjem',
     'Backup datoteka' => 'Backup datoteka',
     'Backup područja' => 'Backup područja',
+    'Odaberi datoteku' => 'Odaberi datoteku',
+    'Nije odabrana datoteka' => 'Nije odabrana datoteka',
+    'Arhiv uključuje stranice i povijest, privitke, stablo, ACL, privatnu temu, posebne menije i obnovu indeksa.' =>
+        'Arhiv uključuje stranice i povijest, privitke, stablo, ACL, privatnu temu, posebne menije i obnovu indeksa.',
     'Ciljno područje' => 'Ciljno područje',
     'Izvezi backup područja' => 'Izvezi backup područja',
     'Kreiraj novo područje' => 'Kreiraj novo područje',
@@ -653,13 +657,19 @@ return [
     'Preuzmi šifrirani backup' => 'Preuzmi šifrirani backup',
     'Spoji s istim područjem' => 'Spoji s istim područjem',
     'Upravljaj backupom područja' => 'Upravljaj backupom područja',
+    'Izvezite ili vratite sadržaj, povijest, prava, temu i posebne menije ovog područja.' =>
+        'Izvezite ili vratite sadržaj, povijest, prava, temu i posebne menije ovog područja.',
     'Učitaj i provjeri' => 'Učitaj i provjeri',
     'Vrati backup područja' => 'Vrati backup područja',
+    'Datoteka se šalje u nastavivim dijelovima. Prije vraćanja obavezno se provjeravaju integritet, komponente, identiteti i sukobi.' =>
+        'Datoteka se šalje u nastavivim dijelovima. Prije vraćanja obavezno se provjeravaju integritet, komponente, identiteti i sukobi.',
     'Vratiti backup područja sada? Postojeći sadržaj može biti promijenjen.' =>
         'Vratiti backup područja sada? Postojeći sadržaj može biti promijenjen.',
     'Zahtjev nije uspio.' => 'Zahtjev nije uspio.',
     'Zamijeni postojeće područje' => 'Zamijeni postojeće područje',
     'Zaporka arhiva' => 'Zaporka arhiva',
+    'Zaporka štiti sadržaj i ovlasti te se ne sprema u aplikaciji. Sačuvajte je odvojeno.' =>
+        'Zaporka štiti sadržaj i ovlasti te se ne sprema u aplikaciji. Sačuvajte je odvojeno.',
     'Održavanje' => 'Održavanje',
     'Prije čišćenja potvrdite da razumijete da je radnja nepovratna.' =>
         'Prije čišćenja potvrdite da razumijete da je radnja nepovratna.',

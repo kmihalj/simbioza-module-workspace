@@ -642,6 +642,10 @@ return [
     'Upravljaj područjem' => 'Manage Workspace',
     'Backup datoteka' => 'Backup file',
     'Backup područja' => 'Workspace backup',
+    'Odaberi datoteku' => 'Choose file',
+    'Nije odabrana datoteka' => 'No file selected',
+    'Arhiv uključuje stranice i povijest, privitke, stablo, ACL, privatnu temu, posebne menije i obnovu indeksa.' =>
+        'The archive includes pages and history, attachments, the tree, ACL, private theme, special menus and index rebuilding.',
     'Ciljno područje' => 'Target Workspace',
     'Izvezi backup područja' => 'Export Workspace backup',
     'Kreiraj novo područje' => 'Create a new Workspace',
@@ -654,13 +658,19 @@ return [
     'Preuzmi šifrirani backup' => 'Download encrypted backup',
     'Spoji s istim područjem' => 'Merge with the same Workspace',
     'Upravljaj backupom područja' => 'Manage Workspace backup',
+    'Izvezite ili vratite sadržaj, povijest, prava, temu i posebne menije ovog područja.' =>
+        'Export or restore this Workspace content, history, permissions, theme and special menus.',
     'Učitaj i provjeri' => 'Upload and validate',
     'Vrati backup područja' => 'Restore Workspace backup',
+    'Datoteka se šalje u nastavivim dijelovima. Prije vraćanja obavezno se provjeravaju integritet, komponente, identiteti i sukobi.' =>
+        'The file is uploaded in resumable chunks. Integrity, components, identities and conflicts are checked before restore.',
     'Vratiti backup područja sada? Postojeći sadržaj može biti promijenjen.' =>
         'Restore the Workspace backup now? Existing content may be changed.',
     'Zahtjev nije uspio.' => 'The request failed.',
     'Zamijeni postojeće područje' => 'Replace the existing Workspace',
     'Zaporka arhiva' => 'Archive passphrase',
+    'Zaporka štiti sadržaj i ovlasti te se ne sprema u aplikaciji. Sačuvajte je odvojeno.' =>
+        'The passphrase protects content and permissions and is not stored by the application. Keep it separately.',
     'Održavanje' => 'Maintenance',
     'Prije čišćenja potvrdite da razumijete da je radnja nepovratna.' =>
         'Before cleaning, confirm that you understand the action is irreversible.',
