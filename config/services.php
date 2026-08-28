@@ -59,6 +59,7 @@ use HeartPhrame\Http\ResponseFactory;
 use HeartPhrame\Localization\TranslatorInterface;
 use HeartPhrame\Routing\Routes;
 use HeartPhrame\Routing\UrlGenerator;
+use HeartPhrame\Session\SessionInterface;
 use HeartPhrame\View\View;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -378,6 +379,7 @@ $services = [
             $container->get(WorkspaceConfig::class),
             $container->get(UrlGenerator::class),
             $container->get(AlertHandler::class),
+            $container->get(SessionInterface::class),
         ),
 
     WorkspaceShortsController::class => static fn(ContainerInterface $container): WorkspaceShortsController =>
