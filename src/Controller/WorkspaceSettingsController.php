@@ -17,13 +17,13 @@ use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\CodeBook\AlertLevelEnum;
 use HeartPhrame\Http\ResponseFactory;
 use HeartPhrame\Routing\UrlGenerator;
+use HeartPhrame\Session\SessionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 use function is_string;
 use function rawurlencode;
-use function sprintf;
 
 final readonly class WorkspaceSettingsController
 {
@@ -42,6 +42,7 @@ final readonly class WorkspaceSettingsController
         private WorkspaceConfig $config,
         private UrlGenerator $urlGenerator,
         private AlertHandler $alertHandler,
+        private SessionInterface $session,
     ) {
     }
 
@@ -169,6 +170,15 @@ final readonly class WorkspaceSettingsController
                 'workspace.settings.maintenance.images',
                 '/settings/workspaces/maintenance/images',
             ),
+            'imageOptimizeStatusPath' => $this->pathFor(
+                'workspace.settings.maintenance.images.status',
+                '/settings/workspaces/maintenance/images/status',
+            ),
+            'imageOptimizeStepPath' => $this->pathFor(
+                'workspace.settings.maintenance.images.step',
+                '/settings/workspaces/maintenance/images/step',
+            ),
+            'imageOptimization' => $this->maintenance->imageOptimizationStatus(),
             'purgePath' => $this->pathFor(
                 'workspace.settings.purge',
                 '/settings/workspaces/purge',
@@ -242,23 +252,57 @@ final readonly class WorkspaceSettingsController
         }
 
         try {
-            $result = $this->maintenance->optimizeImages();
-            $this->alertHandler->add(new Alert(
-                sprintf(
-                    __('Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.'),
-                    $result['documents'],
-                    $result['generated'],
-                    $result['skipped'],
-                ),
-                AlertLevelEnum::Success,
-            ));
+            return $this->responseFactory->json([
+                'ok' => true,
+                'optimization' => $this->maintenance->startImageOptimization(),
+                'csrf' => $this->csrfPayload(),
+            ]);
         } catch (Throwable $throwable) {
-            $this->alertHandler->add(new Alert($throwable->getMessage(), AlertLevelEnum::Danger));
+            return $this->responseFactory->json([
+                'ok' => false,
+                'error' => $throwable->getMessage(),
+                'csrf' => $this->csrfPayload(),
+            ], 400);
+        }
+    }
+
+    /** HR: Vraća aktualni napredak optimizacije. EN: Returns current optimization progress. */
+    public function imageOptimizationStatus(): ResponseInterface
+    {
+        if (!$this->access->isAdministrator()) {
+            return $this->responseFactory->json(['ok' => false, 'error' => __('Pristup nije dozvoljen.')], 403);
         }
 
-        return $this->responseFactory->redirect(
-            $this->pathFor('workspace.settings.maintenance', '/settings/workspaces/maintenance'),
-        );
+        return $this->responseFactory->json([
+            'ok' => true,
+            'optimization' => $this->maintenance->imageOptimizationStatus(),
+        ]);
+    }
+
+    /** HR: Obrađuje mali batch kao web worker. EN: Processes a small batch as a web worker. */
+    public function stepImageOptimization(): ResponseInterface
+    {
+        if (!$this->access->isAdministrator()) {
+            return $this->responseFactory->json([
+                'ok' => false,
+                'error' => __('Pristup nije dozvoljen.'),
+                'csrf' => $this->csrfPayload(),
+            ], 403);
+        }
+
+        try {
+            return $this->responseFactory->json([
+                'ok' => true,
+                'optimization' => $this->maintenance->stepImageOptimization(3),
+                'csrf' => $this->csrfPayload(),
+            ]);
+        } catch (Throwable $throwable) {
+            return $this->responseFactory->json([
+                'ok' => false,
+                'error' => $throwable->getMessage(),
+                'csrf' => $this->csrfPayload(),
+            ], 400);
+        }
     }
 
     /**
@@ -381,6 +425,15 @@ final readonly class WorkspaceSettingsController
             'message' => __('Samo administrator može mijenjati postavke područja.'),
             'indexPath' => $this->pathFor('workspace.index', '/workspaces'),
         ], true, 403);
+    }
+
+    /** @return array{name: string, token: string} */
+    private function csrfPayload(): array
+    {
+        return [
+            'name' => $this->session->getCsrfTokenName(),
+            'token' => $this->session->getOrGenerateCsrfToken(),
+        ];
     }
 
     /**

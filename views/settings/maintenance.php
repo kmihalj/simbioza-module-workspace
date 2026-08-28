@@ -15,6 +15,9 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
  * @var list<array<string, mixed>> $deletedWorkspaces
  * @var string $runPath
  * @var string $imageOptimizePath
+ * @var string $imageOptimizeStatusPath
+ * @var string $imageOptimizeStepPath
+ * @var array<string, mixed> $imageOptimization
  * @var string $purgePath
  * @var string $settingsPath
  * @var string $homepagePath
@@ -41,6 +44,15 @@ $irreversibleNote = $tr(
 $jsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
 $keptVersionsLabelJson = json_encode(__('Broj sačuvanih verzija'), $jsonFlags);
 $ageDaysLabelJson = json_encode(__('Starost u danima'), $jsonFlags);
+$imageOptimizationJson = json_encode($imageOptimization, $jsonFlags);
+$imageOptimizationLabelsJson = json_encode([
+    'idle' => __('Spremno za optimizaciju.'),
+    'queued' => __('Optimizacija čeka početak obrade.'),
+    'running' => __('Optimizacija slika je u tijeku.'),
+    'done' => __('Optimizacija slika je završena.'),
+    'failed' => __('Optimizacija slika nije uspjela.'),
+    'progress' => __('Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.'),
+], $jsonFlags);
 ?>
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
 
@@ -203,13 +215,38 @@ $ageDaysLabelJson = json_encode(__('Starost u danima'), $jsonFlags);
                         </p>
                     </div>
                     <div class="col-12 col-lg-auto">
-                        <form method="post" action="<?= $this->escape($imageOptimizePath) ?>">
+                        <form
+                            method="post"
+                            action="<?= $this->escape($imageOptimizePath) ?>"
+                            data-image-optimization-form
+                            data-status-path="<?= $this->escape($imageOptimizeStatusPath) ?>"
+                            data-step-path="<?= $this->escape($imageOptimizeStepPath) ?>"
+                        >
                             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-                            <button class="btn btn-primary" type="submit">
+                            <button class="btn btn-primary" type="submit" data-image-optimization-start>
                                 <?= $tr('Optimiziraj postojeće slike') ?>
                             </button>
                         </form>
                     </div>
+                </div>
+                <div class="mt-3" data-image-optimization-panel>
+                    <div
+                        class="progress"
+                        role="progressbar"
+                        aria-label="<?= $tr('Napredak optimizacije slika') ?>"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                        data-image-optimization-progress
+                    >
+                        <div
+                            class="progress-bar progress-bar-striped"
+                            style="width: 0%"
+                            data-image-optimization-bar
+                        >0%</div>
+                    </div>
+                    <p class="small text-body-secondary mt-2 mb-0" data-image-optimization-message></p>
+                    <p class="small mt-1 mb-0" data-image-optimization-details></p>
                 </div>
             </div>
         </section>
@@ -372,6 +409,95 @@ $ageDaysLabelJson = json_encode(__('Starost u danima'), $jsonFlags);
 </div>
 
 <script>
+(() => {
+    const form = document.querySelector('[data-image-optimization-form]');
+    if (!form) return;
+    const button = form.querySelector('[data-image-optimization-start]');
+    const progress = document.querySelector('[data-image-optimization-progress]');
+    const bar = document.querySelector('[data-image-optimization-bar]');
+    const message = document.querySelector('[data-image-optimization-message]');
+    const details = document.querySelector('[data-image-optimization-details]');
+    const labels = <?= $imageOptimizationLabelsJson ?>;
+    let state = <?= $imageOptimizationJson ?>;
+    let working = false;
+
+    const number = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+    const format = (template, values) => template.replace(
+        /%(\d+)\$d/g,
+        (_, index) => String(values[Number(index) - 1] ?? 0),
+    );
+    const updateCsrf = (csrf) => {
+        if (!csrf?.name || !csrf?.token) return;
+        let input = form.querySelector('input[type="hidden"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            form.prepend(input);
+        }
+        input.name = csrf.name;
+        input.value = csrf.token;
+    };
+    const render = () => {
+        const status = String(state?.status || 'idle');
+        const percent = Math.max(0, Math.min(100, number(state?.percent)));
+        progress.setAttribute('aria-valuenow', String(percent));
+        bar.style.width = `${percent}%`;
+        bar.textContent = `${percent}%`;
+        bar.classList.toggle('progress-bar-animated', status === 'queued' || status === 'running');
+        button.disabled = status === 'queued' || status === 'running';
+        message.textContent = String(state?.message || labels[status] || labels.idle);
+        details.textContent = format(labels.progress, [
+            number(state?.processed), number(state?.total),
+            number(state?.documents_processed), number(state?.documents_total),
+            number(state?.generated), number(state?.skipped),
+        ]);
+        details.classList.toggle('text-danger', status === 'failed');
+    };
+    const post = async (url) => {
+        const body = new URLSearchParams(new FormData(form));
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body,
+        });
+        const payload = await response.json();
+        updateCsrf(payload.csrf);
+        if (!response.ok || !payload.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+        return payload.optimization;
+    };
+    const work = async () => {
+        if (working || !['queued', 'running'].includes(String(state?.status || ''))) return;
+        working = true;
+        try {
+            state = await post(form.dataset.stepPath);
+            render();
+        } catch (error) {
+            state = {...state, status: 'failed', message: error instanceof Error ? error.message : String(error)};
+            render();
+        } finally {
+            working = false;
+        }
+        if (['queued', 'running'].includes(String(state?.status || ''))) {
+            window.setTimeout(work, state?.worker_busy ? 750 : 100);
+        }
+    };
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (working) return;
+        button.disabled = true;
+        try {
+            state = await post(form.action);
+            render();
+            window.setTimeout(work, 50);
+        } catch (error) {
+            state = {...state, status: 'failed', message: error instanceof Error ? error.message : String(error)};
+            render();
+        }
+    });
+    render();
+    if (['queued', 'running'].includes(String(state?.status || ''))) window.setTimeout(work, 100);
+})();
+
 (() => {
     const form = document.querySelector('[data-workspace-maintenance-form]');
     if (!form) return;

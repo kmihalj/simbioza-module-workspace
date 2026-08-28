@@ -81,6 +81,52 @@ final readonly class WorkspaceMaintenanceService
         return $result;
     }
 
+    /** @return array<string, mixed> */
+    public function startImageOptimization(): array
+    {
+        return $this->requireImageOptimizationResult($this->editor->startImageOptimization());
+    }
+
+    /** @return array<string, mixed> */
+    public function imageOptimizationStatus(): array
+    {
+        $result = $this->editor->imageOptimizationStatus();
+        if ($result !== []) {
+            return $result;
+        }
+
+        return [
+            'status' => 'idle',
+            'total' => 0,
+            'processed' => 0,
+            'percent' => 0,
+            'generated' => 0,
+            'skipped' => 0,
+            'documents_total' => 0,
+            'documents_processed' => 0,
+            'message' => __('HTML Editor nije dostupan pa optimizacija slika nije moguća.'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function stepImageOptimization(int $limit = 3): array
+    {
+        return $this->requireImageOptimizationResult($this->editor->stepImageOptimization($limit));
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
+     */
+    private function requireImageOptimizationResult(array $result): array
+    {
+        if ($result === []) {
+            throw new RuntimeException(__('HTML Editor nije dostupan pa optimizacija slika nije moguća.'));
+        }
+
+        return $result;
+    }
+
     /**
      * HR: Validira administratorski obrazac, čisti editor i zatim uklanja
      *     metapodatke onih Workspace čvorova čiji je dokument trajno uklonjen.

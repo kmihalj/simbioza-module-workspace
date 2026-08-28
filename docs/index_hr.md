@@ -787,6 +787,10 @@ webu. Izvorne datoteke ne mijenjaju se i ostaju dostupne klikom na prikazanu
 sliku. Isti se postupak automatski primjenjuje pri objavi dokumenta i nakon
 Confluence uvoza, dok ručna radnja pokriva sadržaj koji je postojao prije
 uključivanja optimizacije ili čija je izvedena kopija uklonjena.
+Obrada se izvodi u malim serijama uz vidljivi progress bar. Stanje se trajno
+sprema, pa zatvaranje stranice ne gubi već obavljeni rad, a ponovni dolazak na
+Održavanje automatski nastavlja nedovršeni posao. Zaključavanje sprječava da dva
+otvorena prozora istodobno obrađuju istu seriju.
 
 Soft-obrisano područje administrator može vratiti ili trajno izbrisati na
 stranicama **Obrisana područja** i **Održavanje**. Trajno brisanje zahtijeva

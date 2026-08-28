@@ -93,7 +93,9 @@ period in **Settings → Workspaces → Maintenance**. See the
 [maintenance documentation](docs/index_en.md#13-storage-maintenance) for the
 safety rules.
 The same page offers **Optimize existing images**, which creates missing
-reduced web-display copies without changing the source files.
+reduced web-display copies without changing the source files. A visible progress
+bar is updated after every bounded batch; closing and reopening maintenance
+resumes the saved job instead of repeating a long blocking request.
 
 ## Requirements
 

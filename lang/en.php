@@ -734,6 +734,15 @@ return [
     'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.' =>
         'Create smaller web-ready copies of existing images. Originals remain preserved and open on click.',
     'Optimiziraj postojeće slike' => 'Optimize existing images',
+    'Pristup nije dozvoljen.' => 'Access is denied.',
+    'Napredak optimizacije slika' => 'Image optimization progress',
+    'Spremno za optimizaciju.' => 'Ready to optimize.',
+    'Optimizacija čeka početak obrade.' => 'Optimization is waiting to start processing.',
+    'Optimizacija slika je u tijeku.' => 'Image optimization is in progress.',
+    'Optimizacija slika je završena.' => 'Image optimization is complete.',
+    'Optimizacija slika nije uspjela.' => 'Image optimization failed.',
+    'Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.' =>
+        'Processed %1$d of %2$d images; documents %3$d of %4$d; web copies %5$d; skipped %6$d.',
     'HTML Editor nije dostupan pa optimizacija slika nije moguća.' =>
         'HTML Editor is unavailable, so image optimization cannot run.',
     'Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.' =>

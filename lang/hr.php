@@ -733,6 +733,15 @@ return [
     'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.' =>
         'Izradite smanjene web-kopije postojećih slika. Originali ostaju sačuvani i dostupni otvaranjem slike.',
     'Optimiziraj postojeće slike' => 'Optimiziraj postojeće slike',
+    'Pristup nije dozvoljen.' => 'Pristup nije dozvoljen.',
+    'Napredak optimizacije slika' => 'Napredak optimizacije slika',
+    'Spremno za optimizaciju.' => 'Spremno za optimizaciju.',
+    'Optimizacija čeka početak obrade.' => 'Optimizacija čeka početak obrade.',
+    'Optimizacija slika je u tijeku.' => 'Optimizacija slika je u tijeku.',
+    'Optimizacija slika je završena.' => 'Optimizacija slika je završena.',
+    'Optimizacija slika nije uspjela.' => 'Optimizacija slika nije uspjela.',
+    'Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.' =>
+        'Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.',
     'HTML Editor nije dostupan pa optimizacija slika nije moguća.' =>
         'HTML Editor nije dostupan pa optimizacija slika nije moguća.',
     'Optimizacija slika je dovršena. Dokumenti: %d; web-kopije: %d; preskočeno: %d.' =>

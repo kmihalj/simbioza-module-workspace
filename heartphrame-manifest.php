@@ -342,6 +342,20 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [RequireAuthenticatedUserMiddleware::class],
             ],
             [
+                'GET',
+                '/settings/workspaces/maintenance/images/status',
+                WorkspaceSettingsController::class . '@imageOptimizationStatus',
+                'workspace.settings.maintenance.images.status',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
+                'POST',
+                '/settings/workspaces/maintenance/images/step',
+                WorkspaceSettingsController::class . '@stepImageOptimization',
+                'workspace.settings.maintenance.images.step',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
                 'POST',
                 '/settings/workspaces/purge',
                 WorkspaceSettingsController::class . '@permanentlyDelete',

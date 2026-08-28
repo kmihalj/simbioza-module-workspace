@@ -801,6 +801,10 @@ files; opening the displayed image still reaches its original. The same process
 runs automatically when a document is published and after a Confluence import.
 The manual action covers content that predates image optimization or whose
 derived display copy has been removed.
+Processing runs in small batches with a visible progress bar. Persistent state
+preserves completed work if the page is closed, and reopening Maintenance
+automatically resumes an unfinished job. Locking prevents two open windows from
+processing the same batch concurrently.
 
 An administrator can restore or permanently delete a soft-deleted Workspace
 from **Deleted Workspaces** and **Maintenance**. Permanent deletion requires

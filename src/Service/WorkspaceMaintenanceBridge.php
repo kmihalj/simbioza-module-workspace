@@ -26,6 +26,9 @@ final readonly class WorkspaceMaintenanceBridge
     private const IMAGE_VARIANT_SERVICE
     = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorImageVariantService';
 
+    private const IMAGE_OPTIMIZATION_SERVICE
+    = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorImageOptimizationService';
+
     /** HR: Prima spremnik za opcionalno razrješavanje Editor servisa. EN: Receives the container for optional Editor-service resolution. */
     public function __construct(private ContainerInterface $container)
     {
@@ -138,6 +141,50 @@ final readonly class WorkspaceMaintenanceBridge
                 'generated' => is_int($result['generated'] ?? null) ? $result['generated'] : 0,
                 'skipped' => is_int($result['skipped'] ?? null) ? $result['skipped'] : 0,
             ];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * HR: Pokreće nastavivi posao optimizacije. EN: Starts the resumable optimization job.
+     * @return array<string, mixed>
+     */
+    public function startImageOptimization(): array
+    {
+        return $this->imageOptimizationCall('start');
+    }
+
+    /**
+     * HR: Vraća napredak posla optimizacije. EN: Returns optimization job progress.
+     * @return array<string, mixed>
+     */
+    public function imageOptimizationStatus(): array
+    {
+        return $this->imageOptimizationCall('status');
+    }
+
+    /**
+     * HR: Obrađuje jednu ograničenu seriju slika. EN: Processes one bounded image batch.
+     * @return array<string, mixed>
+     */
+    public function stepImageOptimization(int $limit): array
+    {
+        return $this->imageOptimizationCall('step', $limit);
+    }
+
+    /** @return array<string, mixed> */
+    private function imageOptimizationCall(string $method, ?int $limit = null): array
+    {
+        $service = $this->optionalService(self::IMAGE_OPTIMIZATION_SERVICE);
+        if (!is_object($service) || !method_exists($service, $method)) {
+            return [];
+        }
+
+        try {
+            $result = $limit === null ? $service->{$method}() : $service->{$method}($limit);
+
+            return $this->stringKeyedArray(is_array($result) ? $result : []);
         } catch (Throwable) {
             return [];
         }
