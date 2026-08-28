@@ -173,7 +173,10 @@ final readonly class WorkspaceMaintenanceBridge
         return $this->imageOptimizationCall('step', $limit);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * HR: Sigurno poziva opcionalni servis posla optimizacije. EN: Safely calls the optional optimization-job service.
+     * @return array<string, mixed>
+     */
     private function imageOptimizationCall(string $method, ?int $limit = null): array
     {
         $service = $this->optionalService(self::IMAGE_OPTIMIZATION_SERVICE);

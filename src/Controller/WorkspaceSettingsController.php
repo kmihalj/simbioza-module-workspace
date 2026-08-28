@@ -427,7 +427,10 @@ final readonly class WorkspaceSettingsController
         ], true, 403);
     }
 
-    /** @return array{name: string, token: string} */
+    /**
+     * HR: Vraća svježi CSRF token nakon AJAX POST-a. EN: Returns a fresh CSRF token after an AJAX POST.
+     * @return array{name: string, token: string}
+     */
     private function csrfPayload(): array
     {
         return [

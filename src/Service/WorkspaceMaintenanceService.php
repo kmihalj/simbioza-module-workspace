@@ -81,13 +81,19 @@ final readonly class WorkspaceMaintenanceService
         return $result;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * HR: Pokreće nastavivi posao optimizacije slika. EN: Starts the resumable image optimization job.
+     * @return array<string, mixed>
+     */
     public function startImageOptimization(): array
     {
         return $this->requireImageOptimizationResult($this->editor->startImageOptimization());
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * HR: Vraća napredak optimizacije za administratorski UI. EN: Returns optimization progress for the admin UI.
+     * @return array<string, mixed>
+     */
     public function imageOptimizationStatus(): array
     {
         $result = $this->editor->imageOptimizationStatus();
@@ -108,13 +114,19 @@ final readonly class WorkspaceMaintenanceService
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * HR: Delegira jednu malu seriju editoru. EN: Delegates one small batch to the editor.
+     * @return array<string, mixed>
+     */
     public function stepImageOptimization(int $limit = 3): array
     {
         return $this->requireImageOptimizationResult($this->editor->stepImageOptimization($limit));
     }
 
     /**
+     * HR: Zahtijeva dostupnu editor integraciju za radnje koje mijenjaju stanje.
+     * EN: Requires an available editor integration for state-changing actions.
+     *
      * @param array<string, mixed> $result
      * @return array<string, mixed>
      */
