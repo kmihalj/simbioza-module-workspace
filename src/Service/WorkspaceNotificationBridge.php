@@ -38,6 +38,8 @@ final readonly class WorkspaceNotificationBridge
         private ContainerInterface $container,
         private WorkspaceAccessService $access,
         private UrlGenerator $urlGenerator,
+        private WorkspaceRepository $repository,
+        private WorkspaceConfig $config,
     ) {
     }
 
@@ -55,6 +57,16 @@ final readonly class WorkspaceNotificationBridge
         int $versionNumber,
         int $actorUserId,
     ): void {
+        $workspace = $this->repository->localizeWorkspace(
+            $workspace,
+            $language,
+            $this->config->siteDefaultLanguage(),
+        );
+        $node = $this->repository->localizeNode(
+            $node,
+            $language,
+            $this->config->siteDefaultLanguage(),
+        );
         $recipients = [];
         foreach ($this->access->userIdsWithNodePermission($workspace, $node, 'can_publish') as $userId) {
             if ($userId > 0 && $userId !== $actorUserId) {
@@ -105,6 +117,16 @@ final readonly class WorkspaceNotificationBridge
         int $submittedByUserId,
         int $actorUserId,
     ): void {
+        $workspace = $this->repository->localizeWorkspace(
+            $workspace,
+            $language,
+            $this->config->siteDefaultLanguage(),
+        );
+        $node = $this->repository->localizeNode(
+            $node,
+            $language,
+            $this->config->siteDefaultLanguage(),
+        );
         if ($submittedByUserId <= 0 || $submittedByUserId === $actorUserId) {
             return;
         }

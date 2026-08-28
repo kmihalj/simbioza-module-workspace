@@ -18,16 +18,88 @@ $nodeType = WorkspaceValue::string($node['node_type'] ?? 'document');
 $nodeId = WorkspaceValue::int($node['id'] ?? 0);
 $currentParentId = WorkspaceValue::int($node['parent_id'] ?? 0);
 $currentDocumentKey = WorkspaceValue::string($node['document_key'] ?? '');
+$primaryLanguage = strtolower(WorkspaceValue::string($primaryLanguage ?? 'hr'));
+$activeLanguage = strtolower(WorkspaceValue::string($activeLanguage ?? $primaryLanguage));
+$supportedLanguages = array_values(array_unique(array_filter(array_map(
+    static fn (mixed $language): string => strtolower(WorkspaceValue::string($language)),
+    is_array($supportedLanguages ?? null) ? $supportedLanguages : [$primaryLanguage],
+))));
+if ($supportedLanguages === []) {
+    $supportedLanguages = [$primaryLanguage];
+}
+if (!in_array($primaryLanguage, $supportedLanguages, true)) {
+    array_unshift($supportedLanguages, $primaryLanguage);
+}
+if (!in_array($activeLanguage, $supportedLanguages, true)) {
+    $activeLanguage = $primaryLanguage;
+}
+$titleTranslationValues = WorkspaceValue::stringKeyArray($node['title_translation_values'] ?? null);
+$localeFlagPaths = WorkspaceValue::stringKeyArray($localeFlagPaths ?? null);
+$flagPathForLocale = static function (string $locale) use ($localeFlagPaths): string {
+    $locale = strtolower(trim($locale));
+    $language = strtolower(strtok($locale, '-_') ?: $locale);
+
+    return WorkspaceValue::string($localeFlagPaths[$locale] ?? $localeFlagPaths[$language] ?? '');
+};
+$localeButtonContent = function (string $locale) use ($flagPathForLocale): string {
+    $flagPath = $flagPathForLocale($locale);
+    $flag = $flagPath !== ''
+    ? '<img class="workspace-locale-flag" src="' . $this->escape($flagPath) . '" alt="">'
+    : '';
+
+    return $flag . '<span>' . $this->escape(strtoupper($locale)) . '</span>';
+};
 ?>
 <div class="row g-3" data-workspace-node-fields>
     <div class="col-12 col-lg-4">
-        <label class="form-label"><?= $this->escape(__('Naslov')) ?></label>
-        <input
-            class="form-control"
-            name="title"
-            value="<?= $this->escape(WorkspaceValue::string($node['title'] ?? '')) ?>"
-            required
-        >
+        <label class="form-label" for="workspace-node-title-<?= $nodeId ?>-<?= $activeLanguage ?>">
+            <?= $this->escape(__('Naslov')) ?>
+        </label>
+        <div class="input-group" data-workspace-translation-group>
+            <button
+                class="btn btn-outline-secondary dropdown-toggle workspace-locale-button"
+                type="button"
+                data-bs-toggle="dropdown"
+                data-workspace-translation-button
+                data-current-locale="<?= $this->escape($activeLanguage) ?>"
+                aria-label="<?= $this->escape(__('Jezik naslova')) ?>"
+            >
+                <?= $localeButtonContent($activeLanguage) ?>
+            </button>
+            <ul class="dropdown-menu">
+                <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
+                    <li>
+                        <button
+                            class="dropdown-item d-flex align-items-center gap-2"
+                            type="button"
+                            data-workspace-translation-option
+                            data-locale="<?= $this->escape($supportedLanguage) ?>"
+                            data-flag-src="<?= $this->escape($flagPathForLocale($supportedLanguage)) ?>"
+                        >
+                    <?= $localeButtonContent($supportedLanguage) ?>
+                        </button>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
+                <input
+                    id="workspace-node-title-<?= $nodeId ?>-<?= $supportedLanguage ?>"
+                    class="form-control<?= $supportedLanguage === $activeLanguage ? '' : ' d-none' ?>"
+                    name="title_translations[<?= $supportedLanguage ?>]"
+                    value="<?= $this->escape(WorkspaceValue::string(
+                        $titleTranslationValues[$supportedLanguage] ?? '',
+                    )) ?>"
+                    data-workspace-translation-panel="<?= $supportedLanguage ?>"
+                <?= $supportedLanguage === $primaryLanguage ? 'required' : '' ?>
+                >
+            <?php endforeach; ?>
+        </div>
+        <div class="form-text">
+            <?= $this->escape(sprintf(
+                __('Naslov na primarnom jeziku (%s) je obvezan.'),
+                $primaryLanguage,
+            )) ?>
+        </div>
     </div>
     <div class="col-12 col-md-6 col-lg-3">
         <label class="form-label"><?= $this->escape(__('Slug')) ?></label>

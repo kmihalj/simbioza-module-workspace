@@ -795,4 +795,16 @@ return [
     'Učitavanje grane stabla…' => 'Učitavanje grane stabla…',
     'Granu stabla nije moguće učitati.' =>
         'Granu stabla nije moguće učitati.',
+    'Predložak migracije višejezičnih podataka područja nije pronađen.' =>
+        'Predložak migracije višejezičnih podataka područja nije pronađen.',
+    'Kreirana je migracija višejezičnih podataka područja: ' =>
+        'Kreirana je migracija višejezičnih podataka područja: ',
+    'Prijevode nije moguće spremiti.' => 'Prijevode nije moguće spremiti.',
+    'Jezik naslova' => 'Jezik naslova',
+    'Naslov na primarnom jeziku (%s) je obvezan.' =>
+        'Naslov na primarnom jeziku (%s) je obvezan.',
+    'Jezik naziva' => 'Jezik naziva',
+    'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.' =>
+        'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.',
+    'Jezik opisa' => 'Jezik opisa',
 ];

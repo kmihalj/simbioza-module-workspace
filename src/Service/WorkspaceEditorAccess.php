@@ -367,10 +367,19 @@ final class WorkspaceEditorAccess
         }
 
         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $titleTranslations = [$primaryLanguage => $title];
+        if ($language !== $primaryLanguage) {
+            $titleTranslations[$language] = $title;
+        }
+
         $node = $this->repository->saveNode(
             $workspaceId,
             [
                 'title' => $title,
+                'title_translations' => $titleTranslations,
+                'primary_language' => $primaryLanguage,
+                'supported_languages' => $this->config->supportedLanguages(),
                 'slug' => $nodeSlug,
                 'node_type' => 'document',
                 'document_key' => $documentKey,
@@ -394,6 +403,52 @@ final class WorkspaceEditorAccess
         $this->documentPermissionCache = [];
 
         return $node;
+    }
+
+    /**
+     * HR: Sprema naslov Editor dokumenta u jezičnu kartu pripadajuće stavke
+     * stabla. Primarni naslov ostaje obavezan, a ostali jezici koriste njegov
+     * fallback kada prijevod nije upisan.
+     *
+     * EN: Stores an Editor document title in the language map of its Workspace
+     * tree item. The primary title remains required and other languages fall
+     * back to it when no translation is provided.
+     *
+     * @param array<string,mixed> $user
+     */
+    public function saveDocumentTitleTranslationForUser(
+        string $documentKey,
+        string $language,
+        string $title,
+        array $user,
+    ): void {
+        $context = $this->documentContext($documentKey);
+        if (!is_array($context) || !$this->canEditDocumentForUser($documentKey, $user)) {
+            throw new \RuntimeException(__('Nemate pravo uređivanja ove stranice.'));
+        }
+
+        $node = $context['node'];
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $translations = $this->repository->translationMap($node['title_translations'] ?? null);
+        $translations[$language] = trim($title);
+        if (($translations[$primaryLanguage] ?? '') === '') {
+            $translations[$primaryLanguage] = trim(WorkspaceValue::string($node['title'] ?? $title));
+        }
+
+        $this->repository->saveNode(
+            WorkspaceValue::int($node['workspace_id'] ?? 0),
+            [
+                ...$node,
+                'title_translations' => $translations,
+                'primary_language' => $primaryLanguage,
+                'supported_languages' => $this->config->supportedLanguages(),
+            ],
+            WorkspaceValue::int($user['id'] ?? 0),
+        );
+
+        $this->access->clearRequestCache();
+        $this->documentContextCache = [];
+        $this->documentPermissionCache = [];
     }
 
     /**

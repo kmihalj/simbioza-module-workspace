@@ -844,3 +844,23 @@ filtriran oznakom skupno provjerava ACL i workflow samo stranica s tom oznakom,
 a preklapajući blokovi tijekom istog HTTP zahtjeva dijele već provjerene
 rezultate. Izvještaj bez oznake i blok nedavnih promjena namjerno obrađuju cijelo
 područje jer njihov rezultat semantički obuhvaća sve njegove stranice.
+
+## 15. Višejezični nazivi područja i stranica
+
+Kada site ima više podržanih jezika, **naziv i opis područja** te **naslov
+stranice** uređuju se kroz izbornik jezika uz polje. Vrijednost na primarnom
+jeziku sitea je obvezna. Prijevod na ostalim jezicima nije obvezan; ako nije
+upisan, prikazuje se vrijednost primarnog jezika. Slug ostaje jedna zajednička,
+stabilna vrijednost neovisna o jeziku i zato se poveznice ne mijenjaju pri
+promjeni jezika.
+
+Isti višejezični naslov koristi se u obrascu za novu stranicu, postavkama stavke
+stabla, HTML editoru, stablu stranica, navigacijskoj putanji, popisima i
+rezultatima pretrage. Padajući popisi za izradu menija i povezivanje sadržaja
+prikazuju naziv na aktivnom jeziku, uz isti fallback na primarni jezik.
+
+API i obavijesti vraćaju lokalizirani naziv za aktivni jezik zahtjeva. Backup i
+povrat čuvaju cijele mape prijevoda područja i stranica. Prenosivi HTML izvoz
+renderira odabrani jezik, a Confluence import sprema naziv područja, opis i
+naslove stranica pod jezikom odabranim u preflightu. Ponovni import i dalje
+povezuje sadržaj stabilnim slugom, a ne prevedenim naslovom.

@@ -196,6 +196,10 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
                             'canAttachExistingDocuments' => $canAttachExistingDocuments,
                             'workspaceCanAdd' => $workspaceCanAdd,
                             'treeOrganizerAvailable' => true,
+                            'activeLanguage' => $activeLanguage ?? 'hr',
+                            'primaryLanguage' => $primaryLanguage ?? 'hr',
+                            'supportedLanguages' => $supportedLanguages ?? ['hr'],
+                            'localeFlagPaths' => $localeFlagPaths ?? [],
                         ],
                     ) ?>
                 </div>

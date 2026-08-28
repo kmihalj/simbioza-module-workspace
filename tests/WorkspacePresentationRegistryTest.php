@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleWorkspace\Contract\WorkspacePresentationProviderInterface;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
+use HeartPhrame\Config\Config;
+use HeartPhrame\Helper\Helper;
 use HeartPhrame\Localization\TranslatorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(WorkspacePresentationRegistry::class)]
+#[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue::class)]
 final class WorkspacePresentationRegistryTest extends TestCase
 {
     /** HR: Registry grupno primjenjuje provider i koristi aktivni jezik. EN: The registry applies a provider in a batch using the active locale. */
@@ -46,7 +55,13 @@ final class WorkspacePresentationRegistryTest extends TestCase
                 return $workspaces;
             }
         };
-        $registry = new WorkspacePresentationRegistry($translator);
+        $helper = new Helper();
+        $config = new Config($helper, []);
+        $registry = new WorkspacePresentationRegistry(
+            $translator,
+            new WorkspaceRepository(new Database($config, $helper)),
+            new WorkspaceConfig($config, dirname(__DIR__)),
+        );
         $registry->register($provider);
         $registry->register($provider);
 

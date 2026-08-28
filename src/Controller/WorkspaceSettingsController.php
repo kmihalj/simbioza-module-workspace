@@ -8,6 +8,7 @@ use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMaintenanceService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceSettingsService;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
@@ -37,6 +38,7 @@ final readonly class WorkspaceSettingsController
         private WorkspaceAccessService $access,
         private WorkspaceSettingsService $settings,
         private WorkspaceMaintenanceService $maintenance,
+        private WorkspacePresentationRegistry $presentations,
         private WorkspaceConfig $config,
         private UrlGenerator $urlGenerator,
         private AlertHandler $alertHandler,
@@ -155,9 +157,9 @@ final readonly class WorkspaceSettingsController
         return $this->viewRenderer->render('settings/maintenance', [
             'title' => __('Održavanje'),
             'siteStatistics' => $dashboard['statistics']['site'] ?? [],
-            'workspaces' => $dashboard['workspaces'],
+            'workspaces' => $this->presentations->many(WorkspaceValue::rows($dashboard['workspaces'] ?? null)),
             'deletedWorkspaces' => $this->repository->tablesReady()
-                ? $this->repository->deletedWorkspaces()
+                ? $this->presentations->many($this->repository->deletedWorkspaces())
                 : [],
             'runPath' => $this->pathFor(
                 'workspace.settings.maintenance.run',
@@ -312,6 +314,7 @@ final readonly class WorkspaceSettingsController
      */
     private function workspaceList(string $title, array $workspaces, bool $deleted): ResponseInterface
     {
+        $workspaces = $this->presentations->many($workspaces);
         foreach ($workspaces as &$workspace) {
             $slug = is_string($workspace['slug'] ?? null) ? $workspace['slug'] : '';
             $workspace['manage_path'] = $this->pathFor('workspace.manage', '/workspaces/manage')

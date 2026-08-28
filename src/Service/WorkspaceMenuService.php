@@ -52,6 +52,7 @@ final readonly class WorkspaceMenuService
         private ContainerInterface $container,
         private ComposerBridge $composerBridge,
         private WorkspaceConfig $config,
+        private WorkspaceRepository $workspaceRepository,
         private UrlGenerator $urlGenerator,
     ) {
     }
@@ -303,8 +304,8 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Vraća ime područja kao početnu labelu za sve jezike aplikacije.
-     * EN: Returns the Workspace name as the initial label for all application locales.
+     * HR: Vraća lokalizirano ime područja kao početnu labelu za svaki jezik aplikacije.
+     * EN: Returns the localized Workspace name as the initial label for each application locale.
      *
      * @param array<string, mixed> $workspace
      * @param array<mixed> $locales
@@ -312,16 +313,22 @@ final readonly class WorkspaceMenuService
      */
     private function workspaceLabels(array $workspace, array $locales = ['hr', 'en']): array
     {
-        $name = WorkspaceValue::string($workspace['name'] ?? $workspace['slug'] ?? 'Workspace');
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $fallbackName = WorkspaceValue::string($workspace['name'] ?? $workspace['slug'] ?? 'Workspace');
         $labels = [];
         foreach ($locales as $locale) {
             $locale = is_scalar($locale) ? strtolower(trim((string)$locale)) : '';
             if ($locale !== '') {
-                $labels[$locale] = $name;
+                $localized = $this->workspaceRepository->localizeWorkspace(
+                    $workspace,
+                    $locale,
+                    $primaryLanguage,
+                );
+                $labels[$locale] = WorkspaceValue::string($localized['name'] ?? '') ?: $fallbackName;
             }
         }
 
-        return $labels !== [] ? $labels : ['hr' => $name, 'en' => $name];
+        return $labels !== [] ? $labels : ['hr' => $fallbackName, 'en' => $fallbackName];
     }
 
     /**

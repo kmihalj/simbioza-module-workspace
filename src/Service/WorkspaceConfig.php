@@ -239,10 +239,40 @@ final readonly class WorkspaceConfig
     public function siteDefaultLanguage(): string
     {
         $language = strtolower(trim(
-            $this->config->getAsString('app.localization.locale', 'hr') ?? 'hr',
+            $this->config->getAsString('localization.locale')
+                ?? $this->config->getAsString('app.localization.locale', 'hr')
+                ?? 'hr',
         ));
 
         return preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/', $language) === 1 ? $language : 'hr';
+    }
+
+    /**
+     * HR: Vraća podržane jezike metapodataka, s primarnim jezikom na početku.
+     * EN: Returns supported metadata locales with the primary locale first.
+     *
+     * @return list<string>
+     */
+    public function supportedLanguages(): array
+    {
+        $primary = $this->siteDefaultLanguage();
+        $configured = $this->config->getAsArrayWithValuesAsNonEmptyStrings(
+            'localization.supported_locales',
+        ) ?? $this->config->getAsArrayWithValuesAsNonEmptyStrings(
+            'app.localization.supported_locales',
+        ) ?? [];
+        $languages = [$primary];
+        foreach ($configured as $language) {
+            $language = strtolower(trim($language));
+            if (
+                preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/', $language) === 1
+                && !in_array($language, $languages, true)
+            ) {
+                $languages[] = $language;
+            }
+        }
+
+        return $languages;
     }
 
     /**

@@ -910,7 +910,8 @@ final readonly class WorkspaceResourceController
         $candidate = is_scalar($query['lang'] ?? null)
         ? trim((string)$query['lang'])
         : trim(
-            $this->config->getAsString('app.localization.locale')
+            $this->config->getAsString('localization.locale')
+                    ?? $this->config->getAsString('app.localization.locale')
                     ?? $this->config->getAsString('app.locale')
                     ?? '',
         );

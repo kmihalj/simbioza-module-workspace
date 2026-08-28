@@ -99,6 +99,11 @@ final readonly class WorkspaceApiService
     {
         $workspace = $this->requireWorkspace($slug, $user, 'can_view');
         $tree = $this->access->visibleTree($workspace, $user, $language);
+        $tree = $this->repository->localizeTree(
+            $tree,
+            $language !== '' ? $language : $this->config->siteDefaultLanguage(),
+            $this->config->siteDefaultLanguage(),
+        );
         $nodeIds = $this->treeNodeIds($tree);
         $labels = $this->repository->nodeLabelsForNodes($nodeIds);
         $properties = $this->repository->nodePropertiesForNodes($nodeIds);
@@ -443,6 +448,7 @@ final readonly class WorkspaceApiService
             $payload['visibility'] = $this->config->defaultVisibility();
         }
 
+        $payload = $this->withTranslationContext($payload);
         $saved = $this->repository->saveWorkspace($payload, $this->userId($user));
         $this->access->clearRequestCache();
 
@@ -462,6 +468,7 @@ final readonly class WorkspaceApiService
     {
         $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
         $payload = $this->mergeWorkspacePayload($workspace, $payload);
+        $payload = $this->withTranslationContext($payload);
         $payload['id'] = WorkspaceValue::int($workspace['id'] ?? 0);
         $saved = $this->repository->saveWorkspace($payload, $this->userId($user));
         $this->access->clearRequestCache();
@@ -613,7 +620,7 @@ final readonly class WorkspaceApiService
 
         $node = $this->repository->saveNode(
             WorkspaceValue::int($workspace['id'] ?? 0),
-            $payload,
+            $this->withTranslationContext($payload),
             $this->userId($user),
         );
         $this->access->clearRequestCache();
@@ -639,6 +646,7 @@ final readonly class WorkspaceApiService
         $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
         $node = $this->requireNode($workspace, $nodeId);
         $payload = $this->mergeNodePayload($node, $payload);
+        $payload = $this->withTranslationContext($payload);
         $payload['id'] = $nodeId;
 
         $saved = $this->repository->saveNode(
@@ -884,7 +892,13 @@ final readonly class WorkspaceApiService
             'uuid' => WorkspaceValue::string($workspace['uuid'] ?? ''),
             'slug' => WorkspaceValue::string($workspace['slug'] ?? ''),
             'name' => WorkspaceValue::string($workspace['name'] ?? ''),
+            'name_translations' => $this->repository->translationMap(
+                $workspace['name_translations'] ?? null,
+            ),
             'description' => WorkspaceValue::string($workspace['description'] ?? ''),
+            'description_translations' => $this->repository->translationMap(
+                $workspace['description_translations'] ?? null,
+            ),
             'visibility' => WorkspaceValue::string($workspace['visibility'] ?? 'restricted'),
             'tree_visibility' => WorkspaceValue::string(
                 $workspace['tree_visibility'] ?? 'inherit',
@@ -971,6 +985,9 @@ final readonly class WorkspaceApiService
             'node_type' => WorkspaceValue::string($node['node_type'] ?? ''),
             'slug' => WorkspaceValue::string($node['slug'] ?? ''),
             'title' => WorkspaceValue::string($node['title'] ?? ''),
+            'title_translations' => $this->repository->translationMap(
+                $node['title_translations'] ?? null,
+            ),
             'document_key' => WorkspaceValue::string($node['document_key'] ?? ''),
             'route_name' => WorkspaceValue::string($node['route_name'] ?? ''),
             'target_url' => WorkspaceValue::string($node['target_url'] ?? ''),
@@ -1156,11 +1173,17 @@ final readonly class WorkspaceApiService
      */
     private function mergeWorkspacePayload(array $workspace, array $payload): array
     {
+        $nameWasSubmitted = array_key_exists('name', $payload);
+        $nameTranslationsWereSubmitted = array_key_exists('name_translations', $payload);
+        $descriptionWasSubmitted = array_key_exists('description', $payload);
+        $descriptionTranslationsWereSubmitted = array_key_exists('description_translations', $payload);
         foreach (
             [
                 'name',
+                'name_translations',
                 'slug',
                 'description',
+                'description_translations',
                 'visibility',
                 'is_archived',
                 'tree_visibility',
@@ -1170,6 +1193,19 @@ final readonly class WorkspaceApiService
             if (!array_key_exists($key, $payload)) {
                 $payload[$key] = $workspace[$key] ?? null;
             }
+        }
+
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        if ($nameWasSubmitted && !$nameTranslationsWereSubmitted) {
+            $translations = $this->repository->translationMap($workspace['name_translations'] ?? null);
+            $translations[$primaryLanguage] = WorkspaceValue::string($payload['name'] ?? '');
+            $payload['name_translations'] = $translations;
+        }
+
+        if ($descriptionWasSubmitted && !$descriptionTranslationsWereSubmitted) {
+            $translations = $this->repository->translationMap($workspace['description_translations'] ?? null);
+            $translations[$primaryLanguage] = WorkspaceValue::string($payload['description'] ?? '');
+            $payload['description_translations'] = $translations;
         }
 
         return $payload;
@@ -1186,9 +1222,12 @@ final readonly class WorkspaceApiService
      */
     private function mergeNodePayload(array $node, array $payload): array
     {
+        $titleWasSubmitted = array_key_exists('title', $payload);
+        $titleTranslationsWereSubmitted = array_key_exists('title_translations', $payload);
         foreach (
             [
                 'title',
+                'title_translations',
                 'slug',
                 'parent_id',
                 'sort_order',
@@ -1205,6 +1244,28 @@ final readonly class WorkspaceApiService
 
         $payload['node_type'] = $node['node_type'] ?? '';
         $payload['document_key'] = $node['document_key'] ?? null;
+        if ($titleWasSubmitted && !$titleTranslationsWereSubmitted) {
+            $translations = $this->repository->translationMap($node['title_translations'] ?? null);
+            $translations[$this->config->siteDefaultLanguage()] = WorkspaceValue::string(
+                $payload['title'] ?? '',
+            );
+            $payload['title_translations'] = $translations;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * HR: API spremanju dodaje jedinstveni popis jezika i primarni jezik stranice.
+     * EN: Adds the site's primary language and supported language list to API writes.
+     *
+     * @param array<string,mixed> $payload
+     * @return array<string,mixed>
+     */
+    private function withTranslationContext(array $payload): array
+    {
+        $payload['primary_language'] = $this->config->siteDefaultLanguage();
+        $payload['supported_languages'] = $this->config->supportedLanguages();
 
         return $payload;
     }

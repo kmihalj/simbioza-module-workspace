@@ -71,6 +71,70 @@
     }
 
     /**
+     * HR: Jezični izbornik prikazuje samo polje odabranog jezika, dok sva
+     * ostala polja ostaju u obrascu kako bi se sve inačice spremile zajedno.
+     * EN: The language selector shows only the selected locale field while
+     * every other field remains in the form so all variants are saved together.
+     *
+     * Delegiranje događaja podržava i naknadno učitane modale stabla.
+     * Event delegation also supports tree modals loaded after page startup.
+     *
+     * @returns {void}
+     */
+    function initializeTranslationControls() {
+        document.addEventListener('click', (event) => {
+            const option = event.target instanceof Element
+                ? event.target.closest('[data-workspace-translation-option]')
+                : null;
+            if (!(option instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const group = option.closest('[data-workspace-translation-group]');
+            if (!(group instanceof HTMLElement)) {
+                return;
+            }
+
+            const locale = String(option.dataset.locale || '').toLowerCase();
+            if (locale === '') {
+                return;
+            }
+
+            group.querySelectorAll('[data-workspace-translation-panel]').forEach((panel) => {
+                const isActive = panel.getAttribute('data-workspace-translation-panel') === locale;
+                panel.classList.toggle('d-none', !isActive);
+            });
+
+            const button = group.querySelector('[data-workspace-translation-button]');
+            if (button instanceof HTMLButtonElement) {
+                button.dataset.currentLocale = locale;
+                button.replaceChildren();
+                const flagSource = String(option.dataset.flagSrc || '');
+                if (flagSource !== '') {
+                    const flag = document.createElement('img');
+                    flag.className = 'workspace-locale-flag';
+                    flag.src = flagSource;
+                    flag.alt = '';
+                    button.append(flag);
+                }
+                const label = document.createElement('span');
+                label.textContent = locale.toUpperCase();
+                button.append(label);
+            }
+
+            const activePanel = group.querySelector(
+                '[data-workspace-translation-panel="' + CSS.escape(locale) + '"]'
+            );
+            if (activePanel instanceof HTMLElement && activePanel.id !== '') {
+                const fieldLabel = group.previousElementSibling;
+                if (fieldLabel instanceof HTMLLabelElement) {
+                    fieldLabel.htmlFor = activePanel.id;
+                }
+            }
+        });
+    }
+
+    /**
      * HR: Vraća retke jednog vizualnog organizatora redom kojim su prikazani.
      * EN: Returns rows of one visual organizer in their displayed order.
      *
@@ -2240,6 +2304,7 @@
      * @returns {void}
      */
     function initializeWorkspaceControls() {
+        initializeTranslationControls();
         initializeModalPortals();
         initializeNodeForms();
         initializeTreeOrganizers();

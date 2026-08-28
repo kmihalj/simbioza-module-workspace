@@ -25,7 +25,9 @@ return new class implements ReversibleMigrationInterface {
                 $table->string('uuid', 36)->unique();
                 $table->string('slug', 128)->unique();
                 $table->string('name', 190)->index();
+                $table->text('name_translations')->nullable();
                 $table->text('description')->nullable();
+                $table->text('description_translations')->nullable();
                 $table->string('visibility', 32)->default('restricted')->index();
                 $table->string('tree_visibility', 16)->default('inherit');
                 $table->string('contents_visibility', 16)->default('inherit');
@@ -69,6 +71,7 @@ return new class implements ReversibleMigrationInterface {
                 $table->string('node_type', 32)->default('document')->index();
                 $table->string('slug', 128)->index();
                 $table->string('title', 255);
+                $table->text('title_translations')->nullable();
                 $table->string('document_key', 190)->nullable()->index();
                 $table->string('route_name', 190)->nullable()->index();
                 $table->string('target_url', 1024)->nullable();

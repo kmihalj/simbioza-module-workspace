@@ -40,7 +40,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
     {
         require_once __DIR__ . '/Fixtures/OptionalNotificationService.php';
 
-        [$repository, $access] = $this->workspaceServices();
+        [$repository, $access, $workspaceConfig] = $this->workspaceServices();
         $workspace = $repository->saveWorkspace([
             'name' => 'Team',
             'slug' => 'team',
@@ -147,7 +147,13 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             }
         };
 
-        $bridge = new WorkspaceNotificationBridge($container, $access, $urlGenerator);
+        $bridge = new WorkspaceNotificationBridge(
+            $container,
+            $access,
+            $urlGenerator,
+            $repository,
+            $workspaceConfig,
+        );
         $bridge->pageSubmitted(
             $workspace,
             $node,
@@ -172,7 +178,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
      * HR: Priprema stvarnu prijenosnu Workspace shemu i ACL servis bez web sesije.
      * EN: Prepares the real portable Workspace schema and ACL service without a web session.
      *
-     * @return array{WorkspaceRepository,WorkspaceAccessService}
+     * @return array{WorkspaceRepository,WorkspaceAccessService,WorkspaceConfig}
      */
     private function workspaceServices(): array
     {
@@ -202,7 +208,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             new WorkspaceWorkflowService($repository),
         );
 
-        return [$repository, $access];
+        return [$repository, $access, $workspaceConfig];
     }
 
     /**

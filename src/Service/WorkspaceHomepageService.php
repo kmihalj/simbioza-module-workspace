@@ -508,10 +508,14 @@ final readonly class WorkspaceHomepageService
                 : $this->normalizeLanguage($this->translator->getLocale()),
             $this->workspaceConfig->siteDefaultLanguage(),
             $this->normalizeLanguage(
-                $this->config->getAsString('app.localization.fallback_locale', 'en') ?? 'en',
+                $this->config->getAsString('localization.fallback_locale')
+                    ?? $this->config->getAsString('app.localization.fallback_locale', 'en')
+                    ?? 'en',
             ),
         ];
         $supportedLocales = $this->config->getAsArrayWithValuesAsNonEmptyStrings(
+            'localization.supported_locales',
+        ) ?? $this->config->getAsArrayWithValuesAsNonEmptyStrings(
             'app.localization.supported_locales',
         ) ?? [];
         foreach ($supportedLocales as $language) {

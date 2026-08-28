@@ -796,4 +796,16 @@ return [
     'Učitavanje grane stabla…' => 'Loading tree branch…',
     'Granu stabla nije moguće učitati.' =>
         'The tree branch could not be loaded.',
+    'Predložak migracije višejezičnih podataka područja nije pronađen.' =>
+        'The Workspace metadata translation migration template was not found.',
+    'Kreirana je migracija višejezičnih podataka područja: ' =>
+        'Created the Workspace metadata translation migration: ',
+    'Prijevode nije moguće spremiti.' => 'The translations could not be saved.',
+    'Jezik naslova' => 'Title language',
+    'Naslov na primarnom jeziku (%s) je obvezan.' =>
+        'The title in the primary language (%s) is required.',
+    'Jezik naziva' => 'Name language',
+    'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.' =>
+        'The name in the primary language (%s) is required and is used as the fallback.',
+    'Jezik opisa' => 'Description language',
 ];

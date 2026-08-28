@@ -96,6 +96,10 @@ $hasPermission = static function (
                     'canAttachExistingDocuments' => $canAttachExistingDocuments,
                     'workspaceCanAdd' => true,
                     'treeOrganizerAvailable' => true,
+                    'activeLanguage' => $activeLanguage ?? 'hr',
+                    'primaryLanguage' => $primaryLanguage ?? 'hr',
+                    'supportedLanguages' => $supportedLanguages ?? ['hr'],
+                    'localeFlagPaths' => $localeFlagPaths ?? [],
                 ],
             ) ?>
             <?php if (WorkspaceValue::string($node['node_type'] ?? '') === 'document') : ?>

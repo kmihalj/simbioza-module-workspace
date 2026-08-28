@@ -62,6 +62,36 @@ $canOpenNodeDialog = (bool)($canOpenNodeDialog ?? $canOrganizeTree);
 $breadcrumbs = is_array($breadcrumbs ?? null) ? array_values($breadcrumbs) : [];
 $backlinks = is_array($backlinks ?? null) ? array_values($backlinks) : [];
 $includedIn = is_array($includedIn ?? null) ? array_values($includedIn) : [];
+$primaryLanguage = strtolower(WorkspaceValue::string($primaryLanguage ?? $language ?? 'hr'));
+$activeLanguage = strtolower(WorkspaceValue::string($activeLanguage ?? $language ?? $primaryLanguage));
+$supportedLanguages = array_values(array_unique(array_filter(array_map(
+    static fn (mixed $supportedLanguage): string => strtolower(WorkspaceValue::string($supportedLanguage)),
+    is_array($supportedLanguages ?? null) ? $supportedLanguages : [$primaryLanguage],
+))));
+if ($supportedLanguages === []) {
+    $supportedLanguages = [$primaryLanguage];
+}
+if (!in_array($primaryLanguage, $supportedLanguages, true)) {
+    array_unshift($supportedLanguages, $primaryLanguage);
+}
+if (!in_array($activeLanguage, $supportedLanguages, true)) {
+    $activeLanguage = $primaryLanguage;
+}
+$localeFlagPaths = WorkspaceValue::stringKeyArray($localeFlagPaths ?? null);
+$flagPathForLocale = static function (string $locale) use ($localeFlagPaths): string {
+    $locale = strtolower(trim($locale));
+    $language = strtolower(strtok($locale, '-_') ?: $locale);
+
+    return WorkspaceValue::string($localeFlagPaths[$locale] ?? $localeFlagPaths[$language] ?? '');
+};
+$localeButtonContent = function (string $locale) use ($flagPathForLocale): string {
+    $flagPath = $flagPathForLocale($locale);
+    $flag = $flagPath !== ''
+        ? '<img class="workspace-locale-flag" src="' . $this->escape($flagPath) . '" alt="">'
+        : '';
+
+    return $flag . '<span>' . $this->escape(strtoupper($locale)) . '</span>';
+};
 $editorOutlinedDocument = is_array($editorView ?? null)
     ? ($editorView['outlinedDocument'] ?? null)
     : null;
@@ -328,6 +358,7 @@ $workflowIcon = static function (string $action): string {
                             $treeOrganizerPath . '?' . http_build_query([
                                 'workspace_id' => WorkspaceValue::int($workspace['id'] ?? 0),
                                 'active_node_id' => $activeNodeId ?? 0,
+                                'lang' => $language,
                             ]),
                         ) ?>"
                         data-workspace-tree-editor-loading="<?= $this->escape(__('Učitavanje...')) ?>"
@@ -388,15 +419,54 @@ $workflowIcon = static function (string $action): string {
                         </div>
                         <div class="row g-3 align-items-start">
                             <div class="col-12 col-lg-5">
-                                <label class="form-label" for="workspace-page-title">
+                                <label class="form-label" for="workspace-page-title-<?= $activeLanguage ?>">
                                     <?= $this->escape(__('Naslov stranice')) ?>
                                 </label>
-                                <input
-                                    id="workspace-page-title"
-                                    class="form-control"
-                                    name="title"
-                                    required
-                                >
+                                <div class="input-group" data-workspace-translation-group>
+                                    <button
+                                        class="btn btn-outline-secondary dropdown-toggle workspace-locale-button"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-workspace-translation-button
+                                        data-current-locale="<?= $this->escape($activeLanguage) ?>"
+                                        aria-label="<?= $this->escape(__('Jezik naslova')) ?>"
+                                    >
+                                        <?= $localeButtonContent($activeLanguage) ?>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
+                                            <li>
+                                                <button
+                                                    class="dropdown-item d-flex align-items-center gap-2"
+                                                    type="button"
+                                                    data-workspace-translation-option
+                                                    data-locale="<?= $this->escape($supportedLanguage) ?>"
+                                                    data-flag-src="<?= $this->escape(
+                                                        $flagPathForLocale($supportedLanguage),
+                                                    ) ?>"
+                                                >
+                                                    <?= $localeButtonContent($supportedLanguage) ?>
+                                                </button>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
+                                        <input
+                                            id="workspace-page-title-<?= $supportedLanguage ?>"
+                                            class="form-control<?= $supportedLanguage === $activeLanguage
+                                                ? '' : ' d-none' ?>"
+                                            name="title_translations[<?= $supportedLanguage ?>]"
+                                            data-workspace-translation-panel="<?= $supportedLanguage ?>"
+                                            <?= $supportedLanguage === $primaryLanguage ? 'required' : '' ?>
+                                        >
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="form-text">
+                                    <?= $this->escape(sprintf(
+                                        __('Naslov na primarnom jeziku (%s) je obvezan.'),
+                                        $primaryLanguage,
+                                    )) ?>
+                                </div>
                             </div>
                             <div class="col-12 col-md-6 col-lg-3">
                                 <label class="form-label" for="workspace-page-slug">

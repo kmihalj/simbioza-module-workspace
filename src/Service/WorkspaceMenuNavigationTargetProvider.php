@@ -49,11 +49,26 @@ final readonly class WorkspaceMenuNavigationTargetProvider
             return [];
         }
 
+        $languages = $this->config->supportedLanguages();
+        $primaryLanguage = $this->config->siteDefaultLanguage();
         $targets = [];
         foreach ($workspaces as $workspace) {
             $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
             $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
-            $workspaceName = WorkspaceValue::string($workspace['name'] ?? $workspaceSlug);
+            $workspaceLabels = [];
+            foreach ($languages as $language) {
+                $localizedWorkspace = $this->repository->localizeWorkspace(
+                    $workspace,
+                    $language,
+                    $primaryLanguage,
+                );
+                $workspaceLabels[$language] = WorkspaceValue::string(
+                    $localizedWorkspace['name'] ?? $workspaceSlug,
+                );
+            }
+
+            $workspaceName = $workspaceLabels[$primaryLanguage]
+            ?? WorkspaceValue::string($workspace['name'] ?? $workspaceSlug);
             if ($workspaceId < 1) {
                 continue;
             }
@@ -71,7 +86,7 @@ final readonly class WorkspaceMenuNavigationTargetProvider
                 'id' => 'workspace.' . $workspaceId,
                 'group' => 'Workspaces',
                 'label' => $workspaceName,
-                'labels' => ['hr' => $workspaceName, 'en' => $workspaceName],
+                'labels' => $workspaceLabels,
                 'url' => $workspacePath,
                 'context_paths' => [$workspacePath, rtrim($workspacePath, '/') . '/*'],
             ];
@@ -89,7 +104,18 @@ final readonly class WorkspaceMenuNavigationTargetProvider
 
                 $nodeId = WorkspaceValue::int($node['id'] ?? 0);
                 $nodeSlug = WorkspaceValue::string($node['slug'] ?? '');
-                $nodeTitle = WorkspaceValue::string($node['title'] ?? $nodeSlug);
+                $nodeLabels = [];
+                foreach ($languages as $language) {
+                    $localizedNode = $this->repository->localizeNode($node, $language, $primaryLanguage);
+                    $nodeTitle = WorkspaceValue::string($localizedNode['title'] ?? $nodeSlug);
+                    $localizedWorkspaceName = $workspaceLabels[$language] ?? $workspaceName;
+                    $nodeLabels[$language] = $localizedWorkspaceName . ' / ' . $nodeTitle;
+                }
+
+                $nodeTitle = WorkspaceValue::string(
+                    ($this->repository->localizeNode($node, $primaryLanguage, $primaryLanguage))['title']
+                        ?? $nodeSlug,
+                );
                 if ($nodeId < 1) {
                     continue;
                 }
@@ -102,13 +128,13 @@ final readonly class WorkspaceMenuNavigationTargetProvider
                     continue;
                 }
 
-                $label = $workspaceName . ' / ' . $nodeTitle;
+                $label = $nodeLabels[$primaryLanguage] ?? ($workspaceName . ' / ' . $nodeTitle);
                 $nodePath = $this->nodePath($workspaceSlug, $nodeSlug);
                 $targets[] = [
                     'id' => 'workspace.' . $workspaceId . '.page.' . $nodeId,
                     'group' => 'Workspace pages',
                     'label' => $label,
-                    'labels' => ['hr' => $nodeTitle, 'en' => $nodeTitle],
+                    'labels' => $nodeLabels,
                     'url' => $nodePath,
                     'context_paths' => [$nodePath],
                 ];

@@ -23,8 +23,11 @@ final class WorkspacePresentationRegistry
     private array $providers = [];
 
     /** HR: Prima prevoditelj radi sigurnog zadanog jezika. EN: Receives the translator for a safe default locale. */
-    public function __construct(private readonly TranslatorInterface $translator)
-    {
+    public function __construct(
+        private readonly TranslatorInterface $translator,
+        private readonly WorkspaceRepository $repository,
+        private readonly WorkspaceConfig $config,
+    ) {
     }
 
     /** HR: Registrira provider samo jednom. EN: Registers a provider only once. */
@@ -63,7 +66,11 @@ final class WorkspacePresentationRegistry
     public function many(array $workspaces, string $locale = ''): array
     {
         $locale = trim($locale) !== '' ? trim($locale) : $this->translator->getLocale();
-        $presented = array_values($workspaces);
+        $presented = $this->repository->localizeWorkspaces(
+            array_values($workspaces),
+            $locale,
+            $this->config->siteDefaultLanguage(),
+        );
         foreach ($this->providers as $provider) {
             $candidate = $provider->present($presented, $locale);
             if (count($candidate) === count($presented)) {

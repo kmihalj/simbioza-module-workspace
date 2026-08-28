@@ -6,6 +6,7 @@ namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuService;
+use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
 use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Bridge\ComposerBridge;
 use HeartPhrame\Config\Config;
@@ -19,6 +20,7 @@ use ReflectionMethod;
 
 #[CoversClass(WorkspaceMenuService::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(WorkspaceRepository::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceMenuServiceTest extends TestCase
 {
@@ -28,7 +30,8 @@ final class WorkspaceMenuServiceTest extends TestCase
      */
     public function testPostedContextCannotEscapeWorkspaceScope(): void
     {
-        $config = new Config(new Helper(), [
+        $helper = new Helper();
+        $config = new Config($helper, [
             'app' => [
                 'modules' => [
                     'enabled' => ['aaieduhr/heartphrame-module-menu'],
@@ -39,6 +42,7 @@ final class WorkspaceMenuServiceTest extends TestCase
             $this->createStub(ContainerInterface::class),
             $this->createStub(ComposerBridge::class),
             new WorkspaceConfig($config, dirname(__DIR__)),
+            new WorkspaceRepository(new \AaiEduHr\HeartPhrameModuleOrm\Database\Database($config, $helper)),
             $this->createStub(UrlGenerator::class),
         );
         $method = new ReflectionMethod($service, 'lockedContext');

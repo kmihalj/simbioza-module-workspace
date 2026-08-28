@@ -334,6 +334,8 @@ final readonly class WorkspaceExportService
         array $themeBundle,
         array $localized,
     ): string {
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $localizedWorkspace = $this->repository->localizeWorkspace($workspace, $locale, $primaryLanguage);
         $initial = $this->resolvedSnapshot($localized, $initialPageId, $locale, $locale);
         if (!is_array($initial)) {
             throw new RuntimeException(__('Nema objavljenih stranica za izvoz.'));
@@ -399,7 +401,7 @@ final readonly class WorkspaceExportService
         . ' data-export-panel="tree"' . ($treeVisible ? '' : ' hidden') . '>'
         . '<nav class="card shadow-sm workspace-tree-card hph-sidebar-card"><div class="card-body">'
         . '<h2 class="h6 text-uppercase text-body-secondary workspace-tree-title">'
-        . $this->escape(WorkspaceValue::string($workspace['name'] ?? ''))
+        . $this->localizedWorkspaceName($workspace, $languages, $locale)
         . '</h2>' . $this->treeHtml($tree, $localized, $languages, $locale)
         . '</div></nav></aside>'
         . '<section class="workspace-main workspace-export-main" data-export-page-host>' . $content . '</section>'
@@ -417,7 +419,7 @@ final readonly class WorkspaceExportService
         . "<head>\n"
         . "    <meta charset=\"UTF-8\">\n"
         . "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-        . '    <title>' . $this->escape($this->applicationTitle($workspace)) . "</title>\n"
+        . '    <title>' . $this->escape($this->applicationTitle($localizedWorkspace)) . "</title>\n"
         . "    <link rel=\"stylesheet\" href=\"assets/css/bootstrap.min.css\">\n"
         . "    <link rel=\"stylesheet\" href=\"assets/css/theme.css\">\n"
         . "    <link rel=\"stylesheet\" href=\"assets/css/calendar.css\">\n"
@@ -529,7 +531,6 @@ final readonly class WorkspaceExportService
         $items = '';
         foreach ($nodes as $node) {
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
-            $title = WorkspaceValue::string($node['title'] ?? '');
             $type = WorkspaceValue::string($node['node_type'] ?? 'document');
             $children = WorkspaceValue::rows($node['children'] ?? null);
             if ($type === 'document') {
@@ -543,13 +544,15 @@ final readonly class WorkspaceExportService
             }
 
             $labels = '';
-            if ($type === 'document') {
-                foreach ($languages as $language) {
-                    $labels .= '<span data-export-tree-label data-language="' . $this->escape($language) . '"'
-                    . ($language === $locale ? '' : ' hidden') . '>' . $this->escape($title) . '</span>';
-                }
-            } else {
-                $labels = $this->escape($title);
+            foreach ($languages as $language) {
+                $localizedNode = $this->repository->localizeNode(
+                    $node,
+                    $language,
+                    $this->config->siteDefaultLanguage(),
+                );
+                $labels .= '<span data-export-tree-label data-language="' . $this->escape($language) . '"'
+                . ($language === $locale ? '' : ' hidden') . '>'
+                . $this->escape(WorkspaceValue::string($localizedNode['title'] ?? '')) . '</span>';
             }
 
             $items .= '<li><a href="' . $this->escape($href) . '"'
@@ -785,14 +788,43 @@ final readonly class WorkspaceExportService
     {
         $content = '';
         foreach ($languages as $language) {
+            $localizedWorkspace = $this->repository->localizeWorkspace(
+                $workspace,
+                $language,
+                $this->config->siteDefaultLanguage(),
+            );
             $text = $this->t('Izvezeno područje: :workspace', $language, [
-                'workspace' => WorkspaceValue::string($workspace['name'] ?? ''),
+                'workspace' => WorkspaceValue::string($localizedWorkspace['name'] ?? ''),
             ]);
             $content .= '<span data-export-localized data-language="' . $this->escape($language) . '"'
             . ($language === $activeLocale ? '' : ' hidden') . '>' . $this->escape($text) . '</span>';
         }
 
         return '<p class="hph-hero__export-note">' . $content . '</p>';
+    }
+
+    /**
+     * HR: Ugrađuje lokalizirani naziv područja za svaki jezik offline ljuske.
+     * EN: Embeds the localized Workspace name for every offline-shell locale.
+     *
+     * @param array<string, mixed> $workspace
+     * @param list<string> $languages
+     */
+    private function localizedWorkspaceName(array $workspace, array $languages, string $activeLocale): string
+    {
+        $content = '';
+        foreach ($languages as $language) {
+            $localized = $this->repository->localizeWorkspace(
+                $workspace,
+                $language,
+                $this->config->siteDefaultLanguage(),
+            );
+            $content .= '<span data-export-localized data-language="' . $this->escape($language) . '"'
+            . ($language === $activeLocale ? '' : ' hidden') . '>'
+            . $this->escape(WorkspaceValue::string($localized['name'] ?? '')) . '</span>';
+        }
+
+        return $content;
     }
 
     /**
@@ -1063,11 +1095,17 @@ final readonly class WorkspaceExportService
         try {
             return json_encode([
                 'format' => 'simbioza-workspace-html-export',
-                'version' => 1,
+                'version' => 2,
                 'workspace' => [
                     'id' => WorkspaceValue::int($workspace['id'] ?? 0),
                     'slug' => WorkspaceValue::string($workspace['slug'] ?? ''),
                     'name' => WorkspaceValue::string($workspace['name'] ?? ''),
+                    'name_translations' => $this->repository->translationMap(
+                        $workspace['name_translations'] ?? null,
+                    ),
+                    'description_translations' => $this->repository->translationMap(
+                        $workspace['description_translations'] ?? null,
+                    ),
                 ],
                 'default_language' => $defaultLanguage,
                 'generated_at' => date(DATE_ATOM),

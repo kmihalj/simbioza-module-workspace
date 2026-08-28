@@ -49,6 +49,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         private readonly AuthBackupIdentityResolver $identities,
         private readonly WorkspaceConfig $config,
         private readonly BackupFilesystem $filesystem,
+        private readonly WorkspaceRepository $repository,
     ) {
     }
 
@@ -58,7 +59,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         return new BackupProviderMetadata(
             self::ID,
             ModuleWorkspace::PACKAGE_NAME,
-            1,
+            2,
             ['hr' => 'Područje, prava i privatna tema', 'en' => 'Workspace, permissions and private theme'],
             ['editor-html-workspace'],
             [BackupScope::WORKSPACE],
@@ -92,7 +93,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             ->get();
 
         $options = [];
+        $primaryLanguage = $this->config->siteDefaultLanguage();
         foreach ($rows as $row) {
+            $row = $this->repository->localizeWorkspace($row, $primaryLanguage, $primaryLanguage);
             $slug = BackupValue::string($row['slug'], 'workspace.slug');
             $name = BackupValue::string($row['name'], 'workspace.name');
             $options[] = [
@@ -100,6 +103,8 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 'label' => $name . ' — ' . $slug,
             ];
         }
+
+        usort($options, static fn(array $left, array $right): int => strnatcasecmp($left['label'], $right['label']));
 
         return $options;
     }
@@ -138,6 +143,10 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 'node_type' => BackupValue::string($node['node_type'], 'node.node_type'),
                 'slug' => BackupValue::string($node['slug'], 'node.slug'),
                 'title' => BackupValue::string($node['title'], 'node.title'),
+                'title_translations' => $this->portableTranslations(
+                    $node['title_translations'] ?? null,
+                    BackupValue::string($node['title'], 'node.title'),
+                ),
                 'document_key' => $node['document_key'] ?? null,
                 'route_name' => $node['route_name'] ?? null,
                 'target_url' => $node['target_url'] ?? null,
@@ -389,19 +398,33 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
 
         $targetSlug = $this->targetIdentifier($context, $record);
         $existing = $this->workspace($targetSlug, false);
+        $nameTranslations = $this->portableTranslations(
+            $record['name_translations'] ?? null,
+            BackupValue::string($record['name'], 'workspace.name'),
+        );
+        $descriptionTranslations = $this->portableTranslations(
+            $record['description_translations'] ?? null,
+            is_scalar($record['description'] ?? null) ? (string)$record['description'] : '',
+        );
+        if ($context->conflictMode === BackupImportContext::CONFLICT_COPY) {
+            $nameTranslations[$this->config->siteDefaultLanguage()] = BackupValue::string(
+                $context->optionsFor(self::ID)['name']
+                    ?? (BackupValue::string($record['name'], 'workspace.name') . ' (copy)'),
+                'workspace.name',
+            );
+        }
+
         $values = [
             'uuid' => $context->conflictMode === BackupImportContext::CONFLICT_COPY
                 ? $this->uuid()
                 : BackupValue::string($record['uuid'], 'workspace.uuid'),
             'slug' => $targetSlug,
-            'name' => $context->conflictMode === BackupImportContext::CONFLICT_COPY
-                ? BackupValue::string(
-                    $context->optionsFor(self::ID)['name']
-                        ?? (BackupValue::string($record['name'], 'workspace.name') . ' (copy)'),
-                    'workspace.name',
-                )
-                : BackupValue::string($record['name'], 'workspace.name'),
-            'description' => $record['description'] ?? null,
+            'name' => $nameTranslations[$this->config->siteDefaultLanguage()]
+                ?? BackupValue::string($record['name'], 'workspace.name'),
+            'name_translations' => $this->translationJson($nameTranslations),
+            'description' => $descriptionTranslations[$this->config->siteDefaultLanguage()]
+                ?? ($record['description'] ?? null),
+            'description_translations' => $this->translationJson($descriptionTranslations),
             'visibility' => BackupValue::string($record['visibility'], 'workspace.visibility'),
             'tree_visibility' => BackupValue::string($record['tree_visibility'], 'workspace.tree_visibility'),
             'contents_visibility' => BackupValue::string(
@@ -542,7 +565,15 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             'uuid' => BackupValue::string($row['uuid'], 'workspace.uuid'),
             'slug' => BackupValue::string($row['slug'], 'workspace.slug'),
             'name' => BackupValue::string($row['name'], 'workspace.name'),
+            'name_translations' => $this->portableTranslations(
+                $row['name_translations'] ?? null,
+                BackupValue::string($row['name'], 'workspace.name'),
+            ),
             'description' => $row['description'] ?? null,
+            'description_translations' => $this->portableTranslations(
+                $row['description_translations'] ?? null,
+                is_scalar($row['description'] ?? null) ? (string)$row['description'] : '',
+            ),
             'visibility' => BackupValue::string($row['visibility'], 'workspace.visibility'),
             'tree_visibility' => BackupValue::string($row['tree_visibility'], 'workspace.tree_visibility'),
             'contents_visibility' => BackupValue::string(
@@ -627,6 +658,10 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                     'state.editor.document-key',
                 )
                 : null;
+                $titleTranslations = $this->portableTranslations(
+                    $row['title_translations'] ?? null,
+                    BackupValue::string($row['title'], 'node.title'),
+                );
                 $values = [
                     'uuid' => $targetUuid, 'workspace_id' => $workspaceId,
                     'parent_id' => $parentUuid !== ''
@@ -634,7 +669,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                         : null,
                     'node_type' => BackupValue::string($row['node_type'], 'node.node_type'),
                     'slug' => BackupValue::string($row['slug'], 'node.slug'),
-                    'title' => BackupValue::string($row['title'], 'node.title'),
+                    'title' => $titleTranslations[$this->config->siteDefaultLanguage()]
+                        ?? BackupValue::string($row['title'], 'node.title'),
+                    'title_translations' => $this->translationJson($titleTranslations),
                     'document_key' => $documentKey,
                     'route_name' => $row['route_name'] ?? null,
                     'target_url' => $row['target_url'] ?? null,
@@ -996,6 +1033,43 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
 
         return $path;
+    }
+
+    /**
+     * HR: Čuva sve prijevode, a stare zapise bez mape smješta u primarni jezik.
+     * EN: Preserves every translation and places legacy scalar values in the primary language.
+     *
+     * @return array<string,string>
+     */
+    private function portableTranslations(mixed $value, string $fallback): array
+    {
+        $translations = $this->repository->translationMap($value);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        if (!isset($translations[$primaryLanguage]) && trim($fallback) !== '') {
+            $translations[$primaryLanguage] = trim($fallback);
+        }
+
+        return $translations;
+    }
+
+    /**
+     * HR: Serijalizira mapu prijevoda za bazu.
+     * EN: Serializes a translation map for database storage.
+     *
+     * @param array<string,string> $translations
+     */
+    private function translationJson(array $translations): ?string
+    {
+        if ($translations === []) {
+            return null;
+        }
+
+        $json = json_encode($translations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($json)) {
+            throw new BackupException('Workspace translations cannot be serialized.');
+        }
+
+        return $json;
     }
 
     /** HR: Generira UUID v4 za kopirani zapis. EN: Generates a UUID v4 for a copied record. */

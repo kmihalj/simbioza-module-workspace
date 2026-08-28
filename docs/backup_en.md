@@ -21,3 +21,10 @@ formatted panel content. Workspace and theme providers separately retain the
 private theme and its light/dark tab colors.
 
 Use preflight before restore. A missing required provider, checksum mismatch, unknown module/schema version, ACL problem, or unresolved identity blocks the operation before target content is changed.
+
+Selective and complete backups retain every language variant of the Workspace
+name and description and every page title. `merge`, `copy`, and `replace` carry
+the translation maps together with stable slugs, so restoring a multilingual
+Workspace does not collapse it to the currently active language. A legacy
+record without a translation map is displayed through the primary-language
+fallback.

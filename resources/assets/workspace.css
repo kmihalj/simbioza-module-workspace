@@ -1166,3 +1166,17 @@
         grid-column: 1;
     }
 }
+.workspace-locale-button {
+    align-items: center;
+    display: inline-flex;
+    gap: .5rem;
+    min-width: 5.25rem;
+}
+
+.workspace-locale-flag {
+    display: inline-block;
+    height: .9rem;
+    object-fit: cover;
+    vertical-align: -.125em;
+    width: 1.2rem;
+}

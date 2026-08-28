@@ -66,7 +66,11 @@ use Psr\Log\LoggerInterface;
 $services = [
     WorkspacePresentationRegistry::class =>
         static fn(ContainerInterface $container): WorkspacePresentationRegistry =>
-            new WorkspacePresentationRegistry($container->get(TranslatorInterface::class)),
+            new WorkspacePresentationRegistry(
+                $container->get(TranslatorInterface::class),
+                $container->get(WorkspaceRepository::class),
+                $container->get(WorkspaceConfig::class),
+            ),
 
     WorkspaceConfig::class => static fn(ContainerInterface $container): WorkspaceConfig =>
         new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__)),
@@ -260,6 +264,8 @@ $services = [
                 $container,
                 $container->get(WorkspaceAccessService::class),
                 $container->get(UrlGenerator::class),
+                $container->get(WorkspaceRepository::class),
+                $container->get(WorkspaceConfig::class),
             ),
 
     WorkspaceSettingsService::class => static fn(ContainerInterface $container): WorkspaceSettingsService =>
@@ -306,6 +312,7 @@ $services = [
             $container,
             $container->get(ComposerBridge::class),
             $container->get(WorkspaceConfig::class),
+            $container->get(WorkspaceRepository::class),
             $container->get(UrlGenerator::class),
         ),
 
@@ -367,6 +374,7 @@ $services = [
             $container->get(WorkspaceAccessService::class),
             $container->get(WorkspaceSettingsService::class),
             $container->get(WorkspaceMaintenanceService::class),
+            $container->get(WorkspacePresentationRegistry::class),
             $container->get(WorkspaceConfig::class),
             $container->get(UrlGenerator::class),
             $container->get(AlertHandler::class),
@@ -552,6 +560,7 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(AuthBackupIdentityResolver::class),
                 $container->get(WorkspaceConfig::class),
                 $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupFilesystem::class),
+                $container->get(WorkspaceRepository::class),
             );
 
     // HR: Workspace je vlasnik ACL pravila svojeg backup sučelja; generički

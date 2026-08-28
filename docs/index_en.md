@@ -858,3 +858,24 @@ carrying that label, and overlapping blocks share already checked results for
 the current HTTP request. An unfiltered report and the recent-changes block
 intentionally process the whole Workspace because their result semantically
 covers all of its pages.
+
+## 15. Multilingual Workspace and page names
+
+When the site supports multiple languages, the **Workspace name and
+description** and every **page title** are edited through the language selector
+attached to the field. The value in the site's primary language is required.
+Translations in other languages are optional; when one is missing, the primary
+language value is shown. A slug remains one shared, stable, language-independent
+value, so switching language never changes existing URLs.
+
+The same multilingual page title is used by the new-page form, tree-item
+settings, HTML Editor, page tree, breadcrumbs, lists, and search results. Menu
+and content-target selectors show the active-language name with the same
+primary-language fallback.
+
+The API and notifications expose the localized value for the request's active
+language. Backup and restore retain the complete Workspace and page translation
+maps. Portable HTML export renders the selected language, while Confluence
+import stores the Workspace name, description, and page titles under the
+language selected during preflight. Re-import still matches content by stable
+slug rather than by a translated title.

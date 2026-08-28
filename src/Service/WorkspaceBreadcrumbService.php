@@ -44,6 +44,12 @@ final readonly class WorkspaceBreadcrumbService
         string $currentTitle = '',
         bool $linkWorkspace = false,
     ): array {
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $workspace = $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage);
+        $activeNode = is_array($activeNode)
+        ? $this->repository->localizeNode($activeNode, $language, $primaryLanguage)
+        : null;
+        $visibleTree = $this->repository->localizeTree($visibleTree, $language, $primaryLanguage);
         $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
         $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
         $crumbs = [[

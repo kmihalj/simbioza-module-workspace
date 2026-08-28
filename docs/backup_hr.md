@@ -21,3 +21,9 @@ formatirani sadržaj panela. Workspace i Theme provideri zasebno čuvaju privatn
 temu i njezine light/dark boje tabova.
 
 Prije povrata koristite preflight. Nedostajući obvezni provider, pogrešan checksum, nepoznata verzija modula/sheme, ACL problem ili nerazriješen identitet prekidaju radnju prije promjene sadržaja cilja.
+
+Selektivni i potpuni backup čuvaju sve jezične varijante naziva i opisa
+područja te naslova stranica. `merge`, `copy` i `replace` prenose mape prijevoda
+zajedno sa stabilnim slugovima; povrat zato ne svodi dvojezično područje na samo
+trenutačno aktivan jezik. Stariji zapis bez prijevodne mape pri učitavanju se
+prikazuje kroz vrijednost primarnog jezika.

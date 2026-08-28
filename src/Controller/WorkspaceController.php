@@ -44,6 +44,8 @@ use function rawurlencode;
 use function rtrim;
 use function str_repeat;
 use function str_starts_with;
+use function strtok;
+use function strtolower;
 use function trim;
 
 final readonly class WorkspaceController
@@ -127,6 +129,7 @@ final readonly class WorkspaceController
             $visibleTree,
             $workspace,
             $workflows,
+            $language,
         );
         $homepage = $homepageId > 0 ? $this->treeNodeById($tree, $homepageId) : null;
 
@@ -180,6 +183,7 @@ final readonly class WorkspaceController
             $visibleTree,
             $workspace,
             $workflows,
+            $language,
         );
 
         return $this->renderWorkspace($request, $workspace, $tree, $node, $workflows);
@@ -216,6 +220,9 @@ final readonly class WorkspaceController
             return $this->accessDenied();
         }
 
+        $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $supportedLanguages = $this->config->supportedLanguages();
         $workspaceId = is_array($workspace) ? $this->intValue($workspace['id'] ?? 0) : 0;
         $isAdministrator = $this->access->isAdministrator();
         $workspaceThemeState = null;
@@ -224,9 +231,25 @@ final readonly class WorkspaceController
             $workspaceThemeState = $this->themes->state($workspace);
         }
 
+        $renderWorkspace = is_array($workspace)
+        ? $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage)
+        : null;
+
         return $this->viewRenderer->render('workspace/manage', [
-            'title' => is_array($workspace) ? $this->stringValue($workspace['name'] ?? '') : __('Novo područje'),
-            'workspace' => $workspace,
+            'title' => is_array($renderWorkspace)
+                ? $this->stringValue($renderWorkspace['name'] ?? '')
+                : __('Novo područje'),
+            'workspace' => $renderWorkspace,
+            'activeLanguage' => $language,
+            'primaryLanguage' => $primaryLanguage,
+            'supportedLanguages' => $supportedLanguages,
+            'localeFlagPaths' => $this->localeFlagPaths($supportedLanguages),
+            'workspaceNameTranslations' => is_array($renderWorkspace)
+                ? WorkspaceValue::stringKeyArray($renderWorkspace['name_translations_map'] ?? null)
+                : [],
+            'workspaceDescriptionTranslations' => is_array($renderWorkspace)
+                ? WorkspaceValue::stringKeyArray($renderWorkspace['description_translations_map'] ?? null)
+                : [],
             'workspacePermissions' => $workspacePermissions,
             'workspaceAclSubjects' => $workspaceId > 0
                 ? $this->repository->workspaceAclSubjects($workspaceId)
@@ -292,6 +315,8 @@ final readonly class WorkspaceController
         }
 
         try {
+            $body['primary_language'] = $this->config->siteDefaultLanguage();
+            $body['supported_languages'] = $this->config->supportedLanguages();
             if (!is_array($existing) && !array_key_exists('visibility', $body)) {
                 $body['visibility'] = $this->config->defaultVisibility();
             }
@@ -501,14 +526,31 @@ final readonly class WorkspaceController
 
         $documentKey = '';
         try {
-            $title = $this->stringValue($body['title'] ?? '');
-            $slug = $this->stringValue($body['slug'] ?? '');
             $language = $this->language($request);
+            $primaryLanguage = $this->config->siteDefaultLanguage();
+            $supportedLanguages = $this->config->supportedLanguages();
+            $titleTranslations = $this->repository->translationMap(
+                $body['title_translations'] ?? [],
+            );
+            $legacyTitle = $this->stringValue($body['title'] ?? '');
+            if ($titleTranslations === [] && $legacyTitle !== '') {
+                $titleTranslations[$primaryLanguage] = $legacyTitle;
+            }
+
+            $title = $this->repository->localizedValue(
+                $titleTranslations,
+                $language,
+                $primaryLanguage,
+            );
+            $slug = $this->stringValue($body['slug'] ?? '');
             $documentKey = $this->editor->createDocument($title, $slug, $language);
             $node = $this->repository->saveNode(
                 $this->intValue($workspace['id'] ?? 0),
                 [
                     'title' => $title,
+                    'title_translations' => $titleTranslations,
+                    'primary_language' => $primaryLanguage,
+                    'supported_languages' => $supportedLanguages,
                     'slug' => $slug,
                     'node_type' => 'document',
                     'document_key' => $documentKey,
@@ -620,6 +662,22 @@ final readonly class WorkspaceController
             $nodes[] = $candidate;
         }
 
+        $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $supportedLanguages = $this->config->supportedLanguages();
+        $workspace = $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage);
+        $nodes = array_map(
+            fn(array $candidate): array => $this->repository->localizeNode(
+                $candidate,
+                $language,
+                $primaryLanguage,
+            ),
+            $nodes,
+        );
+        $node = $this->repository->localizeNode($node, $language, $primaryLanguage);
+        $node['title_translation_values'] = WorkspaceValue::stringKeyArray(
+            $node['title_translations_map'] ?? null,
+        );
         $isAdministrator = $this->access->isAdministrator();
         $node['permissions'] = $permissions;
         $node['restrictions'] = $this->repository->nodeAclRows(
@@ -660,6 +718,10 @@ final readonly class WorkspaceController
                 '/workspaces/acl/subjects',
             ),
             'returnNodeId' => $this->intValue($query['return_node_id'] ?? 0),
+            'activeLanguage' => $language,
+            'primaryLanguage' => $primaryLanguage,
+            'supportedLanguages' => $supportedLanguages,
+            'localeFlagPaths' => $this->localeFlagPaths($supportedLanguages),
         ]);
 
         return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
@@ -717,6 +779,26 @@ final readonly class WorkspaceController
             $managementNodes[] = $candidate;
         }
 
+        $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $supportedLanguages = $this->config->supportedLanguages();
+        $workspace = $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage);
+        $managementNodes = array_map(
+            function (array $candidate) use ($language, $primaryLanguage): array {
+                $candidate = $this->repository->localizeNode(
+                    $candidate,
+                    $language,
+                    $primaryLanguage,
+                );
+                $candidate['title_translation_values'] = WorkspaceValue::stringKeyArray(
+                    $candidate['title_translations_map'] ?? null,
+                );
+
+                return $candidate;
+            },
+            $managementNodes,
+        );
+
         $html = $this->viewRenderer->renderPartial('workspace/tree-organizer', [
             'workspace' => $workspace,
             'nodes' => $this->orderNodesForManagement($managementNodes),
@@ -739,6 +821,10 @@ final readonly class WorkspaceController
                 : [],
             'canAttachExistingDocuments' => $this->access->isAdministrator(),
             'workspaceCanAdd' => (bool)($workspacePermissions['can_add'] ?? false),
+            'activeLanguage' => $language,
+            'primaryLanguage' => $primaryLanguage,
+            'supportedLanguages' => $supportedLanguages,
+            'localeFlagPaths' => $this->localeFlagPaths($supportedLanguages),
         ]);
 
         return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
@@ -783,7 +869,7 @@ final readonly class WorkspaceController
             $this->treeNodeIds($visibleTree),
             $language,
         );
-        $children = $this->decorateTree($visibleTree, $workspace, $workflows);
+        $children = $this->decorateTree($visibleTree, $workspace, $workflows, $language);
         $activeNodeId = $this->intValue($query['active_node_id'] ?? 0);
         $html = $this->viewRenderer->renderPartial('workspace/tree', [
             'nodes' => $children,
@@ -839,6 +925,24 @@ final readonly class WorkspaceController
         }
 
         try {
+            $language = $this->language($request);
+            $primaryLanguage = $this->config->siteDefaultLanguage();
+            $body['primary_language'] = $primaryLanguage;
+            $body['supported_languages'] = $this->config->supportedLanguages();
+            $titleTranslations = $this->repository->translationMap(
+                $body['title_translations'] ?? [],
+            );
+            $legacyTitle = $this->stringValue($body['title'] ?? '');
+            if ($titleTranslations === [] && $legacyTitle !== '') {
+                $titleTranslations[$primaryLanguage] = $legacyTitle;
+            }
+
+            $body['title_translations'] = $titleTranslations;
+            $body['title'] = $this->repository->localizedValue(
+                $titleTranslations,
+                $language,
+                $primaryLanguage,
+            );
             $nodeType = $this->stringValue($body['node_type'] ?? 'document');
             $documentKey = $this->stringValue($body['document_key'] ?? '');
             $existingDocumentKey = is_array($existing)
@@ -870,9 +974,9 @@ final readonly class WorkspaceController
                 && $documentKey === ''
             ) {
                 $body['document_key'] = $this->editor->createDocument(
-                    $this->stringValue($body['title'] ?? __('Nova stranica')),
+                    $this->stringValue($body['title']),
                     $this->stringValue($body['slug'] ?? ''),
-                    $this->language($request),
+                    $language,
                 );
                 $createdDocument = true;
             }
@@ -896,7 +1000,6 @@ final readonly class WorkspaceController
 
             $savedDocumentKey = $this->stringValue($savedNode['document_key'] ?? '');
             if ($createdDocument && $savedDocumentKey !== '') {
-                $language = $this->language($request);
                 $latestVersion = $this->editor->latestVersionNumber($savedDocumentKey, $language);
                 if ($latestVersion > 0) {
                     $this->editor->markVersionDraft($savedDocumentKey, $language, $latestVersion);
@@ -1359,6 +1462,16 @@ final readonly class WorkspaceController
         $this->themes->activate($workspace);
 
         $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $workspace = $this->repository->localizeWorkspace(
+            $workspace,
+            $language,
+            $primaryLanguage,
+        );
+        if (is_array($node)) {
+            $node = $this->repository->localizeNode($node, $language, $primaryLanguage);
+        }
+
         $treeVisible = $this->config->treeVisibleForWorkspace($workspace);
         $contentLanguage = $language;
         $editorView = null;
@@ -1576,6 +1689,10 @@ final readonly class WorkspaceController
             'reviewQueue' => $reviewQueue,
             'unpublishedPages' => $unpublishedPages,
             'language' => $language,
+            'activeLanguage' => $language,
+            'primaryLanguage' => $primaryLanguage,
+            'supportedLanguages' => $this->config->supportedLanguages(),
+            'localeFlagPaths' => $this->localeFlagPaths($this->config->supportedLanguages()),
             'treeVisibleByDefault' => $treeVisible,
             'shortsPath' => $this->shortsPath(
                 $this->stringValue($workspace['slug'] ?? ''),
@@ -1785,6 +1902,36 @@ final readonly class WorkspaceController
     }
 
     /**
+     * HR: Gradi URL-ove zastavica za zajednički višejezični editor metapodataka.
+     * EN: Builds flag URLs for the shared multilingual metadata editor.
+     *
+     * @param list<string> $locales
+     * @return array<string, string>
+     */
+    private function localeFlagPaths(array $locales): array
+    {
+        if (!$this->urlGenerator->namedRouteExists('menu.assets.flag')) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($locales as $locale) {
+            $locale = strtolower(trim($locale));
+            if ($locale === '') {
+                continue;
+            }
+
+            $language = strtolower(strtok($locale, '-_') ?: $locale);
+            $paths[$locale] = $this->urlGenerator->getPathFor(
+                'menu.assets.flag',
+                ['file' => $language . '.svg'],
+            );
+        }
+
+        return $paths;
+    }
+
+    /**
      * HR: Pretvara vidljive ravne čvorove u redoslijed prikladan za vizualni
      *     organizator i svakom retku dodaje dubinu u stablu.
      * EN: Converts visible flat nodes into an order suitable for the visual
@@ -1963,8 +2110,14 @@ final readonly class WorkspaceController
         array $tree,
         array $workspace,
         array $workflows = [],
+        string $language = '',
     ): array {
         foreach ($tree as &$node) {
+            $node = $this->repository->localizeNode(
+                $node,
+                $language,
+                $this->config->siteDefaultLanguage(),
+            );
             $type = $this->stringValue($node['node_type'] ?? 'document');
             $node['href'] = $type === 'document'
             ? $this->nodePath(
@@ -2001,7 +2154,12 @@ final readonly class WorkspaceController
             }
 
             $children = WorkspaceValue::rows($node['children'] ?? null);
-            $node['children'] = $this->decorateTree($children, $workspace, $workflows);
+            $node['children'] = $this->decorateTree(
+                $children,
+                $workspace,
+                $workflows,
+                $language,
+            );
         }
 
         return $tree;

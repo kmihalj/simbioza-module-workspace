@@ -23,6 +23,9 @@ use function count;
 use function is_array;
 use function is_numeric;
 use function is_scalar;
+use function is_string;
+use function json_decode;
+use function json_encode;
 use function mb_strtolower;
 use function preg_replace;
 use function sort;
@@ -192,7 +195,30 @@ final readonly class WorkspaceRepository
         $this->assertTablesReady();
         $workspaceId = $this->intValue($data['id'] ?? 0);
         $existing = $workspaceId > 0 ? $this->findWorkspaceById($workspaceId) : null;
-        $name = $this->stringValue($data['name'] ?? '');
+        $primaryLanguage = $this->languageCode($data['primary_language'] ?? 'hr');
+        $submittedNameTranslations = $this->translationMap($data['name_translations'] ?? null);
+        $submittedDescriptionTranslations = $this->translationMap($data['description_translations'] ?? null);
+        $supportedLanguages = $this->languageCodes(
+            $data['supported_languages']
+                ?? array_merge(
+                    [$primaryLanguage],
+                    array_keys($submittedNameTranslations),
+                    array_keys($submittedDescriptionTranslations),
+                ),
+        );
+        $nameTranslations = $this->normalizedTranslations(
+            $data['name_translations'] ?? null,
+            $supportedLanguages,
+            $primaryLanguage,
+            $data['name'] ?? '',
+        );
+        $descriptionTranslations = $this->normalizedTranslations(
+            $data['description_translations'] ?? null,
+            $supportedLanguages,
+            $primaryLanguage,
+            $data['description'] ?? '',
+        );
+        $name = $nameTranslations[$primaryLanguage] ?? '';
         if ($name === '') {
             throw new RuntimeException(__('Naziv područja je obavezan.'));
         }
@@ -208,7 +234,9 @@ final readonly class WorkspaceRepository
         $values = [
             'slug' => $slug,
             'name' => $name,
-            'description' => $this->stringValue($data['description'] ?? ''),
+            'name_translations' => $this->encodeTranslations($nameTranslations),
+            'description' => $descriptionTranslations[$primaryLanguage] ?? '',
+            'description_translations' => $this->encodeTranslations($descriptionTranslations),
             'visibility' => $visibility,
             'tree_visibility' => $this->displayPolicy(
                 $data['tree_visibility']
@@ -1505,8 +1533,9 @@ final readonly class WorkspaceRepository
         $row = $this->database->fetchOne(
             'SELECT '
             . 'n.id AS node_id, n.workspace_id, n.node_type, n.slug AS node_slug, '
-            . 'n.title AS node_title, n.document_key, '
+            . 'n.title AS node_title, n.title_translations AS node_title_translations, n.document_key, '
             . 'w.slug AS workspace_slug, w.name AS workspace_name, '
+            . 'w.name_translations AS workspace_name_translations, '
             . 'f.status, f.current_version_number, f.published_version_number, '
             . 'f.published_by_user_id, f.published_at, '
             . 'u.login_identifier AS author_login_identifier '
@@ -1697,7 +1726,19 @@ final readonly class WorkspaceRepository
     {
         $this->assertTablesReady();
         $nodeId = $this->intValue($data['id'] ?? 0);
-        $title = $this->stringValue($data['title'] ?? '');
+        $primaryLanguage = $this->languageCode($data['primary_language'] ?? 'hr');
+        $submittedTitleTranslations = $this->translationMap($data['title_translations'] ?? null);
+        $supportedLanguages = $this->languageCodes(
+            $data['supported_languages']
+                ?? array_merge([$primaryLanguage], array_keys($submittedTitleTranslations)),
+        );
+        $titleTranslations = $this->normalizedTranslations(
+            $data['title_translations'] ?? null,
+            $supportedLanguages,
+            $primaryLanguage,
+            $data['title'] ?? '',
+        );
+        $title = $titleTranslations[$primaryLanguage] ?? '';
         if ($title === '') {
             throw new RuntimeException(__('Naslov čvora je obavezan.'));
         }
@@ -1764,6 +1805,7 @@ final readonly class WorkspaceRepository
             'node_type' => $nodeType,
             'slug' => $slug,
             'title' => $title,
+            'title_translations' => $this->encodeTranslations($titleTranslations),
             'document_key' => $documentKey,
             'route_name' => $routeName,
             'target_url' => $targetUrl,
@@ -3267,6 +3309,294 @@ final readonly class WorkspaceRepository
     private function stringValue(mixed $value): string
     {
         return is_scalar($value) ? trim((string)$value) : '';
+    }
+
+    /**
+     * HR: Dekodira jezične vrijednosti spremljene kao JSON i normalizira oznake jezika.
+     * EN: Decodes language values stored as JSON and normalizes locale codes.
+     *
+     * @return array<string, string>
+     */
+    public function translationMap(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = trim($value) !== '' ? json_decode($value, true) : [];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $translations = [];
+        foreach ($value as $language => $translation) {
+            if (!is_scalar($translation)) {
+                continue;
+            }
+
+            $language = $this->languageCode($language);
+            $translation = trim((string)$translation);
+            if ($translation !== '') {
+                $translations[$language] = $translation;
+            }
+        }
+
+        return $translations;
+    }
+
+    /**
+     * HR: Vraća prijevod za aktivni jezik, zatim njegov osnovni jezik i na kraju
+     *     primarni jezik sitea. Ne bira proizvoljan prijevod.
+     * EN: Returns the active-locale translation, then its base language, and
+     *     finally the site's primary language. It never picks an arbitrary value.
+     */
+    public function localizedValue(mixed $translations, string $language, string $primaryLanguage): string
+    {
+        $translations = $this->translationMap($translations);
+        $language = $this->languageCode($language);
+        $primaryLanguage = $this->languageCode($primaryLanguage);
+        $baseLanguage = (string)preg_replace('/[-_].*$/', '', $language);
+
+        foreach (array_unique([$language, $baseLanguage, $primaryLanguage]) as $candidate) {
+            if (($translations[$candidate] ?? '') !== '') {
+                return $translations[$candidate];
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * HR: Lokalizira naziv i opis područja bez dodatnog SQL upita te zadržava
+     *     dekodirane mape kako bi ih obrazac mogao uređivati.
+     * EN: Localizes a Workspace name and description without another SQL query
+     *     and retains decoded maps for editing forms.
+     *
+     * @param array<string, mixed> $workspace
+     * @return array<string, mixed>
+     */
+    public function localizeWorkspace(array $workspace, string $language, string $primaryLanguage): array
+    {
+        $workspace['name_translations_map'] = $this->translationMap($workspace['name_translations'] ?? null);
+        $workspace['description_translations_map'] = $this->translationMap(
+            $workspace['description_translations'] ?? null,
+        );
+
+        // HR: Stari skalarni stupci ostaju siguran izvor za primarni jezik ako
+        //     migracija ili prijenos još nisu zapisali JSON mapu.
+        // EN: Legacy scalar columns remain a safe primary-locale source when a
+        //     migration or transfer has not written the JSON map yet.
+        $primaryLanguage = $this->languageCode($primaryLanguage);
+        $legacyName = $this->stringValue($workspace['name'] ?? '');
+        if (($workspace['name_translations_map'][$primaryLanguage] ?? '') === '' && $legacyName !== '') {
+            $workspace['name_translations_map'][$primaryLanguage] = $legacyName;
+        }
+
+        $legacyDescription = $this->stringValue($workspace['description'] ?? '');
+        if (
+            ($workspace['description_translations_map'][$primaryLanguage] ?? '') === ''
+            && $legacyDescription !== ''
+        ) {
+            $workspace['description_translations_map'][$primaryLanguage] = $legacyDescription;
+        }
+
+        $workspace['name'] = $this->localizedValue(
+            $workspace['name_translations_map'],
+            $language,
+            $primaryLanguage,
+        ) ?: $legacyName;
+        $workspace['description'] = $this->localizedValue(
+            $workspace['description_translations_map'],
+            $language,
+            $primaryLanguage,
+        ) ?: $legacyDescription;
+
+        return $workspace;
+    }
+
+    /**
+     * HR: Lokalizira popis područja u memoriji. EN: Localizes a Workspace list in memory.
+     *
+     * @param list<array<string, mixed>> $workspaces
+     * @return list<array<string, mixed>>
+     */
+    public function localizeWorkspaces(array $workspaces, string $language, string $primaryLanguage): array
+    {
+        foreach ($workspaces as &$workspace) {
+            $workspace = $this->localizeWorkspace($workspace, $language, $primaryLanguage);
+        }
+
+        unset($workspace);
+
+        return $workspaces;
+    }
+
+    /**
+     * HR: Lokalizira naslov jednoga čvora i zadržava mapu za obrazac.
+     * EN: Localizes a single node title and retains its map for the form.
+     *
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    public function localizeNode(array $node, string $language, string $primaryLanguage): array
+    {
+        $node['title_translations_map'] = $this->translationMap($node['title_translations'] ?? null);
+        $primaryLanguage = $this->languageCode($primaryLanguage);
+        $legacyTitle = $this->stringValue($node['title'] ?? '');
+        if (($node['title_translations_map'][$primaryLanguage] ?? '') === '' && $legacyTitle !== '') {
+            $node['title_translations_map'][$primaryLanguage] = $legacyTitle;
+        }
+
+        $node['title'] = $this->localizedValue(
+            $node['title_translations_map'],
+            $language,
+            $primaryLanguage,
+        ) ?: $legacyTitle;
+
+        return $node;
+    }
+
+    /**
+     * HR: Lokalizira ravan popis čvorova. EN: Localizes a flat node list.
+     *
+     * @param list<array<string, mixed>> $nodes
+     * @return list<array<string, mixed>>
+     */
+    public function localizeNodes(array $nodes, string $language, string $primaryLanguage): array
+    {
+        foreach ($nodes as &$node) {
+            $node = $this->localizeNode($node, $language, $primaryLanguage);
+        }
+
+        unset($node);
+
+        return $nodes;
+    }
+
+    /**
+     * HR: Rekurzivno lokalizira cijelo stablo bez novih upita prema bazi.
+     * EN: Recursively localizes the whole tree without additional database queries.
+     *
+     * @param list<array<string, mixed>> $nodes
+     * @return list<array<string, mixed>>
+     */
+    public function localizeTree(array $nodes, string $language, string $primaryLanguage): array
+    {
+        foreach ($nodes as &$node) {
+            $node = $this->localizeNode($node, $language, $primaryLanguage);
+            $rawChildren = is_array($node['children'] ?? null) ? $node['children'] : [];
+            $children = $this->treeNodeList($rawChildren);
+            $node['children'] = $this->localizeTree($children, $language, $primaryLanguage);
+        }
+
+        unset($node);
+
+        return $nodes;
+    }
+
+    /**
+     * HR: Normalizira proizvoljan niz djece u popis čvorova sa znakovnim ključevima.
+     * EN: Normalizes an arbitrary children array into a list of string-keyed nodes.
+     *
+     * @param array<mixed> $nodes
+     * @return list<array<string,mixed>>
+     */
+    private function treeNodeList(array $nodes): array
+    {
+        $normalizedNodes = [];
+        foreach ($nodes as $node) {
+            if (!is_array($node)) {
+                continue;
+            }
+
+            $normalizedNode = [];
+            foreach ($node as $key => $value) {
+                if (is_string($key)) {
+                    $normalizedNode[$key] = $value;
+                }
+            }
+
+            $normalizedNodes[] = $normalizedNode;
+        }
+
+        return $normalizedNodes;
+    }
+
+    /** HR: Normalizira proizvoljnu oznaku jezika. EN: Normalizes an arbitrary locale code. */
+    private function languageCode(mixed $language): string
+    {
+        return $this->language(is_scalar($language) ? (string)$language : '');
+    }
+
+    /**
+     * HR: Normalizira jedinstveni popis podržanih jezika.
+     * EN: Normalizes a unique list of supported locales.
+     *
+     * @return list<string>
+     */
+    private function languageCodes(mixed $languages): array
+    {
+        $languages = is_array($languages) ? $languages : [$languages];
+        $normalized = [];
+        foreach ($languages as $language) {
+            $code = $this->languageCode($language);
+            if (!in_array($code, $normalized, true)) {
+                $normalized[] = $code;
+            }
+        }
+
+        return $normalized !== [] ? $normalized : ['hr'];
+    }
+
+    /**
+     * HR: Prihvaća samo podržane prijevode; sirovu vrijednost koristi za primarni
+     *     jezik samo kada pozivatelj nije poslao mapu prijevoda.
+     * EN: Accepts supported translations only; the raw value seeds the primary
+     *     locale only when the caller did not submit a translation map.
+     *
+     * @param list<string> $supportedLanguages
+     * @return array<string, string>
+     */
+    private function normalizedTranslations(
+        mixed $translations,
+        array $supportedLanguages,
+        string $primaryLanguage,
+        mixed $rawValue,
+    ): array {
+        $translationsWereProvided = is_array($translations)
+        || (is_string($translations) && trim($translations) !== '');
+        $translations = $this->translationMap($translations);
+        if (!$translationsWereProvided) {
+            $rawValue = $this->stringValue($rawValue);
+            if ($rawValue !== '') {
+                $translations[$primaryLanguage] = $rawValue;
+            }
+        }
+
+        $normalized = [];
+        foreach ($supportedLanguages as $language) {
+            $language = $this->languageCode($language);
+            if (($translations[$language] ?? '') !== '') {
+                $normalized[$language] = $translations[$language];
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * HR: Kodira prijevode u stabilan Unicode JSON zapis.
+     * EN: Encodes translations as stable Unicode JSON.
+     *
+     * @param array<string, string> $translations
+     */
+    private function encodeTranslations(array $translations): string
+    {
+        $encoded = json_encode($translations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($encoded)) {
+            throw new RuntimeException(__('Prijevode nije moguće spremiti.'));
+        }
+
+        return $encoded;
     }
 
     /**
