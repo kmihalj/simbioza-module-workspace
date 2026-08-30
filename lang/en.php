@@ -155,7 +155,7 @@ return [
     'Postavke' => 'Settings',
     'Postavke stranica i poveznica' => 'Page and link settings',
     'Postavke stavke nije moguće učitati.' => 'The item settings could not be loaded.',
-    'Postavke stavke stabla' => 'Tree item settings',
+    'Postavke stavke stabla/stranice' => 'Tree item/page settings',
     'Postavke područja' => 'Workspace settings',
     'Postavke područja su spremljene.' => 'Workspace settings were saved.',
     'Povezane stranice, članovi i prava organizirani na jednom mjestu.' =>
@@ -797,6 +797,7 @@ return [
     'Oznake stranice' => 'Page labels',
     'Svojstva stranice' => 'Page properties',
     'Naziv svojstva' => 'Property name',
+    'Dodaj svojstvo' => 'Add property',
     'Vrsta' => 'Type',
     'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.' =>
         'The tree cannot be edited because you cannot view or edit every item.',

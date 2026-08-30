@@ -11,6 +11,43 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceEditorViewIntegrationTest extends TestCase
 {
     /**
+     * HR: Svojstva stranice moraju biti jedan dinamički popis koji dopušta
+     *     dodavanje i uklanjanje više redaka prije atomarnog spremanja.
+     * EN: Page properties must be one dynamic list that allows multiple rows
+     *     to be added and removed before the atomic save.
+     */
+    public function testPagePropertiesAreManagedAsOneDynamicList(): void
+    {
+        $view = file_get_contents(dirname(__DIR__) . '/views/workspace/node-dialog.php');
+        $row = file_get_contents(dirname(__DIR__) . '/views/workspace/node-property-row.php');
+        $script = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.js');
+        $controller = file_get_contents(dirname(__DIR__) . '/src/Controller/WorkspaceController.php');
+        $repository = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceRepository.php');
+
+        $this->assertIsString($view);
+        $this->assertIsString($row);
+        $this->assertIsString($script);
+        $this->assertIsString($controller);
+        $this->assertIsString($repository);
+        $this->assertStringContainsString('Postavke stavke stabla/stranice', $view);
+        $this->assertStringContainsString('data-workspace-page-properties', $view);
+        $this->assertStringContainsString('data-workspace-page-property-rows', $view);
+        $this->assertStringContainsString('data-workspace-page-property-add', $view);
+        $this->assertStringContainsString('data-workspace-page-property-template', $view);
+        $this->assertStringContainsString('data-workspace-page-property-remove', $row);
+        $this->assertStringContainsString('name="properties[label][]"', $row);
+        $this->assertStringContainsString('name="properties[type][]"', $row);
+        $this->assertStringContainsString('name="properties[value][]"', $row);
+        $this->assertStringContainsString('function initializePageProperties(', $script);
+        $this->assertStringContainsString('template.content.cloneNode(true)', $script);
+        $this->assertStringContainsString('row.remove()', $script);
+        $this->assertStringContainsString('initializePageProperties(modal)', $script);
+        $this->assertStringContainsString('$this->propertiesFromBody(', $controller);
+        $this->assertStringContainsString('replaceNodeProperties(', $controller);
+        $this->assertStringContainsString('$this->database->transaction(', $repository);
+    }
+
+    /**
      * HR: Ograničenja stranice koriste jedan korisnički picker i jedno
      *     trostanje po pravu, bez grupnih redaka i dvostrukih kvačica.
      * EN: Page restrictions use one user picker and one three-state control per

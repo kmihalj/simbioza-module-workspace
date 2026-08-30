@@ -67,7 +67,7 @@ $hasPermission = static function (
             <?= $this->escape(WorkspaceValue::string($node['title'] ?? '')) ?>
         </h2>
         <p class="small text-body-secondary mb-0">
-            <?= $this->escape(__('Postavke stavke stabla')) ?>
+            <?= $this->escape(__('Postavke stavke stabla/stranice')) ?>
         </p>
     </div>
     <button
@@ -118,35 +118,39 @@ $hasPermission = static function (
                         placeholder="2026, projekt, pristupačnost"
                     >
                 </div>
-                <fieldset class="mt-3">
+                <fieldset class="mt-3" data-workspace-page-properties>
                     <legend class="h6 mb-2"><?= $this->escape(__('Svojstva stranice')) ?></legend>
-                    <div class="vstack gap-2">
-                        <?php
-                        $properties = is_array($node['properties'] ?? null) ? $node['properties'] : [];
+                    <?php
+                    $properties = is_array($node['properties'] ?? null) ? $node['properties'] : [];
+                    if ($properties === []) {
                         $properties[] = ['label' => '', 'type' => 'text', 'value' => ''];
-                        ?>
+                    }
+                    ?>
+                    <div class="vstack gap-2" data-workspace-page-property-rows>
                         <?php foreach ($properties as $property) : ?>
-                            <?php $property = is_array($property) ? $property : []; ?>
-                            <div class="row g-2 align-items-end">
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label small"><?= $this->escape(__('Naziv svojstva')) ?></label>
-                                    <input class="form-control" name="properties[label][]" value="<?= $this->escape(WorkspaceValue::string($property['label'] ?? '')) ?>">
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <label class="form-label small"><?= $this->escape(__('Vrsta')) ?></label>
-                                    <select class="form-select" name="properties[type][]">
-                                        <?php foreach (['text', 'status', 'number', 'date', 'user', 'link'] as $type) : ?>
-                                            <option value="<?= $type ?>" <?= WorkspaceValue::string($property['type'] ?? 'text') === $type ? 'selected' : '' ?>><?= $this->escape(__($type)) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-12 col-md-5">
-                                    <label class="form-label small"><?= $this->escape(__('Vrijednost')) ?></label>
-                                    <input class="form-control" name="properties[value][]" value="<?= $this->escape(WorkspaceValue::string($property['value'] ?? '')) ?>">
-                                </div>
-                            </div>
+                            <?= $this->forModulePartial(
+                                'aaieduhr/heartphrame-module-workspace',
+                                'workspace/node-property-row',
+                                ['property' => is_array($property) ? $property : []],
+                            ) ?>
                         <?php endforeach; ?>
                     </div>
+                    <button
+                        class="btn btn-outline-primary btn-sm mt-2"
+                        type="button"
+                        data-workspace-page-property-add
+                        title="<?= $this->escape(__('Dodaj svojstvo')) ?>"
+                        aria-label="<?= $this->escape(__('Dodaj svojstvo')) ?>"
+                    >
+                        <span aria-hidden="true">+</span>
+                    </button>
+                    <template data-workspace-page-property-template>
+                        <?= $this->forModulePartial(
+                            'aaieduhr/heartphrame-module-workspace',
+                            'workspace/node-property-row',
+                            ['property' => ['label' => '', 'type' => 'text', 'value' => '']],
+                        ) ?>
+                    </template>
                 </fieldset>
                 <div class="mt-3">
                     <label class="form-label" for="workspace-node-contents-visibility">

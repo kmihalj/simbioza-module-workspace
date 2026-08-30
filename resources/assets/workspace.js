@@ -71,6 +71,56 @@
     }
 
     /**
+     * HR: Omogućuje dodavanje i uklanjanje više svojstava stranice prije nego
+     *     što se cijeli popis zajedno pošalje glavnim obrascem stavke.
+     * EN: Allows multiple page properties to be added and removed before the
+     *     complete list is submitted together by the main item form.
+     *
+     * @param {ParentNode} [root=document]
+     * @returns {void}
+     */
+    function initializePageProperties(root = document) {
+        root.querySelectorAll('[data-workspace-page-properties]').forEach((container) => {
+            if (
+                !(container instanceof HTMLFieldSetElement)
+                || container.dataset.workspacePagePropertiesReady === '1'
+            ) {
+                return;
+            }
+
+            const rows = container.querySelector('[data-workspace-page-property-rows]');
+            const template = container.querySelector('[data-workspace-page-property-template]');
+            const addButton = container.querySelector('[data-workspace-page-property-add]');
+            if (
+                !(rows instanceof HTMLElement)
+                || !(template instanceof HTMLTemplateElement)
+                || !(addButton instanceof HTMLButtonElement)
+            ) {
+                return;
+            }
+
+            container.dataset.workspacePagePropertiesReady = '1';
+            addButton.addEventListener('click', () => {
+                const fragment = template.content.cloneNode(true);
+                const row = fragment.querySelector('[data-workspace-page-property-row]');
+                rows.append(fragment);
+                row?.querySelector('input[name="properties[label][]"]')?.focus();
+            });
+
+            container.addEventListener('click', (event) => {
+                const target = event.target;
+                const button = target instanceof Element
+                    ? target.closest('[data-workspace-page-property-remove]')
+                    : null;
+                const row = button?.closest('[data-workspace-page-property-row]');
+                if (row instanceof HTMLElement) {
+                    row.remove();
+                }
+            });
+        });
+    }
+
+    /**
      * HR: Jezični izbornik prikazuje samo polje odabranog jezika, dok sva
      * ostala polja ostaju u obrascu kako bi se sve inačice spremile zajedno.
      * EN: The language selector shows only the selected locale field while
@@ -1174,6 +1224,7 @@
 
                 content.innerHTML = html;
                 initializeNodeForms(modal);
+                initializePageProperties(modal);
                 initializeAclControls(modal);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2307,6 +2358,7 @@
         initializeTranslationControls();
         initializeModalPortals();
         initializeNodeForms();
+        initializePageProperties();
         initializeTreeOrganizers();
         initializeReadableTrees();
         initializeAdaptiveTreeWidths();

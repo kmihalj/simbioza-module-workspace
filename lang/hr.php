@@ -155,7 +155,7 @@ return [
     'Postavke' => 'Postavke',
     'Postavke stranica i poveznica' => 'Postavke stranica i poveznica',
     'Postavke stavke nije moguće učitati.' => 'Postavke stavke nije moguće učitati.',
-    'Postavke stavke stabla' => 'Postavke stavke stabla',
+    'Postavke stavke stabla/stranice' => 'Postavke stavke stabla/stranice',
     'Postavke područja' => 'Postavke područja',
     'Postavke područja su spremljene.' => 'Postavke područja su spremljene.',
     'Povezane stranice, članovi i prava organizirani na jednom mjestu.' =>
@@ -796,6 +796,7 @@ return [
     'Oznake stranice' => 'Oznake stranice',
     'Svojstva stranice' => 'Svojstva stranice',
     'Naziv svojstva' => 'Naziv svojstva',
+    'Dodaj svojstvo' => 'Dodaj svojstvo',
     'Vrsta' => 'Vrsta',
     'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.' =>
         'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.',
