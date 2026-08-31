@@ -325,7 +325,7 @@ When both modules are enabled:
   somebody else's existing document by guessing its key; attaching existing
   documents is reserved for administrators;
 - internal absolute paths are resolved inside the application's configured base
-  path, so `/calendars` also works when the application runs under `/hfc`;
+  path, so `/calendars` also works when the application runs under `/example-app`;
 - a page uses the complete HTML editor view, including theme, languages,
   history, attachments, ZIP export, document outline, audit data, and responsive behavior;
 - Workspace adds only the left tree, while effective node ACL controls editing,

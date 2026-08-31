@@ -2509,9 +2509,9 @@ final readonly class WorkspaceController
 
     /**
      * HR: Dodaje aplikacijski base path internoj apsolutnoj putanji samo kada
-     * ga putanja već ne sadrži. Tako `/calendars` radi i pod `/hfc`.
+     * ga putanja već ne sadrži. Tako `/calendars` radi i pod `/example-app`.
      * EN: Adds the application base path to an internal absolute path only when
-     * the path does not already contain it. This keeps `/calendars` working under `/hfc`.
+     * the path does not already contain it. This keeps `/calendars` working under `/example-app`.
      */
     private function internalTargetPath(string $target): string
     {

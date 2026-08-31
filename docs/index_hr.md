@@ -195,8 +195,8 @@ upravljanje stablom, ali podatke i ACL samog Područja može mijenjati samo uz
 
 Interni link prihvaća postojeću imenovanu rutu ili lokalnu apsolutnu putanju
 koja počinje jednom kosom crtom, primjerice `/calendars`. Lokalna putanja
-automatski se smješta ispod aplikacijskog prefiksa pa postaje `/hfc/calendars`
-kada je aplikacija instalirana pod `/hfc`. Apsolutni HTTP(S) URL-ovi dopušteni
+automatski se smješta ispod aplikacijskog prefiksa pa postaje `/example-app/calendars`
+kada je aplikacija instalirana pod `/example-app`. Apsolutni HTTP(S) URL-ovi dopušteni
 su samo tipu `external_link`.
 
 Jedan aktivni HTML dokument može pripadati samo jednom aktivnom Workspace

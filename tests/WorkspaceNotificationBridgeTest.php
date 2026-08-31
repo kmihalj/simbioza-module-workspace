@@ -74,7 +74,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
         ]);
         $urlGenerator = $this->createMock(UrlGenerator::class);
         $urlGenerator->method('namedRouteExists')->willReturn(false);
-        $urlGenerator->method('getBasePath')->willReturn('/hfc');
+        $urlGenerator->method('getBasePath')->willReturn('/example-app');
 
         $recorder = new class {
             /**
@@ -166,7 +166,7 @@ final class WorkspaceNotificationBridgeTest extends TestCase
         $call = $recorder->calls[0];
         $this->assertSame([11], $call['user_ids']);
         $this->assertSame('workspace.review_requested', $call['key']);
-        $this->assertSame('/hfc/workspace/team/roadmap?lang=hr&draft=preview', $call['link']);
+        $this->assertSame('/example-app/workspace/team/roadmap?lang=hr&draft=preview', $call['link']);
         $this->assertSame(
             'workspace:review:' . (int)$node['id'] . ':hr:4',
             $call['dedup_key'],

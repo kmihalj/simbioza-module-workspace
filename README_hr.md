@@ -319,7 +319,7 @@ Kada su oba modula uključena:
   povezati tuđi postojeći dokument; povezivanje postojećih dokumenata dostupno
   je administratoru;
 - interne apsolutne putanje razrješavaju se unutar aplikacijskog prefiksa, pa
-  `/calendars` radi i kada je aplikacija instalirana pod `/hfc`;
+  `/calendars` radi i kada je aplikacija instalirana pod `/example-app`;
 - stranica koristi isti potpuni pregled kao HTML editor: temu, jezike, povijest,
   privitke, ZIP export, sadržaj dokumenta, audit podatke i responzivno ponašanje;
 - Workspace dodaje samo lijevo stablo, a efektivni ACL čvora određuje prikaz

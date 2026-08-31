@@ -201,8 +201,8 @@ management, but Workspace metadata and ACL remain editable only with
 
 An internal link accepts an existing named route or a local absolute path that
 starts with one slash, for example `/calendars`. The local path is automatically
-resolved under the application base path, so it becomes `/hfc/calendars` when
-the application is mounted below `/hfc`. Absolute HTTP(S) URLs are accepted only
+resolved under the application base path, so it becomes `/example-app/calendars` when
+the application is mounted below `/example-app`. Absolute HTTP(S) URLs are accepted only
 by `external_link`.
 
 One active HTML editor document may be linked to only one active Workspace
