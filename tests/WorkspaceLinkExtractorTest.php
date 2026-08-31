@@ -28,10 +28,10 @@ final class WorkspaceLinkExtractorTest extends TestCase
 
         $links = $extractor->extract(<<<'HTML'
             <p>
-                <a href="/HFC/workspace/qa-space/first-page?lang=hr"> Prva   stranica </a>
-                <a href="https://example.test/HFC/workspace/qa-space/second-page#part">Druga</a>
+                <a href="/example-app/workspace/qa-space/first-page?lang=hr"> Prva   stranica </a>
+                <a href="https://example.test/example-app/workspace/qa-space/second-page#part">Druga</a>
                 <a href="mailto:test@example.test">E-pošta</a>
-                <a href="/HFC/calendars">Kalendari</a>
+                <a href="/example-app/calendars">Kalendari</a>
                 <a href="#local">Lokalni naslov</a>
             </p>
             HTML);

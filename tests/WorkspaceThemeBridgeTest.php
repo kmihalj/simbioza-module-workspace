@@ -30,9 +30,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
             $this->createStub(TranslatorInterface::class),
         );
         $method = new ReflectionMethod($bridge, 'embedRenderedThemeAssets');
-        $html = '<img src="/HFC/theme/assets/library/simbioza/icon.png">'
-        . '<img src="https://example.test/HFC/theme/assets/visual/hero.svg">'
-        . '<img src="/HFC/images/mark.png"><img src="https://cdn.example.test/external.png">';
+        $html = '<img src="/example-app/theme/assets/library/simbioza/icon.png">'
+        . '<img src="https://example.test/example-app/theme/assets/visual/hero.svg">'
+        . '<img src="/example-app/images/mark.png"><img src="https://cdn.example.test/external.png">';
         $sources = [
             '@theme-assets/simbioza/icon.png' => 'data:image/png;base64,aWNvbg==',
             '@theme/hero.svg' => 'data:image/svg+xml;base64,aGVybw==',
@@ -46,7 +46,7 @@ final class WorkspaceThemeBridgeTest extends TestCase
         $this->assertStringContainsString('src="data:image/svg+xml;base64,aGVybw=="', $embedded);
         $this->assertStringContainsString('src="data:image/png;base64,bWFyaw=="', $embedded);
         $this->assertStringContainsString('src="https://cdn.example.test/external.png"', $embedded);
-        $this->assertStringNotContainsString('/HFC/theme/assets/', $embedded);
+        $this->assertStringNotContainsString('/example-app/theme/assets/', $embedded);
     }
 
     /**
