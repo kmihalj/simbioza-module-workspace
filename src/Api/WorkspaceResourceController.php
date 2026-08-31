@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Api;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Api;
 
 use AaiEduHr\HeartPhrameModuleApi\Exception\ApiPreconditionException;
 use AaiEduHr\HeartPhrameModuleApi\Http\ApiResponseFactory;
@@ -253,7 +253,7 @@ final readonly class WorkspaceResourceController
     {
         return $this->downloadExport(
             $request,
-            fn(array $user): \AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExport =>
+            fn(array $user): \AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExport =>
                 $this->workspaces->exportWorkspaceTheme(
                     $this->routeString($request, 'workspaceSlug'),
                     $user,
@@ -767,7 +767,7 @@ final readonly class WorkspaceResourceController
      * HR: Preuzima binarni Workspace ZIP uz jedinstvenu provjeru scopea i grešaka.
      * EN: Downloads a binary Workspace ZIP with consistent scope and error handling.
      *
-     * @param callable(array<string,mixed>):\AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExport $operation
+     * @param callable(array<string,mixed>):\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExport $operation
      */
     private function downloadExport(
         ServerRequestInterface $request,

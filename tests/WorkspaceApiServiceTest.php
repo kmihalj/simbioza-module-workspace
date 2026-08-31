@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
-use AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceApiException;
-use AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceApiService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiException;
+use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Authn\AuthnHandlerInterface;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;

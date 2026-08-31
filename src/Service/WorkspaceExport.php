@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 /**
  * HR: Prenosi završni naziv i binarni sadržaj ZIP izvoza područja prema controlleru.

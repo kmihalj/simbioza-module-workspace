@@ -1,4 +1,4 @@
-# HeartPhrame Workspace Module
+# Simbioza Workspace Module
 
 [Hrvatska verzija](README_hr.md)
 
@@ -10,10 +10,10 @@ permissions, and hierarchical page tree.
 
 Required, in enable order:
 
-1. `aaieduhr/heartphrame-framework` (`dev-main`)
-2. `aaieduhr/heartphrame-module-orm` (`dev-main`)
-3. `aaieduhr/heartphrame-module-auth` (`dev-main`)
-4. `aaieduhr/heartphrame-module-workspace` (`dev-main`)
+1. `aaieduhr/heartphrame-framework` (`^0.0.24`)
+2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
+3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
+4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
 
 Optional integrations:
 
@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace:dev-main
+composer require aaieduhr/simbioza-module-workspace:^0.1.0
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -133,7 +133,7 @@ and response behavior.
 ## Installation
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace
+composer require aaieduhr/simbioza-module-workspace
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -141,7 +141,7 @@ vendor/bin/hph orm-migrate:up
 Add the package after Auth and ORM in `app.modules.enabled`:
 
 ```php
-'aaieduhr/heartphrame-module-workspace',
+'aaieduhr/simbioza-module-workspace',
 ```
 
 Copy `config/workspace.php` into the host application when its defaults need
@@ -436,6 +436,6 @@ personal notifications. Workspace does not depend on that optional module.
 
 ## Dependency policy
 
-The Framework and internal HeartPhrame modules are required from the moving
-`dev-main` branch. This module does not commit `composer.lock`; CI resolves
+The Framework is constrained to `^0.0.24` and internal modules to the
+compatible `^0.1.0` release line. This module does not commit `composer.lock`; CI resolves
 the latest development heads and runs the complete `composer on-commit` suite.

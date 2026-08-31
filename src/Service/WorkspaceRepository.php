@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;

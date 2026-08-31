@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\Contract\WorkspacePresentationProviderInterface;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspacePresentationProviderInterface;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
 use HeartPhrame\Localization\TranslatorInterface;
@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(WorkspacePresentationRegistry::class)]
 #[UsesClass(WorkspaceConfig::class)]
 #[UsesClass(WorkspaceRepository::class)]
-#[UsesClass(\AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 final class WorkspacePresentationRegistryTest extends TestCase
 {
     /** HR: Registry grupno primjenjuje provider i koristi aktivni jezik. EN: The registry applies a provider in a batch using the active locale. */

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleAuth\Middleware\RequireAuthenticatedUserMiddleware;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceExportController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceHomepageController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceMenuController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceSettingsController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceThemeController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

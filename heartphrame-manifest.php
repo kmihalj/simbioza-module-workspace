@@ -6,23 +6,25 @@ use AaiEduHr\HeartPhrameModuleAuth\Account\AuthAccountSectionRegistry;
 use AaiEduHr\HeartPhrameModuleAuth\Middleware\RequireAuthenticatedUserMiddleware;
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\Account\WorkspaceHomepageAccountSectionProvider;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceBackupController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceExportController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceHomepageController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceMenuController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceSettingsController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceThemeController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
-use AaiEduHr\HeartPhrameModuleWorkspace\Listener\SynchronizeWorkspaceBacklinks;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuIntegration;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRouteRegistrar;
+use AaiEduHr\SimbiozaModuleWorkspace\Account\WorkspaceHomepageAccountSectionProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceIntegrationRegistrarInterface;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\Listener\SynchronizeWorkspaceBacklinks;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuIntegration;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRouteRegistrar;
 use HeartPhrame\Bridge\ComposerBridge;
 use HeartPhrame\Command\CommandDefinition;
 use HeartPhrame\Config\ConfigInterface;
 use HeartPhrame\Event\EventListener;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
 return new class extends \HeartPhrame\Module\AbstractModuleManifest {
@@ -418,18 +420,18 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
             new CommandDefinition(
                 'workspace',
                 'Workspace module helper command.',
-                [\AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class, 'run'],
+                [\AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class, 'run'],
             ),
             new CommandDefinition(
                 'workspace:install-migration',
                 'Copy initial Workspace migration into the host application.',
-                [\AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class, 'installMigration'],
+                [\AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class, 'installMigration'],
             ),
             new CommandDefinition(
                 'workspace:install-homepage-migration',
                 'Copy the Workspace homepage upgrade migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installHomepageMigration',
                 ],
             ),
@@ -437,7 +439,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-homepage-view-options-migration',
                 'Copy the structured Workspace homepage-options migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installHomepageViewOptionsMigration',
                 ],
             ),
@@ -445,7 +447,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-themes-migration',
                 'Copy the Workspace private-theme upgrade migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installThemesMigration',
                 ],
             ),
@@ -453,7 +455,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-backlinks-migration',
                 'Copy the Workspace backlinks upgrade migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installBacklinksMigration',
                 ],
             ),
@@ -461,7 +463,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-node-labels-migration',
                 'Copy the Workspace page-label upgrade migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installNodeLabelsMigration',
                 ],
             ),
@@ -469,7 +471,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-node-properties-migration',
                 'Copy the Workspace structured-page-properties migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installNodePropertiesMigration',
                 ],
             ),
@@ -477,7 +479,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-node-direct-permissions-migration',
                 'Copy the Workspace direct-page-permissions migration into the host application.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installNodeDirectPermissionsMigration',
                 ],
             ),
@@ -485,7 +487,7 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'workspace:install-remove-owner-migration',
                 'Copy the migration that removes the obsolete Workspace owner.',
                 [
-                    \AaiEduHr\HeartPhrameModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
                     'installRemoveOwnerMigration',
                 ],
             ),
@@ -535,6 +537,22 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                     && $provider instanceof WorkspaceHomepageAccountSectionProvider
                 ) {
                     $registry->register($provider);
+                }
+            },
+            static function (ContainerInterface $container): void {
+                $registrarClass = 'AaiEduHr\\SimbiozaModuleUser\\Service\\SimbiozaUserIntegrationRegistrar';
+                if (!class_exists($registrarClass)) {
+                    return;
+                }
+
+                try {
+                    $registrar = $container->get($registrarClass);
+                    if ($registrar instanceof WorkspaceIntegrationRegistrarInterface) {
+                        $registrar->register();
+                    }
+                } catch (ContainerExceptionInterface) {
+                    // HR: Simbioza User će ponoviti registraciju ako se učitava nakon Workspacea.
+                    // EN: Simbioza User retries the registration when it loads after Workspace.
                 }
             },
         ];

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceShortsController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceShortsController;
 use HeartPhrame\Routing\Routes;
 
 use function ltrim;

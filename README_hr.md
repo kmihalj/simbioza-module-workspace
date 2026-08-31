@@ -1,4 +1,4 @@
-# HeartPhrame Workspace modul
+# Simbioza Workspace modul
 
 [English version](README.md)
 
@@ -10,10 +10,10 @@ prava i hijerarhijsko stablo stranica.
 
 Obavezno, redoslijedom uključivanja:
 
-1. `aaieduhr/heartphrame-framework` (`dev-main`)
-2. `aaieduhr/heartphrame-module-orm` (`dev-main`)
-3. `aaieduhr/heartphrame-module-auth` (`dev-main`)
-4. `aaieduhr/heartphrame-module-workspace` (`dev-main`)
+1. `aaieduhr/heartphrame-framework` (`^0.0.24`)
+2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
+3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
+4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
 
 Opcionalne integracije:
 
@@ -24,7 +24,7 @@ Opcionalne integracije:
 - API dodaje ACL Workspace resurse i rute za upravljanje stablom.
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace:dev-main
+composer require aaieduhr/simbioza-module-workspace:^0.1.0
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -137,7 +137,7 @@ Popis ruta i ponašanje odgovora nalaze se u
 ## Instalacija
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace
+composer require aaieduhr/simbioza-module-workspace
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -145,7 +145,7 @@ vendor/bin/hph orm-migrate:up
 Paket treba dodati nakon Auth i ORM modula u `app.modules.enabled`:
 
 ```php
-'aaieduhr/heartphrame-module-workspace',
+'aaieduhr/simbioza-module-workspace',
 ```
 
 Kopirajte `config/workspace.php` u host aplikaciju ako želite promijeniti
@@ -432,6 +432,5 @@ tom opcionalnom modulu.
 
 ## Politika ovisnosti
 
-Framework i interni HeartPhrame moduli zahtijevaju se s pomične grane
-`dev-main`. Ovaj modul ne sprema `composer.lock`; CI dohvaća najnovija
-razvojna stanja i pokreće cijeli skup provjera `composer on-commit`.
+Framework koristi `^0.0.24`, a interni moduli kompatibilnu liniju izdanja
+`^0.1.0`. Ovaj modul ne sprema `composer.lock`; CI dohvaća najnovija kompatibilna označena izdanja i pokreće cijeli skup provjera `composer on-commit`.

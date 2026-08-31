@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use RuntimeException;
 
 use function date;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * HR: Osobna Workspace naslovnica prikazana kroz modularni Auth profil.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeBridge;
 use HeartPhrame\Bridge\ComposerBridge;
 use HeartPhrame\Localization\TranslatorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;

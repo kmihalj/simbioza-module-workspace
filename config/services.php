@@ -4,53 +4,53 @@ declare(strict_types=1);
 
 use AaiEduHr\HeartPhrameModuleAuth\Backup\AuthBackupIdentityResolver;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\Account\WorkspaceHomepageAccountSectionProvider;
-use AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceApiExtension;
-use AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceApiService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceResourceController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Backup\WorkspaceScopedBackupProvider;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceBackupController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceExportController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceHomepageController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceMenuController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceSettingsController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceShortsController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Controller\WorkspaceThemeController;
-use AaiEduHr\HeartPhrameModuleWorkspace\Listener\SynchronizeWorkspaceBacklinks;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkIndexer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBreadcrumbService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceContentChangeBatch;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorAccess;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceDynamicContentService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportEditorBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceHomepageRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceHomepageService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceLinkExtractor;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMaintenanceBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMaintenanceService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuIntegration;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuNavigationTargetProvider;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceNotificationBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepositoryRequestCache;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRouteRegistrar;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceSettingsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceShortsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeArchiveService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeAssetLibrary;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Account\WorkspaceHomepageAccountSectionProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiExtension;
+use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiService;
+use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceResourceController;
+use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceScopedBackupProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceShortsController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
+use AaiEduHr\SimbiozaModuleWorkspace\Listener\SynchronizeWorkspaceBacklinks;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkIndexer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentChangeBatch;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorAccess;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDynamicContentService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLinkExtractor;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuIntegration;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuNavigationTargetProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceNotificationBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepositoryRequestCache;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRouteRegistrar;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceSettingsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceShortsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeArchiveService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeAssetLibrary;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\Authn\AuthnHandlerInterface;
 use HeartPhrame\Bridge\ComposerBridge;
@@ -463,7 +463,7 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                 $container->get(Database::class),
                 new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
                     'workspace',
-                    \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
+                    \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
                     2,
                     ['hr' => 'Područja, stabla i ovlasti', 'en' => 'Workspaces, trees, and permissions'],
                     ['auth', 'editor-html'],
@@ -473,51 +473,51 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                     componentGroups: [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupComponentGroup::WORKSPACES],
                 ),
                 [
-                    ['dataset' => 'workspaces', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACES, 'primary_key' => 'id', 'conflict_keys' => ['uuid'], 'preserve_primary_key' => false, 'identity_namespace' => 'workspace.workspace', 'foreign_keys' => [
+                    ['dataset' => 'workspaces', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACES, 'primary_key' => 'id', 'conflict_keys' => ['uuid'], 'preserve_primary_key' => false, 'identity_namespace' => 'workspace.workspace', 'foreign_keys' => [
                         ['column' => 'created_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'deleted_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
-                    ['dataset' => 'workspace-acl', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_ACL, 'primary_key' => 'id', 'conflict_keys' => ['workspace_id', 'subject_type', 'subject_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                    ['dataset' => 'workspace-acl', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_ACL, 'primary_key' => 'id', 'conflict_keys' => ['workspace_id', 'subject_type', 'subject_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'workspace_id', 'namespace' => 'workspace.workspace'],
                     ], 'polymorphic_foreign_keys' => [[
                         'column' => 'subject_id', 'type_column' => 'subject_type',
                         'namespaces' => ['user' => 'auth.user', 'group' => 'auth.group'],
                         'passthrough' => ['public', 'authenticated'],
                     ]]],
-                    ['dataset' => 'nodes', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODES, 'primary_key' => 'id', 'conflict_keys' => ['uuid'], 'preserve_primary_key' => false, 'identity_namespace' => 'workspace.node', 'foreign_keys' => [
+                    ['dataset' => 'nodes', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODES, 'primary_key' => 'id', 'conflict_keys' => ['uuid'], 'preserve_primary_key' => false, 'identity_namespace' => 'workspace.node', 'foreign_keys' => [
                         ['column' => 'workspace_id', 'namespace' => 'workspace.workspace'],
                         ['column' => 'parent_id', 'namespace' => 'workspace.node', 'nullable' => true, 'defer' => true],
                         ['column' => 'created_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
-                    ['dataset' => 'node-acl', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'subject_type', 'subject_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                    ['dataset' => 'node-acl', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'subject_type', 'subject_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'node_id', 'namespace' => 'workspace.node'],
                     ], 'polymorphic_foreign_keys' => [[
                         'column' => 'subject_id', 'type_column' => 'subject_type',
                         'namespaces' => ['user' => 'auth.user', 'group' => 'auth.group'],
                         'passthrough' => ['public', 'authenticated'],
                     ]]],
-                    ['dataset' => 'node-workflows', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'language_code'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                    ['dataset' => 'node-workflows', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'language_code'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'node_id', 'namespace' => 'workspace.node'],
                         ['column' => 'submitted_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'published_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'archived_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
-                    ['dataset' => 'homepage-settings', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS, 'primary_key' => 'id', 'conflict_keys' => ['id'], 'foreign_keys' => [
+                    ['dataset' => 'homepage-settings', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS, 'primary_key' => 'id', 'conflict_keys' => ['id'], 'foreign_keys' => [
                         ['column' => 'public_node_id', 'namespace' => 'workspace.node', 'nullable' => true, 'defer' => true],
                         ['column' => 'public_workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
                         ['column' => 'authenticated_node_id', 'namespace' => 'workspace.node', 'nullable' => true, 'defer' => true],
                         ['column' => 'authenticated_workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
-                    ['dataset' => 'user-homepages', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES, 'primary_key' => 'id', 'conflict_keys' => ['user_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                    ['dataset' => 'user-homepages', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES, 'primary_key' => 'id', 'conflict_keys' => ['user_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'user_id', 'namespace' => 'auth.user'],
                         ['column' => 'node_id', 'namespace' => 'workspace.node', 'defer' => true],
                         ['column' => 'workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
                     ]],
-                    ['dataset' => 'workspace-themes', 'table' => \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_THEMES, 'primary_key' => 'id', 'conflict_keys' => ['workspace_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                    ['dataset' => 'workspace-themes', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_THEMES, 'primary_key' => 'id', 'conflict_keys' => ['workspace_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         // HR: Područja su već uvezena prije privatnih tema, a
                         // workspace_id je obvezan. Izravno mapiranje sprječava
                         // privremeni NULL koji bi SQLite/PostgreSQL/MySQL
@@ -539,7 +539,7 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\FilesystemBackupProvi
             new \AaiEduHr\HeartPhrameModuleBackup\Service\FilesystemBackupProvider(
                 new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
                     'workspace-files',
-                    \AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
+                    \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
                     1,
                     ['hr' => 'Privatne teme područja', 'en' => 'Private workspace themes'],
                     ['workspace'],

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Contract;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Contract;
 
 /**
  * HR: Omogućuje izvedenom modulu da promijeni isključivo prikazne vrijednosti

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Command;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Command;
 
 use HeartPhrame\Config\ConfigInterface;
 use InvalidArgumentException;

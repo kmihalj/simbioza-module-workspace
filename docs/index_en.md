@@ -589,7 +589,7 @@ safety check repairs an interrupted event.
 ## 9. Installation and operation
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace
+composer require aaieduhr/simbioza-module-workspace
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```

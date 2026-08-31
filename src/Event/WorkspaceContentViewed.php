@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Event;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Event;
 
 /**
  * HR: Neutralni događaj uspješnog pregleda područja ili njegove stranice.

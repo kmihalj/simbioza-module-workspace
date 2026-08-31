@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Contract\WorkspacePresentationProviderInterface;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspacePresentationProviderInterface;
 use HeartPhrame\Localization\TranslatorInterface;
 
 use function array_values;

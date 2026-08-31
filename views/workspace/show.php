@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 // phpcs:disable Generic.WhiteSpace.ScopeIndent
 
@@ -338,7 +338,7 @@ $workflowIcon = static function (string $action): string {
                         </p>
                     <?php else : ?>
                         <?= $this->forModulePartial(
-                            'aaieduhr/heartphrame-module-workspace',
+                            'aaieduhr/simbioza-module-workspace',
                             'workspace/tree',
                             [
                                 'nodes' => $tree,

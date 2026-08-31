@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace;
+namespace AaiEduHr\SimbiozaModuleWorkspace;
 
 /**
- * @see \AaiEduHr\HeartPhrameModuleWorkspace\Tests\ModuleWorkspaceTest
+ * @see \AaiEduHr\SimbiozaModuleWorkspace\Tests\ModuleWorkspaceTest
  */
 final class ModuleWorkspace
 {
-    public const PACKAGE_NAME = 'aaieduhr/heartphrame-module-workspace';
+    public const PACKAGE_NAME = 'aaieduhr/simbioza-module-workspace';
 
     public const TABLE_WORKSPACES = 'workspaces';
 

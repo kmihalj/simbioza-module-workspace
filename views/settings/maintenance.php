@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * HR: Administratorski pregled zauzeća i nepovratno održavanje sadržaja.

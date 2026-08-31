@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 
 return new class implements ReversibleMigrationInterface {
     /** HR: Dodaje prenosive izvorne oznake stranica za importe i integracije. EN: Adds portable source page labels for imports and integrations. */

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Account;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Account;
 
 use AaiEduHr\HeartPhrameModuleAuth\Account\AuthAccountSectionProviderInterface;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceHomepageService;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
 use HeartPhrame\Routing\UrlGenerator;
 
 /**

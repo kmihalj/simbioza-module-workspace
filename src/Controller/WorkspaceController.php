@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Controller;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Controller;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentViewed;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBreadcrumbService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMenuService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceNotificationBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentViewed;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceNotificationBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Alert\Alert;
 use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\CodeBook\AlertLevelEnum;

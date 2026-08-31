@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspacePermanentlyDeleting;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePermanentlyDeleting;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;

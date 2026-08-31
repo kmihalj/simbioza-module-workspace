@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
 use PHPUnit\Framework\Attributes\CoversNothing;

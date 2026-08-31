@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * HR: Administratorska postavka naslovnice aplikacije unutar grupe Područja.

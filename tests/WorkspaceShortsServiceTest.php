@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceEditorBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceShortsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceShortsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Authn\AuthnHandlerInterface;
 use HeartPhrame\Bridge\ComposerBridge;
 use HeartPhrame\Config\Config;

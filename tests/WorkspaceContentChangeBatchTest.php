@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceContentChangeBatch;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentChangeBatch;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;

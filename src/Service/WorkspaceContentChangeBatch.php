@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;

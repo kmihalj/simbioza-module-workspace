@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
 use PHPUnit\Framework\Attributes\CoversClass;

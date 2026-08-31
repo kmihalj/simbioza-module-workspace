@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceLinkExtractor;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLinkExtractor;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
 use PHPUnit\Framework\Attributes\CoversClass;

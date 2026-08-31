@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Controller;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Controller;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBreadcrumbService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceShortsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceShortsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Localization\TranslatorInterface;
 use HeartPhrame\Routing\UrlGenerator;
 use Psr\Http\Message\ResponseInterface;

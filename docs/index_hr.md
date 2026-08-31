@@ -577,7 +577,7 @@ eventualno prekinut događaj.
 ## 9. Instalacija i rad
 
 ```bash
-composer require aaieduhr/heartphrame-module-workspace
+composer require aaieduhr/simbioza-module-workspace
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```

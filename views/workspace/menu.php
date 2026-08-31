@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * HR: View za uređivanje dvaju potpuno odvojenih posebnih menija jednog područja.

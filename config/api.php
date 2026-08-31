@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 return [
     'module' => 'workspace',
-    'extension' => \AaiEduHr\HeartPhrameModuleWorkspace\Api\WorkspaceApiExtension::class,
+    'extension' => \AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiExtension::class,
     'resources' => [
         'workspace' => [
             'label' => ['hr' => 'Područja', 'en' => 'Workspaces'],

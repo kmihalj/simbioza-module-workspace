@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Service;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use HeartPhrame\Config\ConfigInterface;
 use HeartPhrame\Http\ResponseFactory;
 use HeartPhrame\View\View;
@@ -78,8 +78,8 @@ final readonly class WorkspaceModuleViewRenderer
 
         foreach (
             [
-                'modules/heartphrame-module-workspace/' . $view,
-                'modules/aaieduhr/heartphrame-module-workspace/' . $view,
+                'modules/simbioza-module-workspace/' . $view,
+                'modules/aaieduhr/simbioza-module-workspace/' . $view,
             ] as $candidate
         ) {
             if (is_file($viewsRoot . '/' . $candidate . '.php')) {

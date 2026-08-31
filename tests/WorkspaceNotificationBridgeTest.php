@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceNotificationBridge;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceWorkflowService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceNotificationBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Authn\AuthnHandlerInterface;
 use HeartPhrame\Config\Config;
 use HeartPhrame\Helper\Helper;
@@ -26,7 +26,7 @@ use RuntimeException;
 #[UsesClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceConfig::class)]
 #[UsesClass(WorkspaceRepository::class)]
-#[UsesClass(\AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 #[UsesClass(WorkspaceWorkflowService::class)]
 final class WorkspaceNotificationBridgeTest extends TestCase
 {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Controller;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Controller;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceMaintenanceService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspacePresentationRegistry;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceSettingsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspacePresentationRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceSettingsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Alert\Alert;
 use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\CodeBook\AlertLevelEnum;

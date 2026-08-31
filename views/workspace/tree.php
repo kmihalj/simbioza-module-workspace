@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * @var \HeartPhrame\View\View $this
@@ -133,7 +133,7 @@ $containsActiveNode = static function (
             >
             <?php if ($childrenLoaded) : ?>
                 <?= $this->forModulePartial(
-                    'aaieduhr/heartphrame-module-workspace',
+                    'aaieduhr/simbioza-module-workspace',
                     'workspace/tree',
                     [
                         'nodes' => $children,

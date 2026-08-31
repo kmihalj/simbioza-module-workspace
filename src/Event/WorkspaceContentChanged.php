@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Event;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Event;
 
 /**
  * HR: Objavljuje neutralnu obavijest da se promijenio sadržaj područja koji

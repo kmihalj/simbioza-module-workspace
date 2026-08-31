@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Controller;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Controller;
 
 use AaiEduHr\HeartPhrameModuleBackup\Exception\BackupException;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupConfig;
@@ -12,10 +12,10 @@ use AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupUploadService;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceModuleViewRenderer;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use HeartPhrame\Http\ResponseFactory;
 use HeartPhrame\Routing\UrlGenerator;
 use HeartPhrame\Session\SessionInterface;

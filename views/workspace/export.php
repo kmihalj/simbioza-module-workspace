@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 // phpcs:disable Generic.Files.LineLength.TooLong -- Translation keys remain literal for catalogue auditing.
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * @var \HeartPhrame\View\View $this

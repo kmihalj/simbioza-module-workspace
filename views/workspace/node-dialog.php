@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 // phpcs:disable Generic.Files.LineLength,Generic.WhiteSpace.ScopeIndent
 
@@ -86,7 +86,7 @@ $hasPermission = static function (
             <input type="hidden" name="return_context" value="workspace">
             <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
             <?= $this->forModulePartial(
-                'aaieduhr/heartphrame-module-workspace',
+                'aaieduhr/simbioza-module-workspace',
                 'workspace/node-fields',
                 [
                     'node' => $node,
@@ -129,7 +129,7 @@ $hasPermission = static function (
                     <div class="vstack gap-2" data-workspace-page-property-rows>
                         <?php foreach ($properties as $property) : ?>
                             <?= $this->forModulePartial(
-                                'aaieduhr/heartphrame-module-workspace',
+                                'aaieduhr/simbioza-module-workspace',
                                 'workspace/node-property-row',
                                 ['property' => is_array($property) ? $property : []],
                             ) ?>
@@ -146,7 +146,7 @@ $hasPermission = static function (
                     </button>
                     <template data-workspace-page-property-template>
                         <?= $this->forModulePartial(
-                            'aaieduhr/heartphrame-module-workspace',
+                            'aaieduhr/simbioza-module-workspace',
                             'workspace/node-property-row',
                             ['property' => ['label' => '', 'type' => 'text', 'value' => '']],
                         ) ?>

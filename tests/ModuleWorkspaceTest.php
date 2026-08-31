@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Tests;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +17,7 @@ final class ModuleWorkspaceTest extends TestCase
      */
     public function testPackageNameIsStable(): void
     {
-        $this->assertSame('aaieduhr/heartphrame-module-workspace', ModuleWorkspace::PACKAGE_NAME);
+        $this->assertSame('aaieduhr/simbioza-module-workspace', ModuleWorkspace::PACKAGE_NAME);
         $this->assertSame(
             'workspace_homepage_settings',
             ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,

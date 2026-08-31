@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Listener;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Listener;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Event\WorkspaceContentChanged;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceBacklinkIndexer;
+use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkIndexer;
 use Psr\Log\LoggerInterface;
 use Throwable;
 

@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Api;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Api;
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceAccessService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExport;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportSelectionException;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceExportService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceHomepageService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceShortsService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeArchiveService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceThemeService;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExport;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportSelectionException;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceShortsService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeArchiveService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**

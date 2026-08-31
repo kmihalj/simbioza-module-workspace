@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Api;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Api;
 
 use RuntimeException;
 

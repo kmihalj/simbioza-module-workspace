@@ -1,6 +1,6 @@
 {
-    "name": "aaieduhr/heartphrame-module-workspace",
-    "description": "Workspace and hierarchical content organization module for HeartPhrame",
+    "name": "aaieduhr/simbioza-module-workspace",
+    "description": "Workspace and hierarchical content organization module for Simbioza",
     "type": "heartphrame-module",
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -20,18 +20,18 @@
         },
         {
             "type": "vcs",
-            "url": "https://github.com/kmihalj/heartphrame-module-backup.git"
+            "url": "https://gitlab.opencode.hr/srce/aai-eduhr/heartphrame/heartphrame-module-backup.git"
         },
         {
             "type": "vcs",
-            "url": "https://github.com/kmihalj/heartphrame-module-API.git"
+            "url": "https://gitlab.opencode.hr/srce/aai-eduhr/heartphrame/heartphrame-module-api.git"
         }
     ],
     "require": {
         "php": ">=8.2",
-        "aaieduhr/heartphrame-framework": "dev-main",
-        "aaieduhr/heartphrame-module-auth": "dev-main",
-        "aaieduhr/heartphrame-module-orm": "dev-main"
+        "aaieduhr/heartphrame-framework": "^0.0.24",
+        "aaieduhr/heartphrame-module-auth": "^0.1.0",
+        "aaieduhr/heartphrame-module-orm": "^0.1.0"
     },
     "suggest": {
         "aaieduhr/heartphrame-module-backup": "Adds complete site backup and scoped Workspace backup/import with ACL, trees, themes, and related content.",
@@ -43,8 +43,8 @@
         "aaieduhr/heartphrame-module-theme": "Adds isolated per-Workspace themes and includes them in portable HTML exports."
     },
     "require-dev": {
-        "aaieduhr/heartphrame-module-api": "dev-main",
-        "aaieduhr/heartphrame-module-backup": "dev-main",
+        "aaieduhr/heartphrame-module-api": "^0.1.0",
+        "aaieduhr/heartphrame-module-backup": "^0.1.0",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^10 || ^11",
         "rector/rector": "^2.0",
@@ -53,12 +53,12 @@
     },
     "autoload": {
         "psr-4": {
-            "AaiEduHr\\HeartPhrameModuleWorkspace\\": "src/"
+            "AaiEduHr\\SimbiozaModuleWorkspace\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "AaiEduHr\\HeartPhrameModuleWorkspace\\Tests\\": "tests/"
+            "AaiEduHr\\SimbiozaModuleWorkspace\\Tests\\": "tests/"
         },
         "exclude-from-classmap": [
             "tests/Fixtures/OptionalNotificationService.php"
@@ -100,5 +100,10 @@
             "vendor/bin/phpstan analyze -c phpstan-dev.neon --memory-limit=1024M",
             "vendor/bin/phpunit"
         ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 // phpcs:disable Generic.WhiteSpace.ScopeIndent,PSR12.ControlStructures.ControlStructureSpacing
 
@@ -186,7 +186,7 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
                     <input type="hidden" name="return_context" value="workspace">
                     <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
                     <?= $this->forModulePartial(
-                        'aaieduhr/heartphrame-module-workspace',
+                        'aaieduhr/simbioza-module-workspace',
                         'workspace/node-fields',
                         [
                             'node' => ['node_type' => 'internal_link'],

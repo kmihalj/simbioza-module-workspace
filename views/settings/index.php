@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceValue;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 // phpcs:disable Generic.WhiteSpace.ScopeIndent,Squiz.ControlStructures.ControlSignature,Generic.Files.LineLength
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Backup;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Backup;
 
 use AaiEduHr\HeartPhrameModuleAuth\Backup\AuthBackupIdentityResolver;
 use AaiEduHr\HeartPhrameModuleBackup\Contract\BackupCommitAwareProviderInterface;
@@ -19,9 +19,9 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupValue;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
-use AaiEduHr\HeartPhrameModuleWorkspace\ModuleWorkspace;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceConfig;
-use AaiEduHr\HeartPhrameModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
 
 /**
  * HR: Prenosivi backup jednog područja, njegova stabla, workflowa, ACL-a i

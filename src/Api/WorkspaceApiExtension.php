@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AaiEduHr\HeartPhrameModuleWorkspace\Api;
+namespace AaiEduHr\SimbiozaModuleWorkspace\Api;
 
 use AaiEduHr\HeartPhrameModuleApi\Contract\ApiExtensionInterface;
 use AaiEduHr\HeartPhrameModuleApi\Contract\ApiRouteRegistry;
@@ -11,7 +11,7 @@ use AaiEduHr\HeartPhrameModuleApi\Contract\ApiRouteRegistry;
  * HR: Oglašava Workspace API rute generičkoj API jezgri.
  *
  * EN: Advertises Workspace API routes to the generic API core.
- * @see \AaiEduHr\HeartPhrameModuleWorkspace\Tests\Api\WorkspaceApiExtensionTest
+ * @see \AaiEduHr\SimbiozaModuleWorkspace\Tests\Api\WorkspaceApiExtensionTest
  */
 final readonly class WorkspaceApiExtension implements ApiExtensionInterface
 {
