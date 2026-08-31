@@ -14,8 +14,9 @@
 
 .workspace-sidebar {
     position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
+    top: calc(var(--hph-sticky-stack-height, 0px) + 1rem);
+    max-height: calc(100vh - var(--hph-sticky-stack-height, 0px) - 2rem);
+    max-height: calc(100dvh - var(--hph-sticky-stack-height, 0px) - 2rem);
     min-height: 0;
 }
 

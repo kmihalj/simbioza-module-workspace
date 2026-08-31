@@ -255,6 +255,14 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString("'breadcrumbs' => \$breadcrumbs", $controller);
         $this->assertStringContainsString('.workspace-shorts-shell > .workspace-sidebar', $css);
         $this->assertStringContainsString('.workspace-shorts-shell > .workspace-shorts-main', $css);
+        $this->assertStringContainsString(
+            'top: calc(var(--hph-sticky-stack-height, 0px) + 1rem);',
+            $css,
+        );
+        $this->assertStringContainsString(
+            'max-height: calc(100dvh - var(--hph-sticky-stack-height, 0px) - 2rem);',
+            $css,
+        );
         $this->assertStringContainsString('grid-row: 2;', $css);
         $this->assertLessThan(
             strpos($view, 'id="workspace-page-tree"'),

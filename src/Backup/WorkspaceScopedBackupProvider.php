@@ -406,9 +406,13 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             $record['description_translations'] ?? null,
             is_scalar($record['description'] ?? null) ? (string)$record['description'] : '',
         );
-        if ($context->conflictMode === BackupImportContext::CONFLICT_COPY) {
+        $workspaceOptions = $context->optionsFor(self::ID);
+        if (
+            $context->conflictMode === BackupImportContext::CONFLICT_COPY
+            && ($workspaceOptions['preserve_name_on_copy'] ?? false) !== true
+        ) {
             $nameTranslations[$this->config->siteDefaultLanguage()] = BackupValue::string(
-                $context->optionsFor(self::ID)['name']
+                $workspaceOptions['name']
                     ?? (BackupValue::string($record['name'], 'workspace.name') . ' (copy)'),
                 'workspace.name',
             );
