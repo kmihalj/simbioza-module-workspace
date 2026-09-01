@@ -31,6 +31,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceIndexService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLinkExtractor;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceService;
@@ -72,6 +73,8 @@ $services = [
                 $container->get(WorkspaceRepository::class),
                 $container->get(WorkspaceConfig::class),
             ),
+
+    WorkspaceIndexService::class => static fn(): WorkspaceIndexService => new WorkspaceIndexService(),
 
     WorkspaceConfig::class => static fn(ContainerInterface $container): WorkspaceConfig =>
         new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__)),
@@ -350,6 +353,7 @@ $services = [
             $container->get(WorkspaceBreadcrumbService::class),
             $container->get(WorkspaceBacklinkService::class),
             $container->get(WorkspacePresentationRegistry::class),
+            $container->get(WorkspaceIndexService::class),
             $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
             $container->get(LoggerInterface::class),
         ),

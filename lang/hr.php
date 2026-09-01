@@ -817,4 +817,14 @@ return [
     'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.' =>
         'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.',
     'Jezik opisa' => 'Jezik opisa',
+    'Administratorski pregled osobnih područja odvojen od ostalih područja.' =>
+        'Administratorski pregled osobnih područja odvojen od ostalih područja.',
+    'Dostupna osobna područja' => 'Dostupna osobna područja',
+    'Nema osobnih područja.' => 'Nema osobnih područja.',
+    'Osobna područja' => 'Osobna područja',
+    'Prethodna stranica' => 'Prethodna stranica',
+    'Prikazano %d–%d od %d područja.' => 'Prikazano %d–%d od %d područja.',
+    'Sljedeća stranica' => 'Sljedeća stranica',
+    'Stranice područja' => 'Stranice područja',
+    'Sva ostala područja' => 'Sva ostala područja',
 ];

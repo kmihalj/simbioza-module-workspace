@@ -39,6 +39,19 @@
     color: var(--hph-content-card-text, var(--bs-body-color, #212529));
 }
 
+/*
+ * HR: Tuđa osobna područja ostaju u kompaktnom izborniku koji ne može ponovno
+ *     rastegnuti cijelu stranicu kada korisnik ima pristup velikom broju njih.
+ * EN: Other users' personal Workspaces stay in a compact menu that cannot grow
+ *     the complete page again when the actor can access many of them.
+ */
+.workspace-personal-dropdown {
+    max-height: min(28rem, 65vh);
+    max-width: min(32rem, calc(100vw - 2rem));
+    min-width: min(22rem, calc(100vw - 2rem));
+    overflow-y: auto;
+}
+
 .workspace-tree-card .card-body {
     display: flex;
     flex-direction: column;

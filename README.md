@@ -36,6 +36,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
 - built-in **Public** and **All signed-in users** audiences plus restricted Workspaces
 - user and group permissions: view, add, edit, publish, delete, and manage
 - asynchronous Auth-directory search without listing every user and group
+- paginated Workspace directory with optional presentation-based separation of
+  personal Workspaces, while preserving the current user's own space and ACL
 - page-level restrictions inherited by every descendant
 - ACL-filtered Workspace Shorts with rendered article excerpts, depth, count, and ordering controls
 - hierarchical document, internal-link, and external-link nodes
@@ -105,6 +107,13 @@ resumes the saved job instead of repeating a long blocking request.
 - `aaieduhr/heartphrame-module-orm`
 
 The HTML editor, API, Menu, Notification, and E-mail modules are optional integrations.
+
+The public Workspace directory renders 25 rows per page. Optional presentation
+providers may mark personal Workspaces and provide their stable owner user ID.
+Administrators then receive a separate **Personal Workspaces** view, while a
+regular user's own personal Workspace remains in the main directory and only
+other personal Workspaces already allowed by Workspace ACL appear in a compact
+dropdown.
 
 When Menu is enabled, Workspace also registers live navigation destinations in
 the shared editor catalog. All four menu editors show active areas and their

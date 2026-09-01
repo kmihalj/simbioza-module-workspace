@@ -10,6 +10,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceIndexService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceNotificationBridge;
@@ -71,6 +72,7 @@ final readonly class WorkspaceController
         private WorkspaceBreadcrumbService $breadcrumbs,
         private WorkspaceBacklinkService $backlinks,
         private WorkspacePresentationRegistry $presentations,
+        private WorkspaceIndexService $workspaceIndex,
         private EventDispatcherInterface $events,
         private LoggerInterface $logger,
     ) {
@@ -80,18 +82,37 @@ final readonly class WorkspaceController
      * HR: Prikazuje javna i korisniku dodijeljena područja.
      * EN: Displays public workspaces and workspaces assigned to the current user.
      */
-    public function index(): ResponseInterface
+    public function index(ServerRequestInterface $request): ResponseInterface
     {
         $tablesReady = $this->repository->tablesReady();
+        $user = $this->access->currentUser();
+        $isAdministrator = $this->access->isAdministrator($user);
+        $query = $request->getQueryParams();
+        $requestedPage = is_numeric($query['page'] ?? null) ? (int)$query['page'] : 1;
+        $personalMode = $isAdministrator && $this->stringValue($query['personal'] ?? '') === '1';
+        $prepared = $this->workspaceIndex->prepare(
+            $tablesReady ? $this->decorateWorkspaces($this->access->visibleWorkspaces($user)) : [],
+            $user,
+            $isAdministrator,
+            $personalMode,
+            $requestedPage,
+        );
+        $indexPath = $this->pathFor('workspace.index', '/workspaces');
 
         return $this->viewRenderer->render('workspace/index', [
-            'title' => __('Područja'),
+            'title' => $prepared['personal_mode'] ? __('Osobna područja') : __('Područja'),
             'tablesReady' => $tablesReady,
-            'workspaces' => $tablesReady ? $this->decorateWorkspaces($this->access->visibleWorkspaces()) : [],
+            'workspaces' => $prepared['items'],
+            'otherPersonalWorkspaces' => $prepared['other_personal_workspaces'],
+            'personalWorkspaceCount' => $prepared['personal_workspace_count'],
+            'personalMode' => $prepared['personal_mode'],
+            'pagination' => $prepared,
+            'indexPath' => $indexPath,
+            'personalPath' => $indexPath . '?personal=1',
             'canCreateWorkspace' => $tablesReady && $this->access->canCreateWorkspace(),
             'managePath' => $this->pathFor('workspace.manage', '/workspaces/manage'),
             'settingsPath' => $this->pathFor('workspace.settings', '/settings/workspaces'),
-            'isAdministrator' => $this->access->isAdministrator(),
+            'isAdministrator' => $isAdministrator,
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
         ]);
     }

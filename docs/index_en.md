@@ -129,6 +129,14 @@ listed Workspace are loaded in one query, while the administrator fast path
 does not read ACL rows it cannot need. Adding Workspaces therefore does not
 create an ACL query-per-row pattern.
 
+The main directory renders 25 Workspaces per page with a bounded page-number
+window. When an optional presentation provider marks personal Workspaces and
+their stable owner IDs, the administrator directory separates them behind a
+**Personal Workspaces** button. A regular user's own personal Workspace remains
+in the main directory, while other personal Workspaces that already passed the
+same ACL filter appear in a separate dropdown. A personal marker never bypasses
+Workspace ACL.
+
 Those calculated results live for one request only. After saving Workspace or
 node ACL entries, the controller explicitly clears the short-lived cache, so a
 later check in the same request also sees the new permissions.

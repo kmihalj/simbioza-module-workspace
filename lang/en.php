@@ -818,4 +818,14 @@ return [
     'Naziv na primarnom jeziku (%s) je obvezan i koristi se kao zamjenski.' =>
         'The name in the primary language (%s) is required and is used as the fallback.',
     'Jezik opisa' => 'Description language',
+    'Administratorski pregled osobnih područja odvojen od ostalih područja.' =>
+        'Administrator view of personal Workspaces, separated from other Workspaces.',
+    'Dostupna osobna područja' => 'Accessible personal Workspaces',
+    'Nema osobnih područja.' => 'There are no personal Workspaces.',
+    'Osobna područja' => 'Personal Workspaces',
+    'Prethodna stranica' => 'Previous page',
+    'Prikazano %d–%d od %d područja.' => 'Showing %d–%d of %d Workspaces.',
+    'Sljedeća stranica' => 'Next page',
+    'Stranice područja' => 'Workspace pages',
+    'Sva ostala područja' => 'All other Workspaces',
 ];

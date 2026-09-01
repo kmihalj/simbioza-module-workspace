@@ -1,5 +1,12 @@
 # Simbioza Workspace modul
 
+Javni popis područja prikazuje 25 redaka po stranici. Opcionalni presentation
+provideri mogu označiti osobna područja i dati stabilni ID njihova vlasnika.
+Administrator tada dobiva odvojen pregled **Osobna područja**, dok vlastito
+osobno područje običnog korisnika ostaje u glavnom popisu. Tuđa osobna područja
+pojavljuju se u kompaktnom padajućem izborniku samo ako ih je Workspace ACL već
+dopustio tom korisniku.
+
 [English version](README.md)
 
 Workspace modul organizira povezani sadržaj u **Područja** (`Workspaces` na

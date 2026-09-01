@@ -125,6 +125,13 @@ običnog korisnika učitavaju se jednim upitom, dok administratorski brzi put ne
 čita ACL retke koji mu ne mogu trebati. Dodavanje Područja zato ne stvara ACL
 upit za svaki red popisa.
 
+Glavni popis prikazuje 25 područja po stranici i ima ograničen prozor brojeva
+stranica. Ako opcionalni presentation provider označi osobna područja i njihov
+stabilni ID vlasnika, administratorski glavni popis ih izdvaja iza gumba
+**Osobna područja**. Običnom korisniku vlastito osobno područje ostaje u glavnom
+popisu, a tuđa osobna područja koja su već prošla isti ACL filtar pojavljuju se
+u zasebnom padajućem izborniku. Oznaka osobnog područja nikada ne zaobilazi ACL.
+
 Rezultati tog izračuna vrijede samo tijekom jednog zahtjeva. Nakon spremanja
 Workspace ili čvornog ACL-a controller izričito prazni kratkotrajni cache, pa
 sljedeća provjera u istom zahtjevu također vidi nova prava.
