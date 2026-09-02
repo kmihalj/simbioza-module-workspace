@@ -312,6 +312,7 @@ final class WorkspaceAccessService
         }
 
         $directByNode = [];
+        $groupIds = $this->groupIds($userId);
         if ($userId > 0) {
             foreach ($this->repository->nodeDirectPermissionRowsForNodes($nodeIds, $userId) as $row) {
                 $directNodeId = WorkspaceValue::int($row['node_id'] ?? 0);
@@ -328,6 +329,7 @@ final class WorkspaceAccessService
                 $this->ancestorIdsFromParentMap($nodeId, $parentIds),
                 $rowsByNode,
                 $userId,
+                $groupIds,
             );
             $permissions[$nodeId] = $this->applyArchivedReadOnly(
                 $workspace,
@@ -413,6 +415,7 @@ final class WorkspaceAccessService
                     $ancestorIds,
                     $rowsByNode,
                     $userId,
+                    $groupsByUser[$userId] ?? [],
                 );
                 $permissions = $this->applyArchivedReadOnly(
                     $workspace,
@@ -996,6 +999,7 @@ final class WorkspaceAccessService
      * @param array<string, bool> $permissions
      * @param list<int> $ancestorIds
      * @param array<int, list<array<string, mixed>>> $rowsByNode
+     * @param list<int> $groupIds
      * @return array<string, bool>
      */
     private function restrictPermissionsFromRows(
@@ -1003,10 +1007,48 @@ final class WorkspaceAccessService
         array $ancestorIds,
         array $rowsByNode,
         int $userId,
+        array $groupIds = [],
     ): array {
         foreach ($ancestorIds as $ancestorId) {
             $restrictionRows = $rowsByNode[$ancestorId] ?? [];
             if ($restrictionRows === []) {
+                continue;
+            }
+
+            $hasImportedDefault = false;
+            foreach ($restrictionRows as $row) {
+                if (
+                    WorkspaceValue::string($row['subject_type'] ?? '')
+                        === WorkspaceRepository::SUBJECT_PUBLIC
+                    && WorkspaceValue::int($row['subject_id'] ?? 0)
+                        === WorkspaceRepository::BUILT_IN_SUBJECT_ID
+                ) {
+                    $hasImportedDefault = true;
+                    break;
+                }
+            }
+
+            if ($hasImportedDefault) {
+                $allowedAtNode = $this->emptyPermissions();
+                foreach ($restrictionRows as $row) {
+                    $type = WorkspaceValue::string($row['subject_type'] ?? '');
+                    $subjectId = WorkspaceValue::int($row['subject_id'] ?? 0);
+                    $matches = ($type === WorkspaceRepository::SUBJECT_PUBLIC
+                            && $subjectId === WorkspaceRepository::BUILT_IN_SUBJECT_ID)
+                    || ($type === WorkspaceRepository::SUBJECT_USER && $subjectId === $userId)
+                    || ($type === WorkspaceRepository::SUBJECT_GROUP && in_array($subjectId, $groupIds, true));
+                    if ($matches) {
+                        $allowedAtNode = $this->unionPermissions(
+                            $allowedAtNode,
+                            $this->permissionsFromRow($row),
+                        );
+                    }
+                }
+
+                foreach (self::PERMISSION_KEYS as $permission) {
+                    $permissions[$permission] = $permissions[$permission] && $allowedAtNode[$permission];
+                }
+
                 continue;
             }
 

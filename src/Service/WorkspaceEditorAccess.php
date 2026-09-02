@@ -7,8 +7,11 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 use HeartPhrame\Routing\UrlGenerator;
 
 use function array_key_exists;
+use function array_values;
 use function in_array;
 use function is_array;
+use function max;
+use function strtolower;
 use function trim;
 
 final class WorkspaceEditorAccess
@@ -531,6 +534,32 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * HR: Razrješava prenosivi par slugova područja i stranice u Editorov
+     *     dokument. Metoda ne zaobilazi ACL: pozivatelj i dalje mora provjeriti
+     *     pravo čitanja ili promjene nad vraćenim dokumentom.
+     * EN: Resolves a portable workspace/page slug pair to its Editor document.
+     *     This method does not bypass ACL; callers must still check read or
+     *     change access for the returned document.
+     */
+    public function documentKeyForPage(string $workspaceSlug, string $nodeSlug): string
+    {
+        $workspace = $this->repository->findWorkspaceBySlug(trim($workspaceSlug));
+        if (!is_array($workspace)) {
+            return '';
+        }
+
+        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+        $node = $workspaceId > 0
+        ? $this->repository->findNodeBySlug($workspaceId, trim($nodeSlug))
+        : null;
+        if (!is_array($node)) {
+            return '';
+        }
+
+        return WorkspaceValue::string($node['document_key'] ?? '');
+    }
+
+    /**
      * HR: Vraća true kada dokument pripada aktivnom Workspace čvoru.
      * EN: Returns true when a document belongs to an active Workspace node.
      */
@@ -644,6 +673,75 @@ final class WorkspaceEditorAccess
             WorkspaceValue::int($context['node']['id'] ?? 0),
             $language,
         );
+    }
+
+    /**
+     * HR: Skupno vraća objavljene verzije Workspace dokumenata. Dokumenti koji
+     *     ne pripadaju Workspaceu nisu u rezultatu, a neobjavljeni imaju vrijednost nula.
+     * EN: Batch-returns published versions for Workspace documents. Standalone
+     *     documents are absent while unpublished Workspace documents map to zero.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string,int>
+     */
+    public function publicationVersionMap(array $documentKeys, string $language): array
+    {
+        $contexts = [];
+        $missingDocumentKeys = [];
+        foreach ($documentKeys as $documentKey) {
+            $documentKey = trim((string)$documentKey);
+            if ($documentKey === '') {
+                continue;
+            }
+
+            if (array_key_exists($documentKey, $this->documentContextCache)) {
+                $context = $this->documentContextCache[$documentKey];
+                if (is_array($context)) {
+                    $contexts[$documentKey] = $context;
+                }
+
+                continue;
+            }
+
+            $missingDocumentKeys[] = $documentKey;
+        }
+
+        if ($missingDocumentKeys !== []) {
+            $contexts += $this->repository->documentContextsByKeys($missingDocumentKeys);
+        }
+
+        $nodeIds = [];
+        foreach ($contexts as $documentKey => $context) {
+            $documentKey = trim((string)$documentKey);
+            $node = $context['node'] ?? null;
+            if ($documentKey === '' || !is_array($node)) {
+                continue;
+            }
+
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            if ($nodeId <= 0) {
+                continue;
+            }
+
+            $this->documentContextCache[$documentKey] = $context;
+            $nodeIds[$documentKey] = $nodeId;
+        }
+
+        $workflows = $this->repository->nodeWorkflowsForNodes(array_values($nodeIds), $language);
+        $versions = [];
+        foreach ($nodeIds as $documentKey => $nodeId) {
+            $workflow = $workflows[$nodeId] ?? null;
+            $status = is_array($workflow)
+            ? strtolower(WorkspaceValue::string($workflow['status'] ?? ''))
+            : '';
+            $version = is_array($workflow) && $status !== WorkspaceWorkflowService::STATUS_ARCHIVED
+            ? WorkspaceValue::int($workflow['published_version_number'] ?? 0)
+            : 0;
+            $versions[$documentKey] = max(0, $version);
+            $this->publicationVersionCache[$documentKey . '|' . $language] = $versions[$documentKey];
+        }
+
+        return $versions;
     }
 
     /**

@@ -2309,8 +2309,12 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Zamjenjuje ograničenja čvora samo subjektima koji već imaju Workspace ACL zapis.
-     * EN: Replaces node restrictions only for subjects already present in the Workspace ACL.
+     * HR: Zamjenjuje ograničenja čvora. Uobičajeno korisničko sučelje sprema
+     *     samo korisnike, dok kontrolirani uvoz smije dodati `public` zadani
+     *     red i izričite korisničke ili grupne iznimke za zatvoreni allowlist.
+     * EN: Replaces node restrictions. The regular UI stores users only, while
+     *     a controlled import may add a `public` default row plus explicit user
+     *     or group exceptions for a fail-closed allowlist.
      *
      * @param array<string, mixed> $acl
      */
@@ -2335,55 +2339,85 @@ final readonly class WorkspaceRepository
             $eligible[$this->intValue($subject['subject_id'] ?? 0)] = $subject;
         }
 
+        $hasImportedDefault = is_array($acl[self::SUBJECT_PUBLIC] ?? null)
+        && isset($acl[self::SUBJECT_PUBLIC][self::BUILT_IN_SUBJECT_ID]);
+        $requestedGroupIds = [];
+        if ($hasImportedDefault && is_array($acl[self::SUBJECT_GROUP] ?? null)) {
+            foreach (array_keys($acl[self::SUBJECT_GROUP]) as $subjectId) {
+                $subjectId = $this->intValue($subjectId);
+                if ($subjectId > 0) {
+                    $requestedGroupIds[] = $subjectId;
+                }
+            }
+        }
+
+        $activeGroups = $this->groupsByIds($requestedGroupIds);
+
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
             ->where('node_id', '=', $nodeId)
             ->delete();
         $now = date('Y-m-d H:i:s');
 
-        foreach ($requested as $subjectId => $permissions) {
-            $subjectId = $this->intValue($subjectId);
-            if ($subjectId <= 0) {
-                continue;
-            }
+        $types = $hasImportedDefault
+        ? [self::SUBJECT_PUBLIC, self::SUBJECT_USER, self::SUBJECT_GROUP]
+        : [self::SUBJECT_USER];
+        foreach ($types as $type) {
+            $subjects = is_array($acl[$type] ?? null) ? $acl[$type] : [];
+            foreach ($subjects as $subjectId => $permissions) {
+                $subjectId = $this->intValue($subjectId);
+                if ($subjectId <= 0 || !is_array($permissions)) {
+                    continue;
+                }
 
-            if (!isset($eligible[$subjectId])) {
-                continue;
-            }
+                if ($type === self::SUBJECT_PUBLIC && $subjectId !== self::BUILT_IN_SUBJECT_ID) {
+                    continue;
+                }
 
-            if (!is_array($permissions)) {
-                continue;
-            }
+                if ($type === self::SUBJECT_USER && !isset($eligible[$subjectId])) {
+                    continue;
+                }
 
-            $normalized = $this->permissionValues(WorkspaceValue::stringKeyArray($permissions));
-            $inherited = $this->permissionValues($eligible[$subjectId]);
-            foreach (array_keys($normalized) as $permission) {
-                $normalized[$permission] = $normalized[$permission] && $inherited[$permission];
-            }
+                if ($type === self::SUBJECT_GROUP && !isset($activeGroups[$subjectId])) {
+                    continue;
+                }
 
-            // HR: Ne spremamo red koji ništa ne mijenja; uklanjanje svih
-            //     uskraćivanja vraća potpuno nasljeđivanje.
-            // EN: A row that changes nothing is omitted; removing every denial
-            //     restores complete inheritance.
-            if ($normalized === $inherited) {
-                continue;
-            }
+                $normalized = $this->permissionValues(WorkspaceValue::stringKeyArray($permissions));
+                $inherited = $type === self::SUBJECT_USER
+                ? $this->permissionValues($eligible[$subjectId])
+                : null;
+                if (is_array($inherited)) {
+                    foreach (array_keys($normalized) as $permission) {
+                        $normalized[$permission] = $normalized[$permission] && $inherited[$permission];
+                    }
+                }
 
-            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->insert([
-                'node_id' => $nodeId,
-                'subject_type' => self::SUBJECT_USER,
-                'subject_id' => $subjectId,
-                ...$normalized,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+                // HR: Običan korisnički red jednak naslijeđenim pravima nije
+                //     ograničenje. U importnom allowlistu isti je red iznimka
+                //     od zadanog deny retka i zato ga moramo spremiti.
+                // EN: A regular user row equal to inherited rights is not a
+                //     restriction. In an imported allowlist it is an exception
+                //     to the default deny row and therefore must be stored.
+                if (!$hasImportedDefault && is_array($inherited) && $normalized === $inherited) {
+                    continue;
+                }
+
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)->insert([
+                    'node_id' => $nodeId,
+                    'subject_type' => $type,
+                    'subject_id' => $subjectId,
+                    ...$normalized,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
 
     /**
-     * HR: Paketno spaja izravna korisnička i grupna prava područja te na njih
-     *     primjenjuje samo korisnička ograničenja predaka.
-     * EN: Batch-merges direct-user and group Workspace rights, then applies only
-     *     user-specific ancestor restrictions.
+     * HR: Paketno spaja javna, autentificirana, izravna korisnička i grupna
+     *     prava područja te primjenjuje korisnička i importna allowlist ograničenja predaka.
+     * EN: Batch-merges public, authenticated, direct-user, and group Workspace
+     *     rights, then applies user restrictions and imported ancestor allowlists.
      *
      * @param list<array<string, mixed>> $users
      * @return list<array<string, mixed>>
@@ -2442,13 +2476,10 @@ final readonly class WorkspaceRepository
 
         $restrictions = [];
         foreach ($this->nodeAclRowsForNodes($ancestorIds) as $row) {
-            if ($this->stringValue($row['subject_type'] ?? '') !== self::SUBJECT_USER) {
-                continue;
-            }
-
             $restrictionNodeId = $this->intValue($row['node_id'] ?? 0);
-            $restrictionUserId = $this->intValue($row['subject_id'] ?? 0);
-            $restrictions[$restrictionNodeId][$restrictionUserId] = $row;
+            if ($restrictionNodeId > 0) {
+                $restrictions[$restrictionNodeId][] = $row;
+            }
         }
 
         $subjects = [];
@@ -2468,7 +2499,9 @@ final readonly class WorkspaceRepository
                 $subjectId = $this->intValue($row['subject_id'] ?? 0);
                 $matches = ($subjectType === self::SUBJECT_USER && $subjectId === $userId)
                 || ($subjectType === self::SUBJECT_GROUP
-                    && in_array($subjectId, $groupsByUser[$userId] ?? [], true));
+                    && in_array($subjectId, $groupsByUser[$userId] ?? [], true))
+                || ($subjectType === self::SUBJECT_PUBLIC && $subjectId === self::BUILT_IN_SUBJECT_ID)
+                || ($subjectType === self::SUBJECT_AUTHENTICATED && $subjectId === self::BUILT_IN_SUBJECT_ID);
                 if (!$matches) {
                     continue;
                 }
@@ -2485,12 +2518,54 @@ final readonly class WorkspaceRepository
             }
 
             foreach ($ancestorIds as $ancestorId) {
-                $row = $restrictions[$ancestorId][$userId] ?? null;
-                if (!is_array($row)) {
-                    continue;
+                $rows = $restrictions[$ancestorId] ?? [];
+                $hasImportedDefault = false;
+                foreach ($rows as $row) {
+                    if (
+                        $this->stringValue($row['subject_type'] ?? '') === self::SUBJECT_PUBLIC
+                        && $this->intValue($row['subject_id'] ?? 0) === self::BUILT_IN_SUBJECT_ID
+                    ) {
+                        $hasImportedDefault = true;
+                        break;
+                    }
                 }
 
-                $allowed = $this->permissionValues($row);
+                $allowed = $this->permissionValues([]);
+                if ($hasImportedDefault) {
+                    foreach ($rows as $row) {
+                        $type = $this->stringValue($row['subject_type'] ?? '');
+                        $id = $this->intValue($row['subject_id'] ?? 0);
+                        $matches = ($type === self::SUBJECT_PUBLIC && $id === self::BUILT_IN_SUBJECT_ID)
+                        || ($type === self::SUBJECT_USER && $id === $userId)
+                        || ($type === self::SUBJECT_GROUP
+                                && in_array($id, $groupsByUser[$userId] ?? [], true));
+                        if (!$matches) {
+                            continue;
+                        }
+
+                        $rowPermissions = $this->permissionValues($row);
+                        foreach (array_keys($allowed) as $permission) {
+                            $allowed[$permission] = $allowed[$permission] || $rowPermissions[$permission];
+                        }
+                    }
+                } else {
+                    $matchedUserRestriction = false;
+                    foreach ($rows as $row) {
+                        if (
+                            $this->stringValue($row['subject_type'] ?? '') === self::SUBJECT_USER
+                            && $this->intValue($row['subject_id'] ?? 0) === $userId
+                        ) {
+                            $allowed = $this->permissionValues($row);
+                            $matchedUserRestriction = true;
+                            break;
+                        }
+                    }
+
+                    if (!$matchedUserRestriction) {
+                        continue;
+                    }
+                }
+
                 foreach (array_keys($permissions) as $permission) {
                     $permissions[$permission] = $permissions[$permission] && $allowed[$permission];
                 }

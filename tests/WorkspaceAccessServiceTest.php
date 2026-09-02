@@ -800,6 +800,83 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Uvezeni page ACL koristi zadani deny red te dopušta samo izričite
+     *     korisnike i grupe, uključujući potomke i javno područje.
+     * EN: An imported page ACL uses a default-deny row and allows only explicit
+     *     users and groups, including descendants inside a public workspace.
+     */
+    public function testImportedNodeAllowlistFailsClosedForGuestsAndUnlistedUsers(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Javno područje s ograničenom stranicom',
+            'slug' => 'javno-ograniceno',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            WorkspaceRepository::SUBJECT_PUBLIC => [
+                WorkspaceRepository::BUILT_IN_SUBJECT_ID => ['can_view' => true],
+            ],
+            WorkspaceRepository::SUBJECT_GROUP => [
+                10 => ['can_view' => true, 'can_edit' => true],
+            ],
+        ]);
+        $workspace = $this->repository->findWorkspaceById($workspaceId);
+        $this->assertIsArray($workspace);
+        $root = $this->repository->saveNode($workspaceId, [
+            'title' => 'Ograničena stranica',
+            'node_type' => 'document',
+            'document_key' => 'imported-restricted-root',
+        ], 1);
+        $child = $this->repository->saveNode($workspaceId, [
+            'title' => 'Ograničeni potomak',
+            'node_type' => 'document',
+            'document_key' => 'imported-restricted-child',
+            'parent_id' => $root['id'],
+        ], 1);
+        $this->repository->replaceNodeAcl($workspaceId, (int)$root['id'], [
+            WorkspaceRepository::SUBJECT_PUBLIC => [
+                WorkspaceRepository::BUILT_IN_SUBJECT_ID => [
+                    'can_view' => false,
+                    'can_add' => false,
+                    'can_edit' => false,
+                    'can_publish' => false,
+                    'can_delete' => false,
+                    'can_manage' => false,
+                ],
+            ],
+            WorkspaceRepository::SUBJECT_USER => [
+                3 => ['can_view' => true],
+            ],
+            WorkspaceRepository::SUBJECT_GROUP => [
+                10 => ['can_view' => true, 'can_edit' => true],
+            ],
+        ]);
+
+        $storedAcl = $this->repository->nodeAclRows((int)$root['id']);
+        $this->assertCount(3, $storedAcl, json_encode($storedAcl, JSON_PRETTY_PRINT));
+        $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_view']);
+
+        $this->authn->login(['id' => 4, 'is_admin' => false]);
+        $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_view']);
+
+        $this->authn->login(['id' => 3, 'is_admin' => false]);
+        $userPermissions = $this->access->nodePermissions($workspace, $child);
+        $userGrants = array_keys(array_filter($userPermissions));
+        $this->assertContains('can_view', $userGrants);
+        $this->assertNotContains('can_edit', $userGrants);
+
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+        $groupPermissions = $this->access->nodePermissions($workspace, $child);
+        $groupGrants = array_keys(array_filter($groupPermissions));
+        $this->assertContains('can_view', $groupGrants);
+        $this->assertContains('can_edit', $groupGrants);
+
+        $this->authn->login(['id' => 4, 'is_admin' => true]);
+        $this->assertTrue($this->access->nodePermissions($workspace, $child)['can_view']);
+    }
+
+    /**
      * HR: Provjerava da interni link prihvaća samo lokalnu putanju, a vanjski URL mora koristiti vanjski tip čvora.
      * EN: Verifies that an internal link accepts only a local path while an external URL requires an external node.
      */
