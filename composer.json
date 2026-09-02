@@ -29,7 +29,7 @@
     ],
     "require": {
         "php": ">=8.2",
-        "aaieduhr/heartphrame-framework": "^0.0.24",
+        "aaieduhr/heartphrame-framework": "^0.0.25",
         "aaieduhr/heartphrame-module-auth": "^0.1.0",
         "aaieduhr/heartphrame-module-orm": "^0.1.0"
     },

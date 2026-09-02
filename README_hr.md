@@ -17,7 +17,7 @@ prava i hijerarhijsko stablo stranica.
 
 Obavezno, redoslijedom uključivanja:
 
-1. `aaieduhr/heartphrame-framework` (`^0.0.24`)
+1. `aaieduhr/heartphrame-framework` (`^0.0.25`)
 2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
 3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
 4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
@@ -439,5 +439,5 @@ tom opcionalnom modulu.
 
 ## Politika ovisnosti
 
-Framework koristi `^0.0.24`, a interni moduli kompatibilnu liniju izdanja
+Framework koristi `^0.0.25`, a interni moduli kompatibilnu liniju izdanja
 `^0.1.0`. Ovaj modul ne sprema `composer.lock`; CI dohvaća najnovija kompatibilna označena izdanja i pokreće cijeli skup provjera `composer on-commit`.

@@ -10,7 +10,7 @@ permissions, and hierarchical page tree.
 
 Required, in enable order:
 
-1. `aaieduhr/heartphrame-framework` (`^0.0.24`)
+1. `aaieduhr/heartphrame-framework` (`^0.0.25`)
 2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
 3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
 4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
@@ -445,6 +445,6 @@ personal notifications. Workspace does not depend on that optional module.
 
 ## Dependency policy
 
-The Framework is constrained to `^0.0.24` and internal modules to the
+The Framework is constrained to `^0.0.25` and internal modules to the
 compatible `^0.1.0` release line. This module does not commit `composer.lock`; CI resolves
 the latest development heads and runs the complete `composer on-commit` suite.
