@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.5
+composer require aaieduhr/simbioza-module-workspace:^0.1.6
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -424,6 +424,11 @@ dynamic result is filtered again through the current ACL; the API,
 backup/restore, and HTML export preserve the same contract. Dynamically generated
 tables use the HTML Editor's standard responsive table markup and therefore
 follow the active theme without a Workspace-specific visual override.
+
+The embedded search form submits directly to a result page fixed to the current
+Workspace and does not place live suggestions over following page content.
+Plain multi-word input is treated as an exact phrase; `+word` and
+`+"multiple words"` express required terms and phrases.
 
 ## Documentation
 

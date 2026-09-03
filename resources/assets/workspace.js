@@ -2247,108 +2247,6 @@
     }
 
     /**
-     * HR: Dinamički prikazuje ACL-filtrirane prijedloge ugrađene pretrage
-     * područja bez napuštanja trenutačne stranice.
-     * EN: Dynamically shows ACL-filtered suggestions for embedded Workspace
-     * search without leaving the current page.
-     *
-     * @returns {void}
-     */
-    function initializeEmbeddedWorkspaceSearch() {
-        document.querySelectorAll('[data-workspace-embedded-search="1"]').forEach((form) => {
-            if (!(form instanceof HTMLFormElement) || form.dataset.workspaceSearchReady === '1') {
-                return;
-            }
-            const input = form.querySelector('[data-workspace-embedded-search-input="1"]');
-            const results = form.querySelector('[data-workspace-embedded-search-results="1"]');
-            const suggestUrl = String(form.dataset.suggestUrl || '').trim();
-            if (!(input instanceof HTMLInputElement) || !(results instanceof HTMLElement) || suggestUrl === '') {
-                return;
-            }
-
-            form.dataset.workspaceSearchReady = '1';
-            let timer = 0;
-            let request = null;
-
-            const clear = () => {
-                results.replaceChildren();
-                results.hidden = true;
-            };
-
-            const render = (items) => {
-                clear();
-                if (!Array.isArray(items) || items.length === 0) {
-                    return;
-                }
-                items.forEach((item) => {
-                    const url = typeof item.url === 'string' ? item.url : '';
-                    const title = typeof item.title === 'string' ? item.title : '';
-                    if (url === '' || title === '') {
-                        return;
-                    }
-                    const link = document.createElement('a');
-                    link.className = 'list-group-item list-group-item-action';
-                    link.href = url;
-                    link.setAttribute('role', 'option');
-                    const heading = document.createElement('span');
-                    heading.className = 'd-block fw-semibold';
-                    heading.textContent = title;
-                    link.appendChild(heading);
-                    if (typeof item.workspace === 'string' && item.workspace !== '') {
-                        const workspace = document.createElement('small');
-                        workspace.className = 'text-body-secondary';
-                        workspace.textContent = item.workspace;
-                        link.appendChild(workspace);
-                    }
-                    results.appendChild(link);
-                });
-                results.hidden = results.childElementCount === 0;
-            };
-
-            input.addEventListener('input', () => {
-                window.clearTimeout(timer);
-                if (request instanceof AbortController) {
-                    request.abort();
-                }
-                const query = input.value.trim();
-                if (query.length < 2) {
-                    clear();
-                    return;
-                }
-                timer = window.setTimeout(async () => {
-                    request = new AbortController();
-                    const url = new URL(suggestUrl, window.location.href);
-                    url.searchParams.set('q', query);
-                    url.searchParams.set('workspace', String(form.dataset.workspaceSlug || ''));
-                    url.searchParams.set('lang', String(form.dataset.searchLanguage || ''));
-                    try {
-                        const response = await window.fetch(url.toString(), {
-                            headers: { Accept: 'application/json' },
-                            signal: request.signal,
-                        });
-                        if (!response.ok) {
-                            clear();
-                            return;
-                        }
-                        const payload = await response.json();
-                        render(payload && Array.isArray(payload.data) ? payload.data : []);
-                    } catch (error) {
-                        if (!(error instanceof DOMException) || error.name !== 'AbortError') {
-                            clear();
-                        }
-                    }
-                }, 180);
-            });
-
-            input.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    clear();
-                }
-            });
-        });
-    }
-
-    /**
      * HR: Inicijalizira sve Workspace kontrole nakon što je DOM spreman.
      * EN: Initializes every Workspace control after the DOM is ready.
      *
@@ -2368,7 +2266,6 @@
         initializeHomepageTargets();
         initializeMobilePanels();
         initializeBacklinkLayout();
-        initializeEmbeddedWorkspaceSearch();
     }
 
     if (document.readyState === 'loading') {

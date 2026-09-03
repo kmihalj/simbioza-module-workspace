@@ -360,24 +360,25 @@ final class WorkspaceDynamicContentService
         $action = $this->urls->namedRouteExists('workspace-search.index')
         ? $this->urls->getPathFor('workspace-search.index')
         : rtrim($this->urls->getBasePath(), '/') . '/search';
-        $suggest = $this->urls->namedRouteExists('workspace-search.suggest')
-        ? $this->urls->getPathFor('workspace-search.suggest')
-        : '';
         $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
 
         return $output . '<form action="' . $this->escape($action) . '" method="get" role="search"'
-        . ' data-workspace-embedded-search="1" data-suggest-url="' . $this->escape($suggest) . '"'
-        . ' data-workspace-slug="' . $this->escape($workspaceSlug) . '"'
-        . ' data-search-language="' . $this->escape($language) . '">'
+        . ' data-workspace-embedded-search="1">'
         . '<input type="hidden" name="workspace" value="'
         . $this->escape($workspaceSlug) . '">'
         . '<input type="hidden" name="lang" value="' . $this->escape($language) . '">'
+        . '<input type="hidden" name="embedded" value="1">'
         . '<div class="input-group"><input class="form-control" type="search" name="q" required minlength="2"'
-        . ' autocomplete="off" data-workspace-embedded-search-input="1"'
+        . ' autocomplete="off"'
         . ' placeholder="' . $this->escape(__('Pretraži područje')) . '">'
         . '<button class="btn btn-primary" type="submit">' . $this->escape(__('Pretraži'))
-        . '</button></div><div class="list-group mt-2" hidden role="listbox"'
-        . ' data-workspace-embedded-search-results="1"></div></form></section>';
+        . '</button></div><p class="form-text mb-0 mt-2">'
+        . $this->escape(__(
+            'Without operators, multiple words are searched as an exact phrase. '
+            . 'Use +word and +"multiple words" for required words and phrases, '
+            . 'e.g. +Part +1 +"Part 2".',
+        ))
+        . '</p></form></section>';
     }
 
     /**

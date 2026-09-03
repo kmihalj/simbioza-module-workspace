@@ -834,8 +834,8 @@ HTML Editor na Workspace stranici može umetnuti četiri nativna bloka:
   prikazuje odabrana svojstva i može ih sortirati po naslovu, vremenu izmjene
   ili vrijednosti svojstva;
 - **Galerija privitaka** prikazuje slike koje pripadaju aktualnoj stranici;
-- **Pretraga područja** dinamično predlaže samo rezultate iz trenutačnog
-  područja koje posjetitelj smije otvoriti;
+- **Pretraga područja** šalje upit izravno na stranicu rezultata zaključanu na
+  trenutačno područje i vraća samo stranice koje posjetitelj smije otvoriti;
 - **Nedavne promjene** prikazuje objavljene promjene trenutačnog područja s
   autorom i lokaliziranim vremenom.
 

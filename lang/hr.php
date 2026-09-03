@@ -15,6 +15,8 @@ return [
     'Pretraga područja' => 'Pretraga područja',
     'Pretraži područje' => 'Pretraži područje',
     'Pretraži' => 'Pretraži',
+    'Without operators, multiple words are searched as an exact phrase. Use +word and +"multiple words" for required words and phrases, e.g. +Part +1 +"Part 2".' =>
+        'Bez operatora više riječi traži se kao točna fraza. Za obavezne riječi i fraze koristite +riječ i +"više riječi", npr. +Dio +1 +"Dio 2".',
     'Stranica' => 'Stranica',
     'Predložak migracije backlinkova nije pronađen.' => 'Predložak migracije backlinkova nije pronađen.',
     'Kreirana je migracija Workspace backlinkova: ' => 'Kreirana je migracija Workspace backlinkova: ',
