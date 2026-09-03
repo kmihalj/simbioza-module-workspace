@@ -27,6 +27,73 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 final class WorkspaceRepositoryTest extends TestCase
 {
     /**
+     * HR: Potpuni izvedeni indeksi učitavaju dokumente svih područja jednim
+     *     upitom i pritom pune request cache za naknadno čitanje po ID-u.
+     * EN: Complete derived indexes load document nodes from all Workspaces in
+     *     one query and prime the request cache for subsequent reads by ID.
+     */
+    public function testActiveDocumentNodesAreLoadedAcrossWorkspacesInOneQuery(): void
+    {
+        $database = $this->database();
+        $repository = new WorkspaceRepository(
+            $database,
+            requestCache: new WorkspaceRepositoryRequestCache(),
+        );
+        $now = '2026-09-03 15:30:00';
+        foreach ([1, 2] as $workspaceId) {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+                'id' => $workspaceId,
+                'uuid' => sprintf('01000000-0000-4000-8000-%012d', $workspaceId),
+                'slug' => 'workspace-' . $workspaceId,
+                'name' => 'Workspace ' . $workspaceId,
+                'visibility' => 'public',
+                'is_archived' => false,
+                'is_deleted' => false,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        foreach (
+            [
+                [1, 1, 'document', true],
+                [2, 2, 'document', true],
+                [3, 2, 'document', false],
+                [4, 2, 'external_link', true],
+            ] as [$nodeId, $workspaceId, $type, $enabled]
+        ) {
+            $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)->insert([
+                'id' => $nodeId,
+                'uuid' => sprintf('02000000-0000-4000-8000-%012d', $nodeId),
+                'workspace_id' => $workspaceId,
+                'node_type' => $type,
+                'slug' => 'node-' . $nodeId,
+                'title' => 'Node ' . $nodeId,
+                'document_key' => 'document-' . $nodeId,
+                'target_url' => 'https://example.test/',
+                'sort_order' => 100,
+                'is_homepage' => false,
+                'is_enabled' => $enabled,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $nodeSelects = 0;
+        $database->listen(static function (QueryExecuted $query) use (&$nodeSelects): void {
+            if (str_starts_with($query->sql, 'SELECT * FROM "workspace_nodes"')) {
+                ++$nodeSelects;
+            }
+        });
+
+        $nodes = $repository->activeDocumentNodes();
+        $this->assertSame([1, 2], array_column($nodes, 'id'));
+        $this->assertIsArray($repository->findNodeById(1));
+        $this->assertIsArray($repository->findNodeById(2));
+        $this->assertSame(1, $nodeSelects);
+    }
+
+    /**
      * HR: Pronalaženje po slugu puni request cache po ID-u, a promjena ga odmah poništava.
      * EN: A slug lookup primes the request cache by ID, and a mutation invalidates it immediately.
      */

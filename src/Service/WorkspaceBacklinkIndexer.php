@@ -8,8 +8,6 @@ use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 
 use function array_chunk;
-use function array_filter;
-use function array_map;
 use function array_values;
 use function date;
 use function is_array;
@@ -177,125 +175,102 @@ final class WorkspaceBacklinkIndexer
         ?string $onlyLanguage = null,
     ): array {
         $workspaces = $this->repository->activeWorkspaces();
-        $targets = [];
-        $nodesByWorkspace = [];
+        $workspacesById = [];
         foreach ($workspaces as $workspace) {
             $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+            if ($workspaceId > 0) {
+                $workspacesById[$workspaceId] = $workspace;
+            }
+        }
+
+        $targets = [];
+        $sourceNodesById = [];
+        $sourceNodesByDocument = [];
+        foreach ($this->repository->activeDocumentNodes() as $node) {
+            $workspaceId = WorkspaceValue::int($node['workspace_id'] ?? 0);
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            $workspace = $workspacesById[$workspaceId] ?? null;
+            if (!is_array($workspace) || $nodeId <= 0) {
+                continue;
+            }
+
             $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
-            $nodes = array_values(array_filter(
-                $this->repository->nodesForWorkspace($workspaceId),
-                static fn(array $node): bool => WorkspaceValue::string($node['node_type'] ?? '') === 'document',
-            ));
-            $nodesByWorkspace[$workspaceId] = $nodes;
-            foreach ($nodes as $node) {
-                $nodeSlug = WorkspaceValue::string($node['slug'] ?? '');
-                if ($workspaceSlug !== '' && $nodeSlug !== '') {
-                    $targets[$workspaceSlug . '/' . $nodeSlug] = [
-                        'workspaceId' => $workspaceId,
-                        'nodeId' => WorkspaceValue::int($node['id'] ?? 0),
-                    ];
+            $nodeSlug = WorkspaceValue::string($node['slug'] ?? '');
+            if ($workspaceSlug !== '' && $nodeSlug !== '') {
+                $targets[$workspaceSlug . '/' . $nodeSlug] = [
+                    'workspaceId' => $workspaceId,
+                    'nodeId' => $nodeId,
+                ];
+            }
+
+            if (
+                ($onlyWorkspaceId !== null && $workspaceId !== $onlyWorkspaceId)
+                || ($onlyNodeId !== null && $nodeId !== $onlyNodeId)
+            ) {
+                continue;
+            }
+
+            $sourceNodesById[$nodeId] = $node;
+            $documentKey = WorkspaceValue::string($node['document_key'] ?? '');
+            if ($documentKey !== '') {
+                $sourceNodesByDocument[$documentKey] = $node;
+            }
+        }
+
+        $versionsByLanguage = [];
+        $workflows = $this->repository->nodeWorkflowsForNodesAllLanguages(array_keys($sourceNodesById));
+        foreach ($workflows as $nodeId => $nodeWorkflows) {
+            foreach ($nodeWorkflows as $workflow) {
+                $language = strtolower(WorkspaceValue::string($workflow['language_code'] ?? ''));
+                $node = $sourceNodesById[$nodeId] ?? null;
+                $documentKey = is_array($node) ? WorkspaceValue::string($node['document_key'] ?? '') : '';
+                $version = WorkspaceValue::int($workflow['published_version_number'] ?? 0);
+                if (
+                    !$this->workflow->isReadableWorkflow($workflow)
+                    || $language === ''
+                    || $documentKey === ''
+                    || $version <= 0
+                    || ($onlyLanguage !== null && $language !== $onlyLanguage)
+                ) {
+                    continue;
                 }
+
+                $versionsByLanguage[$language][$documentKey] = $version;
             }
         }
 
         $rows = [];
         $now = date('Y-m-d H:i:s');
-        foreach ($workspaces as $workspace) {
-            $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
-            if ($onlyWorkspaceId !== null && $workspaceId !== $onlyWorkspaceId) {
-                continue;
-            }
-
-            $nodes = $nodesByWorkspace[$workspaceId] ?? [];
-            if ($onlyNodeId !== null) {
-                $nodes = array_values(array_filter(
-                    $nodes,
-                    static fn(array $node): bool => WorkspaceValue::int($node['id'] ?? 0) === $onlyNodeId,
-                ));
-            }
-
-            $nodeIds = array_map(static fn(array $node): int => WorkspaceValue::int($node['id'] ?? 0), $nodes);
-            $workflows = $this->repository->nodeWorkflowsForNodesAllLanguages($nodeIds);
-            $nodesByDocument = [];
-            $nodesById = [];
-            $versionsByLanguage = [];
-            foreach ($nodes as $node) {
-                $nodesById[WorkspaceValue::int($node['id'] ?? 0)] = $node;
-                $documentKey = WorkspaceValue::string($node['document_key'] ?? '');
-                if ($documentKey !== '') {
-                    $nodesByDocument[$documentKey] = $node;
+        foreach ($versionsByLanguage as $language => $versions) {
+            foreach ($this->editor->publishedVersionsForIndexing($versions, $language) as $documentKey => $version) {
+                $source = $sourceNodesByDocument[(string)$documentKey] ?? null;
+                if (!is_array($source)) {
+                    continue;
                 }
-            }
 
-            foreach ($workflows as $nodeId => $nodeWorkflows) {
-                foreach ($nodeWorkflows as $workflow) {
-                    $language = strtolower(WorkspaceValue::string($workflow['language_code'] ?? ''));
-                    $node = $nodesById[$nodeId] ?? null;
-                    $documentKey = is_array($node) ? WorkspaceValue::string($node['document_key'] ?? '') : '';
-                    $version = WorkspaceValue::int($workflow['published_version_number'] ?? 0);
-                    if (!$this->workflow->isReadableWorkflow($workflow)) {
+                $sourceNodeId = WorkspaceValue::int($source['id'] ?? 0);
+                $sourceWorkspaceId = WorkspaceValue::int($source['workspace_id'] ?? 0);
+                foreach ($this->extractor->extract(WorkspaceValue::string($version['html'] ?? '')) as $link) {
+                    $target = $targets[$link['workspaceSlug'] . '/' . $link['nodeSlug']] ?? null;
+                    if (!is_array($target) || $target['nodeId'] === $sourceNodeId) {
                         continue;
                     }
 
-                    if ($language === '') {
-                        continue;
-                    }
-
-                    if ($documentKey === '') {
-                        continue;
-                    }
-
-                    if ($version <= 0) {
-                        continue;
-                    }
-
-                    if ($onlyLanguage !== null && $language !== $onlyLanguage) {
-                        continue;
-                    }
-
-                    $versionsByLanguage[$language][$documentKey] = $version;
-                }
-            }
-
-            foreach ($versionsByLanguage as $language => $versions) {
-                foreach (
-                    $this->editor->publishedVersionsForIndexing(
-                        $versions,
-                        $language,
-                    ) as $documentKey => $version
-                ) {
-                    $source = $nodesByDocument[(string)$documentKey] ?? null;
-                    if (!is_array($source)) {
-                        continue;
-                    }
-
-                    $sourceNodeId = WorkspaceValue::int($source['id'] ?? 0);
-                    foreach ($this->extractor->extract(WorkspaceValue::string($version['html'] ?? '')) as $link) {
-                        $target = $targets[$link['workspaceSlug'] . '/' . $link['nodeSlug']] ?? null;
-                        if (!is_array($target)) {
-                            continue;
-                        }
-
-                        if ($target['nodeId'] === $sourceNodeId) {
-                            continue;
-                        }
-
-                        $key = $sourceNodeId . ':' . $language . ':' . $target['nodeId'];
-                        $rows[$key] = [
-                            'source_workspace_id' => $workspaceId,
-                            'source_node_id' => $sourceNodeId,
-                            'source_language_code' => $language,
-                            'source_version_number' => WorkspaceValue::int($version['versionNumber'] ?? 0),
-                            'source_title' => WorkspaceValue::string($version['title'] ?? '')
-                                ?: WorkspaceValue::string($source['title'] ?? ''),
-                            'target_workspace_id' => $target['workspaceId'],
-                            'target_node_id' => $target['nodeId'],
-                            'link_text' => $link['linkText'] !== '' ? $link['linkText'] : null,
-                            'indexed_at' => $now,
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
-                    }
+                    $key = $sourceNodeId . ':' . $language . ':' . $target['nodeId'];
+                    $rows[$key] = [
+                        'source_workspace_id' => $sourceWorkspaceId,
+                        'source_node_id' => $sourceNodeId,
+                        'source_language_code' => $language,
+                        'source_version_number' => WorkspaceValue::int($version['versionNumber'] ?? 0),
+                        'source_title' => WorkspaceValue::string($version['title'] ?? '')
+                            ?: WorkspaceValue::string($source['title'] ?? ''),
+                        'target_workspace_id' => $target['workspaceId'],
+                        'target_node_id' => $target['nodeId'],
+                        'link_text' => $link['linkText'] !== '' ? $link['linkText'] : null,
+                        'indexed_at' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
             }
         }

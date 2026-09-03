@@ -128,6 +128,8 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('publishedVersionsForIndexing(', $bridge);
         $this->assertStringContainsString('loadPublishedVersionsForIndexing', $bridge);
         $this->assertStringContainsString('publishedVersionsForIndexing(', $indexer);
+        $this->assertStringContainsString('activeDocumentNodes()', $indexer);
+        $this->assertStringNotContainsString('nodesForWorkspace(', $indexer);
     }
 
     /**

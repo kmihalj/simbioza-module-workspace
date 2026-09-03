@@ -1404,6 +1404,34 @@ final readonly class WorkspaceRepository
     }
 
     /**
+     * HR: Grupno vraća sve aktivne čvorove dokumenata. Izvedeni indeksi time
+     *     izbjegavaju zaseban upit za svako područje tijekom potpune obnove.
+     * EN: Returns every active document node in one batch. Derived indexes use
+     *     this to avoid one query per Workspace during a complete rebuild.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function activeDocumentNodes(): array
+    {
+        $this->assertTablesReady();
+        $nodes = $this->rows(
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                ->where('node_type', '=', 'document')
+                ->where('is_enabled', '=', true)
+                ->orderBy('workspace_id', 'ASC')
+                ->orderBy('sort_order', 'ASC')
+                ->orderBy('id', 'ASC')
+                ->get(),
+        );
+
+        foreach ($nodes as $node) {
+            $this->rememberNode($node);
+        }
+
+        return $nodes;
+    }
+
+    /**
      * HR: Grupno učitava aktivne čvorove dokumenata i njihova područja. Ova
      *     metoda služi popisima i biračima koji moraju provjeriti velik broj
      *     dokumenata bez izvođenja zasebnih upita za svaki dokument.

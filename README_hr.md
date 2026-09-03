@@ -31,7 +31,7 @@ Opcionalne integracije:
 - API dodaje ACL Workspace resurse i rute za upravljanje stablom.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.0
+composer require aaieduhr/simbioza-module-workspace:^0.1.5
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
