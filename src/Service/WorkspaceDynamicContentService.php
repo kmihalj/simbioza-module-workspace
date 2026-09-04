@@ -12,6 +12,7 @@ use Throwable;
 
 use function array_filter;
 use function array_slice;
+use function array_unique;
 use function array_values;
 use function base64_decode;
 use function base64_encode;
@@ -87,6 +88,7 @@ final class WorkspaceDynamicContentService
         private readonly WorkspaceEditorBridge $editor,
         private readonly WorkspaceConfig $config,
         private readonly UrlGenerator $urls,
+        private readonly WorkspaceExternalReferenceRegistry $externalReferences,
     ) {
     }
 
@@ -334,8 +336,10 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Gradi pretragu ograničenu na trenutačno područje.
-     * EN: Builds a search form scoped to the current workspace.
+     * HR: Gradi pretragu ograničenu na jedno ili više odabranih područja.
+     *     Vanjske oznake ostaju neriješene dok njihov importer ne registrira cilj.
+     * EN: Builds a search form scoped to one or more selected Workspaces.
+     *     External references remain unresolved until their importer registers a target.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $configuration
@@ -360,12 +364,22 @@ final class WorkspaceDynamicContentService
         $action = $this->urls->namedRouteExists('workspace-search.index')
         ? $this->urls->getPathFor('workspace-search.index')
         : rtrim($this->urls->getBasePath(), '/') . '/search';
-        $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
+        $scopes = $this->searchScopes($workspace, $configuration);
+        if ($scopes === []) {
+            return $output . '<div class="alert alert-secondary mb-0" role="status">'
+            . $this->escape(__('Odabrana područja još nisu dostupna.'))
+            . '</div></section>';
+        }
+
+        $workspaceSlugs = [];
+        foreach ($scopes as $scope) {
+            $workspaceSlugs[] = $scope['slug'];
+        }
 
         return $output . '<form action="' . $this->escape($action) . '" method="get" role="search"'
         . ' data-workspace-embedded-search="1">'
-        . '<input type="hidden" name="workspace" value="'
-        . $this->escape($workspaceSlug) . '">'
+        . '<input type="hidden" name="workspaces" value="'
+        . $this->escape(implode(',', $workspaceSlugs)) . '">'
         . '<input type="hidden" name="lang" value="' . $this->escape($language) . '">'
         . '<input type="hidden" name="embedded" value="1">'
         . '<div class="input-group"><input class="form-control" type="search" name="q" required minlength="2"'
@@ -379,6 +393,68 @@ final class WorkspaceDynamicContentService
             . 'e.g. +Part +1 +"Part 2".',
         ))
         . '</p></form></section>';
+    }
+
+    /**
+     * HR: Razrješava lokalne i prijenosne ciljeve te vraća samo područja koja
+     *     trenutačni posjetitelj stvarno smije vidjeti.
+     * EN: Resolves local and portable targets and returns only Workspaces the
+     *     current visitor is actually allowed to see.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed> $configuration
+     * @return list<array{slug:string,title:string}>
+     */
+    private function searchScopes(array $workspace, array $configuration): array
+    {
+        $hasExplicitScope = array_key_exists('workspace_slugs', $configuration)
+        || array_key_exists('workspace_refs', $configuration);
+        $slugs = $this->textList($configuration['workspace_slugs'] ?? []);
+        foreach ($this->workspaceReferences($configuration['workspace_refs'] ?? []) as $reference) {
+            $resolved = $this->externalReferences->resolve($reference['provider'], $reference['reference']);
+            if (is_array($resolved)) {
+                $slugs[] = $resolved['slug'];
+            }
+        }
+
+        if (!$hasExplicitScope) {
+            $currentSlug = WorkspaceValue::string($workspace['slug'] ?? '');
+            if ($currentSlug !== '') {
+                $slugs[] = $currentSlug;
+            }
+        }
+
+        $slugs = array_values(array_unique($slugs));
+        if ($slugs === []) {
+            return [];
+        }
+
+        $access = $this->container->get(WorkspaceAccessService::class);
+        if (!$access instanceof WorkspaceAccessService) {
+            return [];
+        }
+
+        $visible = [];
+        foreach ($access->visibleWorkspaces() as $candidate) {
+            $slug = WorkspaceValue::string($candidate['slug'] ?? '');
+            if ($slug === '' || !in_array($slug, $slugs, true)) {
+                continue;
+            }
+
+            $visible[$slug] = [
+                'slug' => $slug,
+                'title' => WorkspaceValue::string($candidate['name'] ?? $slug) ?: $slug,
+            ];
+        }
+
+        $result = [];
+        foreach ($slugs as $slug) {
+            if (isset($visible[$slug])) {
+                $result[] = $visible[$slug];
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -749,6 +825,9 @@ final class WorkspaceDynamicContentService
             : $defaultDirection;
         } elseif ($kind === 'attachment-gallery') {
             $result['sort'] = ($configuration['sort'] ?? '') === 'name' ? 'name' : 'date';
+        } elseif ($kind === 'workspace-search') {
+            $result['workspace_slugs'] = $this->textList($configuration['workspace_slugs'] ?? []);
+            $result['workspace_refs'] = $this->workspaceReferences($configuration['workspace_refs'] ?? []);
         }
 
         return $result;
@@ -822,6 +901,60 @@ final class WorkspaceDynamicContentService
         }
 
         return $configuration;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function textList(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $candidate) {
+            $candidate = $this->text($candidate);
+            if ($candidate !== '' && !in_array($candidate, $result, true)) {
+                $result[] = $candidate;
+            }
+
+            if (count($result) >= 50) {
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<array{provider:string,reference:string}>
+     */
+    private function workspaceReferences(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+
+            $provider = strtolower($this->text($candidate['provider'] ?? ''));
+            $reference = $this->text($candidate['reference'] ?? '');
+            $key = $provider . ':' . $reference;
+            if ($provider !== '' && $reference !== '' && !isset($result[$key])) {
+                $result[$key] = ['provider' => $provider, 'reference' => $reference];
+            }
+
+            if (count($result) >= 50) {
+                break;
+            }
+        }
+
+        return array_values($result);
     }
 
     /** HR: Sigurno čita imenovani atribut iz kanonskog elementa. EN: Safely reads a named attribute from a canonical element. */

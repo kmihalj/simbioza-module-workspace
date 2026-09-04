@@ -24,6 +24,9 @@ final class WorkspaceEmbeddedSearchMarkupTest extends TestCase
         $this->assertIsString($script);
         $this->assertIsString($styles);
         $this->assertStringContainsString('name="embedded" value="1"', $service);
+        $this->assertStringContainsString('name="workspaces"', $service);
+        $this->assertStringContainsString('Odabrana područja još nisu dostupna.', $service);
+        $this->assertStringContainsString('WorkspaceExternalReferenceRegistry', $service);
         $this->assertStringContainsString(
             'Without operators, multiple words are searched as an exact phrase.',
             $service,

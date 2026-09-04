@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.7
+composer require aaieduhr/simbioza-module-workspace:^0.1.8
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -426,14 +426,17 @@ and layout are generated. Editor is required for document content.
 
 Workspace pages support labels and structured properties (`text`, `status`,
 `link`). The HTML Editor can use them in a native pages and properties table and also provides
-an attachment gallery, current-Workspace search, and recent changes. Every
+an attachment gallery, search across one or more selected Workspaces, and recent changes. Every
 dynamic result is filtered again through the current ACL; the API,
 backup/restore, and HTML export preserve the same contract. Dynamically generated
 tables use the HTML Editor's standard responsive table markup and therefore
 follow the active theme without a Workspace-specific visual override.
 
-The embedded search form submits directly to a result page fixed to the current
-Workspace and does not place live suggestions over following page content.
+The embedded search form submits directly to a result page fixed to its selected
+ACL-visible Workspaces and does not place live suggestions over following page
+content. Its default target is the current Workspace. Portable targets from an
+importer remain disabled until that importer has stored their local mapping;
+they never broaden into a current-Workspace or global search.
 Plain multi-word input is treated as an exact phrase; `+word` and
 `+"multiple words"` express required terms and phrases.
 

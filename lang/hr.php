@@ -412,6 +412,7 @@ return [
         'Naslovnica za prijavljene mora biti objavljena i dostupna svim prijavljenim korisnicima.',
     'Odabrana stranica nije objavljena ili joj nemate pristup.' =>
         'Odabrana stranica nije objavljena ili joj nemate pristup.',
+    'Odabrana područja još nisu dostupna.' => 'Odabrana područja još nisu dostupna.',
     'Odaberite objavljenu stranicu područja za goste i prijavljene korisnike.' =>
         'Odaberite objavljenu stranicu područja za goste i prijavljene korisnike.',
     'Nedostaje migracija naslovnice područja.' => 'Nedostaje migracija naslovnice područja.',

@@ -842,7 +842,8 @@ HTML Editor na Workspace stranici može umetnuti četiri nativna bloka:
   ili vrijednosti svojstva;
 - **Galerija privitaka** prikazuje slike koje pripadaju aktualnoj stranici;
 - **Pretraga područja** šalje upit izravno na stranicu rezultata zaključanu na
-  trenutačno područje i vraća samo stranice koje posjetitelj smije otvoriti;
+  jedno ili više odabranih područja; početna je vrijednost trenutačno područje,
+  a rezultat sadrži samo stranice koje posjetitelj smije otvoriti;
 - **Nedavne promjene** prikazuje objavljene promjene trenutačnog područja s
   autorom i lokaliziranim vremenom.
 
@@ -856,6 +857,12 @@ pregledu uz aktualni Workspace i page ACL. Web API vraća isti renderirani HTML,
 a HTML izvoz prerenderira read-only rezultat. Backup čuva konfiguraciju bloka u
 verziji dokumenta te zasebno čuva oznake i svojstva, pa restore ne gubi
 dinamičko ponašanje.
+
+Uvozni modul može spremiti prijenosnu vanjsku oznaku ciljnog područja. Dok cilj
+nije uvezen i mapiran, forma je onemogućena i nikada ne prelazi na trenutačno
+područje ili globalnu pretragu. Nakon nastanka mapiranja blok počinje raditi bez
+prepisivanja stranice, a u Editoru ga se i dalje može pretvoriti u običan ručni
+odabir lokalnih područja.
 
 Stranica koja nema nativni dinamički blok ne pokreće njegove upite. Izvještaj
 filtriran oznakom skupno provjerava ACL i workflow samo stranica s tom oznakom,

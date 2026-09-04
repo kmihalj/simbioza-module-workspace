@@ -855,8 +855,9 @@ On a Workspace page the HTML Editor can insert four native blocks:
 - **Pages and properties table** filters published ACL-visible pages by label, shows selected
   properties, and can sort by title, modification time, or a property value;
 - **Attachment gallery** shows images attached to the current page;
-- **Workspace search** submits directly to a result page fixed to the current
-  Workspace and returns only pages that the visitor is allowed to open;
+- **Workspace search** submits directly to a result page fixed to one or more
+  selected Workspaces; the current Workspace is the default and results contain
+  only pages that the visitor is allowed to open;
 - **Recent changes** lists published changes from the current Workspace with
   author and localized time.
 
@@ -870,6 +871,12 @@ view under the current Workspace and page ACL. The web API returns the same
 rendered HTML, while HTML export pre-renders a read-only result. Backup keeps
 the block configuration inside the document version and stores labels and
 properties separately, so restore preserves the dynamic behavior.
+
+An importer may store a portable external target reference. Until the target is
+imported and mapped, the form is disabled and never falls back to the current
+Workspace or global search. Once a mapping exists the block starts working
+without rewriting the page, and Editor can still convert it into an ordinary
+manual selection of local Workspaces.
 
 A page without a native dynamic block does not execute any dynamic-block
 queries. A label-filtered report batch-checks ACL and workflow only for pages

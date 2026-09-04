@@ -412,6 +412,7 @@ return [
         'The signed-in homepage must be published and available to every signed-in user.',
     'Odabrana stranica nije objavljena ili joj nemate pristup.' =>
         'The selected page is not published or you do not have access to it.',
+    'Odabrana područja još nisu dostupna.' => 'The selected Workspaces are not available yet.',
     'Odaberite objavljenu stranicu područja za goste i prijavljene korisnike.' =>
         'Choose a published Workspace page for guests and signed-in users.',
     'Nedostaje migracija naslovnice područja.' => 'The Workspace homepage migration is missing.',

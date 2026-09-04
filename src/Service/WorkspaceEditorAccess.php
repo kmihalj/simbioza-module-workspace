@@ -65,6 +65,7 @@ final class WorkspaceEditorAccess
         private readonly WorkspaceWorkflowService $workflow,
         private readonly WorkspaceNotificationBridge $notifications,
         private readonly WorkspaceDynamicContentService $dynamicContent,
+        private readonly WorkspacePresentationRegistry $presentations,
     ) {
     }
 
@@ -594,6 +595,33 @@ final class WorkspaceEditorAccess
             'slug' => $slug,
             'title' => WorkspaceValue::string($context['workspace']['title'] ?? $slug),
         ];
+    }
+
+    /**
+     * HR: Vraća lagani ACL-sigurni popis područja za Editorove birače.
+     * EN: Returns a lightweight ACL-safe Workspace list for Editor pickers.
+     *
+     * @return list<array{slug:string,title:string,is_personal_workspace:bool}>
+     */
+    public function workspaceChoices(string $language): array
+    {
+        $workspaces = $this->presentations->many($this->access->visibleWorkspaces(), $language);
+        $result = [];
+        foreach ($workspaces as $workspace) {
+            $slug = WorkspaceValue::string($workspace['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+
+            $title = WorkspaceValue::string($workspace['name'] ?? $slug);
+            $result[] = [
+                'slug' => $slug,
+                'title' => $title !== '' ? $title : $slug,
+                'is_personal_workspace' => (bool)($workspace['is_personal_workspace'] ?? false),
+            ];
+        }
+
+        return $result;
     }
 
     /**

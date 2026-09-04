@@ -27,6 +27,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentChangeBatch;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorAccess;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDynamicContentService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExternalReferenceRegistry;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageRepository;
@@ -215,6 +216,9 @@ $services = [
             $container->get(UrlGenerator::class),
         ),
 
+    WorkspaceExternalReferenceRegistry::class =>
+        static fn(): WorkspaceExternalReferenceRegistry => new WorkspaceExternalReferenceRegistry(),
+
     WorkspaceDynamicContentService::class =>
         static fn(ContainerInterface $container): WorkspaceDynamicContentService =>
             new WorkspaceDynamicContentService(
@@ -224,6 +228,7 @@ $services = [
                 $container->get(WorkspaceEditorBridge::class),
                 $container->get(WorkspaceConfig::class),
                 $container->get(UrlGenerator::class),
+                $container->get(WorkspaceExternalReferenceRegistry::class),
             ),
 
     WorkspaceEditorAccess::class => static fn(ContainerInterface $container): WorkspaceEditorAccess =>
@@ -235,6 +240,7 @@ $services = [
             $container->get(WorkspaceWorkflowService::class),
             $container->get(WorkspaceNotificationBridge::class),
             $container->get(WorkspaceDynamicContentService::class),
+            $container->get(WorkspacePresentationRegistry::class),
         ),
 
     WorkspaceExportEditorBridge::class =>
