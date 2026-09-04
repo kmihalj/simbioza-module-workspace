@@ -53,6 +53,8 @@ final class WorkspaceDynamicContentService
     private const BLOCK_PATTERN =
     '~<section\b[^>]*data-editor-html-workspace-block=(?:"1"|\'1\')[^>]*>.*?</section>~isu';
 
+    private const PERSONAL_WORKSPACES_SCOPE = '__personal__';
+
     /**
      * HR: Čitljivi kandidati dijele se između svih dinamičkih blokova u istom
      *     HTTP zahtjevu. Provjeravaju se samo stranice koje konkretni blokovi
@@ -437,9 +439,18 @@ final class WorkspaceDynamicContentService
         }
 
         $visible = [];
+        $hasVisiblePersonalWorkspace = false;
         foreach ($access->visibleWorkspaces() as $candidate) {
             $slug = WorkspaceValue::string($candidate['slug'] ?? '');
-            if ($slug === '' || !in_array($slug, $slugs, true)) {
+            if ($slug === '') {
+                continue;
+            }
+
+            if ((bool)($candidate['is_personal_workspace'] ?? false)) {
+                $hasVisiblePersonalWorkspace = true;
+            }
+
+            if (!in_array($slug, $slugs, true)) {
                 continue;
             }
 
@@ -451,6 +462,17 @@ final class WorkspaceDynamicContentService
 
         $result = [];
         foreach ($slugs as $slug) {
+            if ($slug === self::PERSONAL_WORKSPACES_SCOPE) {
+                if ($hasVisiblePersonalWorkspace) {
+                    $result[] = [
+                        'slug' => self::PERSONAL_WORKSPACES_SCOPE,
+                        'title' => __('Osobna područja'),
+                    ];
+                }
+
+                continue;
+            }
+
             if (isset($visible[$slug])) {
                 $result[] = $visible[$slug];
             }

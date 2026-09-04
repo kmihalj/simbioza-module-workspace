@@ -25,6 +25,8 @@ final class WorkspaceEmbeddedSearchMarkupTest extends TestCase
         $this->assertIsString($styles);
         $this->assertStringContainsString('name="embedded" value="1"', $service);
         $this->assertStringContainsString('name="workspaces"', $service);
+        $this->assertStringContainsString("PERSONAL_WORKSPACES_SCOPE = '__personal__'", $service);
+        $this->assertStringContainsString('$hasVisiblePersonalWorkspace', $service);
         $this->assertStringContainsString('Odabrana područja još nisu dostupna.', $service);
         $this->assertStringContainsString('WorkspaceExternalReferenceRegistry', $service);
         $this->assertStringContainsString(
