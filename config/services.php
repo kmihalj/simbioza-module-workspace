@@ -216,9 +216,6 @@ $services = [
             $container->get(UrlGenerator::class),
         ),
 
-    WorkspaceExternalReferenceRegistry::class =>
-        static fn(): WorkspaceExternalReferenceRegistry => new WorkspaceExternalReferenceRegistry(),
-
     WorkspaceDynamicContentService::class =>
         static fn(ContainerInterface $container): WorkspaceDynamicContentService =>
             new WorkspaceDynamicContentService(

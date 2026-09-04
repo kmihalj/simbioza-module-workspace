@@ -28,9 +28,10 @@ final class WorkspaceEmbeddedSearchMarkupTest extends TestCase
         $this->assertStringContainsString('Odabrana područja još nisu dostupna.', $service);
         $this->assertStringContainsString('WorkspaceExternalReferenceRegistry', $service);
         $this->assertStringContainsString(
-            'Without operators, multiple words are searched as an exact phrase.',
+            'If you simply enter one or more words',
             $service,
         );
+        $this->assertStringContainsString('+part +second +"Part 2"', $service);
         $this->assertStringNotContainsString('data-suggest-url', $service);
         $this->assertStringNotContainsString('data-workspace-embedded-search-results', $service);
         $this->assertStringNotContainsString('initializeEmbeddedWorkspaceSearch', $script);

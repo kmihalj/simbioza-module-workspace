@@ -421,7 +421,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringNotContainsString("'workspace/node-fields'", $manageView);
     }
 
-    /** HR: Pregled stabla ima sklopive grane, a organizator ostaje odvojen i potpuno otvoren. EN: The tree view has collapsible branches while the organizer remains separate and fully visible. */
+    /** HR: Prva razina pregleda uvijek je otvorena, dublje su grane sklopive, a organizator je potpuno otvoren. EN: The first view level is always open, deeper branches are collapsible, and the organizer remains fully visible. */
     public function testReadOnlyTreeHasBranchControlsWithoutAffectingOrganizer(): void
     {
         $tree = file_get_contents(dirname(__DIR__) . '/views/workspace/tree.php');
@@ -440,6 +440,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('data-workspace-tree-branch-toggle', $tree);
         $this->assertStringContainsString('data-workspace-tree-branch', $tree);
         $this->assertStringContainsString('data-workspace-tree-branch-url', $tree);
+        $this->assertStringContainsString('$hasChildren && $level > 1', $tree);
         $this->assertStringContainsString('$nodeType === \'separator\'', $tree);
         $this->assertStringContainsString('workspace-tree-separator', $tree);
         $this->assertStringContainsString("['document', 'separator']", $organizer);

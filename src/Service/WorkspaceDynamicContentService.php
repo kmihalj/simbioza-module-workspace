@@ -388,9 +388,11 @@ final class WorkspaceDynamicContentService
         . '<button class="btn btn-primary" type="submit">' . $this->escape(__('Pretraži'))
         . '</button></div><p class="form-text mb-0 mt-2">'
         . $this->escape(__(
-            'Without operators, multiple words are searched as an exact phrase. '
-            . 'Use +word and +"multiple words" for required words and phrases, '
-            . 'e.g. +Part +1 +"Part 2".',
+            'If you simply enter one or more words, '
+            . 'the entire input is searched as one phrase. '
+            . 'If the result must contain several separate words or phrases, put + before each one. '
+            . 'Example: +part +second +"Part 2" finds content containing the word “part”, '
+            . 'the word “second”, and the phrase “Part 2”.',
         ))
         . '</p></form></section>';
     }
@@ -904,6 +906,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
+     * HR: Normalizira ograničeni popis jedinstvenih tekstnih vrijednosti.
+     * EN: Normalizes a bounded list of unique text values.
+     *
      * @return list<string>
      */
     private function textList(mixed $value): array
@@ -928,6 +933,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
+     * HR: Normalizira prijenosne reference područja iz konfiguracije bloka.
+     * EN: Normalizes portable Workspace references from block configuration.
+     *
      * @return list<array{provider:string,reference:string}>
      */
     private function workspaceReferences(mixed $value): array

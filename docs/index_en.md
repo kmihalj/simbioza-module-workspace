@@ -153,13 +153,13 @@ opens the card, while its close button, backdrop, or Escape returns focus to the
 document. Focus and `aria-expanded` state follow the open card.
 
 The reader tree is a compact list without item borders. Its first-level
-branches expose the second level, while deeper branches start collapsed. A
+branches always expose the second level and cannot be collapsed, while deeper branches start collapsed. A
 direct page URL marks that page and expands only its ancestor path; the same
 prepared state is retained if the whole tree card starts hidden and is opened
 later. The management organizer remains fully expanded so ordering operations
 always expose the complete hierarchy.
 
-When a reader manually expands or collapses branches, that state is retained
+When a reader manually expands or collapses deeper branches, that state is retained
 while navigating inside the same Workspace in the current browser tab. Each
 Workspace has an independent state. Active-page ancestors are always opened
 after navigation so restored preferences can never hide the selected page.

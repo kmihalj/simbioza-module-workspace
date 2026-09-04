@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.8
+composer require aaieduhr/simbioza-module-workspace:^0.1.9
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -42,8 +42,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
 - ACL-filtered Workspace Shorts with rendered article excerpts, depth, count, and ordering controls
 - hierarchical document, internal-link, and external-link nodes, plus one
   movable localized **Links** system branch for grouping links
-- compact, borderless, collapsible, and responsive page tree that opens only
-  the active page's ancestor path below the first level
+- compact, borderless, and responsive page tree whose first level is always
+  open while deeper branches remember their collapsible state
 - ACL-safe breadcrumbs from the application home through visible ancestors
 - backlinks from other published pages, revalidated against the viewer's current ACL
 - system, Workspace, and page-specific defaults for page-tree and outline visibility
@@ -437,8 +437,9 @@ ACL-visible Workspaces and does not place live suggestions over following page
 content. Its default target is the current Workspace. Portable targets from an
 importer remain disabled until that importer has stored their local mapping;
 they never broaden into a current-Workspace or global search.
-Plain multi-word input is treated as an exact phrase; `+word` and
-`+"multiple words"` express required terms and phrases.
+Input without special characters is searched as one complete phrase. To require
+several separate words or phrases, prefix every term with `+`; for example,
+`+part +second +"Part 2"` requires all three expressions.
 
 ## Documentation
 

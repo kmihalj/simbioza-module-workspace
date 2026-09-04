@@ -31,7 +31,7 @@ Opcionalne integracije:
 - API dodaje ACL Workspace resurse i rute za upravljanje stablom.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.7
+composer require aaieduhr/simbioza-module-workspace:^0.1.9
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -83,8 +83,9 @@ English documentation: [README.md](README.md)
 
 Ugrađena pretraga šalje upit izravno na stranicu rezultata zaključanu na
 trenutačno područje i ne prikazuje žive prijedloge preko sljedećeg sadržaja.
-Običan višerječni unos tretira se kao točna fraza, dok `+riječ` i
-`+"više riječi"` označavaju obavezne pojmove i fraze.
+Unos bez posebnih znakova pretražuje se kao jedna cijela fraza. Ako sadržaj
+mora sadržavati više zasebnih riječi ili fraza, ispred svakog se pojma dodaje
+`+`; primjer `+dio +drugi +"Dio 2"` zahtijeva sva tri izraza.
 
 Ograničenja stranice mogu samo suziti prava dodijeljena na Području. Ne mogu
 dati pristup korisniku ili grupi koji već nemaju prava na Području.

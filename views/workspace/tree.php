@@ -83,7 +83,7 @@ $containsActiveNode = static function (
             data-workspace-tree-level="<?= $this->escape((string)$level) ?>"
         >
             <div class="workspace-tree-row">
-        <?php if ($hasChildren) : ?>
+        <?php if ($hasChildren && $level > 1) : ?>
                 <button
                     class="workspace-tree-branch-toggle"
                     type="button"

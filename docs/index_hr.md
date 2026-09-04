@@ -148,13 +148,13 @@ Escape vraćaju čitatelja na dokument. Fokus i `aria-expanded` stanje prate
 otvorenu karticu.
 
 Stablo za čitanje je kompaktna lista bez okvira oko stavki. Grane prve razine
-prikazuju drugu razinu, dok dublje grane počinju sažete. Izravni URL označava
+uvijek prikazuju drugu razinu i ne mogu se sažeti, dok dublje grane počinju sažete. Izravni URL označava
 otvorenu stranicu i širi samo putanju njezinih predaka; isto pripremljeno stanje
 ostaje i kada je cijela kartica stabla početno skrivena pa se naknadno otvori.
 Organizator za uređivanje ostaje potpuno proširen kako bi pri slaganju uvijek
 bila dostupna cijela hijerarhija.
 
-Kada čitatelj ručno proširi ili sažme grane, to se stanje zadržava tijekom
+Kada čitatelj ručno proširi ili sažme dublje grane, to se stanje zadržava tijekom
 navigacije unutar istog Područja u trenutačnoj kartici preglednika. Svako
 Područje ima neovisno stanje. Preci aktivne stranice uvijek se otvaraju nakon
 navigacije pa spremljeni odabir nikada ne može sakriti označenu stranicu.
