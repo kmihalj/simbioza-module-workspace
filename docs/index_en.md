@@ -177,6 +177,8 @@ Node types:
 - `document`: links to one HTML editor document;
 - `internal_link`: follows a named project route or an internal path;
 - `external_link`: follows a validated external URL.
+- `separator`: the single localized `Linkovi` / `Links` system branch used to
+  group links without creating a document.
 
 Parent and order values define the hierarchy. A user with complete management
 permission enables the organizer directly from the icon in the left tree
@@ -185,12 +187,17 @@ parent, while left/right arrows outdent or indent the subtree by one level.
 Unavailable actions are disabled. Order numbers are synchronized automatically
 and the complete arrangement is saved by one atomic ORM transaction. Before
 the first write, the repository verifies that every active node is present,
-all parents are document pages, and the resulting tree contains no cycle.
+all parents are document pages or the system separator, and the resulting tree
+contains no cycle. The separator is created explicitly in the organizer, may
+be moved like every other branch, and is never synthesized from missing import
+data.
 
-The complete organizer, available-document list, and add-item form load only
-after the first click on its icon. A normal page view therefore does not ship a
-large hidden HTML form, substantially reducing responses for imported
-Workspaces with many pages.
+The complete organizer loads only after the first click on its icon. Its node
+permissions are calculated in one batch. The available-document list and
+add-item form load separately only after the footer's **Add item** action. A
+normal page view therefore does not ship a large hidden HTML form, and opening
+the organizer no longer enumerates every Editor document, substantially
+reducing latency for imported Workspaces with many pages.
 
 A small edit icon beside an item opens a Bootstrap modal with title, slug,
 type, target, inherited restrictions, and deletion. The form is loaded on

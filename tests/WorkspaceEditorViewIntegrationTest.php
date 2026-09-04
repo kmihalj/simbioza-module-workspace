@@ -376,10 +376,16 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     {
         $workspaceView = file_get_contents(dirname(__DIR__) . '/views/workspace/show.php');
         $manageView = file_get_contents(dirname(__DIR__) . '/views/workspace/manage.php');
+        $organizerView = file_get_contents(dirname(__DIR__) . '/views/workspace/tree-organizer.php');
+        $createDialogView = file_get_contents(dirname(__DIR__) . '/views/workspace/node-create-dialog.php');
+        $controller = file_get_contents(dirname(__DIR__) . '/src/Controller/WorkspaceController.php');
         $workspaceScript = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.js');
 
         $this->assertIsString($workspaceView);
         $this->assertIsString($manageView);
+        $this->assertIsString($organizerView);
+        $this->assertIsString($createDialogView);
+        $this->assertIsString($controller);
         $this->assertIsString($workspaceScript);
         $this->assertStringContainsString('data-workspace-tree-edit-toggle', $workspaceView);
         $this->assertStringContainsString('data-workspace-tree-editor-url', $workspaceView);
@@ -401,6 +407,16 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
             $workspaceScript,
         );
         $this->assertStringContainsString('document.body.append(modal)', $workspaceScript);
+        $this->assertStringContainsString("'node_id' => 0", $organizerView);
+        $this->assertStringContainsString('data-workspace-node-dialog-url', $organizerView);
+        $this->assertStringNotContainsString('data-workspace-lazy-modal', $organizerView);
+        $this->assertStringNotContainsString('$editorDocuments', $organizerView);
+        $this->assertStringContainsString("'workspace/node-fields'", $createDialogView);
+        $this->assertStringContainsString('private function createNodeDialog(', $controller);
+        $this->assertStringContainsString(
+            '$permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $allNodes);',
+            $controller,
+        );
         $this->assertStringNotContainsString('data-workspace-tree-order-form', $manageView);
         $this->assertStringNotContainsString("'workspace/node-fields'", $manageView);
     }
@@ -424,6 +440,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('data-workspace-tree-branch-toggle', $tree);
         $this->assertStringContainsString('data-workspace-tree-branch', $tree);
         $this->assertStringContainsString('data-workspace-tree-branch-url', $tree);
+        $this->assertStringContainsString('$nodeType === \'separator\'', $tree);
+        $this->assertStringContainsString('workspace-tree-separator', $tree);
+        $this->assertStringContainsString("['document', 'separator']", $organizer);
         $this->assertStringContainsString('loadBranch', $javascript);
         $this->assertStringContainsString('window.fetch', $javascript);
         $this->assertStringContainsString('$level === 1 || $containsActiveChild', $tree);

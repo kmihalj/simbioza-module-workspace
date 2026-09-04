@@ -171,6 +171,8 @@ Vrste čvorova:
 - `document`: povezuje jedan dokument HTML editora;
 - `internal_link`: vodi na imenovanu projektnu rutu ili internu putanju;
 - `external_link`: vodi na provjereni vanjski URL.
+- `separator`: jedina lokalizirana sistemska grana `Linkovi` / `Links` koja
+  grupira linkove bez stvaranja dokumenta.
 
 Roditelj i redoslijed određuju hijerarhiju. Korisnik s potpunim pravom
 upravljanja uključuje organizator izravno ikonom u zaglavlju lijevog stabla:
@@ -179,11 +181,16 @@ strelice lijevo/desno izvlače ili uvlače podgranu za jednu razinu. Nedostupne
 radnje su onemogućene. Brojevi redoslijeda sinkroniziraju se automatski i cijeli
 se raspored sprema jednom atomskom ORM transakcijom. Repository prije prvog
 zapisa provjerava da su poslani svi aktivni čvorovi, da su roditelji
-dokument-stranice i da nema ciklusa.
+dokument-stranice ili sistemski separator i da nema ciklusa. Separator se
+izričito dodaje u organizatoru, premješta se kao svaka druga grana i nikada se
+ne izmišlja iz podataka kojih nema u izvornoj import arhivi.
 
-Cijeli organizator, popis dostupnih dokumenata i obrazac za dodavanje učitavaju
-se tek pri prvom kliku na ikonu. Običan pregled zato ne šalje veliki skriveni
-HTML obrazac, što bitno smanjuje odgovor kod uvezenih područja s mnogo stranica.
+Cijeli organizator učitava se tek pri prvom kliku na ikonu, a prava njegovih
+čvorova računaju se skupno. Popis dostupnih dokumenata i obrazac za dodavanje
+učitavaju se odvojeno tek klikom na **Dodaj stavku** u podnožju. Običan pregled
+zato ne šalje veliki skriveni HTML obrazac, a otvaranje organizatora više ne
+popisuje sve dokumente Editora, što bitno smanjuje čekanje kod uvezenih područja
+s mnogo stranica.
 
 Mala edit ikona uz stavku otvara Bootstrap modal s naslovom, slugom, vrstom,
 ciljem, nasljednim ograničenjima i brisanjem. Obrazac se učitava na zahtjev pa

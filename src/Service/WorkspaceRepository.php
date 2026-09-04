@@ -1754,12 +1754,25 @@ final readonly class WorkspaceRepository
     {
         $this->assertTablesReady();
         $nodeId = $this->intValue($data['id'] ?? 0);
+        $nodeType = $this->nodeType($data['node_type'] ?? 'document');
         $primaryLanguage = $this->languageCode($data['primary_language'] ?? 'hr');
         $submittedTitleTranslations = $this->translationMap($data['title_translations'] ?? null);
         $supportedLanguages = $this->languageCodes(
             $data['supported_languages']
                 ?? array_merge([$primaryLanguage], array_keys($submittedTitleTranslations)),
         );
+        if ($nodeType === 'separator') {
+            $supportedLanguages = $this->languageCodes([
+                ...$supportedLanguages,
+                'hr',
+                'en',
+            ]);
+            $data['title_translations'] = array_fill_keys($supportedLanguages, 'Links');
+            $data['title_translations']['hr'] = 'Linkovi';
+            $data['title_translations']['en'] = 'Links';
+            $data['title'] = $data['title_translations'][$primaryLanguage] ?? 'Links';
+        }
+
         $titleTranslations = $this->normalizedTranslations(
             $data['title_translations'] ?? null,
             $supportedLanguages,
@@ -1771,18 +1784,43 @@ final readonly class WorkspaceRepository
             throw new RuntimeException(__('Naslov čvora je obavezan.'));
         }
 
-        $nodeType = $this->nodeType($data['node_type'] ?? 'document');
         $slugInput = $this->stringValue($data['slug'] ?? '');
         $slug = $this->uniqueNodeSlug(
             $workspaceId,
-            $this->slug($slugInput !== '' ? $slugInput : $title, 'page'),
+            $nodeType === 'separator'
+                ? 'links'
+                : $this->slug($slugInput !== '' ? $slugInput : $title, 'page'),
             $nodeId,
         );
+        $existingNode = $nodeId > 0 ? $this->findNodeById($nodeId) : null;
+        if (
+            is_array($existingNode)
+            && $this->stringValue($existingNode['node_type'] ?? '') === 'separator'
+            && $nodeType !== 'separator'
+        ) {
+            throw new RuntimeException(__('Sistemski separator Linkovi nije moguće pretvoriti u drugu vrstu stavke.'));
+        }
+
+        if ($nodeType === 'separator') {
+            foreach ($this->nodesForWorkspace($workspaceId) as $candidate) {
+                if (
+                    $this->intValue($candidate['id'] ?? 0) !== $nodeId
+                    && $this->stringValue($candidate['node_type'] ?? '') === 'separator'
+                ) {
+                    throw new RuntimeException(__('Područje već ima sistemski separator Linkovi.'));
+                }
+            }
+        }
+
         $parentId = $this->nullablePositiveInt($data['parent_id'] ?? null);
         if ($parentId !== null) {
             $parent = $this->findNodeById($parentId);
             if (!is_array($parent) || $this->intValue($parent['workspace_id'] ?? 0) !== $workspaceId) {
                 throw new RuntimeException(__('Roditeljska stranica nije valjana.'));
+            }
+
+            if (!in_array($this->stringValue($parent['node_type'] ?? ''), ['document', 'separator'], true)) {
+                throw new RuntimeException(__('Samo stranica ili separator može imati podređene stavke.'));
             }
 
             if ($nodeId > 0 && $this->wouldCreateCycle($nodeId, $parentId)) {
@@ -1826,7 +1864,6 @@ final readonly class WorkspaceRepository
         }
 
         $now = date('Y-m-d H:i:s');
-        $existingNode = $nodeId > 0 ? $this->findNodeById($nodeId) : null;
         $values = [
             'workspace_id' => $workspaceId,
             'parent_id' => $parentId,
@@ -1944,8 +1981,8 @@ final readonly class WorkspaceRepository
                     throw new RuntimeException(__('Roditeljska stranica nije valjana.'));
                 }
 
-                if ($this->stringValue($parent['node_type'] ?? '') !== 'document') {
-                    throw new RuntimeException(__('Samo dokument-stranica može imati podređene stavke.'));
+                if (!in_array($this->stringValue($parent['node_type'] ?? ''), ['document', 'separator'], true)) {
+                    throw new RuntimeException(__('Samo stranica ili separator može imati podređene stavke.'));
                 }
             }
 
@@ -3141,7 +3178,7 @@ final readonly class WorkspaceRepository
     {
         $type = is_scalar($value) ? strtolower(trim((string)$value)) : '';
 
-        return in_array($type, ['document', 'internal_link', 'external_link'], true)
+        return in_array($type, ['document', 'internal_link', 'external_link', 'separator'], true)
         ? $type
         : 'document';
     }

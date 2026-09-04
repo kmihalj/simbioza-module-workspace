@@ -407,6 +407,73 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
+     * HR: Sistemski separator ima fiksne lokalizirane naslove, postoji samo
+     *     jednom i ostaje pravi roditelj linkovima pri pomicanju stabla.
+     * EN: The system separator has fixed localized titles, exists only once,
+     *     and remains a real parent for links while the tree is reordered.
+     */
+    public function testLinksSeparatorIsUniqueLocalizedAndMovable(): void
+    {
+        $database = $this->database();
+        $repository = new WorkspaceRepository($database);
+        $now = '2026-09-04 09:00:00';
+        $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+            'uuid' => '90000000-0000-4000-8000-000000000001',
+            'slug' => 'links-test',
+            'name' => 'Links test',
+            'visibility' => 'public',
+            'is_archived' => false,
+            'is_deleted' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $page = $repository->saveNode(1, [
+            'node_type' => 'document',
+            'title' => 'Page',
+            'document_key' => 'page',
+        ], 1);
+        $separator = $repository->saveNode(1, [
+            'node_type' => 'separator',
+            'title' => 'Ignored',
+            'title_translations' => ['hr' => 'Pogrešno', 'en' => 'Wrong'],
+            'supported_languages' => ['hr', 'en'],
+            'primary_language' => 'hr',
+        ], 1);
+        $link = $repository->saveNode(1, [
+            'node_type' => 'external_link',
+            'title' => 'Srce',
+            'target_url' => 'https://www.srce.unizg.hr/',
+            'parent_id' => $separator['id'],
+        ], 1);
+
+        $this->assertSame('separator', $separator['node_type']);
+        $this->assertSame('links', $separator['slug']);
+        $this->assertSame('Linkovi', $separator['title']);
+        $this->assertSame(
+            ['hr' => 'Linkovi', 'en' => 'Links'],
+            $repository->translationMap($separator['title_translations']),
+        );
+        $this->assertSame($separator['id'], $link['parent_id']);
+
+        $repository->reorderNodes(1, [
+            ['id' => $page['id'], 'parent_id' => null, 'sort_order' => 100],
+            ['id' => $separator['id'], 'parent_id' => $page['id'], 'sort_order' => 100],
+            ['id' => $link['id'], 'parent_id' => $separator['id'], 'sort_order' => 100],
+        ], 1);
+        $movedSeparator = $repository->findNodeById((int)$separator['id']);
+        $this->assertIsArray($movedSeparator);
+        $this->assertSame($page['id'], $movedSeparator['parent_id']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Područje već ima sistemski separator Linkovi.');
+        $repository->saveNode(1, [
+            'node_type' => 'separator',
+            'title' => 'Another',
+        ], 1);
+    }
+
+    /**
      * HR: Priprema prijenosnu SQLite bazu s aktualnom inicijalnom Workspace shemom.
      * EN: Prepares a portable SQLite database with the current initial Workspace schema.
      */

@@ -14,10 +14,6 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $treeOrderSavePath
  * @var string $nodeDialogPath
  * @var string $nodeSavePath
- * @var list<array{id:string,title:string}> $editorDocuments
- * @var bool $editorAvailable
- * @var bool $canAttachExistingDocuments
- * @var bool $workspaceCanAdd
  */
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
 $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
@@ -46,7 +42,11 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
             $parentId = WorkspaceValue::int($node['parent_id'] ?? 0);
             $nodePermissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
-            $canBeParent = WorkspaceValue::string($node['node_type'] ?? '') === 'document'
+            $canBeParent = in_array(
+                WorkspaceValue::string($node['node_type'] ?? ''),
+                ['document', 'separator'],
+                true,
+            )
                 && (bool)($nodePermissions['can_add'] ?? false);
             $dialogUrl = $nodeDialogPath . '?' . http_build_query([
                 'workspace_id' => $workspaceId,
@@ -138,7 +138,14 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
             class="btn btn-outline-secondary btn-sm"
             type="button"
             data-bs-toggle="modal"
-            data-bs-target="#workspace-add-tree-item-modal"
+            data-bs-target="#workspace-node-editor-modal"
+            data-workspace-node-dialog-url="<?= $this->escape(
+                $nodeDialogPath . '?' . http_build_query([
+                    'workspace_id' => $workspaceId,
+                    'node_id' => 0,
+                    'return_node_id' => $returnNodeId,
+                ]),
+            ) ?>"
         >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 5v14M5 12h14"/>
@@ -152,66 +159,3 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
         <?php endif; ?>
     </div>
 </form>
-
-<div
-    class="modal fade"
-    id="workspace-add-tree-item-modal"
-    tabindex="-1"
-    aria-labelledby="workspace-add-tree-item-title"
-    aria-hidden="true"
-    data-workspace-lazy-modal
->
-    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h2 id="workspace-add-tree-item-title" class="modal-title fs-5 mb-0">
-                        <?= $this->escape(__('Dodaj poveznicu ili postojeći dokument')) ?>
-                    </h2>
-                    <p class="small text-body-secondary mb-0">
-                        <?= $this->escape(__('Nova stavka bit će dodana u stablo ovog područja.')) ?>
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="<?= $this->escape(__('Zatvori')) ?>"
-                ></button>
-            </div>
-            <form method="post" action="<?= $this->escape($nodeSavePath) ?>">
-                <div class="modal-body">
-                    <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-                    <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
-                    <input type="hidden" name="return_context" value="workspace">
-                    <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
-                    <?= $this->forModulePartial(
-                        'aaieduhr/simbioza-module-workspace',
-                        'workspace/node-fields',
-                        [
-                            'node' => ['node_type' => 'internal_link'],
-                            'nodes' => $nodes,
-                            'editorDocuments' => $editorDocuments,
-                            'editorAvailable' => $editorAvailable,
-                            'canAttachExistingDocuments' => $canAttachExistingDocuments,
-                            'workspaceCanAdd' => $workspaceCanAdd,
-                            'treeOrganizerAvailable' => true,
-                            'activeLanguage' => $activeLanguage ?? 'hr',
-                            'primaryLanguage' => $primaryLanguage ?? 'hr',
-                            'supportedLanguages' => $supportedLanguages ?? ['hr'],
-                            'localeFlagPaths' => $localeFlagPaths ?? [],
-                        ],
-                    ) ?>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <?= $this->escape(__('Odustani')) ?>
-                    </button>
-                    <button class="btn btn-primary" type="submit">
-                        <?= $this->escape(__('Dodaj stavku')) ?>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>

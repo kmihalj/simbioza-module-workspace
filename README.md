@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.6
+composer require aaieduhr/simbioza-module-workspace:^0.1.7
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -40,7 +40,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
   personal Workspaces, while preserving the current user's own space and ACL
 - page-level restrictions inherited by every descendant
 - ACL-filtered Workspace Shorts with rendered article excerpts, depth, count, and ordering controls
-- hierarchical document, internal-link, and external-link nodes
+- hierarchical document, internal-link, and external-link nodes, plus one
+  movable localized **Links** system branch for grouping links
 - compact, borderless, collapsible, and responsive page tree that opens only
   the active page's ancestor path below the first level
 - ACL-safe breadcrumbs from the application home through visible ancestors
@@ -79,6 +80,12 @@ Open **Edit tree**, then the pencil beside a page, to inspect page restrictions.
 Green checkboxes show permissions inherited from the Workspace and ancestor pages; red checkboxes
 show permissions retained by a direct restriction on that page. Saving no red
 checkboxes removes the direct restriction and returns to full inheritance.
+
+The add-item form can create one **Links** system separator per Workspace. Its
+title is fixed as `Linkovi` in Croatian and `Links` in English, it may be moved
+anywhere a normal branch may be placed, and it may contain link nodes. It is a
+Workspace editing feature only: imports do not synthesize it when the source
+archive does not contain equivalent data.
 
 `Public` is a built-in view-only audience. `All signed-in users` is not a real
 Auth group either, but it may receive broader permissions. The form renders

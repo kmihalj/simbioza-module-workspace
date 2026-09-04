@@ -31,7 +31,7 @@ Opcionalne integracije:
 - API dodaje ACL Workspace resurse i rute za upravljanje stablom.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.6
+composer require aaieduhr/simbioza-module-workspace:^0.1.7
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -53,7 +53,8 @@ English documentation: [README.md](README.md)
 - asinkrono pretraživanje Auth imenika bez ispisivanja svih korisnika i grupa
 - ograničenja po stranici koja nasljeđuju svi potomci
 - ACL-filtrirani Sažetci s renderiranim isječcima, razinama, brojem i redoslijedom članaka
-- hijerarhijski čvorovi za dokumente, interne i vanjske linkove
+- hijerarhijski čvorovi za dokumente, interne i vanjske linkove te jedna
+  pomična sistemska grana **Linkovi** za grupiranje poveznica
 - kompaktno responzivno stablo bez okvira koje ispod prve razine otvara samo
   putanju do aktivne stranice
 - ACL-sigurna navigacijska putanja od početne stranice kroz vidljive pretke
@@ -96,6 +97,12 @@ Za pregled ograničenja uključite **Uredi stablo** i odaberite olovku uz
 stranicu. Zeleni checkbox prikazuje pravo naslijeđeno iz Područja, a crveni
 pravo zadržano izravnim ograničenjem te stranice. Spremanje bez ijedne crvene
 oznake uklanja izravno ograničenje i vraća potpuno nasljeđivanje.
+
+Obrazac za dodavanje stavke može izraditi jedan sistemski separator **Linkovi**
+po Području. Naslov je fiksno `Linkovi` na hrvatskom i `Links` na engleskom,
+grana se može premještati gdje i obična grana te ispod nje mogu stajati linkovi.
+To je funkcija uređivanja Područja: import ne izmišlja separator kada odgovarajući
+podatak ne postoji u izvornoj arhivi.
 
 `Javno` je ugrađena publika samo za čitanje. `Svi prijavljeni` također nije
 stvarna Auth grupa, ali može dobiti šira prava. Obrazac prikazuje samo

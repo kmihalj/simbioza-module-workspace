@@ -268,13 +268,16 @@ final readonly class WorkspaceShortsService
     private function decorateTree(array $tree, string $workspaceSlug, string $language): array
     {
         foreach ($tree as &$node) {
-            $node['href'] = WorkspaceValue::string($node['node_type'] ?? '') === 'document'
-            ? $this->nodePath(
-                $workspaceSlug,
-                WorkspaceValue::string($node['slug'] ?? ''),
-                $language,
-            )
-            : WorkspaceValue::string($node['target_url'] ?? '#');
+            $nodeType = WorkspaceValue::string($node['node_type'] ?? '');
+            $node['href'] = match ($nodeType) {
+                'document' => $this->nodePath(
+                    $workspaceSlug,
+                    WorkspaceValue::string($node['slug'] ?? ''),
+                    $language,
+                ),
+                'separator' => '',
+                default => WorkspaceValue::string($node['target_url'] ?? '#'),
+            };
             $node['children'] = $this->decorateTree(
                 WorkspaceValue::rows($node['children'] ?? null),
                 $workspaceSlug,

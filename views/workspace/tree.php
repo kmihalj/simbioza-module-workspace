@@ -62,6 +62,7 @@ $containsActiveNode = static function (
         $workflowLabel = WorkspaceValue::string($treeNode['workflow_label'] ?? '');
         $workflowStatus = WorkspaceValue::string($treeNode['workflow_status'] ?? '');
         $title = WorkspaceValue::string($treeNode['title'] ?? '');
+        $nodeType = WorkspaceValue::string($treeNode['node_type'] ?? '');
         $branchId = 'workspace-tree-branch-' . $treeNodeId;
         $containsActiveChild = $containsActiveNode($children, $activeNodeId ?? null);
         $branchExpanded = $hasChildren && ($level === 1 || $containsActiveChild);
@@ -102,26 +103,37 @@ $containsActiveNode = static function (
         <?php else : ?>
                 <span class="workspace-tree-branch-spacer" aria-hidden="true"></span>
         <?php endif; ?>
+        <?php if ($nodeType === 'separator') : ?>
+                <span
+                    class="list-group-item workspace-tree-link workspace-tree-separator
+                        workspace-tree-link-level-<?= $this->escape((string)$level) ?>"
+                    role="heading"
+                    aria-level="<?= $this->escape((string)$level) ?>"
+                >
+                    <span class="workspace-tree-link-title"><?= $this->escape($title) ?></span>
+                </span>
+        <?php else : ?>
                 <a
                     class="list-group-item list-group-item-action workspace-tree-link
                         workspace-tree-link-level-<?= $this->escape((string)$level) ?><?= $isActive ? ' active' : '' ?>"
                     href="<?= $this->escape(WorkspaceValue::string($treeNode['href'] ?? '#')) ?>"
-        <?= $isActive ? 'aria-current="page"' : '' ?>
-        <?= WorkspaceValue::string($treeNode['node_type'] ?? '') === 'external_link'
-        ? 'target="_blank" rel="noopener noreferrer"'
-        : '' ?>
+            <?= $isActive ? 'aria-current="page"' : '' ?>
+            <?= $nodeType === 'external_link'
+            ? 'target="_blank" rel="noopener noreferrer"'
+            : '' ?>
                 >
                     <span class="workspace-tree-link-title"><?= $this->escape($title) ?></span>
-        <?php if ($workflowLabel !== '') : ?>
+            <?php if ($workflowLabel !== '') : ?>
                     <span
                         class="badge rounded-pill workspace-tree-status
-            <?= $workflowStatus === 'in_review' ? 'text-bg-warning' : 'text-bg-info' ?>"
+                <?= $workflowStatus === 'in_review' ? 'text-bg-warning' : 'text-bg-info' ?>"
                         title="<?= $this->escape($workflowLabel) ?>"
                     >
-            <?= $this->escape($workflowLabel) ?>
+                <?= $this->escape($workflowLabel) ?>
                     </span>
-        <?php endif; ?>
+            <?php endif; ?>
                 </a>
+        <?php endif; ?>
             </div>
         <?php if ($hasChildren) : ?>
             <div

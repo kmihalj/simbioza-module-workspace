@@ -535,11 +535,13 @@ final readonly class WorkspaceExportService
             $children = WorkspaceValue::rows($node['children'] ?? null);
             if ($type === 'document') {
                 $href = '#page-' . $nodeId;
+            } elseif ($type === 'separator') {
+                $href = '';
             } else {
                 $href = WorkspaceValue::string($node['link_url'] ?? '#');
             }
 
-            if ($href === '') {
+            if ($href === '' && $type !== 'separator') {
                 continue;
             }
 
@@ -555,9 +557,12 @@ final readonly class WorkspaceExportService
                 . $this->escape(WorkspaceValue::string($localizedNode['title'] ?? '')) . '</span>';
             }
 
-            $items .= '<li><a href="' . $this->escape($href) . '"'
-            . ($type === 'document' ? ' data-export-page-link data-node-id="' . $nodeId . '"' : '') . '>'
-            . $labels . '</a>'
+            $items .= '<li>'
+            . ($type === 'separator'
+                ? '<span class="workspace-export-tree-separator">' . $labels . '</span>'
+                : '<a href="' . $this->escape($href) . '"'
+                    . ($type === 'document' ? ' data-export-page-link data-node-id="' . $nodeId . '"' : '') . '>'
+                    . $labels . '</a>')
             . ($children !== [] ? $this->treeHtml($children, $localized, $languages, $locale) : '')
             . '</li>';
         }
@@ -1334,6 +1339,16 @@ body {
 .workspace-export-tree-list a:hover,
 .workspace-export-tree-list a:focus-visible {
     background: var(--hph-nav-hover-bg, var(--bs-tertiary-bg));
+}
+
+.workspace-export-tree-separator {
+    color: var(--hph-muted-text, var(--bs-secondary-color));
+    display: block;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: .4rem .5rem;
+    text-transform: uppercase;
 }
 
 .workspace-export-document {

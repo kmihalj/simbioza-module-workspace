@@ -51,7 +51,7 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
 };
 ?>
 <div class="row g-3" data-workspace-node-fields>
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-4" data-workspace-node-types="document internal_link external_link">
         <label class="form-label" for="workspace-node-title-<?= $nodeId ?>-<?= $activeLanguage ?>">
             <?= $this->escape(__('Naslov')) ?>
         </label>
@@ -101,7 +101,7 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
             )) ?>
         </div>
     </div>
-    <div class="col-12 col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3" data-workspace-node-types="document internal_link external_link">
         <label class="form-label"><?= $this->escape(__('Slug')) ?></label>
         <input
             class="form-control font-monospace"
@@ -111,13 +111,20 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
     </div>
     <div class="col-12 col-md-6 col-lg-3">
         <label class="form-label"><?= $this->escape(__('Vrsta stavke')) ?></label>
-        <select class="form-select" name="node_type" data-workspace-node-type>
-            <?php foreach (['document', 'internal_link', 'external_link'] as $type) : ?>
-                <option value="<?= $type ?>" <?= $nodeType === $type ? 'selected' : '' ?>>
+        <?php if ($nodeType === 'separator' && $nodeId > 0) : ?>
+            <input type="hidden" name="node_type" value="separator">
+            <select class="form-select" data-workspace-node-type disabled>
+                <option value="separator" selected><?= $this->escape(__('separator')) ?></option>
+            </select>
+        <?php else : ?>
+            <select class="form-select" name="node_type" data-workspace-node-type>
+            <?php foreach (['document', 'internal_link', 'external_link', 'separator'] as $type) : ?>
+                    <option value="<?= $type ?>" <?= $nodeType === $type ? 'selected' : '' ?>>
                 <?= $this->escape(__($type)) ?>
-                </option>
+                    </option>
             <?php endforeach; ?>
-        </select>
+            </select>
+        <?php endif; ?>
     </div>
     <?php if (!$treeOrganizerAvailable) : ?>
         <div class="col-12 col-md-4 col-lg-2">
@@ -148,7 +155,11 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
             <?php if (
                         $candidateId !== $nodeId
                         && $canUseCandidate
-                        && WorkspaceValue::string($candidate['node_type'] ?? '') === 'document'
+                        && in_array(
+                            WorkspaceValue::string($candidate['node_type'] ?? ''),
+                            ['document', 'separator'],
+                            true,
+                        )
 ) : ?>
                         <option
                             value="<?= $candidateId ?>"
@@ -166,6 +177,13 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
             </select>
         </div>
     <?php endif; ?>
+    <div class="col-12" data-workspace-node-types="separator">
+        <div class="alert alert-info mb-0">
+            <?= $this->escape(__(
+                'Sistemski separator ima fiksni naslov Linkovi / Links i ponaša se kao pomična grana stabla.',
+            )) ?>
+        </div>
+    </div>
     <div class="col-12 col-md-6" data-workspace-node-types="document">
         <label class="form-label"><?= $this->escape(__('HTML dokument')) ?></label>
         <?php if ($canAttachExistingDocuments) : ?>

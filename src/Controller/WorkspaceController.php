@@ -631,14 +631,23 @@ final readonly class WorkspaceController
     {
         $query = WorkspaceValue::stringKeyArray($request->getQueryParams());
         $workspace = $this->workspaceFromInput($query);
-        $node = $this->repository->findNodeById($this->intValue($query['node_id'] ?? 0));
-        if (!is_array($workspace) || !is_array($node)) {
+        if (!is_array($workspace)) {
             return $this->responseFactory->html(
                 '<div class="modal-body"><div class="alert alert-danger mb-0">'
                 . htmlspecialchars(__('Sadržaj nije pronađen'), ENT_QUOTES, 'UTF-8')
                 . '</div></div>',
                 404,
             );
+        }
+
+        $nodeId = $this->intValue($query['node_id'] ?? 0);
+        if ($nodeId <= 0) {
+            return $this->createNodeDialog($request, $workspace, $query);
+        }
+
+        $node = $this->repository->findNodeById($nodeId);
+        if (!is_array($node)) {
+            return $this->responseFactory->html('', 404);
         }
 
         if (
@@ -780,9 +789,12 @@ final readonly class WorkspaceController
         }
 
         $workspaceId = $this->intValue($workspace['id'] ?? 0);
+        $allNodes = $this->repository->nodesForWorkspace($workspaceId);
+        $permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $allNodes);
         $managementNodes = [];
-        foreach ($this->repository->nodesForWorkspace($workspaceId) as $candidate) {
-            $permissions = $this->access->nodePermissions($workspace, $candidate);
+        foreach ($allNodes as $candidate) {
+            $permissions = $permissionsByNode[$this->intValue($candidate['id'] ?? 0)]
+            ?? $this->permissionArray([]);
             if (!(bool)($permissions['can_view'] ?? false) || !(bool)($permissions['can_edit'] ?? false)) {
                 return $this->responseFactory->html(
                     '<div class="alert alert-danger mb-0">'
@@ -802,7 +814,6 @@ final readonly class WorkspaceController
 
         $language = $this->language($request);
         $primaryLanguage = $this->config->siteDefaultLanguage();
-        $supportedLanguages = $this->config->supportedLanguages();
         $workspace = $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage);
         $managementNodes = array_map(
             function (array $candidate) use ($language, $primaryLanguage): array {
@@ -832,16 +843,81 @@ final readonly class WorkspaceController
                 'workspace.node.dialog',
                 '/workspaces/node/dialog',
             ),
-            'nodeSavePath' => $this->pathFor(
-                'workspace.node.save',
-                '/workspaces/node/save',
+        ]);
+        // The organizer contains only controls and escaped labels, so whitespace
+        // between tags has no visual meaning. Removing it keeps very large trees
+        // from transferring several megabytes of template indentation.
+        $html = preg_replace('/>\s+</', '><', $html) ?? $html;
+
+        return $this->responseFactory->html($html, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
+     * HR: Obrazac za novu stavku učitava tek nakon klika. Popis Editor
+     *     dokumenata zato više ne usporava samo otvaranje velikog organizatora.
+     * EN: Loads the new-item form only after a click. The Editor document list
+     *     therefore no longer slows down opening a large organizer by itself.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed> $query
+     */
+    private function createNodeDialog(
+        ServerRequestInterface $request,
+        array $workspace,
+        array $query,
+    ): ResponseInterface {
+        $workspacePermissions = $this->access->workspacePermissions($workspace);
+        if (
+            !(bool)($workspacePermissions['can_add'] ?? false)
+            && !(bool)($workspacePermissions['can_manage'] ?? false)
+        ) {
+            return $this->responseFactory->html('', 403);
+        }
+
+        $workspaceId = $this->intValue($workspace['id'] ?? 0);
+        $allNodes = $this->repository->nodesForWorkspace($workspaceId);
+        $permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $allNodes);
+        $nodes = [];
+        foreach ($allNodes as $candidate) {
+            $candidatePermissions = $permissionsByNode[$this->intValue($candidate['id'] ?? 0)]
+            ?? $this->permissionArray([]);
+            if (!(bool)($candidatePermissions['can_view'] ?? false)) {
+                continue;
+            }
+
+            $candidate['permissions'] = $candidatePermissions;
+            $nodes[] = $candidate;
+        }
+
+        $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $supportedLanguages = $this->config->supportedLanguages();
+        $localizedWorkspace = $this->repository->localizeWorkspace(
+            $workspace,
+            $language,
+            $primaryLanguage,
+        );
+        $nodes = array_map(
+            fn(array $candidate): array => $this->repository->localizeNode(
+                $candidate,
+                $language,
+                $primaryLanguage,
             ),
+            $nodes,
+        );
+
+        $html = $this->viewRenderer->renderPartial('workspace/node-create-dialog', [
+            'workspace' => $localizedWorkspace,
+            'node' => ['node_type' => 'internal_link'],
+            'nodes' => $this->orderNodesForManagement($nodes),
             'editorAvailable' => $this->editor->isAvailable(),
             'editorDocuments' => $this->access->isAdministrator()
-                ? $this->editor->documents($this->language($request))
+                ? $this->editor->documents($language)
                 : [],
             'canAttachExistingDocuments' => $this->access->isAdministrator(),
             'workspaceCanAdd' => (bool)($workspacePermissions['can_add'] ?? false),
+            'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
+            'returnNodeId' => $this->intValue($query['return_node_id'] ?? 0),
             'activeLanguage' => $language,
             'primaryLanguage' => $primaryLanguage,
             'supportedLanguages' => $supportedLanguages,
@@ -1108,8 +1184,12 @@ final readonly class WorkspaceController
             return $this->accessDenied();
         }
 
-        foreach ($this->repository->nodesForWorkspace($this->intValue($workspace['id'] ?? 0)) as $node) {
-            if (!$this->access->nodePermissions($workspace, $node)['can_edit']) {
+        $nodes = $this->repository->nodesForWorkspace($this->intValue($workspace['id'] ?? 0));
+        $permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $nodes);
+        foreach ($nodes as $node) {
+            $permissions = $permissionsByNode[$this->intValue($node['id'] ?? 0)]
+            ?? $this->permissionArray([]);
+            if (!$permissions['can_edit']) {
                 return $this->accessDenied();
             }
         }
@@ -2140,12 +2220,14 @@ final readonly class WorkspaceController
                 $this->config->siteDefaultLanguage(),
             );
             $type = $this->stringValue($node['node_type'] ?? 'document');
-            $node['href'] = $type === 'document'
-            ? $this->nodePath(
-                $this->stringValue($workspace['slug'] ?? ''),
-                $this->stringValue($node['slug'] ?? ''),
-            )
-            : $this->linkNodeHref($node);
+            $node['href'] = match ($type) {
+                'document' => $this->nodePath(
+                    $this->stringValue($workspace['slug'] ?? ''),
+                    $this->stringValue($node['slug'] ?? ''),
+                ),
+                'separator' => '',
+                default => $this->linkNodeHref($node),
+            };
             $permissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
             $workflow = $workflows[$this->intValue($node['id'] ?? 0)] ?? null;
             if (
