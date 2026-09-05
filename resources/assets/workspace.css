@@ -941,7 +941,7 @@
 .workspace-tree-editor-row {
     display: grid;
     align-items: start;
-    grid-template-columns: 1.35rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.35rem minmax(0, 1fr);
     grid-template-rows: auto auto;
     column-gap: .35rem;
     row-gap: .05rem;
@@ -970,9 +970,9 @@
 }
 
 .workspace-tree-editor-row .workspace-tree-order-label {
-    align-self: center;
+    align-self: start;
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
     padding-left: calc(var(--workspace-tree-level, 0) * .65rem);
 }
 
@@ -1037,8 +1037,8 @@
     display: flex;
     flex-wrap: nowrap;
     gap: .05rem;
-    grid-column: 3;
-    grid-row: 1 / span 2;
+    grid-column: 2;
+    grid-row: 2;
     justify-content: flex-end;
     justify-self: end;
 }
@@ -1229,16 +1229,6 @@
 
     .workspace-workflow-action {
         justify-content: center;
-    }
-
-    .workspace-tree-editor-row .workspace-tree-order-controls {
-        grid-column: 2 / -1;
-        grid-row: 2;
-    }
-
-    .workspace-tree-editor-row .workspace-tree-order-label {
-        align-self: start;
-        grid-row: 1;
     }
 }
 
