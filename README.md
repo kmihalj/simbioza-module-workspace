@@ -24,7 +24,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.9
+composer require aaieduhr/simbioza-module-workspace:^0.1.11
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```

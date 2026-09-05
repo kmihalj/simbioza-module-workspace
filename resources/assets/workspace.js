@@ -2015,6 +2015,418 @@
     }
 
     /**
+     * HR: Ujednačava tekst za lokalno filtriranje pretraživih odabira.
+     * EN: Normalizes text for local filtering in searchable pickers.
+     *
+     * @param {string} value
+     * @returns {string}
+     */
+    function normalizedHomepageSearch(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLocaleLowerCase();
+    }
+
+    /**
+     * HR: Zatvara pretraživi odabir i po potrebi vraća fokus na njegov gumb.
+     * EN: Closes a searchable picker and optionally restores focus to its toggle.
+     *
+     * @param {HTMLElement} picker
+     * @param {boolean} [restoreFocus=false]
+     * @returns {void}
+     */
+    function closeHomepagePicker(picker, restoreFocus = false) {
+        const toggle = picker.querySelector('[data-workspace-homepage-picker-toggle]');
+        const menu = picker.querySelector('[data-workspace-homepage-picker-menu]');
+        if (!(toggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+            return;
+        }
+
+        menu.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        if (restoreFocus) {
+            toggle.focus();
+        }
+    }
+
+    /**
+     * HR: Filtrira trenutno popunjene opcije područja ili stranica.
+     * EN: Filters the currently populated Workspace or page choices.
+     *
+     * @param {HTMLElement} picker
+     * @param {string} query
+     * @returns {void}
+     */
+    function filterHomepagePicker(picker, query) {
+        const options = picker.querySelector('[data-workspace-homepage-picker-options]');
+        if (!(options instanceof HTMLElement)) {
+            return;
+        }
+
+        const normalizedQuery = normalizedHomepageSearch(query.trim());
+        let visible = 0;
+        options.querySelectorAll('[data-workspace-homepage-picker-option]').forEach((option) => {
+            if (!(option instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const matches = normalizedQuery === ''
+                || normalizedHomepageSearch(option.textContent || '').includes(normalizedQuery);
+            option.hidden = !matches;
+            if (matches) {
+                visible += 1;
+            }
+        });
+
+        const empty = options.querySelector('[data-workspace-homepage-picker-empty]');
+        if (empty instanceof HTMLElement) {
+            empty.hidden = visible > 0;
+        }
+    }
+
+    /**
+     * HR: Jednom povezuje otvaranje, filtriranje i tipkovničko upravljanje pickerom.
+     * EN: Wires picker opening, filtering, and keyboard control once.
+     *
+     * @param {HTMLElement} picker
+     * @returns {void}
+     */
+    function initializeHomepagePickerBehaviour(picker) {
+        if (picker.dataset.workspaceHomepagePickerReady === '1') {
+            return;
+        }
+
+        const toggle = picker.querySelector('[data-workspace-homepage-picker-toggle]');
+        const menu = picker.querySelector('[data-workspace-homepage-picker-menu]');
+        const search = picker.querySelector('[data-workspace-homepage-picker-search]');
+        const options = picker.querySelector('[data-workspace-homepage-picker-options]');
+        if (
+            !(toggle instanceof HTMLButtonElement)
+            || !(menu instanceof HTMLElement)
+            || !(search instanceof HTMLInputElement)
+            || !(options instanceof HTMLElement)
+        ) {
+            return;
+        }
+
+        picker.dataset.workspaceHomepagePickerReady = '1';
+        toggle.addEventListener('click', () => {
+            const willOpen = menu.hidden;
+            document.querySelectorAll('[data-workspace-homepage-picker]').forEach((other) => {
+                if (other instanceof HTMLElement && other !== picker) {
+                    closeHomepagePicker(other);
+                }
+            });
+            menu.hidden = !willOpen;
+            toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            if (willOpen) {
+                search.value = '';
+                filterHomepagePicker(picker, '');
+                search.focus();
+            }
+        });
+        search.addEventListener('input', () => {
+            filterHomepagePicker(picker, search.value);
+        });
+        search.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeHomepagePicker(picker, true);
+                return;
+            }
+            if (event.key !== 'ArrowDown') {
+                return;
+            }
+
+            const first = options.querySelector(
+                '[data-workspace-homepage-picker-option]:not([hidden])',
+            );
+            if (first instanceof HTMLButtonElement) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+        options.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeHomepagePicker(picker, true);
+                return;
+            }
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+                return;
+            }
+
+            const choices = Array.from(options.querySelectorAll(
+                '[data-workspace-homepage-picker-option]:not([hidden])',
+            ));
+            const current = choices.indexOf(document.activeElement);
+            if (current < 0 || choices.length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+            const offset = event.key === 'ArrowDown' ? 1 : -1;
+            const next = (current + offset + choices.length) % choices.length;
+            const choice = choices[next];
+            if (choice instanceof HTMLButtonElement) {
+                choice.focus();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (event.target instanceof Node && !picker.contains(event.target)) {
+                closeHomepagePicker(picker);
+            }
+        });
+    }
+
+    /**
+     * HR: Popunjava picker samo opcijama dopuštenima u trenutačnom kontekstu.
+     * EN: Populates a picker only with choices allowed in the current context.
+     *
+     * @param {HTMLElement} picker
+     * @param {{value:string,label:string}[]} choices
+     * @param {string} selectedValue
+     * @param {string} emptyLabel
+     * @param {string} noResultsLabel
+     * @param {boolean} disabled
+     * @param {(value:string) => void} onSelect
+     * @returns {void}
+     */
+    function populateHomepagePicker(
+        picker,
+        choices,
+        selectedValue,
+        emptyLabel,
+        noResultsLabel,
+        disabled,
+        onSelect,
+    ) {
+        const toggle = picker.querySelector('[data-workspace-homepage-picker-toggle]');
+        const label = picker.querySelector('[data-workspace-homepage-picker-label]');
+        const options = picker.querySelector('[data-workspace-homepage-picker-options]');
+        if (
+            !(toggle instanceof HTMLButtonElement)
+            || !(label instanceof HTMLElement)
+            || !(options instanceof HTMLElement)
+        ) {
+            return;
+        }
+
+        options.replaceChildren();
+        const selected = choices.find((choice) => choice.value === selectedValue);
+        label.textContent = selected?.label || emptyLabel;
+        toggle.disabled = disabled;
+        picker.dataset.workspaceHomepagePickerValue = selected?.value || '';
+        choices.forEach((choice) => {
+            const option = document.createElement('button');
+            option.className = 'list-group-item list-group-item-action';
+            option.type = 'button';
+            option.role = 'option';
+            option.dataset.workspaceHomepagePickerOption = '';
+            option.dataset.value = choice.value;
+            option.textContent = choice.label;
+            option.setAttribute('aria-selected', choice.value === selectedValue ? 'true' : 'false');
+            option.addEventListener('click', () => {
+                picker.dataset.workspaceHomepagePickerValue = choice.value;
+                label.textContent = choice.label;
+                options.querySelectorAll('[aria-selected="true"]').forEach((current) => {
+                    current.setAttribute('aria-selected', 'false');
+                });
+                option.setAttribute('aria-selected', 'true');
+                closeHomepagePicker(picker, true);
+                onSelect(choice.value);
+            });
+            options.append(option);
+        });
+
+        const empty = document.createElement('div');
+        empty.className = 'list-group-item text-body-secondary';
+        empty.dataset.workspaceHomepagePickerEmpty = '';
+        empty.textContent = noResultsLabel;
+        empty.hidden = choices.length > 0;
+        options.append(empty);
+        closeHomepagePicker(picker);
+    }
+
+    /**
+     * HR: Povezuje područje i stranicu bez promjene postojećeg spremljenog cilja.
+     * EN: Connects Workspace and page pickers without changing the stored target format.
+     *
+     * @param {HTMLElement} selector
+     * @returns {void}
+     */
+    function initializeHomepageSelector(selector) {
+        if (selector.dataset.workspaceHomepageSelectorReady === '1') {
+            return;
+        }
+
+        const workspacePicker = selector.querySelector(
+            '[data-workspace-homepage-picker="workspace"]',
+        );
+        const pagePicker = selector.querySelector('[data-workspace-homepage-picker="page"]');
+        const target = selector.querySelector('[data-workspace-homepage-target]');
+        const payload = selector.querySelector('[data-workspace-homepage-options]');
+        const required = selector.querySelector('[data-workspace-homepage-page-required]');
+        if (
+            !(workspacePicker instanceof HTMLElement)
+            || !(pagePicker instanceof HTMLElement)
+            || !(target instanceof HTMLInputElement)
+            || !(payload instanceof HTMLScriptElement)
+        ) {
+            return;
+        }
+
+        let groups;
+        try {
+            groups = JSON.parse(payload.textContent || '[]');
+        } catch (error) {
+            groups = [];
+        }
+        if (!Array.isArray(groups)) {
+            groups = [];
+        }
+
+        selector.dataset.workspaceHomepageSelectorReady = '1';
+        initializeHomepagePickerBehaviour(workspacePicker);
+        initializeHomepagePickerBehaviour(pagePicker);
+
+        const specialWorkspace = String(selector.dataset.workspaceHomepageSpecialWorkspace || '');
+        const specialWorkspaceLabel = String(
+            selector.dataset.workspaceHomepageSpecialWorkspaceLabel || '',
+        );
+        const specialPageLabel = String(selector.dataset.workspaceHomepageSpecialPageLabel || '');
+        const allLabel = String(selector.dataset.workspaceHomepageAllLabel || '');
+        const pagePlaceholder = String(selector.dataset.workspaceHomepagePagePlaceholder || '');
+        const noResultsLabel = String(selector.dataset.workspaceHomepageNoResults || '');
+        const normalizedGroups = groups.map((group) => {
+            const options = Array.isArray(group.options) ? group.options : [];
+            const workspaceId = String(options[0]?.workspace_id || '');
+            return {
+                id: workspaceId,
+                name: String(group.name || ''),
+                options: options.map((option) => ({
+                    value: String(option.value || ''),
+                    title: String(option.title || ''),
+                })).filter((option) => option.value !== '' && option.title !== ''),
+            };
+        }).filter((group) => group.id !== '' && group.name !== '');
+        const specialChoice = {
+            value: specialWorkspace,
+            label: specialWorkspaceLabel,
+        };
+        const workspaceChoices = [
+            specialChoice,
+            {value: 'all', label: allLabel},
+            ...normalizedGroups.map((group) => ({
+                value: 'workspace:' + group.id,
+                label: group.name,
+            })),
+        ];
+        let selectedWorkspace = String(
+            selector.dataset.workspaceHomepageSelectedWorkspace || specialWorkspace,
+        );
+
+        const refreshForm = () => {
+            const form = selector.closest('form');
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            const invalid = Array.from(form.querySelectorAll('[data-workspace-homepage-target]'))
+                .some((control) => control instanceof HTMLInputElement && control.value === '');
+            form.querySelectorAll('[data-workspace-homepage-submit]').forEach((button) => {
+                if (button instanceof HTMLButtonElement) {
+                    button.disabled = invalid;
+                }
+            });
+        };
+        const setTarget = (value) => {
+            if (target.value !== value) {
+                target.value = value;
+                target.dispatchEvent(new Event('change', {bubbles: true}));
+            }
+            if (required instanceof HTMLElement) {
+                required.hidden = value !== '';
+            }
+            const pageToggle = pagePicker.querySelector('[data-workspace-homepage-picker-toggle]');
+            if (pageToggle instanceof HTMLButtonElement) {
+                pageToggle.setAttribute('aria-invalid', value === '' ? 'true' : 'false');
+            }
+            refreshForm();
+        };
+        const pageChoices = () => normalizedGroups.flatMap((group) => {
+            if (selectedWorkspace !== 'all' && selectedWorkspace !== 'workspace:' + group.id) {
+                return [];
+            }
+
+            return group.options.map((option) => ({
+                value: option.value,
+                label: selectedWorkspace === 'all'
+                    ? group.name + ' / ' + option.title
+                    : option.title,
+            }));
+        });
+        const synchronizePagePicker = () => {
+            if (selectedWorkspace === specialWorkspace) {
+                populateHomepagePicker(
+                    pagePicker,
+                    [],
+                    '',
+                    specialPageLabel,
+                    noResultsLabel,
+                    true,
+                    () => {},
+                );
+                setTarget('default');
+                return;
+            }
+
+            const choices = pageChoices();
+            const selectedTarget = choices.some((choice) => choice.value === target.value)
+                ? target.value
+                : '';
+            populateHomepagePicker(
+                pagePicker,
+                choices,
+                selectedTarget,
+                pagePlaceholder,
+                noResultsLabel,
+                false,
+                setTarget,
+            );
+            setTarget(selectedTarget);
+        };
+
+        populateHomepagePicker(
+            workspacePicker,
+            workspaceChoices,
+            selectedWorkspace,
+            specialChoice.label,
+            noResultsLabel,
+            false,
+            (value) => {
+                selectedWorkspace = value;
+                synchronizePagePicker();
+            },
+        );
+        synchronizePagePicker();
+    }
+
+    /**
+     * HR: Inicijalizira sve administratorske dvostupanjske odabire naslovnice.
+     * EN: Initializes every administrator two-step homepage selector.
+     *
+     * @returns {void}
+     */
+    function initializeHomepageSelectors() {
+        document.querySelectorAll('[data-workspace-homepage-selector]').forEach((selector) => {
+            if (selector instanceof HTMLElement) {
+                initializeHomepageSelector(selector);
+            }
+        });
+    }
+
+    /**
      * HR: Prikazuje postavke stabla i opcija samo kada je cilj naslovnice Shorts.
      * EN: Shows tree and display settings only when the homepage target is Shorts.
      *
@@ -2022,7 +2434,7 @@
      */
     function initializeHomepageTargets() {
         document.querySelectorAll('[data-workspace-homepage-target]').forEach((control) => {
-            if (!(control instanceof HTMLSelectElement)) {
+            if (!(control instanceof HTMLSelectElement) && !(control instanceof HTMLInputElement)) {
                 return;
             }
 
@@ -2263,6 +2675,7 @@
         initializeTreeEditModes();
         initializeNodeDialog();
         initializeAclControls();
+        initializeHomepageSelectors();
         initializeHomepageTargets();
         initializeMobilePanels();
         initializeBacklinkLayout();

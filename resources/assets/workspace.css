@@ -815,6 +815,79 @@
     color: var(--bs-body-color);
 }
 
+.workspace-homepage-selector {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.workspace-homepage-picker {
+    position: relative;
+}
+
+.workspace-homepage-picker-toggle {
+    overflow: hidden;
+    padding-right: 2.25rem;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-homepage-picker-toggle > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.workspace-homepage-picker-menu {
+    background: var(--bs-body-bg);
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--bs-box-shadow);
+    left: 0;
+    min-width: 100%;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: calc(100% + .25rem);
+    z-index: 1080;
+}
+
+.workspace-homepage-picker-menu[hidden] {
+    display: none;
+}
+
+.workspace-homepage-picker-search {
+    border-left: 0;
+    border-radius: 0;
+    border-right: 0;
+    border-top: 0;
+}
+
+.workspace-homepage-picker-options {
+    max-height: min(20rem, 50vh);
+    overflow-y: auto;
+}
+
+.workspace-homepage-picker-options .list-group-item {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    text-align: left;
+}
+
+.workspace-homepage-picker-options .list-group-item-action:hover,
+.workspace-homepage-picker-options .list-group-item-action:focus {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+.workspace-homepage-picker-options [aria-selected="true"] {
+    background: rgba(var(--bs-primary-rgb), .14);
+    color: var(--bs-body-color);
+    font-weight: 600;
+}
+
 .workspace-node-editor > summary {
     cursor: pointer;
 }

@@ -13,8 +13,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var bool $tablesReady
  * @var bool $viewOptionsReady
  * @var array<string, mixed> $settings
- * @var list<array{name:string,options:list<array{id:int,title:string}>}> $publicOptionGroups
- * @var list<array{name:string,options:list<array{id:int,title:string}>}> $authenticatedOptionGroups
+ * @var list<array{name:string,options:list<array<string,mixed>>}> $publicOptionGroups
+ * @var list<array{name:string,options:list<array<string,mixed>>}> $authenticatedOptionGroups
  * @var string $savePath
  * @var string $settingsPath
  * @var string $homepagePath
@@ -78,35 +78,17 @@ $authenticatedValue = $targetValue($authenticatedTarget);
 
                         <div class="row g-4">
                             <div class="col-12 col-xl-6">
-                                <label class="form-label" for="workspace-public-homepage">
-                    <?= $this->escape(__('Javna naslovnica')) ?>
-                                </label>
-                                <select
-                                    id="workspace-public-homepage"
-                                    class="form-select"
-                                    name="public_target"
-                                    data-workspace-homepage-target="public"
-                                >
-                                    <option value="default">
-                    <?= $this->escape(__('Ugrađena naslovnica aplikacije')) ?>
-                                    </option>
-                    <?php foreach ($publicOptionGroups as $group) : ?>
-                                        <optgroup label="<?= $this->escape($group['name']) ?>">
-                        <?php foreach ($group['options'] as $option) : ?>
-                                                <option
-                                                    value="<?= $this->escape(WorkspaceValue::string(
-                                                        $option['value'] ?? '',
-                                                    )) ?>"
-                            <?= WorkspaceValue::string($option['value'] ?? '') === $publicValue
-                            ? 'selected'
-                            : '' ?>
-                                                >
-                            <?= $this->escape($option['title']) ?>
-                                                </option>
-                        <?php endforeach; ?>
-                                        </optgroup>
-                    <?php endforeach; ?>
-                                </select>
+                    <?php
+                    $selectorKey = 'public';
+                    $selectorLegend = __('Javna naslovnica');
+                    $selectorTargetName = 'public_target';
+                    $selectorTargetValue = $publicValue;
+                    $selectorGroups = $publicOptionGroups;
+                    $selectorSpecialWorkspaceValue = 'builtin';
+                    $selectorSpecialWorkspaceLabel = __('Ugrađena naslovnica aplikacije');
+                    $selectorSpecialPageLabel = __('Ugrađena stranica aplikacije');
+                    require __DIR__ . '/homepage-selector.php';
+                    ?>
                                 <div class="form-text">
                     <?= $this->escape(__('Može se odabrati samo stranica dostupna neprijavljenom gostu.')) ?>
                                 </div>
@@ -148,35 +130,17 @@ $authenticatedValue = $targetValue($authenticatedTarget);
                             </div>
 
                             <div class="col-12 col-xl-6">
-                                <label class="form-label" for="workspace-authenticated-homepage">
-                    <?= $this->escape(__('Naslovnica za prijavljene korisnike')) ?>
-                                </label>
-                                <select
-                                    id="workspace-authenticated-homepage"
-                                    class="form-select"
-                                    name="authenticated_target"
-                                    data-workspace-homepage-target="authenticated"
-                                >
-                                    <option value="default">
-                    <?= $this->escape(__('Koristi javnu naslovnicu')) ?>
-                                    </option>
-                    <?php foreach ($authenticatedOptionGroups as $group) : ?>
-                                        <optgroup label="<?= $this->escape($group['name']) ?>">
-                        <?php foreach ($group['options'] as $option) : ?>
-                                                <option
-                                                    value="<?= $this->escape(WorkspaceValue::string(
-                                                        $option['value'] ?? '',
-                                                    )) ?>"
-                            <?= WorkspaceValue::string($option['value'] ?? '') === $authenticatedValue
-                            ? 'selected'
-                            : '' ?>
-                                                >
-                            <?= $this->escape($option['title']) ?>
-                                                </option>
-                        <?php endforeach; ?>
-                                        </optgroup>
-                    <?php endforeach; ?>
-                                </select>
+                    <?php
+                    $selectorKey = 'authenticated';
+                    $selectorLegend = __('Naslovnica za prijavljene korisnike');
+                    $selectorTargetName = 'authenticated_target';
+                    $selectorTargetValue = $authenticatedValue;
+                    $selectorGroups = $authenticatedOptionGroups;
+                    $selectorSpecialWorkspaceValue = 'public';
+                    $selectorSpecialWorkspaceLabel = __('Koristi javnu naslovnicu');
+                    $selectorSpecialPageLabel = __('Koristi javnu naslovnicu');
+                    require __DIR__ . '/homepage-selector.php';
+                    ?>
                                 <div class="form-text">
                     <?= $this->escape(
                         __('Izbor mora biti dostupan svakom prijavljenom korisniku bez grupnih prava.'),
@@ -260,7 +224,11 @@ $authenticatedValue = $targetValue($authenticatedTarget);
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button class="btn btn-primary" type="submit">
+                            <button
+                                class="btn btn-primary"
+                                type="submit"
+                                data-workspace-homepage-submit
+                            >
                     <?= $this->escape(__('Spremi postavke naslovnice')) ?>
                             </button>
                         </div>
