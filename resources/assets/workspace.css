@@ -941,16 +941,19 @@
 .workspace-tree-editor-row {
     display: grid;
     align-items: start;
-    grid-template-columns: 1.35rem 1.15rem minmax(0, 1fr);
+    grid-template-columns: 1.35rem minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     column-gap: .35rem;
-    row-gap: .15rem;
-    min-height: 2.75rem;
-    padding: .4rem .5rem;
+    row-gap: .05rem;
+    min-height: 2.6rem;
+    padding: .3rem .5rem;
 }
 
 .workspace-tree-hidden-toggle {
     align-self: center;
     cursor: pointer;
+    grid-column: 1;
+    grid-row: 2;
     height: .9rem;
     justify-self: center;
     margin: 0;
@@ -967,6 +970,9 @@
 }
 
 .workspace-tree-editor-row .workspace-tree-order-label {
+    align-self: center;
+    grid-column: 2;
+    grid-row: 1 / span 2;
     padding-left: calc(var(--workspace-tree-level, 0) * .65rem);
 }
 
@@ -993,6 +999,11 @@
     box-shadow: none;
     height: 1.35rem;
     width: 1.35rem;
+}
+
+.workspace-tree-editor-row .workspace-tree-node-edit {
+    grid-column: 1;
+    grid-row: 1;
 }
 
 .workspace-tree-node-edit:hover,
@@ -1022,11 +1033,14 @@
 }
 
 .workspace-tree-order-controls {
+    align-self: center;
     display: flex;
     flex-wrap: nowrap;
     gap: .05rem;
-    grid-column: 1 / -1;
+    grid-column: 3;
+    grid-row: 1 / span 2;
     justify-content: flex-end;
+    justify-self: end;
 }
 
 .workspace-tree-order-action:disabled {
@@ -1218,7 +1232,13 @@
     }
 
     .workspace-tree-editor-row .workspace-tree-order-controls {
-        padding-left: 2.1rem;
+        grid-column: 2 / -1;
+        grid-row: 2;
+    }
+
+    .workspace-tree-editor-row .workspace-tree-order-label {
+        align-self: start;
+        grid-row: 1;
     }
 }
 
