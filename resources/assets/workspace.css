@@ -186,6 +186,18 @@
     color: var(--hph-workspace-tree-active-text, var(--bs-white));
 }
 
+.workspace-tree-node--temporarily-visible > .workspace-tree-row {
+    opacity: .58;
+}
+
+.workspace-tree-node--temporarily-visible > .workspace-tree-row .workspace-tree-link {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 42%, transparent);
+}
+
+.workspace-tree-node--temporarily-visible > .workspace-tree-row .workspace-tree-link.active {
+    opacity: .88;
+}
+
 .workspace-tree-row {
     --workspace-tree-indent: calc((var(--workspace-tree-level, 1) - 1) * .9rem);
     align-items: center;
@@ -929,11 +941,29 @@
 .workspace-tree-editor-row {
     display: grid;
     align-items: start;
-    grid-template-columns: 1.35rem minmax(0, 1fr);
+    grid-template-columns: 1.35rem 1.15rem minmax(0, 1fr);
     column-gap: .35rem;
     row-gap: .15rem;
     min-height: 2.75rem;
     padding: .4rem .5rem;
+}
+
+.workspace-tree-hidden-toggle {
+    align-self: center;
+    cursor: pointer;
+    height: .9rem;
+    justify-self: center;
+    margin: 0;
+    width: .9rem;
+}
+
+.workspace-tree-editor-row--hidden .workspace-tree-order-label {
+    color: var(--bs-secondary-color);
+    opacity: .6;
+}
+
+.workspace-tree-editor-row--hidden-direct {
+    background: color-mix(in srgb, var(--bs-secondary-color) 8%, transparent);
 }
 
 .workspace-tree-editor-row .workspace-tree-order-label {

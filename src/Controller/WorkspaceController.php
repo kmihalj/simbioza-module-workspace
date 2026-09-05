@@ -1195,9 +1195,18 @@ final readonly class WorkspaceController
         }
 
         try {
+            $placements = WorkspaceValue::rows($body['items'] ?? null);
+            foreach ($placements as &$placement) {
+                // HR: Neoznačen HTML checkbox nije prisutan u POST tijelu.
+                // EN: An unchecked HTML checkbox is absent from the POST body.
+                $placement['is_tree_hidden'] = (bool)($placement['is_tree_hidden'] ?? false);
+            }
+
+            unset($placement);
+
             $this->repository->reorderNodes(
                 $this->intValue($workspace['id'] ?? 0),
-                WorkspaceValue::rows($body['items'] ?? null),
+                $placements,
                 $this->currentUserId(),
             );
             $this->success(__('Hijerarhija i redoslijed stranica su spremljeni.'));

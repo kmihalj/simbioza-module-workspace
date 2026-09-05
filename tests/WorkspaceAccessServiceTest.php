@@ -1011,6 +1011,92 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Skrivena navigacijska grana nestaje iz uobičajenog stabla, ali se
+     *     njezin put prigušeno vraća kada se stranica otvori izravnim URL-om.
+     * EN: A hidden navigation branch disappears from the regular tree, while
+     *     its path returns dimmed when a page is opened through a direct URL.
+     */
+    public function testHiddenTreeBranchOnlyAppearsForItsDirectlyOpenedPage(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Skrivene grane',
+            'visibility' => 'public',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $root = $this->repository->saveNode($workspaceId, [
+            'title' => 'Korijen',
+            'node_type' => 'document',
+            'document_key' => 'hidden-tree-root',
+        ], 1);
+        $hiddenBranch = $this->repository->saveNode($workspaceId, [
+            'title' => 'Skrivena grana',
+            'node_type' => 'document',
+            'document_key' => 'hidden-tree-branch',
+            'parent_id' => $root['id'],
+        ], 1);
+        $active = $this->repository->saveNode($workspaceId, [
+            'title' => 'Otvorena poveznicom',
+            'node_type' => 'document',
+            'document_key' => 'hidden-tree-active',
+            'parent_id' => $hiddenBranch['id'],
+        ], 1);
+        $hiddenSibling = $this->repository->saveNode($workspaceId, [
+            'title' => 'Skriveni susjed',
+            'node_type' => 'document',
+            'document_key' => 'hidden-tree-sibling',
+            'parent_id' => $hiddenBranch['id'],
+        ], 1);
+        $visible = $this->repository->saveNode($workspaceId, [
+            'title' => 'Vidljiva stranica',
+            'node_type' => 'document',
+            'document_key' => 'hidden-tree-visible',
+            'parent_id' => $root['id'],
+        ], 1);
+        $this->repository->reorderNodes($workspaceId, [
+            ['id' => $root['id'], 'parent_id' => null, 'sort_order' => 10],
+            [
+                'id' => $hiddenBranch['id'],
+                'parent_id' => $root['id'],
+                'sort_order' => 10,
+                'is_tree_hidden' => true,
+            ],
+            ['id' => $active['id'], 'parent_id' => $hiddenBranch['id'], 'sort_order' => 10],
+            ['id' => $hiddenSibling['id'], 'parent_id' => $hiddenBranch['id'], 'sort_order' => 20],
+            ['id' => $visible['id'], 'parent_id' => $root['id'], 'sort_order' => 20],
+        ], 1);
+
+        $regularTree = $this->access->visibleTree($workspace);
+        $this->assertSame(['Vidljiva stranica'], array_column($regularTree[0]['children'] ?? [], 'title'));
+        $this->assertIsArray($this->repository->findNodeById((int)$active['id']));
+
+        $directTree = $this->access->visibleTreeWindowForLanguages(
+            $workspace,
+            null,
+            [],
+            (int)$active['id'],
+        );
+        $rootChildren = $directTree[0]['children'] ?? [];
+        $this->assertSame(
+            ['Skrivena grana', 'Vidljiva stranica'],
+            array_column($rootChildren, 'title'),
+        );
+        $this->assertTrue((bool)($rootChildren[0]['is_tree_temporarily_visible'] ?? false));
+        $this->assertSame(
+            ['Otvorena poveznicom'],
+            array_column($rootChildren[0]['children'] ?? [], 'title'),
+        );
+        $this->assertTrue((bool)($rootChildren[0]['children'][0]['is_tree_temporarily_visible'] ?? false));
+
+        $branch = $this->access->visibleTreeBranchForLanguages(
+            $workspace,
+            null,
+            [],
+            (int)$root['id'],
+        );
+        $this->assertSame(['Vidljiva stranica'], array_column($branch, 'title'));
+    }
+
+    /**
      * HR: Dokazuje da se cijeli raspored stabla sprema u jednoj transakciji te
      *     da ciklički raspored ne mijenja prethodno valjano stanje.
      * EN: Proves that the complete tree arrangement is saved in one transaction
@@ -1041,14 +1127,28 @@ final class WorkspaceAccessServiceTest extends TestCase
 
         $this->repository->reorderNodes($workspaceId, [
             ['id' => $second['id'], 'parent_id' => null, 'sort_order' => 10],
-            ['id' => $first['id'], 'parent_id' => $second['id'], 'sort_order' => 10],
+            [
+                'id' => $first['id'],
+                'parent_id' => $second['id'],
+                'sort_order' => 10,
+                'is_tree_hidden' => true,
+            ],
             ['id' => $child['id'], 'parent_id' => $first['id'], 'sort_order' => 10],
         ], 1);
 
         $savedFirst = $this->repository->findNodeById((int)$first['id']);
         $savedSecond = $this->repository->findNodeById((int)$second['id']);
         $this->assertSame((int)$second['id'], (int)($savedFirst['parent_id'] ?? 0));
+        $this->assertTrue((bool)($savedFirst['is_tree_hidden'] ?? false));
         $this->assertNull($savedSecond['parent_id'] ?? null);
+
+        $this->repository->reorderNodes($workspaceId, [
+            ['id' => $second['id'], 'parent_id' => null, 'sort_order' => 10],
+            ['id' => $first['id'], 'parent_id' => $second['id'], 'sort_order' => 10],
+            ['id' => $child['id'], 'parent_id' => $first['id'], 'sort_order' => 10],
+        ], 1);
+        $savedFirst = $this->repository->findNodeById((int)$first['id']);
+        $this->assertTrue((bool)($savedFirst['is_tree_hidden'] ?? false));
 
         try {
             $this->repository->reorderNodes($workspaceId, [

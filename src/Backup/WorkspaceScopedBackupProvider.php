@@ -152,6 +152,10 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 'target_url' => $node['target_url'] ?? null,
                 'sort_order' => BackupValue::integer($node['sort_order'], 'node.sort_order'),
                 'is_homepage' => BackupValue::booleanInteger($node['is_homepage'], 'node.is_homepage'),
+                'is_tree_hidden' => BackupValue::booleanInteger(
+                    $node['is_tree_hidden'] ?? false,
+                    'node.is_tree_hidden',
+                ),
                 'is_enabled' => BackupValue::booleanInteger($node['is_enabled'], 'node.is_enabled'),
                 'contents_visibility' => BackupValue::string(
                     $node['contents_visibility'],
@@ -691,6 +695,13 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                     'created_at' => $row['created_at'] ?? date('Y-m-d H:i:s'),
                     'updated_at' => $row['updated_at'] ?? date('Y-m-d H:i:s'),
                 ];
+                if (array_key_exists('is_tree_hidden', $row)) {
+                    $values['is_tree_hidden'] = BackupValue::booleanInteger(
+                        $row['is_tree_hidden'],
+                        'node.is_tree_hidden',
+                    );
+                }
+
                 $nodeSlug = BackupValue::string($row['slug'], 'node.slug');
                 $existing = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
                     ->where('workspace_id', '=', $workspaceId)->where('slug', '=', $nodeSlug)->first();

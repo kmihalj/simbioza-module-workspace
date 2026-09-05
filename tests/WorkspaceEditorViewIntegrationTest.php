@@ -409,6 +409,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('document.body.append(modal)', $workspaceScript);
         $this->assertStringContainsString("'node_id' => 0", $organizerView);
         $this->assertStringContainsString('data-workspace-node-dialog-url', $organizerView);
+        $this->assertStringContainsString('data-workspace-tree-hidden-toggle', $organizerView);
+        $this->assertStringContainsString("__('Sakrij granu')", $organizerView);
+        $this->assertStringContainsString("__('Sakrij stavku')", $organizerView);
         $this->assertStringNotContainsString('data-workspace-lazy-modal', $organizerView);
         $this->assertStringNotContainsString('$editorDocuments', $organizerView);
         $this->assertStringContainsString("'workspace/node-fields'", $createDialogView);
@@ -443,6 +446,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('$hasChildren && $level > 1', $tree);
         $this->assertStringContainsString('$nodeType === \'separator\'', $tree);
         $this->assertStringContainsString('workspace-tree-separator', $tree);
+        $this->assertStringContainsString('workspace-tree-node--temporarily-visible', $tree);
         $this->assertStringContainsString("['document', 'separator']", $organizer);
         $this->assertStringContainsString('loadBranch', $javascript);
         $this->assertStringContainsString('window.fetch', $javascript);

@@ -77,6 +77,7 @@ return new class implements ReversibleMigrationInterface {
                 $table->string('target_url', 1024)->nullable();
                 $table->integer('sort_order')->default(100)->index();
                 $table->boolean('is_homepage')->default(false)->index();
+                $table->boolean('is_tree_hidden')->default(false);
                 $table->boolean('is_enabled')->default(true)->index();
                 $table->string('contents_visibility', 16)->default('inherit');
                 $table->bigInteger('created_by_user_id')->unsigned()->nullable()->index();

@@ -63,6 +63,7 @@ $containsActiveNode = static function (
         $workflowStatus = WorkspaceValue::string($treeNode['workflow_status'] ?? '');
         $title = WorkspaceValue::string($treeNode['title'] ?? '');
         $nodeType = WorkspaceValue::string($treeNode['node_type'] ?? '');
+        $isTemporarilyVisible = (bool)($treeNode['is_tree_temporarily_visible'] ?? false);
         $branchId = 'workspace-tree-branch-' . $treeNodeId;
         $containsActiveChild = $containsActiveNode($children, $activeNodeId ?? null);
         $branchExpanded = $hasChildren && ($level === 1 || $containsActiveChild);
@@ -78,9 +79,12 @@ $containsActiveNode = static function (
         ]);
         ?>
         <div
-            class="workspace-tree-node"
+            class="workspace-tree-node<?= $isTemporarilyVisible
+            ? ' workspace-tree-node--temporarily-visible'
+            : '' ?>"
             data-workspace-tree-node="<?= $treeNodeId ?>"
             data-workspace-tree-level="<?= $this->escape((string)$level) ?>"
+        <?= $isTemporarilyVisible ? 'data-workspace-tree-temporarily-visible="1"' : '' ?>
         >
             <div class="workspace-tree-row">
         <?php if ($hasChildren && $level > 1) : ?>

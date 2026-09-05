@@ -232,6 +232,18 @@
     }
 
     /**
+     * HR: Čita izravnu oznaku skrivanja iz retka organizatora.
+     * EN: Reads the organizer row's direct hidden-navigation flag.
+     *
+     * @param {HTMLElement} row
+     * @returns {boolean}
+     */
+    function treeRowIsHidden(row) {
+        const input = row.querySelector('[data-workspace-tree-hidden-toggle]');
+        return input instanceof HTMLInputElement && input.checked;
+    }
+
+    /**
      * HR: Pronalazi red prema ID-u unutar istog organizatora.
      * EN: Finds a row by ID inside the same organizer.
      *
@@ -401,7 +413,13 @@
      */
     function refreshTreeOrganizer(list) {
         const siblingPositions = new Map();
-        treeRows(list).forEach((row) => {
+        const rows = treeRows(list);
+        const parentNodeIds = new Set(
+            rows
+                .map((row) => treeParentId(row))
+                .filter((parentId) => parentId !== null)
+        );
+        rows.forEach((row) => {
             const parentId = treeParentId(row);
             const position = (siblingPositions.get(parentId) || 0) + 1;
             siblingPositions.set(parentId, position);
@@ -423,6 +441,32 @@
                 ? treeFindRow(list, treeParentId(parent))
                 : null;
             const canUseRoot = list.dataset.canUseRoot === '1';
+
+            let hidden = treeRowIsHidden(row);
+            let ancestor = parent;
+            const hiddenPath = new Set([treeNodeId(row)]);
+            while (!hidden && ancestor instanceof HTMLElement) {
+                const ancestorId = treeNodeId(ancestor);
+                if (ancestorId === '' || hiddenPath.has(ancestorId)) {
+                    break;
+                }
+                hiddenPath.add(ancestorId);
+                hidden = treeRowIsHidden(ancestor);
+                ancestor = treeFindRow(list, treeParentId(ancestor));
+            }
+            row.classList.toggle('workspace-tree-editor-row--hidden', hidden);
+            row.classList.toggle('workspace-tree-editor-row--hidden-direct', treeRowIsHidden(row));
+
+            const hiddenToggle = row.querySelector('[data-workspace-tree-hidden-toggle]');
+            if (hiddenToggle instanceof HTMLInputElement) {
+                const hasChildren = parentNodeIds.has(treeNodeId(row));
+                const label = hasChildren
+                    ? (list.dataset.hideBranchLabel || '')
+                    : (list.dataset.hideItemLabel || '');
+                const title = row.querySelector('.workspace-tree-order-label')?.textContent?.trim() || '';
+                hiddenToggle.title = label;
+                hiddenToggle.setAttribute('aria-label', title !== '' ? `${label}: ${title}` : label);
+            }
 
             const up = row.querySelector('[data-workspace-tree-action="up"]');
             const down = row.querySelector('[data-workspace-tree-action="down"]');
@@ -508,6 +552,13 @@
             }
 
             refreshTreeOrganizer(list);
+        });
+
+        list.addEventListener('change', (event) => {
+            if (event.target instanceof HTMLInputElement
+                && event.target.matches('[data-workspace-tree-hidden-toggle]')) {
+                refreshTreeOrganizer(list);
+            }
         });
 
         form.addEventListener('submit', () => {

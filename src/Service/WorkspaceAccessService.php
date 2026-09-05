@@ -469,6 +469,8 @@ final class WorkspaceAccessService
         array $languages,
     ): array {
         $nodes = $this->nodesForWorkspace(WorkspaceValue::int($workspace['id'] ?? 0));
+        $nodes = $this->navigationNodes($nodes);
+
         $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
 
         return $this->buildTree($this->promoteVisibleOrphans($visible), null);
@@ -491,14 +493,22 @@ final class WorkspaceAccessService
         array $languages,
         int $activeNodeId = 0,
     ): array {
+        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
         $nodes = $this->repository->treeWindowNodes(
-            WorkspaceValue::int($workspace['id'] ?? 0),
+            $workspaceId,
             $activeNodeId,
         );
-        $nodes = $this->mergeNodesById($nodes, $this->directNodesForWorkspace(
-            WorkspaceValue::int($workspace['id'] ?? 0),
-            $this->userId($user ?? $this->currentUser()),
-        ));
+        $directNodes = $this->markDirectNodeTreeVisibility(
+            $workspaceId,
+            $this->directNodesForWorkspace(
+                $workspaceId,
+                $this->userId($user ?? $this->currentUser()),
+            ),
+        );
+        $nodes = $this->navigationNodes(
+            $this->mergeNodesById($nodes, $directNodes),
+            $activeNodeId,
+        );
         $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
 
         return $this->buildTree($this->promoteVisibleOrphans($visible), null);
@@ -523,6 +533,8 @@ final class WorkspaceAccessService
             WorkspaceValue::int($workspace['id'] ?? 0),
             $parentId,
         );
+        $nodes = $this->navigationNodes($nodes);
+
         $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
 
         return array_values(array_filter(
@@ -721,6 +733,125 @@ final class WorkspaceAccessService
         }
 
         return array_values($nodes);
+    }
+
+    /**
+     * HR: Iz navigacije uklanja označenu stavku i cijelu njezinu podgranu. Ako
+     *     je izravnim URL-om otvorena stranica unutar skrivene grane, zadržava
+     *     samo potreban put i označava ga za prigušeni prikaz.
+     * EN: Removes a marked item and its complete subtree from navigation. When
+     *     a direct URL opens a page inside a hidden branch, only the required
+     *     path is retained and marked for a dimmed presentation.
+     *
+     * @param list<array<string,mixed>> $nodes
+     * @return list<array<string,mixed>>
+     */
+    private function navigationNodes(array $nodes, int $activeNodeId = 0): array
+    {
+        $byId = [];
+        foreach ($nodes as $node) {
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            if ($nodeId > 0) {
+                $byId[$nodeId] = $node;
+            }
+        }
+
+        $activePath = [];
+        $currentId = $activeNodeId;
+        while ($currentId > 0 && isset($byId[$currentId]) && !isset($activePath[$currentId])) {
+            $activePath[$currentId] = true;
+            $currentId = WorkspaceValue::int($byId[$currentId]['parent_id'] ?? 0);
+        }
+
+        $hiddenByNode = [];
+        $resolving = [];
+        $isHidden = function (int $nodeId) use (&$isHidden, &$hiddenByNode, &$resolving, $byId): bool {
+            if ($nodeId <= 0 || !isset($byId[$nodeId])) {
+                return false;
+            }
+
+            if (array_key_exists($nodeId, $hiddenByNode)) {
+                return $hiddenByNode[$nodeId];
+            }
+
+            if (isset($resolving[$nodeId])) {
+                return (bool)($byId[$nodeId]['is_tree_hidden'] ?? false);
+            }
+
+            $node = $byId[$nodeId];
+            $resolving[$nodeId] = true;
+            $parentId = WorkspaceValue::int($node['parent_id'] ?? 0);
+            $hiddenByNode[$nodeId] = (bool)($node['is_tree_hidden_effective'] ?? false)
+            || (bool)($node['is_tree_hidden'] ?? false)
+            || ($parentId > 0 && $isHidden($parentId));
+            unset($resolving[$nodeId]);
+
+            return $hiddenByNode[$nodeId];
+        };
+
+        $visible = [];
+        foreach ($nodes as $node) {
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            $hidden = $isHidden($nodeId);
+            if ($hidden && !isset($activePath[$nodeId])) {
+                continue;
+            }
+
+            $node['is_tree_hidden_effective'] = $hidden;
+            $node['is_tree_temporarily_visible'] = $hidden;
+            $visible[$nodeId] = $node;
+        }
+
+        $retainedParents = [];
+        foreach ($visible as $node) {
+            $parentId = WorkspaceValue::int($node['parent_id'] ?? 0);
+            if ($parentId > 0) {
+                $retainedParents[$parentId] = true;
+            }
+        }
+
+        foreach ($visible as $nodeId => &$node) {
+            if ((bool)($node['children_loaded'] ?? false)) {
+                $node['has_children'] = isset($retainedParents[$nodeId]);
+            } elseif (isset($retainedParents[$nodeId])) {
+                $node['has_children'] = true;
+            }
+
+            if ((bool)($node['is_tree_temporarily_visible'] ?? false)) {
+                $node['has_children'] = isset($retainedParents[$nodeId]);
+                $node['children_loaded'] = true;
+            }
+        }
+
+        unset($node);
+
+        return array_values($visible);
+    }
+
+    /**
+     * HR: Izravno dopušteni čvor može biti dohvaćen bez predaka; zato mu
+     *     zasebno prenosimo naslijeđeno stanje skrivene navigacijske grane.
+     * EN: A directly granted node may be loaded without its ancestors, so its
+     *     inherited hidden-navigation state is carried separately.
+     *
+     * @param list<array<string,mixed>> $nodes
+     * @return list<array<string,mixed>>
+     */
+    private function markDirectNodeTreeVisibility(int $workspaceId, array $nodes): array
+    {
+        foreach ($nodes as &$node) {
+            $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+            foreach ($this->repository->ancestorNodes($workspaceId, $nodeId) as $ancestor) {
+                if ((bool)($ancestor['is_tree_hidden'] ?? false)) {
+                    $node['is_tree_hidden_effective'] = true;
+                    break;
+                }
+            }
+        }
+
+        unset($node);
+
+        return $nodes;
     }
 
     /**

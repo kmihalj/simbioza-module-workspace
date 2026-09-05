@@ -116,6 +116,7 @@ final class WorkspaceSchemaTest extends TestCase
                     'node_type',
                     'document_key',
                     'sort_order',
+                    'is_tree_hidden',
                     'contents_visibility',
                 ],
             ),
@@ -153,6 +154,42 @@ final class WorkspaceSchemaTest extends TestCase
 
         $migration->down($database);
         $this->assertFalse($schema->hasTable(ModuleWorkspace::TABLE_WORKSPACES));
+    }
+
+    /** HR: Zasebna nadogradnja dodaje i uklanja oznaku skrivanja stabla. EN: The standalone upgrade adds and removes the tree-hiding flag. */
+    public function testTreeHidingUpgradeMigrationIsPortableAndReversible(): void
+    {
+        $helper = new Helper();
+        $config = new Config($helper, [
+            'database' => [
+                'connections' => [
+                    'default' => ['driver' => 'sqlite', 'database' => ':memory:'],
+                ],
+            ],
+        ]);
+        $database = new Database($config, $helper);
+        $schema = $database->schema();
+        $schema->create(
+            ModuleWorkspace::TABLE_WORKSPACE_NODES,
+            static function (\AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint $table): void {
+                $table->id();
+                $table->string('title');
+            },
+        );
+        $migration = require dirname(__DIR__)
+        . '/resources/migrations/20260905223000_add_workspace_tree_hiding.php';
+
+        $this->assertInstanceOf(ReversibleMigrationInterface::class, $migration);
+        $migration->up($database);
+        $this->assertTrue($schema->hasColumn(
+            ModuleWorkspace::TABLE_WORKSPACE_NODES,
+            'is_tree_hidden',
+        ));
+        $migration->down($database);
+        $this->assertFalse($schema->hasColumn(
+            ModuleWorkspace::TABLE_WORKSPACE_NODES,
+            'is_tree_hidden',
+        ));
     }
 
     /**

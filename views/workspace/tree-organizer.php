@@ -17,6 +17,13 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  */
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
 $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
+$parentNodeIds = [];
+foreach ($nodes as $candidateNode) {
+    $candidateParentId = WorkspaceValue::int($candidateNode['parent_id'] ?? 0);
+    if ($candidateParentId > 0) {
+        $parentNodeIds[$candidateParentId] = true;
+    }
+}
 ?>
 <form
     method="post"
@@ -31,6 +38,8 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
         class="list-group list-group-flush workspace-tree workspace-tree-order-list"
         data-workspace-tree-order-list
         data-can-use-root="1"
+        data-hide-item-label="<?= $this->escape(__('Sakrij stavku')) ?>"
+        data-hide-branch-label="<?= $this->escape(__('Sakrij granu')) ?>"
     >
         <?php if ($nodes === []) : ?>
             <p class="small text-body-secondary px-3 mb-0">
@@ -41,6 +50,9 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
             <?php
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
             $parentId = WorkspaceValue::int($node['parent_id'] ?? 0);
+            $hasChildren = isset($parentNodeIds[$nodeId]);
+            $isTreeHidden = (bool)($node['is_tree_hidden'] ?? false);
+            $hideLabel = $hasChildren ? __('Sakrij granu') : __('Sakrij stavku');
             $nodePermissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
             $canBeParent = in_array(
                 WorkspaceValue::string($node['node_type'] ?? ''),
@@ -94,6 +106,18 @@ $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
                         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"/>
                     </svg>
                 </button>
+                <input
+                    class="form-check-input workspace-tree-hidden-toggle"
+                    type="checkbox"
+                    name="items[<?= $nodeId ?>][is_tree_hidden]"
+                    value="1"
+                    data-workspace-tree-hidden-toggle
+                    title="<?= $this->escape($hideLabel) ?>"
+                    aria-label="<?= $this->escape(
+                        $hideLabel . ': ' . WorkspaceValue::string($node['title'] ?? ''),
+                    ) ?>"
+                    <?= $isTreeHidden ? 'checked' : '' ?>
+                >
                 <div
                     class="workspace-tree-order-label"
                     style="--workspace-tree-level: <?= WorkspaceValue::int(

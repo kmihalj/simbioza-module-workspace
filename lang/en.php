@@ -823,6 +823,12 @@ return [
         'The Workspace metadata translation migration template was not found.',
     'Kreirana je migracija višejezičnih podataka područja: ' =>
         'Created the Workspace metadata translation migration: ',
+    'Predložak migracije skrivanja stabla nije pronađen.' =>
+        'The Workspace tree-hiding migration template was not found.',
+    'Kreirana je migracija skrivanja Workspace stabla: ' =>
+        'Created the Workspace tree-hiding migration: ',
+    'Sakrij granu' => 'Hide branch',
+    'Sakrij stavku' => 'Hide item',
     'Prijevode nije moguće spremiti.' => 'The translations could not be saved.',
     'Jezik naslova' => 'Title language',
     'Naslov na primarnom jeziku (%s) je obvezan.' =>

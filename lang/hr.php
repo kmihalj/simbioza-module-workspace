@@ -822,6 +822,12 @@ return [
         'Predložak migracije višejezičnih podataka područja nije pronađen.',
     'Kreirana je migracija višejezičnih podataka područja: ' =>
         'Kreirana je migracija višejezičnih podataka područja: ',
+    'Predložak migracije skrivanja stabla nije pronađen.' =>
+        'Predložak migracije skrivanja stabla nije pronađen.',
+    'Kreirana je migracija skrivanja Workspace stabla: ' =>
+        'Kreirana je migracija skrivanja Workspace stabla: ',
+    'Sakrij granu' => 'Sakrij granu',
+    'Sakrij stavku' => 'Sakrij stavku',
     'Prijevode nije moguće spremiti.' => 'Prijevode nije moguće spremiti.',
     'Jezik naslova' => 'Jezik naslova',
     'Naslov na primarnom jeziku (%s) je obvezan.' =>

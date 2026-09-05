@@ -1075,8 +1075,9 @@ final readonly class WorkspaceRepository
         $placeholders = implode(',', array_fill(0, count($nodeIds), '?'));
         $parentRows = $this->rows($this->database->fetchAll(
             'SELECT DISTINCT parent_id FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES
-            . ' WHERE workspace_id = ? AND is_enabled = ? AND parent_id IN (' . $placeholders . ')',
-            [$workspaceId, true, ...$nodeIds],
+            . ' WHERE workspace_id = ? AND is_enabled = ? AND is_tree_hidden = ?'
+            . ' AND parent_id IN (' . $placeholders . ')',
+            [$workspaceId, true, false, ...$nodeIds],
         ));
         $parentsWithChildren = [];
         foreach ($parentRows as $row) {
@@ -1961,6 +1962,11 @@ final readonly class WorkspaceRepository
             $normalized[$nodeId] = [
                 'parent_id' => $this->nullablePositiveInt($placement['parent_id'] ?? null),
                 'sort_order' => $this->intValue($placement['sort_order'] ?? 0),
+                // HR: API klijenti koji još ne šalju novu oznaku zadržavaju postojeće stanje.
+                // EN: API clients that do not yet send the new flag preserve its current state.
+                'is_tree_hidden' => array_key_exists('is_tree_hidden', $placement)
+                    ? $this->boolValue($placement['is_tree_hidden'])
+                    : (bool)($nodesById[$nodeId]['is_tree_hidden'] ?? false),
             ];
         }
 
@@ -2018,6 +2024,7 @@ final readonly class WorkspaceRepository
                         ->update([
                             'parent_id' => $placement['parent_id'],
                             'sort_order' => $placement['sort_order'],
+                            'is_tree_hidden' => $placement['is_tree_hidden'],
                             'updated_by_user_id' => $actorUserId,
                             'updated_at' => $now,
                         ]);
