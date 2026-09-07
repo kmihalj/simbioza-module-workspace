@@ -20,11 +20,11 @@ $language = WorkspaceValue::string($language ?? 'hr');
 
 /**
  * HR: Provjerava sadrži li podstablo aktivnu stranicu. Time se pri izravnom
- *     otvaranju URL-a šire samo preci aktivne stranice, dok ostale grane druge
- *     i dubljih razina ostaju sažete.
- * EN: Checks whether a subtree contains the active page. This expands only the
- *     active page ancestors on a direct URL visit while keeping unrelated
- *     second-level and deeper branches collapsed.
+ *     otvaranju URL-a šire preci aktivne stranice, a sama aktivna stranica
+ *     zasebno otvara svoju prvu razinu podstranica.
+ * EN: Checks whether a subtree contains the active page. This expands the
+ *     active page ancestors on a direct URL visit, while the active page itself
+ *     separately opens its first child level.
  *
  * @param list<array<string, mixed>> $candidateNodes
  */
@@ -66,7 +66,7 @@ $containsActiveNode = static function (
         $isTemporarilyVisible = (bool)($treeNode['is_tree_temporarily_visible'] ?? false);
         $branchId = 'workspace-tree-branch-' . $treeNodeId;
         $containsActiveChild = $containsActiveNode($children, $activeNodeId ?? null);
-        $branchExpanded = $hasChildren && ($level === 1 || $containsActiveChild);
+        $branchExpanded = $hasChildren && ($level === 1 || $isActive || $containsActiveChild);
         $branchActionLabel = $branchExpanded
         ? sprintf(__('Sažmi podstranice: %s'), $title)
         : sprintf(__('Proširi podstranice: %s'), $title);

@@ -424,7 +424,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringNotContainsString("'workspace/node-fields'", $manageView);
     }
 
-    /** HR: Prva razina pregleda uvijek je otvorena, dublje su grane sklopive, a organizator je potpuno otvoren. EN: The first view level is always open, deeper branches are collapsible, and the organizer remains fully visible. */
+    /** HR: Prva razina i djeca aktivne stranice su otvoreni, druge dublje grane su sklopive, a organizator je potpuno otvoren. EN: The first level and active-page children are open, other deeper branches are collapsible, and the organizer remains fully visible. */
     public function testReadOnlyTreeHasBranchControlsWithoutAffectingOrganizer(): void
     {
         $tree = file_get_contents(dirname(__DIR__) . '/views/workspace/tree.php');
@@ -450,11 +450,13 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString("['document', 'separator']", $organizer);
         $this->assertStringContainsString('loadBranch', $javascript);
         $this->assertStringContainsString('window.fetch', $javascript);
-        $this->assertStringContainsString('$level === 1 || $containsActiveChild', $tree);
+        $this->assertStringContainsString('$level === 1 || $isActive || $containsActiveChild', $tree);
         $this->assertStringContainsString('aria-current="page"', $tree);
         $this->assertStringNotContainsString('data-workspace-tree-branch-toggle', $organizer);
         $this->assertStringContainsString('initializeReadableTrees', $javascript);
         $this->assertStringContainsString('containsActivePage', $javascript);
+        $this->assertStringContainsString('const isActivePage =', $javascript);
+        $this->assertStringContainsString('isActivePage || containsActivePage', $javascript);
         $this->assertStringContainsString('data-workspace-tree-key', $workspaceView);
         $this->assertStringContainsString('data-workspace-tree-key', $shortsView);
         $this->assertStringContainsString('initializeAdaptiveTreeWidths', $javascript);

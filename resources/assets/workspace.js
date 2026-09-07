@@ -878,8 +878,11 @@
                     toggle.dataset.workspaceTreeReady = '1';
                     const level = Number.parseInt(node.dataset.workspaceTreeLevel || '1', 10);
                     const nodeId = node.dataset.workspaceTreeNode || '';
+                    const isActivePage = node.querySelector(
+                        ':scope > .workspace-tree-row > [aria-current="page"]',
+                    ) !== null;
                     const containsActivePage = branch.querySelector('[aria-current="page"]') !== null;
-                    const expanded = containsActivePage || (storedExpandedNodes instanceof Set
+                    const expanded = isActivePage || containsActivePage || (storedExpandedNodes instanceof Set
                         ? storedExpandedNodes.has(nodeId)
                         : level === 1);
                     setBranchState(toggle, branch, expanded);
