@@ -81,8 +81,9 @@ English documentation: [README.md](README.md)
   promjene i šalje jedan završni `bulk_content_changed` događaj po Području
 - prijenosna inicijalna shema za SQLite, PostgreSQL i MySQL/MariaDB
 
-Ugrađena pretraga šalje upit izravno na stranicu rezultata zaključanu na
-trenutačno područje i ne prikazuje žive prijedloge preko sljedećeg sadržaja.
+Ugrađena pretraga šalje upit izravno na redovnu stranicu rezultata, gdje su
+odabrana ACL-vidljiva područja unaprijed označena u uredivom biraču, i ne
+prikazuje žive prijedloge preko sljedećeg sadržaja.
 Unos bez posebnih znakova pretražuje se kao jedna cijela fraza. Ako sadržaj
 mora sadržavati više zasebnih riječi ili fraza, ispred svakog se pojma dodaje
 `+`; primjer `+dio +drugi +"Dio 2"` zahtijeva sva tri izraza.

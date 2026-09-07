@@ -432,9 +432,10 @@ backup/restore, and HTML export preserve the same contract. Dynamically generate
 tables use the HTML Editor's standard responsive table markup and therefore
 follow the active theme without a Workspace-specific visual override.
 
-The embedded search form submits directly to a result page fixed to its selected
-ACL-visible Workspaces and does not place live suggestions over following page
-content. Its default target is the current Workspace. Portable targets from an
+The embedded search form submits directly to the regular result page with its
+ACL-visible Workspaces preselected in the editable Workspace picker and does not
+place live suggestions over following page content. Its default target is the
+current Workspace. Portable targets from an
 importer remain disabled until that importer has stored their local mapping;
 they never broaden into a current-Workspace or global search.
 Input without special characters is searched as one complete phrase. To require

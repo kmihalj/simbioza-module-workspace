@@ -855,9 +855,10 @@ On a Workspace page the HTML Editor can insert four native blocks:
 - **Pages and properties table** filters published ACL-visible pages by label, shows selected
   properties, and can sort by title, modification time, or a property value;
 - **Attachment gallery** shows images attached to the current page;
-- **Workspace search** submits directly to a result page fixed to one or more
-  selected Workspaces; the current Workspace is the default and results contain
-  only pages that the visitor is allowed to open;
+- **Workspace search** submits directly to the regular result page with one or
+  more selected Workspaces preselected in its editable picker; the current
+  Workspace is the default and results contain only pages that the visitor is
+  allowed to open;
 - **Recent changes** lists published changes from the current Workspace with
   author and localized time.
 
