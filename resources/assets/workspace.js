@@ -1279,6 +1279,7 @@
                 content.innerHTML = html;
                 initializeNodeForms(modal);
                 initializePageProperties(modal);
+                initializeLookupPickers(modal);
                 initializeAclControls(modal);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') {
@@ -1724,10 +1725,13 @@
      * @param {Object[]} subjects
      * @returns {void}
      */
-    function renderSubjectResults(picker, input, results, subjects) {
+    function renderSubjectResults(picker, input, results, subjects, append = false, hasMore = false) {
         const mode = String(picker.dataset.workspacePickerMode || 'acl');
         const form = picker.closest('form');
-        results.replaceChildren();
+        results.querySelector('[data-workspace-subject-more]')?.remove();
+        if (!append) {
+            results.replaceChildren();
+        }
 
         const visibleSubjects = subjects.filter((subject) => {
             if (!(form instanceof HTMLFormElement)) {
@@ -1760,7 +1764,7 @@
             return !form.querySelector('[data-workspace-acl-row="' + CSS.escape(key) + '"]');
         });
 
-        if (visibleSubjects.length === 0) {
+        if (visibleSubjects.length === 0 && !append && !hasMore) {
             const message = document.createElement('div');
             message.className = 'list-group-item text-body-secondary';
             message.textContent = String(picker.dataset.workspaceNoResults || 'No results.');
@@ -1792,6 +1796,15 @@
             });
         }
 
+        if (hasMore) {
+            const loadMore = document.createElement('button');
+            loadMore.className = 'list-group-item list-group-item-action text-center fw-semibold';
+            loadMore.type = 'button';
+            loadMore.dataset.workspaceSubjectMore = '1';
+            loadMore.textContent = String(picker.dataset.workspaceLoadMore || 'Učitaj još');
+            results.append(loadMore);
+        }
+
         results.hidden = false;
         input.setAttribute('aria-expanded', 'true');
     }
@@ -1808,14 +1821,13 @@
      * @param {{controller: AbortController|null}} state
      * @returns {Promise<void>}
      */
-    async function searchSubjects(picker, input, results, state) {
+    async function searchSubjects(picker, input, results, state, page = 1, append = false) {
         if (state.controller instanceof AbortController) {
             state.controller.abort();
         }
-        const minimumLength = Number.parseInt(
-            String(picker.dataset.workspaceMinQueryLength || '0'),
-            10,
-        );
+        const minimumLength = String(picker.dataset.workspaceSubjectType || '') === 'user'
+            ? 0
+            : Number.parseInt(String(picker.dataset.workspaceMinQueryLength || '0'), 10);
         if (input.value.trim().length < minimumLength) {
             results.replaceChildren();
             closeSubjectResults(input, results);
@@ -1826,6 +1838,8 @@
         const url = new URL(String(picker.dataset.workspaceSearchUrl || ''), window.location.href);
         url.searchParams.set('type', String(picker.dataset.workspaceSubjectType || ''));
         url.searchParams.set('q', input.value.trim());
+        url.searchParams.set('page', String(page));
+        url.searchParams.set('per_page', '25');
         const workspaceId = String(picker.dataset.workspaceId || '');
         if (workspaceId !== '' && workspaceId !== '0') {
             url.searchParams.set('workspace_id', workspaceId);
@@ -1849,7 +1863,9 @@
             if (!response.ok || payload.ok !== true || !Array.isArray(payload.results)) {
                 throw new Error(String(payload.error || 'Search failed.'));
             }
-            renderSubjectResults(picker, input, results, payload.results);
+            state.page = Number(payload.page || page) || 1;
+            state.hasMore = payload.hasMore === true;
+            renderSubjectResults(picker, input, results, payload.results, append, state.hasMore);
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 return;
@@ -1884,12 +1900,14 @@
         }
         picker.dataset.workspaceSubjectPickerReady = '1';
 
-        const state = {controller: null};
+        const state = {controller: null, page: 0, hasMore: false};
         let timer = 0;
         const schedule = () => {
             window.clearTimeout(timer);
             timer = window.setTimeout(() => {
-                void searchSubjects(picker, input, results, state);
+                state.page = 0;
+                state.hasMore = false;
+                void searchSubjects(picker, input, results, state, 1, false);
             }, 180);
         };
 
@@ -1900,6 +1918,14 @@
         input.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeSubjectResults(input, results);
+            }
+        });
+        results.addEventListener('click', (event) => {
+            const loadMore = event.target instanceof HTMLElement
+                ? event.target.closest('[data-workspace-subject-more]')
+                : null;
+            if (loadMore instanceof HTMLButtonElement && state.hasMore) {
+                void searchSubjects(picker, input, results, state, state.page + 1, true);
             }
         });
 
@@ -2733,6 +2759,205 @@
         initializeHomepageTargets();
         initializeMobilePanels();
         initializeBacklinkLayout();
+        initializeLookupPickers();
+    }
+
+    /**
+     * HR: Inicijalizira udaljene birače koji vraćaju najviše 25 rezultata po zahtjevu.
+     * EN: Initializes remote pickers that return at most 25 results per request.
+     */
+    function initializeLookupPickers(root = document) {
+        root.querySelectorAll('[data-workspace-lookup-picker]').forEach((picker) => {
+            if (!(picker instanceof HTMLElement) || picker.dataset.workspaceLookupReady === '1') {
+                return;
+            }
+
+            picker.dataset.workspaceLookupReady = '1';
+            const kind = String(picker.dataset.workspaceLookupPicker || 'workspace');
+            const endpoint = String(picker.dataset.workspaceLookupEndpoint || '');
+            const audience = String(picker.dataset.workspaceLookupAudience || 'current');
+            const workspaceSelector = String(picker.dataset.workspaceLookupWorkspaceSelector || '');
+            const allLabel = String(picker.dataset.workspaceLookupAllLabel || '');
+            const allValue = String(picker.dataset.workspaceLookupAllValue || '');
+            const allDisabled = picker.dataset.workspaceLookupAllDisabled === '1';
+            const valueMode = String(picker.dataset.workspaceLookupValueMode || 'id');
+            const publishedOnly = picker.dataset.workspaceLookupPublished === '1';
+            const includeShorts = picker.dataset.workspaceLookupIncludeShorts === '1';
+            const includeContainers = picker.dataset.workspaceLookupIncludeContainers === '1';
+            const requireCanAdd = picker.dataset.workspaceLookupRequireCanAdd === '1';
+            const excludeNodeId = Number(picker.dataset.workspaceLookupExcludeNodeId || 0) || 0;
+            const fixedWorkspaceId = Number(picker.dataset.workspaceLookupFixedWorkspaceId || 0) || 0;
+            const value = picker.querySelector('[data-workspace-lookup-value]');
+            const toggle = picker.querySelector('[data-workspace-lookup-toggle]');
+            const search = picker.querySelector('[data-workspace-lookup-search]');
+            const loading = picker.querySelector('[data-workspace-lookup-loading]');
+            const errorBox = picker.querySelector('[data-workspace-lookup-error]');
+            const list = picker.querySelector('[data-workspace-lookup-list]');
+            const empty = picker.querySelector('[data-workspace-lookup-empty]');
+            const more = picker.querySelector('[data-workspace-lookup-more]');
+            const state = {page: 0, hasMore: false, loaded: false, sequence: 0, timer: 0};
+            if (
+                !(value instanceof HTMLInputElement)
+                || !(toggle instanceof HTMLButtonElement)
+                || !(list instanceof HTMLElement)
+                || endpoint === ''
+            ) {
+                return;
+            }
+
+            const option = (id, label, disabled = false) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action';
+                button.dataset.workspaceLookupChoice = String(id || '');
+                button.dataset.workspaceLookupLabel = label;
+                button.textContent = label;
+                button.disabled = disabled;
+                button.classList.toggle('active', String(value.value) === String(id || ''));
+                return button;
+            };
+            const setSelection = (id, label) => {
+                value.value = String(id || '');
+                toggle.textContent = String(label || '').trim()
+                    || toggle.dataset.workspaceLookupPlaceholder
+                    || '';
+                value.dispatchEvent(new Event('change', {bubbles: true}));
+            };
+
+            const load = async (page, append) => {
+                const sequence = ++state.sequence;
+                loading?.removeAttribute('hidden');
+                errorBox?.setAttribute('hidden', '');
+                const url = new URL(endpoint, window.location.href);
+                url.searchParams.set('q', String(search?.value || '').trim());
+                url.searchParams.set('page', String(page));
+                url.searchParams.set('per_page', '25');
+                url.searchParams.set('audience', audience);
+                if (publishedOnly) {
+                    url.searchParams.set('published', '1');
+                }
+                if (includeShorts) {
+                    url.searchParams.set('include_shorts', '1');
+                }
+                if (includeContainers) {
+                    url.searchParams.set('include_containers', '1');
+                }
+                if (requireCanAdd) {
+                    url.searchParams.set('require_can_add', '1');
+                }
+                if (excludeNodeId > 0) {
+                    url.searchParams.set('exclude_node_id', String(excludeNodeId));
+                }
+                if (kind === 'workspace' && fixedWorkspaceId > 0) {
+                    url.searchParams.set('workspace_id', String(fixedWorkspaceId));
+                }
+                if (kind === 'page' && workspaceSelector !== '') {
+                    const workspaceInput = document.querySelector(workspaceSelector);
+                    if (workspaceInput instanceof HTMLInputElement) {
+                        url.searchParams.set('workspace_id', workspaceInput.value);
+                    }
+                }
+
+                try {
+                    const response = await fetch(url.toString(), {
+                        credentials: 'same-origin',
+                        headers: {Accept: 'application/json'},
+                    });
+                    const payload = await response.json();
+                    if (sequence !== state.sequence) {
+                        return;
+                    }
+                    if (!response.ok || payload?.ok !== true || !Array.isArray(payload.items)) {
+                        throw new Error(String(payload?.error || 'Popis nije moguće dohvatiti.'));
+                    }
+
+                    if (!append) {
+                        list.replaceChildren();
+                        if (allLabel !== '') {
+                            list.appendChild(option(allValue, allLabel, allDisabled));
+                        }
+                    }
+                    payload.items.forEach((item) => {
+                        const itemId = valueMode === 'target'
+                            ? String(item?.value || '')
+                            : (valueMode === 'slug'
+                                ? String(item?.slug || '')
+                                : String(Number(item?.id || 0) || ''));
+                        const itemLabel = String(item?.label || '').trim();
+                        if (itemId !== '' && itemLabel !== '') {
+                            list.appendChild(option(itemId, itemLabel));
+                        }
+                    });
+                    state.page = Number(payload.page || page) || 1;
+                    state.hasMore = payload.hasMore === true;
+                    state.loaded = true;
+                    const resultCount = list.children.length - (allLabel !== '' ? 1 : 0);
+                    empty?.toggleAttribute('hidden', resultCount > 0);
+                    more?.toggleAttribute('hidden', !state.hasMore);
+                } catch (error) {
+                    if (sequence !== state.sequence) {
+                        return;
+                    }
+                    if (!append) {
+                        list.replaceChildren();
+                        empty?.removeAttribute('hidden');
+                    }
+                    if (errorBox instanceof HTMLElement) {
+                        errorBox.textContent = error instanceof Error ? error.message : 'Popis nije moguće dohvatiti.';
+                        errorBox.removeAttribute('hidden');
+                    }
+                } finally {
+                    if (sequence === state.sequence) {
+                        loading?.setAttribute('hidden', '');
+                    }
+                }
+            };
+
+            picker.addEventListener('shown.bs.dropdown', () => {
+                search?.focus();
+                if (!state.loaded) {
+                    load(1, false);
+                }
+            });
+            search?.addEventListener('input', () => {
+                window.clearTimeout(state.timer);
+                state.timer = window.setTimeout(() => load(1, false), 180);
+            });
+            more?.addEventListener('click', () => {
+                if (state.hasMore) {
+                    load(state.page + 1, true);
+                }
+            });
+            list.addEventListener('click', (event) => {
+                const choice = event.target instanceof HTMLElement
+                    ? event.target.closest('[data-workspace-lookup-choice]')
+                    : null;
+                if (!(choice instanceof HTMLButtonElement)) {
+                    return;
+                }
+
+                setSelection(
+                    String(choice.dataset.workspaceLookupChoice || ''),
+                    String(choice.dataset.workspaceLookupLabel || ''),
+                );
+                if (window.bootstrap?.Dropdown) {
+                    window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+                }
+            });
+
+            if (kind === 'page' && workspaceSelector !== '') {
+                const workspaceInput = document.querySelector(workspaceSelector);
+                workspaceInput?.addEventListener('change', () => {
+                    state.sequence++;
+                    state.page = 0;
+                    state.hasMore = false;
+                    state.loaded = false;
+                    list.replaceChildren();
+                    more?.setAttribute('hidden', '');
+                    setSelection(allLabel !== '' ? allValue : '', allLabel);
+                });
+            }
+        });
     }
 
     if (document.readyState === 'loading') {

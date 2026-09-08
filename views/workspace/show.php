@@ -27,6 +27,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $shortsPath
  * @var string $managePath
  * @var string $pageCreatePath
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  * @var list<array{id:int,label:string}> $pageParentOptions
  * @var int $defaultPageParentId
  * @var bool $canCreatePage
@@ -50,6 +52,15 @@ $manageLabel = ($workspacePermissions['can_manage'] ?? false)
 : __('Upravljaj sadržajem');
 $reviewQueue = is_array($reviewQueue ?? null) ? array_values($reviewQueue) : [];
 $unpublishedPages = is_array($unpublishedPages ?? null) ? array_values($unpublishedPages) : [];
+$workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+$workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
+$defaultPageParentLabel = __('Korijen stabla');
+foreach ($pageParentOptions as $parentOption) {
+    if (WorkspaceValue::int($parentOption['id'] ?? 0) === $defaultPageParentId) {
+        $defaultPageParentLabel = WorkspaceValue::string($parentOption['label'] ?? $defaultPageParentLabel);
+        break;
+    }
+}
 $hasTreeActions = WorkspaceValue::string($shortsPath ?? '') !== ''
     || $canCreatePage
     || $canManageContent
@@ -481,25 +492,60 @@ $workflowIcon = static function (string $action): string {
                                     <?= $this->escape(__('Ako ostane prazan, slug se izrađuje iz naslova.')) ?>
                                 </div>
                             </div>
+                            <div class="col-12 col-md-6 col-lg-4" id="workspace-page-parent-workspace">
+                                <label class="form-label"><?= $this->escape(__('Područje')) ?></label>
+                                <?php
+                                $workspaceLookupKind = 'workspace';
+                                $workspaceLookupName = '';
+                                $workspaceLookupValue = (string)$workspaceId;
+                                $workspaceLookupLabel = $workspaceName;
+                                $workspaceLookupEndpoint = $workspaceLookupPath;
+                                $workspaceLookupAudience = 'current';
+                                $workspaceLookupWorkspaceSelector = '';
+                                $workspaceLookupIncludeAll = false;
+                                $workspaceLookupAllLabel = '';
+                                $workspaceLookupAllValue = '';
+                                $workspaceLookupAllDisabled = false;
+                                $workspaceLookupRequired = true;
+                                $workspaceLookupValueMode = 'id';
+                                $workspaceLookupPublishedOnly = false;
+                                $workspaceLookupIncludeShorts = false;
+                                $workspaceLookupIncludeContainers = false;
+                                $workspaceLookupRequireCanAdd = false;
+                                $workspaceLookupExcludeNodeId = 0;
+                                $workspaceLookupFixedWorkspaceId = $workspaceId;
+                                $workspaceLookupTargetKey = '';
+                                require __DIR__ . '/../partials/lookup-picker.php';
+                                ?>
+                            </div>
                             <div class="col-12 col-md-6 col-lg-4">
-                                <label class="form-label" for="workspace-page-parent">
+                                <label class="form-label">
                                     <?= $this->escape(__('Nadređena stranica')) ?>
                                 </label>
-                                <select id="workspace-page-parent" class="form-select" name="parent_id">
-                                    <option value=""><?= $this->escape(__('Korijen stabla')) ?></option>
-                                    <?php foreach ($pageParentOptions as $parentOption) : ?>
-                                        <option
-                                            value="<?= WorkspaceValue::int($parentOption['id'] ?? 0) ?>"
-                                            <?= $defaultPageParentId === WorkspaceValue::int(
-                                                $parentOption['id'] ?? 0,
-                                            ) ? 'selected' : '' ?>
-                                        >
-                                            <?= $this->escape(
-                                                WorkspaceValue::string($parentOption['label'] ?? ''),
-                                            ) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <?php
+                                $workspaceLookupKind = 'page';
+                                $workspaceLookupName = 'parent_id';
+                                $workspaceLookupValue = $defaultPageParentId > 0 ? (string)$defaultPageParentId : '';
+                                $workspaceLookupLabel = $defaultPageParentLabel;
+                                $workspaceLookupEndpoint = $pageLookupPath;
+                                $workspaceLookupAudience = 'current';
+                                $workspaceLookupWorkspaceSelector =
+                                    '#workspace-page-parent-workspace [data-workspace-lookup-value]';
+                                $workspaceLookupIncludeAll = true;
+                                $workspaceLookupAllLabel = __('Korijen stabla');
+                                $workspaceLookupAllValue = '';
+                                $workspaceLookupAllDisabled = false;
+                                $workspaceLookupRequired = false;
+                                $workspaceLookupValueMode = 'id';
+                                $workspaceLookupPublishedOnly = false;
+                                $workspaceLookupIncludeShorts = false;
+                                $workspaceLookupIncludeContainers = true;
+                                $workspaceLookupRequireCanAdd = true;
+                                $workspaceLookupExcludeNodeId = 0;
+                                $workspaceLookupFixedWorkspaceId = 0;
+                                $workspaceLookupTargetKey = '';
+                                require __DIR__ . '/../partials/lookup-picker.php';
+                                ?>
                             </div>
                             <div class="col-12 d-flex justify-content-end">
                                 <button class="btn btn-primary" type="submit">

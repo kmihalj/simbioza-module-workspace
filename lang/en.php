@@ -398,6 +398,8 @@ return [
     'Spremi postavke naslovnice' => 'Save homepage settings',
     'Spremi osobnu naslovnicu' => 'Save personal homepage',
     'Pretraži područja' => 'Search Workspaces',
+    'Odaberite područje' => 'Select a Workspace',
+    'Učitaj još' => 'Load more',
     'Pretraži stranice' => 'Search pages',
     'Odaberite stranicu' => 'Choose a page',
     'Odaberite stranicu.' => 'Choose a page.',
@@ -847,4 +849,6 @@ return [
     'Sljedeća stranica' => 'Next page',
     'Stranice područja' => 'Workspace pages',
     'Sva ostala područja' => 'All other Workspaces',
+    'Popis za odabir trenutačno nije moguće dohvatiti.' =>
+        'The selection list is currently unavailable.',
 ];

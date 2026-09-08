@@ -14,6 +14,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var bool $canAttachExistingDocuments
  * @var bool $workspaceCanAdd
  * @var string $nodeSavePath
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  * @var int $returnNodeId
  * @var string $activeLanguage
  * @var string $primaryLanguage
@@ -47,6 +49,7 @@ $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
             'workspace/node-fields',
             [
                 'node' => $node,
+                'workspace' => $workspace,
                 'nodes' => $nodes,
                 'editorDocuments' => $editorDocuments,
                 'editorAvailable' => $editorAvailable,
@@ -57,6 +60,8 @@ $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
                 'primaryLanguage' => $primaryLanguage ?? 'hr',
                 'supportedLanguages' => $supportedLanguages ?? ['hr'],
                 'localeFlagPaths' => $localeFlagPaths ?? [],
+                'workspaceLookupPath' => $workspaceLookupPath,
+                'pageLookupPath' => $pageLookupPath,
             ],
         ) ?>
     </div>

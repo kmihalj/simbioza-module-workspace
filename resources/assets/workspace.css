@@ -4,6 +4,27 @@
     --workspace-tree-width: var(--workspace-tree-min-width);
 }
 
+.workspace-lookup-picker [data-workspace-lookup-toggle] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-lookup-menu {
+    min-width: 100%;
+    width: max-content;
+    max-width: min(36rem, 90vw);
+}
+
+.workspace-lookup-list {
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.workspace-lookup-list .list-group-item {
+    overflow-wrap: anywhere;
+}
+
 .workspace-shell {
     position: relative;
     display: grid;

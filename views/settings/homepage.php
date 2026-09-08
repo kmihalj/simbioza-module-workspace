@@ -24,6 +24,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var object|null $menuRenderer
  * @var string $assetsCssPath
  * @var string $assetsJsPath
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  */
 
 $publicTarget = WorkspaceValue::stringKeyArray($settings['public_target'] ?? null);

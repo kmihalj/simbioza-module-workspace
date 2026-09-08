@@ -398,6 +398,8 @@ return [
     'Spremi postavke naslovnice' => 'Spremi postavke naslovnice',
     'Spremi osobnu naslovnicu' => 'Spremi osobnu naslovnicu',
     'Pretraži područja' => 'Pretraži područja',
+    'Odaberite područje' => 'Odaberite područje',
+    'Učitaj još' => 'Učitaj još',
     'Pretraži stranice' => 'Pretraži stranice',
     'Odaberite stranicu' => 'Odaberite stranicu',
     'Odaberite stranicu.' => 'Odaberite stranicu.',
@@ -846,4 +848,6 @@ return [
     'Sljedeća stranica' => 'Sljedeća stranica',
     'Stranice područja' => 'Stranice područja',
     'Sva ostala područja' => 'Sva ostala područja',
+    'Popis za odabir trenutačno nije moguće dohvatiti.' =>
+        'Popis za odabir trenutačno nije moguće dohvatiti.',
 ];

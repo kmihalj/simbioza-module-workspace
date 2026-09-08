@@ -7,16 +7,28 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 /**
  * @var \HeartPhrame\View\View $this
  * @var array<string, mixed> $node
+ * @var array<string, mixed> $workspace
  * @var list<array<string, mixed>> $nodes
  * @var list<array{id:string,title:string}> $editorDocuments
  * @var bool $editorAvailable
  * @var bool $canAttachExistingDocuments
  * @var bool $workspaceCanAdd
  * @var bool $treeOrganizerAvailable
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  */
 $nodeType = WorkspaceValue::string($node['node_type'] ?? 'document');
 $nodeId = WorkspaceValue::int($node['id'] ?? 0);
 $currentParentId = WorkspaceValue::int($node['parent_id'] ?? 0);
+$workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+$workspaceLabel = WorkspaceValue::string($workspace['name'] ?? '');
+$currentParentLabel = __('Korijen stabla');
+foreach ($nodes as $candidate) {
+    if (WorkspaceValue::int($candidate['id'] ?? 0) === $currentParentId) {
+        $currentParentLabel = WorkspaceValue::string($candidate['title'] ?? $currentParentLabel);
+        break;
+    }
+}
 $currentDocumentKey = WorkspaceValue::string($node['document_key'] ?? '');
 $primaryLanguage = strtolower(WorkspaceValue::string($primaryLanguage ?? 'hr'));
 $activeLanguage = strtolower(WorkspaceValue::string($activeLanguage ?? $primaryLanguage));
@@ -138,43 +150,58 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         </div>
     <?php endif; ?>
     <?php if ($nodeId === 0 || !$treeOrganizerAvailable) : ?>
+        <div class="col-12 col-md-6" id="workspace-node-parent-workspace-<?= $nodeId ?>">
+            <label class="form-label"><?= $this->escape(__('Područje')) ?></label>
+        <?php
+        $workspaceLookupKind = 'workspace';
+        $workspaceLookupName = '';
+        $workspaceLookupValue = (string)$workspaceId;
+        $workspaceLookupLabel = $workspaceLabel;
+        $workspaceLookupEndpoint = $workspaceLookupPath;
+        $workspaceLookupAudience = 'current';
+        $workspaceLookupWorkspaceSelector = '';
+        $workspaceLookupIncludeAll = false;
+        $workspaceLookupAllLabel = '';
+        $workspaceLookupAllValue = '';
+        $workspaceLookupAllDisabled = false;
+        $workspaceLookupRequired = true;
+        $workspaceLookupValueMode = 'id';
+        $workspaceLookupPublishedOnly = false;
+        $workspaceLookupIncludeShorts = false;
+        $workspaceLookupIncludeContainers = false;
+        $workspaceLookupRequireCanAdd = false;
+        $workspaceLookupExcludeNodeId = 0;
+        $workspaceLookupFixedWorkspaceId = $workspaceId;
+        $workspaceLookupTargetKey = '';
+        require __DIR__ . '/../partials/lookup-picker.php';
+        ?>
+        </div>
         <div class="col-12 col-md-6">
             <label class="form-label"><?= $this->escape(__('Roditeljska stranica')) ?></label>
-            <select class="form-select" name="parent_id">
-                <option
-                    value=""
-        <?= !$workspaceCanAdd && $currentParentId !== 0 ? 'disabled' : '' ?>
-                ><?= $this->escape(__('Korijen stabla')) ?></option>
-        <?php foreach ($nodes as $candidate) : ?>
-            <?php $candidateId = WorkspaceValue::int($candidate['id'] ?? 0); ?>
-            <?php
-            $candidatePermissions = WorkspaceValue::stringKeyArray($candidate['permissions'] ?? null);
-            $canUseCandidate = (bool)($candidatePermissions['can_add'] ?? false)
-            || $candidateId === $currentParentId;
-            ?>
-            <?php if (
-                        $candidateId !== $nodeId
-                        && $canUseCandidate
-                        && in_array(
-                            WorkspaceValue::string($candidate['node_type'] ?? ''),
-                            ['document', 'separator'],
-                            true,
-                        )
-) : ?>
-                        <option
-                            value="<?= $candidateId ?>"
-    <?= $currentParentId === $candidateId ? 'selected' : '' ?>
-                        >
-    <?= $this->escape(
-        str_repeat(
-            '— ',
-            WorkspaceValue::int($candidate['tree_depth'] ?? 0),
-        ) . WorkspaceValue::string($candidate['title'] ?? ''),
-    ) ?>
-                        </option>
-            <?php endif; ?>
-        <?php endforeach; ?>
-            </select>
+        <?php
+        $workspaceLookupKind = 'page';
+        $workspaceLookupName = 'parent_id';
+        $workspaceLookupValue = $currentParentId > 0 ? (string)$currentParentId : '';
+        $workspaceLookupLabel = $currentParentLabel;
+        $workspaceLookupEndpoint = $pageLookupPath;
+        $workspaceLookupAudience = 'current';
+        $workspaceLookupWorkspaceSelector = '#workspace-node-parent-workspace-' . $nodeId
+        . ' [data-workspace-lookup-value]';
+        $workspaceLookupIncludeAll = true;
+        $workspaceLookupAllLabel = __('Korijen stabla');
+        $workspaceLookupAllValue = '';
+        $workspaceLookupAllDisabled = !$workspaceCanAdd && $currentParentId !== 0;
+        $workspaceLookupRequired = false;
+        $workspaceLookupValueMode = 'id';
+        $workspaceLookupPublishedOnly = false;
+        $workspaceLookupIncludeShorts = false;
+        $workspaceLookupIncludeContainers = true;
+        $workspaceLookupRequireCanAdd = true;
+        $workspaceLookupExcludeNodeId = $nodeId;
+        $workspaceLookupFixedWorkspaceId = 0;
+        $workspaceLookupTargetKey = '';
+        require __DIR__ . '/../partials/lookup-picker.php';
+        ?>
         </div>
     <?php endif; ?>
     <div class="col-12" data-workspace-node-types="separator">

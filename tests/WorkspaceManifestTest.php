@@ -8,6 +8,7 @@ use AaiEduHr\HeartPhrameModuleAuth\Middleware\RequireAuthenticatedUserMiddleware
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
@@ -51,10 +52,22 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(48, $routesByName);
+        $this->assertCount(50, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
+        );
+        $this->assertSame(
+            WorkspaceLookupController::class . '@workspaces',
+            $routesByName['workspace.lookup.workspaces'][2],
+        );
+        $this->assertSame(
+            WorkspaceLookupController::class . '@pages',
+            $routesByName['workspace.lookup.pages'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.lookup.pages'][4],
         );
         $this->assertSame(
             WorkspaceController::class . '@saveNodeDirectPermissions',

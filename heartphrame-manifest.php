@@ -12,6 +12,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
@@ -273,6 +274,20 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
             ],
             ['GET', '/workspaces/assets.css', WorkspaceController::class . '@styles', 'workspace.assets.css', []],
             ['GET', '/workspaces/assets.js', WorkspaceController::class . '@scripts', 'workspace.assets.js', []],
+            [
+                'GET',
+                '/workspaces/lookups/workspaces',
+                WorkspaceLookupController::class . '@workspaces',
+                'workspace.lookup.workspaces',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
+                'GET',
+                '/workspaces/lookups/pages',
+                WorkspaceLookupController::class . '@pages',
+                'workspace.lookup.pages',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
             [
                 'GET',
                 '/settings/workspaces',

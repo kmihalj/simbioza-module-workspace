@@ -17,8 +17,29 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var bool $viewOptionsReady
  * @var string $savePath
  * @var string $assetsJsPath
+ * @var string $assetsCssPath
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  */
+
+$selectedWorkspaceId = 0;
+$selectedWorkspaceLabel = __('Sva područja');
+$selectedPageLabel = __('Koristi zadanu naslovnicu');
+foreach ($optionGroups as $group) {
+    foreach ($group['options'] as $option) {
+        if (WorkspaceValue::string($option['value'] ?? '') !== $selectedTargetValue) {
+            continue;
+        }
+
+        $selectedWorkspaceId = WorkspaceValue::int($option['workspace_id'] ?? 0);
+        $selectedWorkspaceLabel = WorkspaceValue::string($group['name'] ?? __('Sva područja'));
+        $selectedPageLabel = WorkspaceValue::string($option['title'] ?? '');
+        break 2;
+    }
+}
+$workspaceValueSelector = '#workspace-personal-homepage-workspace [data-workspace-lookup-value]';
 ?>
+<link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
 <script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
 <div class="card shadow-sm">
     <div class="card-body p-4">
@@ -39,33 +60,51 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
         <form method="post" action="<?= $this->escape($savePath) ?>">
             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-            <label class="form-label" for="workspace-personal-homepage">
+            <label class="form-label">
                 <?= $this->escape(__('Moja naslovnica')) ?>
             </label>
-            <select
-                id="workspace-personal-homepage"
-                class="form-select"
-                name="target"
-                data-workspace-homepage-target="personal"
-            >
-                <option value="default"><?= $this->escape(__('Koristi zadanu naslovnicu')) ?></option>
-                <?php foreach ($optionGroups as $group) : ?>
-                    <optgroup label="<?= $this->escape(WorkspaceValue::string($group['name'] ?? '')) ?>">
-                    <?php foreach ($group['options'] as $option) : ?>
-                            <option
-                                value="<?= $this->escape(WorkspaceValue::string(
-                                    $option['value'] ?? '',
-                                )) ?>"
-                        <?= WorkspaceValue::string($option['value'] ?? '') === $selectedTargetValue
-                        ? 'selected'
-                        : '' ?>
-                            >
-                        <?= $this->escape(WorkspaceValue::string($option['title'] ?? '')) ?>
-                            </option>
-                    <?php endforeach; ?>
-                    </optgroup>
-                <?php endforeach; ?>
-            </select>
+            <div class="mb-3" id="workspace-personal-homepage-workspace">
+                <label class="form-label"><?= $this->escape(__('Područje')) ?></label>
+                <?php
+                $workspaceLookupKind = 'workspace';
+                $workspaceLookupName = '';
+                $workspaceLookupValue = $selectedWorkspaceId > 0 ? (string)$selectedWorkspaceId : '';
+                $workspaceLookupLabel = $selectedWorkspaceLabel;
+                $workspaceLookupEndpoint = $workspaceLookupPath;
+                $workspaceLookupAudience = 'current';
+                $workspaceLookupWorkspaceSelector = '';
+                $workspaceLookupIncludeAll = true;
+                $workspaceLookupAllLabel = __('Sva područja');
+                $workspaceLookupAllValue = '';
+                $workspaceLookupRequired = false;
+                $workspaceLookupValueMode = 'id';
+                $workspaceLookupPublishedOnly = false;
+                $workspaceLookupIncludeShorts = false;
+                $workspaceLookupTargetKey = '';
+                require __DIR__ . '/../partials/lookup-picker.php';
+                ?>
+            </div>
+            <div>
+                <label class="form-label"><?= $this->escape(__('Stranica')) ?></label>
+                <?php
+                $workspaceLookupKind = 'page';
+                $workspaceLookupName = 'target';
+                $workspaceLookupValue = $selectedTargetValue;
+                $workspaceLookupLabel = $selectedPageLabel;
+                $workspaceLookupEndpoint = $pageLookupPath;
+                $workspaceLookupAudience = 'current';
+                $workspaceLookupWorkspaceSelector = $workspaceValueSelector;
+                $workspaceLookupIncludeAll = true;
+                $workspaceLookupAllLabel = __('Koristi zadanu naslovnicu');
+                $workspaceLookupAllValue = 'default';
+                $workspaceLookupRequired = true;
+                $workspaceLookupValueMode = 'target';
+                $workspaceLookupPublishedOnly = true;
+                $workspaceLookupIncludeShorts = $viewOptionsReady;
+                $workspaceLookupTargetKey = 'personal';
+                require __DIR__ . '/../partials/lookup-picker.php';
+                ?>
+            </div>
             <?php if ($viewOptionsReady) : ?>
                 <div class="mt-3" data-workspace-homepage-view-options="personal">
                     <div class="form-check form-switch">

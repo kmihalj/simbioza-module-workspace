@@ -22,6 +22,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $nodeAclSavePath
  * @var string $nodeDirectPermissionSavePath
  * @var string $subjectSearchPath
+ * @var string $workspaceLookupPath
+ * @var string $pageLookupPath
  * @var int $returnNodeId
  */
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
@@ -90,6 +92,7 @@ $hasPermission = static function (
                 'workspace/node-fields',
                 [
                     'node' => $node,
+                    'workspace' => $workspace,
                     'nodes' => $nodes,
                     'editorDocuments' => $editorDocuments,
                     'editorAvailable' => $editorAvailable,
@@ -100,6 +103,8 @@ $hasPermission = static function (
                     'primaryLanguage' => $primaryLanguage ?? 'hr',
                     'supportedLanguages' => $supportedLanguages ?? ['hr'],
                     'localeFlagPaths' => $localeFlagPaths ?? [],
+                    'workspaceLookupPath' => $workspaceLookupPath,
+                    'pageLookupPath' => $pageLookupPath,
                 ],
             ) ?>
             <?php if (WorkspaceValue::string($node['node_type'] ?? '') === 'document') : ?>
@@ -261,6 +266,7 @@ $hasPermission = static function (
                         data-workspace-id="<?= $workspaceId ?>"
                         data-workspace-node-id="<?= $nodeId ?>"
                         data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                        data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
                         data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
                     >
                         <input
@@ -451,6 +457,7 @@ $hasPermission = static function (
                             data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
                             data-workspace-id="<?= $workspaceId ?>"
                             data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                            data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
                             data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
                         >
                             <input

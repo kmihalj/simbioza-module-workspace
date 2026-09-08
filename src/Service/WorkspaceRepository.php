@@ -48,7 +48,7 @@ final readonly class WorkspaceRepository
 
     public const BUILT_IN_SUBJECT_ID = 1;
 
-    private const DIRECTORY_RESULT_LIMIT = 20;
+    private const DIRECTORY_RESULT_LIMIT = 25;
 
     private const RESTRICTION_CANDIDATE_LIMIT = 100;
 
@@ -743,6 +743,105 @@ final readonly class WorkspaceRepository
         }
 
         return $this->searchGroups($search, self::DIRECTORY_RESULT_LIMIT);
+    }
+
+    /**
+     * HR: Vraća jednu ograničenu stranicu imenika za udaljene ACL birače.
+     * EN: Returns one bounded directory page for remote ACL pickers.
+     *
+     * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
+     */
+    public function directorySubjectPage(
+        string $category,
+        string $search,
+        int $page = 1,
+        int $perPage = self::DIRECTORY_RESULT_LIMIT,
+    ): array {
+        $page = max(1, $page);
+        $perPage = max(1, min(self::DIRECTORY_RESULT_LIMIT, $perPage));
+        if ($category !== self::SUBJECT_USER) {
+            $all = $category === self::SUBJECT_GROUP
+            ? $this->searchGroups(trim($search), ($page * $perPage) + 1)
+            : [];
+            $slice = array_slice($all, ($page - 1) * $perPage, $perPage + 1);
+            $hasMore = count($slice) > $perPage;
+            if ($hasMore) {
+                array_pop($slice);
+            }
+
+            return ['items' => array_values($slice), 'page' => $page, 'perPage' => $perPage, 'hasMore' => $hasMore];
+        }
+
+        if (!$this->database->schema()->hasTable(self::AUTH_USERS_TABLE)) {
+            return ['items' => [], 'page' => $page, 'perPage' => $perPage, 'hasMore' => false];
+        }
+
+        $values = self::AUTH_ATTRIBUTE_VALUES_TABLE;
+        $hasValues = $this->database->schema()->hasTable($values);
+        $attribute = static fn(string $field): string => $hasValues
+        ? "(SELECT av.value_text FROM {$values} av WHERE av.user_id = u.id"
+            . " AND av.field_key = '{$field}' LIMIT 1)"
+        : 'NULL';
+        $lastName = $attribute('last_name');
+        $firstName = $attribute('first_name');
+        $displayName = $attribute('display_name');
+        $parameters = [];
+        $where = ' WHERE u.is_active = 1';
+        $search = mb_substr(trim($search), 0, 190);
+        if ($search !== '') {
+            $needle = '%' . mb_strtolower($search) . '%';
+            $where .= ' AND (LOWER(u.login_identifier) LIKE ?';
+            $parameters[] = $needle;
+            if ($hasValues) {
+                $where .= " OR EXISTS (SELECT 1 FROM {$values} searched WHERE searched.user_id = u.id"
+                . " AND searched.field_key IN ('last_name', 'first_name', 'display_name', 'email')"
+                . ' AND LOWER(searched.value_text) LIKE ?)';
+                $parameters[] = $needle;
+            }
+
+            $where .= ')';
+        }
+
+        $limit = $perPage + 1;
+        $offset = ($page - 1) * $perPage;
+        $rows = $this->database->fetchAll(
+            "SELECT u.id, u.login_identifier, {$lastName} AS last_name,"
+            . " {$firstName} AS first_name, {$displayName} AS display_name"
+            . ' FROM ' . self::AUTH_USERS_TABLE . " u{$where}"
+            . " ORDER BY CASE WHEN TRIM(COALESCE({$lastName}, '')) = '' THEN 1 ELSE 0 END ASC,"
+            . " LOWER(COALESCE({$lastName}, '')) ASC, LOWER(COALESCE({$firstName}, '')) ASC,"
+            . " LOWER(u.login_identifier) ASC, u.id ASC LIMIT {$limit} OFFSET {$offset}",
+            $parameters,
+        );
+        $hasMore = count($rows) > $perPage;
+        if ($hasMore) {
+            array_pop($rows);
+        }
+
+        $items = [];
+        foreach ($rows as $row) {
+            if (!is_array($row) || !is_numeric($row['id'] ?? null)) {
+                continue;
+            }
+
+            $userId = (int)$row['id'];
+            $last = $this->stringValue($row['last_name'] ?? '');
+            $first = $this->stringValue($row['first_name'] ?? '');
+            $display = $this->stringValue($row['display_name'] ?? '');
+            $login = $this->stringValue($row['login_identifier'] ?? '');
+            $surnameFirst = trim($last . ' ' . $first);
+            $fallbackLabel = $display !== '' ? $display : ($login ?: '#' . $userId);
+            $items[] = [
+                'id' => $userId,
+                'type' => self::SUBJECT_USER,
+                'category' => self::SUBJECT_USER,
+                'label' => $surnameFirst !== '' ? $surnameFirst : $fallbackLabel,
+                'is_builtin' => false,
+                'is_read_only' => false,
+            ];
+        }
+
+        return ['items' => $items, 'page' => $page, 'perPage' => $perPage, 'hasMore' => $hasMore];
     }
 
     /**

@@ -27,6 +27,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $settingsMenuActiveSection
  * @var object|null $menuRenderer
  * @var string $assetsCssPath
+ * @var string $assetsJsPath
+ * @var string $workspaceLookupPath
  */
 
 $mib = static fn(mixed $bytes): string => number_format(max(0, WorkspaceValue::int($bytes)) / 1048576, 2, ',', '.');
@@ -55,6 +57,7 @@ $imageOptimizationLabelsJson = json_encode([
 ], $jsonFlags);
 ?>
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
+<script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
 
 <div class="row g-4">
     <aside class="col-lg-3">
@@ -269,14 +272,18 @@ $imageOptimizationLabelsJson = json_encode([
                             </select>
                         </div>
                         <div class="col-12 col-lg-8" data-maintenance-workspace hidden>
-                            <label class="form-label" for="maintenance-workspace"><?= $tr('Područje') ?></label>
-                            <select id="maintenance-workspace" class="form-select" name="workspace_id">
-                                <?php foreach ($workspaces as $workspace) : ?>
-                                    <option value="<?= WorkspaceValue::int($workspace['id'] ?? 0) ?>">
-                                    <?= $this->escape(WorkspaceValue::string($workspace['name'] ?? '')) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label"><?= $tr('Područje') ?></label>
+                            <?php
+                            $workspaceLookupKind = 'workspace';
+                            $workspaceLookupName = 'workspace_id';
+                            $workspaceLookupValue = '';
+                            $workspaceLookupLabel = '';
+                            $workspaceLookupEndpoint = $workspaceLookupPath;
+                            $workspaceLookupAudience = 'current';
+                            $workspaceLookupIncludeAll = false;
+                            $workspaceLookupRequired = true;
+                            require __DIR__ . '/../partials/lookup-picker.php';
+                            ?>
                         </div>
 
                         <div class="col-12 col-lg-6">

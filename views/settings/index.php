@@ -163,6 +163,7 @@ $creatorSubjects = [
                                             data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
                                             data-workspace-min-query-length="2"
                                             data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                                            data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
                                             data-workspace-search-error="<?= $this->escape(
                                                 __('Pretraživanje nije uspjelo.'),
                                             ) ?>"

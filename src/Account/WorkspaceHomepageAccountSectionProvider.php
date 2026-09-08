@@ -46,6 +46,15 @@ final readonly class WorkspaceHomepageAccountSectionProvider implements AuthAcco
         $data['assetsJsPath'] = $this->urlGenerator->namedRouteExists('workspace.assets.js')
         ? $this->urlGenerator->getPathFor('workspace.assets.js')
         : rtrim($this->urlGenerator->getBasePath(), '/') . '/workspaces/assets.js';
+        $data['assetsCssPath'] = $this->urlGenerator->namedRouteExists('workspace.assets.css')
+        ? $this->urlGenerator->getPathFor('workspace.assets.css')
+        : rtrim($this->urlGenerator->getBasePath(), '/') . '/workspaces/assets.css';
+        $data['workspaceLookupPath'] = $this->urlGenerator->namedRouteExists('workspace.lookup.workspaces')
+        ? $this->urlGenerator->getPathFor('workspace.lookup.workspaces')
+        : rtrim($this->urlGenerator->getBasePath(), '/') . '/workspaces/lookups/workspaces';
+        $data['pageLookupPath'] = $this->urlGenerator->namedRouteExists('workspace.lookup.pages')
+        ? $this->urlGenerator->getPathFor('workspace.lookup.pages')
+        : rtrim($this->urlGenerator->getBasePath(), '/') . '/workspaces/lookups/pages';
 
         return [
             'key' => 'workspace-homepage',

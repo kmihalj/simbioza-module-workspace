@@ -284,6 +284,11 @@ final readonly class WorkspaceController
                 'workspace.acl.subjects',
                 '/workspaces/acl/subjects',
             ),
+            'workspaceLookupPath' => $this->pathFor(
+                'workspace.lookup.workspaces',
+                '/workspaces/lookups/workspaces',
+            ),
+            'pageLookupPath' => $this->pathFor('workspace.lookup.pages', '/workspaces/lookups/pages'),
             'indexPath' => $this->pathFor('workspace.index', '/workspaces'),
             'workspaceViewPath' => is_array($workspace)
                 ? $this->workspacePath($this->stringValue($workspace['slug'] ?? ''))
@@ -473,11 +478,14 @@ final readonly class WorkspaceController
 
         $mode = $this->stringValue($query['mode'] ?? '');
         $search = trim($this->stringValue($query['q'] ?? ''));
-        if (
-            in_array($mode, ['acl', 'creator', 'restriction', 'direct-permission'], true)
-            && mb_strlen($search) < 2
-        ) {
-            return $this->responseFactory->json(['ok' => true, 'results' => []]);
+        if ($mode === 'restriction' && mb_strlen($search) < 2) {
+            return $this->responseFactory->json([
+                'ok' => true,
+                'results' => [],
+                'page' => 1,
+                'perPage' => 25,
+                'hasMore' => false,
+            ]);
         }
 
         if (
@@ -505,10 +513,20 @@ final readonly class WorkspaceController
                     $nodeId,
                     $search,
                 ),
+                'page' => 1,
+                'perPage' => 25,
+                'hasMore' => false,
             ]);
         }
 
-        $results = $this->repository->searchDirectorySubjects($category, $search);
+        $page = max(1, $this->intValue($query['page'] ?? 1));
+        $resultPage = $this->repository->directorySubjectPage(
+            $category,
+            $search,
+            $page,
+            $this->intValue($query['per_page'] ?? 25),
+        );
+        $results = $resultPage['items'];
         if ($mode === 'creator') {
             $results = array_values(array_filter(
                 $results,
@@ -519,6 +537,9 @@ final readonly class WorkspaceController
         return $this->responseFactory->json([
             'ok' => true,
             'results' => $results,
+            'page' => $resultPage['page'],
+            'perPage' => $resultPage['perPage'],
+            'hasMore' => $resultPage['hasMore'],
         ]);
     }
 
@@ -734,6 +755,11 @@ final readonly class WorkspaceController
                 : [],
             'canAttachExistingDocuments' => $isAdministrator,
             'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
+            'workspaceLookupPath' => $this->pathFor(
+                'workspace.lookup.workspaces',
+                '/workspaces/lookups/workspaces',
+            ),
+            'pageLookupPath' => $this->pathFor('workspace.lookup.pages', '/workspaces/lookups/pages'),
             'nodeDeletePath' => $this->pathFor('workspace.node.delete', '/workspaces/node/delete'),
             'nodeAclSavePath' => $this->pathFor(
                 'workspace.node.acl.save',
@@ -917,6 +943,11 @@ final readonly class WorkspaceController
             'canAttachExistingDocuments' => $this->access->isAdministrator(),
             'workspaceCanAdd' => (bool)($workspacePermissions['can_add'] ?? false),
             'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
+            'workspaceLookupPath' => $this->pathFor(
+                'workspace.lookup.workspaces',
+                '/workspaces/lookups/workspaces',
+            ),
+            'pageLookupPath' => $this->pathFor('workspace.lookup.pages', '/workspaces/lookups/pages'),
             'returnNodeId' => $this->intValue($query['return_node_id'] ?? 0),
             'activeLanguage' => $language,
             'primaryLanguage' => $primaryLanguage,
@@ -1810,6 +1841,11 @@ final readonly class WorkspaceController
             ),
             'managePath' => $this->managePath($this->stringValue($workspace['slug'] ?? '')),
             'pageCreatePath' => $this->pathFor('workspace.page.create', '/workspaces/page/create'),
+            'workspaceLookupPath' => $this->pathFor(
+                'workspace.lookup.workspaces',
+                '/workspaces/lookups/workspaces',
+            ),
+            'pageLookupPath' => $this->pathFor('workspace.lookup.pages', '/workspaces/lookups/pages'),
             'pageParentOptions' => $this->pageParentOptions($tree),
             'defaultPageParentId' => $defaultParentId,
             'canCreatePage' => (bool)($workspacePermissions['can_add'] ?? false)

@@ -103,9 +103,14 @@ final readonly class WorkspaceMenuService
             'selectedContextId' => WorkspaceValue::string($context['id'] ?? ''),
             'supportedLocales' => $locales,
             'localeFlagPaths' => $this->localeFlagPaths($locales),
-            'navigationTargets' => method_exists($catalog, 'targets') ? $catalog->targets() : [],
+            'navigationTargets' => method_exists($catalog, 'staticTargets')
+                ? $catalog->staticTargets()
+                : (method_exists($catalog, 'targets') ? $catalog->targets() : []),
             'contextTargets' => [],
             'scopeTargets' => [],
+            'targetLookupPath' => $this->urlGenerator->namedRouteExists('menu.settings.targets')
+                ? $this->urlGenerator->getPathFor('menu.settings.targets')
+                : '/settings/menu/targets',
             'jsonPath' => '',
             'configurationError' => null,
             'embedded' => true,

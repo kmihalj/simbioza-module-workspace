@@ -89,6 +89,10 @@ final readonly class WorkspaceMenuNavigationTargetProvider
                 'labels' => $workspaceLabels,
                 'url' => $workspacePath,
                 'context_paths' => [$workspacePath, rtrim($workspacePath, '/') . '/*'],
+                'kind' => 'workspace',
+                'workspace_id' => $workspaceId,
+                'workspace_slug' => $workspaceSlug,
+                'item_label' => $workspaceName,
             ];
 
             try {
@@ -137,6 +141,10 @@ final readonly class WorkspaceMenuNavigationTargetProvider
                     'labels' => $nodeLabels,
                     'url' => $nodePath,
                     'context_paths' => [$nodePath],
+                    'kind' => 'page',
+                    'workspace_id' => $workspaceId,
+                    'workspace_slug' => $workspaceSlug,
+                    'item_label' => $nodeTitle,
                 ];
             }
         }

@@ -13,6 +13,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceShortsController;
@@ -33,6 +34,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceIndexService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLookupService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLinkExtractor;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceService;
@@ -76,6 +78,21 @@ $services = [
             ),
 
     WorkspaceIndexService::class => static fn(): WorkspaceIndexService => new WorkspaceIndexService(),
+
+    WorkspaceLookupService::class => static fn(ContainerInterface $container): WorkspaceLookupService =>
+        new WorkspaceLookupService(
+            $container->get(WorkspaceRepository::class),
+            $container->get(WorkspaceAccessService::class),
+            $container->get(WorkspacePresentationRegistry::class),
+            $container->get(WorkspaceWorkflowService::class),
+        ),
+
+    WorkspaceLookupController::class => static fn(ContainerInterface $container): WorkspaceLookupController =>
+        new WorkspaceLookupController(
+            $container->get(ResponseFactory::class),
+            $container->get(WorkspaceLookupService::class),
+            $container->get(WorkspaceAccessService::class),
+        ),
 
     WorkspaceConfig::class => static fn(ContainerInterface $container): WorkspaceConfig =>
         new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__)),

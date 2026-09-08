@@ -81,6 +81,11 @@ final readonly class WorkspaceHomepageController
             'settingsMenuActiveSection' => 'workspace.settings.homepage',
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
             'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
+            'workspaceLookupPath' => $this->pathFor(
+                'workspace.lookup.workspaces',
+                '/workspaces/lookups/workspaces',
+            ),
+            'pageLookupPath' => $this->pathFor('workspace.lookup.pages', '/workspaces/lookups/pages'),
         ], true, $this->homepages->tablesReady() ? 200 : 503);
     }
 
