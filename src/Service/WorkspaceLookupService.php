@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use HeartPhrame\Localization\TranslatorInterface;
+
 /**
  * HR: Gradi ograničene, ACL-sigurne stranice rezultata za udaljene birače.
  * EN: Builds bounded, ACL-safe result pages for remote pickers.
@@ -21,6 +23,7 @@ final readonly class WorkspaceLookupService
         private WorkspaceAccessService $access,
         private WorkspacePresentationRegistry $presentations,
         private WorkspaceWorkflowService $workflow,
+        private TranslatorInterface $translator,
     ) {
     }
 
@@ -102,7 +105,7 @@ final readonly class WorkspaceLookupService
             $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
             $nodes = $this->repository->localizeNodes(
                 $this->repository->nodesForWorkspace($currentWorkspaceId),
-                '',
+                $this->translator->getLocale(),
                 WorkspaceValue::string($workspace['primary_language'] ?? 'hr'),
             );
             $permissions = $this->access->nodePermissionsForNodes($workspace, $nodes, $user);

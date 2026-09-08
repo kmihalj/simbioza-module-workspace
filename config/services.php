@@ -85,6 +85,7 @@ $services = [
             $container->get(WorkspaceAccessService::class),
             $container->get(WorkspacePresentationRegistry::class),
             $container->get(WorkspaceWorkflowService::class),
+            $container->get(TranslatorInterface::class),
         ),
 
     WorkspaceLookupController::class => static fn(ContainerInterface $container): WorkspaceLookupController =>
