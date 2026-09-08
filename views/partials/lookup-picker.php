@@ -65,6 +65,9 @@ $workspaceLookupPlaceholder = $workspaceLookupKind === 'workspace'
     data-workspace-lookup-require-can-add="<?= $workspaceLookupRequireCanAdd ? '1' : '0' ?>"
     data-workspace-lookup-exclude-node-id="<?= $workspaceLookupExcludeNodeId ?>"
     data-workspace-lookup-fixed-workspace-id="<?= $workspaceLookupFixedWorkspaceId ?>"
+    data-workspace-lookup-all-global-only="<?= $workspaceLookupKind === 'page' && $workspaceLookupTargetKey !== ''
+    ? '1'
+    : '0' ?>"
 >
     <input
         type="hidden"

@@ -2787,6 +2787,7 @@
             const requireCanAdd = picker.dataset.workspaceLookupRequireCanAdd === '1';
             const excludeNodeId = Number(picker.dataset.workspaceLookupExcludeNodeId || 0) || 0;
             const fixedWorkspaceId = Number(picker.dataset.workspaceLookupFixedWorkspaceId || 0) || 0;
+            const allGlobalOnly = picker.dataset.workspaceLookupAllGlobalOnly === '1';
             const value = picker.querySelector('[data-workspace-lookup-value]');
             const toggle = picker.querySelector('[data-workspace-lookup-toggle]');
             const search = picker.querySelector('[data-workspace-lookup-search]');
@@ -2871,9 +2872,17 @@
                         throw new Error(String(payload?.error || 'Popis nije moguće dohvatiti.'));
                     }
 
+                    const selectedWorkspace = workspaceSelector !== ''
+                        ? document.querySelector(workspaceSelector)
+                        : null;
+                    const showAllOption = allLabel !== '' && (
+                        !allGlobalOnly
+                        || !(selectedWorkspace instanceof HTMLInputElement)
+                        || selectedWorkspace.value === ''
+                    );
                     if (!append) {
                         list.replaceChildren();
-                        if (allLabel !== '') {
+                        if (showAllOption) {
                             list.appendChild(option(allValue, allLabel, allDisabled));
                         }
                     }
@@ -2891,7 +2900,7 @@
                     state.page = Number(payload.page || page) || 1;
                     state.hasMore = payload.hasMore === true;
                     state.loaded = true;
-                    const resultCount = list.children.length - (allLabel !== '' ? 1 : 0);
+                    const resultCount = list.children.length - (showAllOption ? 1 : 0);
                     empty?.toggleAttribute('hidden', resultCount > 0);
                     more?.toggleAttribute('hidden', !state.hasMore);
                 } catch (error) {
@@ -2954,7 +2963,15 @@
                     state.loaded = false;
                     list.replaceChildren();
                     more?.setAttribute('hidden', '');
-                    setSelection(allLabel !== '' ? allValue : '', allLabel);
+                    const useAllOption = allLabel !== '' && (
+                        !allGlobalOnly
+                        || !(workspaceInput instanceof HTMLInputElement)
+                        || workspaceInput.value === ''
+                    );
+                    setSelection(
+                        useAllOption ? allValue : '',
+                        useAllOption ? allLabel : String(toggle.dataset.workspaceLookupPlaceholder || ''),
+                    );
                 });
             }
         });
