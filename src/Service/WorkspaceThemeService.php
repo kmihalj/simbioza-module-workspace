@@ -313,14 +313,14 @@ final readonly class WorkspaceThemeService
             ],
             'componentSettings' => is_array($selected['components'] ?? null) ? $selected['components'] : [],
             'themeAssets' => $assets,
-            'gradientPresets' => $this->repositoryRows($themeRepository, 'gradientPresets'),
+            'gradientPresets' => $this->repositoryMap($themeRepository, 'gradientPresets'),
             'selectedTheme' => $selected,
-            'colorFields' => $this->repositoryRows($themeRepository, 'colorFields'),
-            'colorFieldGroups' => $this->repositoryRows($themeRepository, 'colorFieldGroups'),
-            'fontOptions' => $this->repositoryRows($themeRepository, 'fontOptions'),
-            'menuFontSizeOptions' => $this->repositoryRows($themeRepository, 'menuFontSizeOptions'),
-            'menuFontWeightOptions' => $this->repositoryRows($themeRepository, 'menuFontWeightOptions'),
-            'menuFontStyleOptions' => $this->repositoryRows($themeRepository, 'menuFontStyleOptions'),
+            'colorFields' => $this->repositoryMap($themeRepository, 'colorFields'),
+            'colorFieldGroups' => $this->repositoryMap($themeRepository, 'colorFieldGroups'),
+            'fontOptions' => $this->repositoryMap($themeRepository, 'fontOptions'),
+            'menuFontSizeOptions' => $this->repositoryMap($themeRepository, 'menuFontSizeOptions'),
+            'menuFontWeightOptions' => $this->repositoryMap($themeRepository, 'menuFontWeightOptions'),
+            'menuFontStyleOptions' => $this->repositoryMap($themeRepository, 'menuFontStyleOptions'),
             'supportedLocales' => $this->repositorySupportedLocales($themeRepository),
             'localeFlagPaths' => $this->localeFlagPaths(),
             'themeRenderer' => $this->requireService(self::THEME_RENDERER),
@@ -681,14 +681,14 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Normalizira tablični rezultat pomoćne metode Theme repozitorija.
-     * EN: Normalizes a row-list result from a Theme repository helper method.
+     * HR: Čuva semantičke string ključeve konfiguracijske mape Theme repozitorija.
+     * EN: Preserves semantic string keys from a Theme repository configuration map.
      *
-     * @return list<array<string,mixed>>
+     * @return array<string,mixed>
      */
-    private function repositoryRows(object $repository, string $method): array
+    private function repositoryMap(object $repository, string $method): array
     {
-        return WorkspaceValue::rows($this->invoke($repository, $method));
+        return WorkspaceValue::stringKeyArray($this->invoke($repository, $method));
     }
 
     /**
