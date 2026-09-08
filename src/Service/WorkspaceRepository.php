@@ -786,7 +786,7 @@ final readonly class WorkspaceRepository
         $firstName = $attribute('first_name');
         $displayName = $attribute('display_name');
         $parameters = [];
-        $where = ' WHERE u.is_active = 1';
+        $where = ' WHERE u.is_active';
         $search = mb_substr(trim($search), 0, 190);
         if ($search !== '') {
             $needle = '%' . mb_strtolower($search) . '%';
