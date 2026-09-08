@@ -12,6 +12,10 @@ final readonly class WorkspaceLookupService
 {
     private const PAGE_SIZE = 25;
 
+    /**
+     * HR: Inicijalizira ACL-sigurnu uslugu udaljenih imenika.
+     * EN: Initializes the ACL-safe remote directory service.
+     */
     public function __construct(
         private WorkspaceRepository $repository,
         private WorkspaceAccessService $access,
@@ -21,6 +25,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
+     * HR: Pretražuje korisniku dostupna područja i vraća jednu stranicu rezultata.
+     * EN: Searches Workspaces available to the user and returns one result page.
+     *
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
     public function workspacePage(
@@ -63,6 +70,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
+     * HR: Pretražuje korisniku dostupan sadržaj i vraća jednu stranicu rezultata.
+     * EN: Searches content available to the user and returns one result page.
+     *
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
     public function pagePage(
@@ -174,7 +184,12 @@ final readonly class WorkspaceLookupService
         return $this->resultPage($items, $page, $perPage);
     }
 
-    /** @param list<array<string,mixed>> $workflows */
+    /**
+     * HR: Provjerava ima li stranica barem jedan čitljiv tijek objave.
+     * EN: Checks whether a page has at least one readable publication workflow.
+     *
+     * @param list<array<string,mixed>> $workflows
+     */
     private function hasReadableWorkflow(array $workflows): bool
     {
         foreach ($workflows as $workflow) {
@@ -186,7 +201,12 @@ final readonly class WorkspaceLookupService
         return false;
     }
 
-    /** @return array<string,mixed>|null */
+    /**
+     * HR: Vraća odabrano područje samo ako je vidljivo zadanoj publici.
+     * EN: Returns the selected Workspace only when it is visible to the given audience.
+     *
+     * @return array<string,mixed>|null
+     */
     public function selectedWorkspace(int $workspaceId, string $audience = 'current'): ?array
     {
         foreach ($this->workspacePage('', 1, self::PAGE_SIZE, $audience)['items'] as $item) {
@@ -216,13 +236,21 @@ final readonly class WorkspaceLookupService
         return null;
     }
 
-    /** @return array{0:int,1:int} */
+    /**
+     * HR: Ograničava broj stranice i veličinu rezultata na podržane vrijednosti.
+     * EN: Bounds the page number and result size to supported values.
+     *
+     * @return array{0:int,1:int}
+     */
     private function pagination(int $page, int $perPage): array
     {
         return [max(1, $page), max(1, min(self::PAGE_SIZE, $perPage))];
     }
 
     /**
+     * HR: Izdvaja traženu stranicu rezultata i označava postoje li daljnji zapisi.
+     * EN: Extracts the requested result page and indicates whether more records exist.
+     *
      * @param list<array<string,mixed>> $items
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
@@ -243,7 +271,12 @@ final readonly class WorkspaceLookupService
         ];
     }
 
-    /** @return array<string,mixed>|null */
+    /**
+     * HR: Određuje korisnički kontekst za javnu, prijavljenu ili trenutačnu publiku.
+     * EN: Resolves the user context for public, authenticated, or current audiences.
+     *
+     * @return array<string,mixed>|null
+     */
     private function audienceUser(string $audience): ?array
     {
         return match ($audience) {
