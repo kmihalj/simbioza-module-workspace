@@ -250,6 +250,12 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertIsString($css);
         $this->assertStringContainsString('workspace-shorts-breadcrumb-nav', $view);
         $this->assertStringContainsString('workspace-breadcrumb-home-icon', $view);
+        $this->assertStringContainsString('href="<?= $this->escape($workspacePath) ?>"', $view);
+        $this->assertStringContainsString("__('Zatvori sažetke')", $view);
+        $this->assertStringContainsString('value="all"', $view);
+        $this->assertStringContainsString("'title_asc' => __('Po naslovu uzlazno')", $view);
+        $this->assertStringContainsString("'title_desc' => __('Po naslovu silazno')", $view);
+        $this->assertStringContainsString('data-workspace-shorts-pagination', $view);
         $this->assertStringContainsString(
             "build(\$workspace, null, [], \$language, '', true)",
             $controller,

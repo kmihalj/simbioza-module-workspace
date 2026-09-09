@@ -236,12 +236,16 @@ verziju svake dopuštene stranice kao isječak visine dvanaest redaka s fade
 završetkom i poveznicom **Pročitaj više**. Tako ostaje mjesta za približno pet
 do šest dodatnih redaka teksta i kada članak počinje kompaktnom slikom. Nacrti, arhivirane objave,
 nedostupne stranice i svi potomci nedostupne stranice uklanjaju se prije
-učitavanja sadržaja.
+učitavanja sadržaja. Ista aktivna ikona u Sažetcima zatvara taj prikaz i vraća
+korisnika na standardni prikaz područja uz očuvani jezik.
 
-Posjetitelj bira samo 1., razine 1–2 ili razine 1–3; 5, 10, 25, 50 ili sve
-članke; te hijerarhijski redoslijed, najnovije ili najstarije prvo. **Sve** je
-dostupno samo kada manje od 100 članaka prođe provjeru objave i ACL-a. Server
-isto pravilo provodi i za ručno sastavljen query string.
+Posjetitelj bira samo 1., razine 1–2, razine 1–3 ili sve razine; 5, 10, 25, 50
+članaka po stranici ili sve članke; te hijerarhijski redoslijed, najnovije,
+najstarije, naslov uzlazno ili naslov silazno. Konačni naslovni redoslijed prati
+odabrani jezik sučelja. Kada postoji više članaka od odabrane veličine stranice,
+paginacija omogućuje pristup cijelom skupu. **Sve** je dostupno samo kada manje
+od 100 članaka prođe provjeru objave i ACL-a. Server isto pravilo provodi i za
+ručno sastavljen query string.
 
 Zadane vrijednosti postavljaju se pod **Postavke → Područja** i spremaju u
 aplikacijski `config/workspace.php`:

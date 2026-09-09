@@ -265,10 +265,13 @@ $creatorSubjects = [
                                     <?= $this->escape(__('Prikazane razine')) ?>
                                 </label>
                                 <select id="workspace-shorts-depth" class="form-select" name="shorts_depth">
+                                    <?php $selectedShortsDepth = WorkspaceValue::string(
+                                        $settings['shorts_depth'] ?? 2,
+                                    ); ?>
                                     <?php foreach ([1, 2, 3] as $depth) : ?>
                                         <option
                                             value="<?= $depth ?>"
-                                        <?= WorkspaceValue::int($settings['shorts_depth'] ?? 2) === $depth
+                                        <?= $selectedShortsDepth === (string)$depth
                                         ? 'selected'
                                         : '' ?>
                                         >
@@ -277,6 +280,10 @@ $creatorSubjects = [
                                                 : __('Razine 1–') . $depth) ?>
                                         </option>
                                     <?php endforeach; ?>
+                                    <option
+                                        value="all"
+                                        <?= $selectedShortsDepth === 'all' ? 'selected' : '' ?>
+                                    ><?= $this->escape(__('Sve razine')) ?></option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4">
@@ -304,6 +311,8 @@ $creatorSubjects = [
                                             'hierarchy' => __('Prema hijerarhiji'),
                                             'newest' => __('Najnovije prvo'),
                                             'oldest' => __('Najstarije prvo'),
+                                            'title_asc' => __('Po naslovu uzlazno'),
+                                            'title_desc' => __('Po naslovu silazno'),
                                         ] as $order => $label
 ) : ?>
                                         <option

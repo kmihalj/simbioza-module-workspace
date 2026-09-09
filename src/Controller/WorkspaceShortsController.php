@@ -122,8 +122,10 @@ final readonly class WorkspaceShortsController
             'order' => $model['order'],
             'total' => $model['total'],
             'allAvailable' => $model['all_available'],
+            'pagination' => $model['pagination'],
             'language' => $language,
             'shortsPath' => $model['shorts_path'],
+            'workspacePath' => $model['workspace_path'],
             'treeVisibleByDefault' => $treeVisible,
             'displayOptionsVisibleByDefault' => $displayOptionsVisible,
             'treeBranchPath' => $this->pathFor(

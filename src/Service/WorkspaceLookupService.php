@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use HeartPhrame\Localization\TranslatorInterface;
 
 /**
@@ -64,9 +65,11 @@ final readonly class WorkspaceLookupService
             $items[] = ['id' => $id, 'label' => $name, 'slug' => $slug];
         }
 
-        usort($items, static fn(array $left, array $right): int => strcasecmp(
+        $locale = $this->translator->getLocale();
+        usort($items, static fn(array $left, array $right): int => LocaleSorter::compare(
             (string)($left['label'] ?? ''),
             (string)($right['label'] ?? ''),
+            $locale,
         ));
 
         return $this->resultPage($items, $page, $perPage);
@@ -179,9 +182,11 @@ final readonly class WorkspaceLookupService
             }
         }
 
-        usort($items, static fn(array $left, array $right): int => strcasecmp(
+        $locale = $this->translator->getLocale();
+        usort($items, static fn(array $left, array $right): int => LocaleSorter::compare(
             (string)($left['label'] ?? ''),
             (string)($right['label'] ?? ''),
+            $locale,
         ));
 
         return $this->resultPage($items, $page, $perPage);

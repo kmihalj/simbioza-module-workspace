@@ -326,6 +326,7 @@ return [
     'Workflow stranice nije moguće spremiti.' =>
         'Workflow stranice nije moguće spremiti.',
     'Sažetci' => 'Sažetci',
+    'Zatvori sažetke' => 'Zatvori sažetke',
     'Sažetci stranica' => 'Sažetci stranica',
     'Objavljene stranice koje smijete vidjeti, prikazane kao kratki isječci.' =>
         'Objavljene stranice koje smijete vidjeti, prikazane kao kratki isječci.',
@@ -336,13 +337,18 @@ return [
     'Prikazane razine' => 'Prikazane razine',
     'Samo 1. razina' => 'Samo 1. razina',
     'Razine 1–' => 'Razine 1–',
+    'Sve razine' => 'Sve razine',
     'Broj članaka' => 'Broj članaka',
     'Prema hijerarhiji' => 'Prema hijerarhiji',
     'Najnovije prvo' => 'Najnovije prvo',
     'Najstarije prvo' => 'Najstarije prvo',
+    'Po naslovu uzlazno' => 'Po naslovu uzlazno',
+    'Po naslovu silazno' => 'Po naslovu silazno',
     'Prikaži' => 'Prikaži',
     'Sve' => 'Sve',
     'Dostupnih članaka:' => 'Dostupnih članaka:',
+    'Prikazano %d–%d od %d članaka.' => 'Prikazano %d–%d od %d članaka.',
+    'Stranice sažetaka' => 'Stranice sažetaka',
     'Opcija „Sve” isključena je za 100 ili više članaka.' =>
         'Opcija „Sve” isključena je za 100 ili više članaka.',
     'U odabranim razinama nema objavljenih stranica koje smijete vidjeti.' =>

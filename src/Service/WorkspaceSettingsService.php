@@ -99,7 +99,7 @@ final readonly class WorkspaceSettingsService
                 ),
             ],
             'shorts' => [
-                'depth' => $this->allowedInt($input['shorts_depth'] ?? 2, [1, 2, 3], 2),
+                'depth' => $this->allowedDepth($input['shorts_depth'] ?? 2),
                 'limit' => $this->allowedInt(
                     $input['shorts_limit'] ?? 10,
                     [5, 10, 25, 50],
@@ -107,7 +107,7 @@ final readonly class WorkspaceSettingsService
                 ),
                 'order' => $this->allowedString(
                     $input['shorts_order'] ?? 'newest',
-                    ['hierarchy', 'newest', 'oldest'],
+                    ['hierarchy', 'newest', 'oldest', 'title_asc', 'title_desc'],
                     'newest',
                 ),
                 'display_options_visible' => $this->boolValue(
@@ -236,6 +236,16 @@ final readonly class WorkspaceSettingsService
         $number = is_scalar($value) ? (int)$value : 0;
 
         return in_array($number, $allowed, true) ? $number : $fallback;
+    }
+
+    /** HR: Prihvaća zadanu dubinu 1–3 ili sve razine. EN: Accepts default depth 1–3 or all levels. */
+    private function allowedDepth(mixed $value): int|string
+    {
+        $normalized = is_scalar($value) ? strtolower(trim((string)$value)) : '';
+
+        return $normalized === 'all'
+        ? 'all'
+        : $this->allowedInt($normalized, [1, 2, 3], 2);
     }
 
     /**

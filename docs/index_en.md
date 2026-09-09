@@ -227,13 +227,20 @@ node. This keeps URL and ACL ownership unambiguous.
 
 The list icon in every visible tree header opens
 `/{workspace-root}/{workspaceSlug}/shorts`. It is visible to every user who can
-view that Workspace; it is not a management action.
+view that Workspace; it is not a management action. In the active Shorts view,
+the same icon closes the view and returns to the standard Workspace while
+preserving the locale.
 
 The page supports three independent controls:
 
-- levels 1, 1–2, or 1–3 of the visible tree;
-- 5, 10, 25, 50, or all articles;
-- hierarchy, newest-first, or oldest-first order.
+- levels 1, 1–2, 1–3, or all levels of the visible tree;
+- 5, 10, 25, or 50 articles per page, or all articles;
+- hierarchy, newest-first, oldest-first, title-ascending, or title-descending
+  order.
+
+Title ordering follows the active interface locale. A numeric page size shows
+pagination that exposes every eligible article instead of only the first N
+results.
 
 The `all` option is enabled only below 100 eligible articles. The controller
 rejects a crafted `limit=all` at 100 or more and falls back to the configured
@@ -700,7 +707,7 @@ enabled, Workspace's `WorkspaceApiExtension` registers the routes and its
 | `POST /api/v1/workspaces` | `workspace:manage` | Uses the application creation policy |
 | `GET/PATCH/DELETE /api/v1/workspaces/{slug}` | read/manage | Rechecks effective view or manage permission |
 | `GET /api/v1/workspaces/{slug}/tree?lang=hr` | `workspace:read` | Filters inherited ACL and publication state |
-| `GET /api/v1/workspaces/{slug}/shorts?lang=hr` | `workspace:read` | Returns only visible, exactly published summaries |
+| `GET /api/v1/workspaces/{slug}/shorts?lang=hr&page=1` | `workspace:read` | Returns only visible, exactly published, paginated summaries |
 | `POST /api/v1/workspaces/{slug}/exports/html` | `workspace:manage` | Downloads the ACL-filtered offline HTML ZIP |
 | `GET/PUT /api/v1/workspaces/homepage/settings` | `workspace:manage` | Administrator-only public/authenticated policy |
 | `GET/PUT /api/v1/workspaces/homepage/preference` | `workspace:read` | Reads or stores only the key owner's personal choice |

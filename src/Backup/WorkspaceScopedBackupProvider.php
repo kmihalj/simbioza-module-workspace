@@ -19,6 +19,7 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupValue;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
@@ -89,7 +90,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
 
         $rows = $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
             ->where('is_deleted', '=', false)
-            ->orderBy('name', 'ASC')
+            ->orderByLocalized('name', 'ASC')
             ->get();
 
         $options = [];
@@ -104,7 +105,10 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             ];
         }
 
-        usort($options, static fn(array $left, array $right): int => strnatcasecmp($left['label'], $right['label']));
+        usort($options, static fn(array $left, array $right): int => LocaleSorter::compare(
+            $left['label'],
+            $right['label'],
+        ));
 
         return $options;
     }
@@ -180,7 +184,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             foreach (
                 $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
                 ->where('node_id', '=', $nodeId)
-                ->orderBy('label')
+                ->orderByLocalized('label')
                 ->get() as $label
             ) {
                 $writer->writeRecord(self::ID, 'node-labels', [
@@ -193,7 +197,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES)
                 ->where('node_id', '=', $nodeId)
                 ->orderBy('sort_order')
-                ->orderBy('property_label')
+                ->orderByLocalized('property_label')
                 ->get() as $property
             ) {
                 $writer->writeRecord(self::ID, 'node-properties', [

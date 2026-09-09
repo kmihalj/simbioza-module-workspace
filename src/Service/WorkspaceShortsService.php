@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use HeartPhrame\Routing\UrlGenerator;
 
 use function array_slice;
 use function array_unique;
 use function array_values;
+use function ceil;
 use function count;
 use function in_array;
 use function is_scalar;
+use function max;
+use function min;
 use function preg_match;
+use function range;
 use function rawurlencode;
 use function rtrim;
 use function strcmp;
@@ -22,7 +27,7 @@ use function usort;
 
 /**
  * HR: Gradi ACL-siguran, paginirani prikaz sažetaka objavljenih Workspace stranica.
- * EN: Builds an ACL-safe, limited Shorts view of published Workspace pages.
+ * EN: Builds an ACL-safe, paginated Shorts view of published Workspace pages.
  */
 final readonly class WorkspaceShortsService
 {
@@ -30,7 +35,7 @@ final readonly class WorkspaceShortsService
 
     private const LIMITS = [5, 10, 25, 50];
 
-    private const ORDERS = ['hierarchy', 'newest', 'oldest'];
+    private const ORDERS = ['hierarchy', 'newest', 'oldest', 'title_asc', 'title_desc'];
 
     /**
      * HR: Prima jedinstvene izvore stabla, ACL-a, objava i HTML sadržaja.
@@ -69,9 +74,8 @@ final readonly class WorkspaceShortsService
             $defaultLanguage ?? $this->config->siteDefaultLanguage(),
             $this->config->siteDefaultLanguage(),
         );
-        $depth = $this->allowedInt(
+        $depth = $this->allowedDepth(
             $query['depth'] ?? null,
-            self::DEPTHS,
             $this->config->shortsDefaultDepth(),
         );
         $order = $this->allowedString(
@@ -88,12 +92,17 @@ final readonly class WorkspaceShortsService
             $user,
             array_values(array_unique([$language, $defaultLanguage])),
         );
+        $visibleTree = $this->repository->localizeTree(
+            $visibleTree,
+            $language,
+            $defaultLanguage,
+        );
         $flatNodes = $this->flattenTree($visibleTree);
         $candidateIds = [];
         foreach ($flatNodes as $entry) {
             $node = WorkspaceValue::stringKeyArray($entry['node'] ?? null);
             if (
-                WorkspaceValue::int($entry['depth'] ?? 0) <= $depth
+                $this->depthIncludes(WorkspaceValue::int($entry['depth'] ?? 0), $depth)
                 && WorkspaceValue::string($node['node_type'] ?? '') === 'document'
             ) {
                 $candidateIds[] = WorkspaceValue::int($node['id'] ?? 0);
@@ -105,7 +114,7 @@ final readonly class WorkspaceShortsService
         foreach ($flatNodes as $entry) {
             $node = WorkspaceValue::stringKeyArray($entry['node'] ?? null);
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
-            if (WorkspaceValue::int($entry['depth'] ?? 0) > $depth) {
+            if (!$this->depthIncludes(WorkspaceValue::int($entry['depth'] ?? 0), $depth)) {
                 continue;
             }
 
@@ -122,16 +131,40 @@ final readonly class WorkspaceShortsService
                 continue;
             }
 
+            $contentLanguage = WorkspaceValue::string($workflow['language_code'] ?? $language);
             $eligible[] = [
-                'node' => $node,
+                'node' => $this->repository->localizeNode(
+                    $node,
+                    $contentLanguage,
+                    $defaultLanguage,
+                ),
                 'workflow' => $workflow,
-                'language' => WorkspaceValue::string($workflow['language_code'] ?? $language),
+                'language' => $contentLanguage,
                 'hierarchy_index' => WorkspaceValue::int($entry['index'] ?? 0),
                 'published_at' => WorkspaceValue::string($workflow['published_at'] ?? ''),
             ];
         }
 
-        if ($order !== 'hierarchy') {
+        if (in_array($order, ['title_asc', 'title_desc'], true)) {
+            usort(
+                $eligible,
+                static function (array $left, array $right) use ($order, $language): int {
+                    $leftNode = WorkspaceValue::stringKeyArray($left['node'] ?? null);
+                    $rightNode = WorkspaceValue::stringKeyArray($right['node'] ?? null);
+                    $comparison = LocaleSorter::compare(
+                        WorkspaceValue::string($leftNode['title'] ?? ''),
+                        WorkspaceValue::string($rightNode['title'] ?? ''),
+                        $language,
+                    );
+                    if ($comparison === 0) {
+                        return WorkspaceValue::int($left['hierarchy_index'] ?? 0)
+                        <=> WorkspaceValue::int($right['hierarchy_index'] ?? 0);
+                    }
+
+                    return $order === 'title_desc' ? -$comparison : $comparison;
+                },
+            );
+        } elseif ($order !== 'hierarchy') {
             usort(
                 $eligible,
                 static function (array $left, array $right) use ($order): int {
@@ -157,7 +190,17 @@ final readonly class WorkspaceShortsService
             $this->config->shortsDefaultLimit(),
         );
         $selectedLimit = $requestedLimit === 'all' && $allAvailable ? 'all' : (string)$limit;
-        $selectedEntries = $selectedLimit === 'all' ? $eligible : array_slice($eligible, 0, $limit);
+        $pages = $selectedLimit === 'all'
+        ? ($total > 0 ? 1 : 0)
+        : ($total > 0 ? (int)ceil($total / $limit) : 0);
+        $requestedPage = is_scalar($query['page'] ?? null) ? (int)$query['page'] : 1;
+        $page = $pages > 0 ? min(max(1, $requestedPage), $pages) : 1;
+        $offset = ($page - 1) * $limit;
+        $selectedEntries = $selectedLimit === 'all'
+        ? $eligible
+        : array_slice($eligible, $offset, $limit);
+        $from = $selectedEntries === [] ? 0 : $offset + 1;
+        $to = $selectedEntries === [] ? 0 : $offset + count($selectedEntries);
 
         $requestedVersions = [];
         foreach ($selectedEntries as $entry) {
@@ -215,7 +258,16 @@ final readonly class WorkspaceShortsService
             'order' => $order,
             'total' => $total,
             'all_available' => $allAvailable,
+            'pagination' => [
+                'page' => $page,
+                'pages' => $pages,
+                'total' => $total,
+                'from' => $from,
+                'to' => $to,
+                'page_numbers' => $this->pageNumbers($page, $pages),
+            ],
             'shorts_path' => $this->shortsPath($workspaceSlug, $language),
+            'workspace_path' => $this->workspaceViewPath($workspaceSlug, $language),
         ];
     }
 
@@ -234,6 +286,23 @@ final readonly class WorkspaceShortsService
         }
 
         return $this->workspacePath($workspaceSlug) . '/shorts?lang=' . rawurlencode($language);
+    }
+
+    /**
+     * HR: Vraća kanonsku putanju standardnog prikaza područja uz očuvani jezik.
+     * EN: Returns the canonical standard Workspace path while preserving locale.
+     */
+    private function workspaceViewPath(string $workspaceSlug, string $language): string
+    {
+        if ($this->urlGenerator->namedRouteExists('workspace.show')) {
+            return $this->urlGenerator->getPathFor(
+                'workspace.show',
+                ['workspaceSlug' => $workspaceSlug],
+                ['lang' => $language],
+            );
+        }
+
+        return $this->workspacePath($workspaceSlug) . '?lang=' . rawurlencode($language);
     }
 
     /**
@@ -342,6 +411,53 @@ final readonly class WorkspaceShortsService
         $number = is_scalar($value) ? (int)$value : 0;
 
         return in_array($number, $allowed, true) ? $number : $fallback;
+    }
+
+    /**
+     * HR: Prihvaća brojčanu najveću dubinu ili sve razine bez umjetnog ograničenja stabla.
+     * EN: Accepts a numeric maximum depth or all levels without an artificial tree limit.
+     */
+    private function allowedDepth(mixed $value, int|string $fallback): int|string
+    {
+        $normalized = is_scalar($value) ? strtolower(trim((string)$value)) : '';
+        if ($normalized === 'all') {
+            return 'all';
+        }
+
+        $depth = (int)$normalized;
+        if (in_array($depth, self::DEPTHS, true)) {
+            return $depth;
+        }
+
+        return $fallback;
+    }
+
+    /** HR: Provjerava ulazi li razina u odabrani raspon. EN: Checks whether a level is in range. */
+    private function depthIncludes(int $candidate, int|string $depth): bool
+    {
+        return $depth === 'all' || $candidate <= $depth;
+    }
+
+    /**
+     * HR: Vraća mali prozor stranica kako velik broj članaka ne bi prepunio navigaciju.
+     * EN: Returns a compact page window so a large article count cannot flood navigation.
+     *
+     * @return list<int>
+     */
+    private function pageNumbers(int $page, int $pages): array
+    {
+        if ($pages <= 0) {
+            return [];
+        }
+
+        $start = max(1, $page - 2);
+        $end = min($pages, $page + 2);
+        if ($end - $start < 4) {
+            $start = max(1, $end - 4);
+            $end = min($pages, $start + 4);
+        }
+
+        return range($start, $end);
     }
 
     /**

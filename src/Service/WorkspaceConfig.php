@@ -185,10 +185,17 @@ final readonly class WorkspaceConfig
      * HR: Vraća zadanu najveću dubinu stabla na stranici Sažetaka.
      * EN: Returns the default maximum tree depth on the Shorts page.
      */
-    public function shortsDefaultDepth(): int
+    public function shortsDefaultDepth(): int|string
     {
         $shorts = $this->section('shorts');
-        $depth = WorkspaceValue::int($shorts['depth'] ?? 2);
+        $value = is_scalar($shorts['depth'] ?? null)
+        ? strtolower(trim((string)$shorts['depth']))
+        : '';
+        if ($value === 'all') {
+            return 'all';
+        }
+
+        $depth = WorkspaceValue::int($value !== '' ? $value : 2);
 
         return in_array($depth, [1, 2, 3], true) ? $depth : 2;
     }
@@ -216,7 +223,7 @@ final readonly class WorkspaceConfig
         ? strtolower(trim((string)$shorts['order']))
         : '';
 
-        return in_array($order, ['hierarchy', 'newest', 'oldest'], true)
+        return in_array($order, ['hierarchy', 'newest', 'oldest', 'title_asc', 'title_desc'], true)
         ? $order
         : 'newest';
     }

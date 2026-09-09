@@ -184,6 +184,7 @@ final class WorkspaceShortsServiceTest extends TestCase
         $this->assertTrue((bool)$newest['all_available']);
         $this->assertStringContainsString('Sadržaj druge razine', (string)$newest['articles'][0]['html']);
         $this->assertSame('/workspace/sazetci/child-doc?lang=hr', $newest['articles'][0]['href']);
+        $this->assertSame('/workspace/sazetci/?lang=hr', $newest['workspace_path']);
 
         $this->accessCacheReset();
         $this->authn->login(['id' => 3, 'is_admin' => false]);
@@ -204,6 +205,17 @@ final class WorkspaceShortsServiceTest extends TestCase
         $this->assertSame(['Korijen', 'Dijete', 'Ograničeno'], $this->titles($hierarchy));
         $this->assertNotContains('Nacrt', $this->titles($hierarchy));
         $this->assertNotContains('Duboko', $this->titles($hierarchy));
+
+        $allDepths = $this->shorts->viewModel($workspace, 'hr', [
+            'depth' => 'all',
+            'limit' => 'all',
+            'order' => 'hierarchy',
+        ]);
+        $this->assertSame('all', $allDepths['depth']);
+        $this->assertSame(
+            ['Korijen', 'Dijete', 'Unuk', 'Duboko', 'Ograničeno'],
+            $this->titles($allDepths),
+        );
 
         $this->accessCacheReset();
         $this->authn->login(['id' => 1, 'is_admin' => true]);
@@ -253,6 +265,67 @@ final class WorkspaceShortsServiceTest extends TestCase
         $this->assertFalse((bool)$model['all_available']);
         $this->assertSame('10', $model['limit']);
         $this->assertCount(10, WorkspaceValue::rows($model['articles'] ?? null));
+        $this->assertSame([
+            'page' => 1,
+            'pages' => 10,
+            'total' => 100,
+            'from' => 1,
+            'to' => 10,
+            'page_numbers' => [1, 2, 3, 4, 5],
+        ], $model['pagination']);
+    }
+
+    /**
+     * HR: Broj članaka određuje veličinu stranice, a naslovni redoslijed prati hrvatsku abecedu.
+     * EN: Article count determines page size, while title ordering follows the Croatian alphabet.
+     */
+    public function testTitleOrderingAndPaginationExposeAllEligibleArticles(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Straničeni sažetci',
+            'slug' => 'straniceni-sazetci',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            'user' => [2 => ['can_view' => true]],
+        ]);
+        $titles = ['Žaba', 'Zec', 'Šuma', 'Sava', 'Đak', 'Dabar', 'Ćuk', 'Čar', 'Cesta', 'Džep'];
+        foreach ($titles as $index => $title) {
+            $documentKey = 'sorted-' . $index;
+            $node = $this->node($workspaceId, $title, $documentKey);
+            $this->publish((int)$node['id'], '2026-01-01 10:00:00');
+            $this->editor->documents[$documentKey] = $this->editorDocument(
+                $title,
+                'Sadržaj ' . $title,
+            );
+        }
+
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+        $secondPage = $this->shorts->viewModel($workspace, 'hr', [
+            'depth' => 'all',
+            'limit' => 5,
+            'order' => 'title_asc',
+            'page' => 2,
+        ]);
+
+        $this->assertSame(['Đak', 'Sava', 'Šuma', 'Zec', 'Žaba'], $this->titles($secondPage));
+        $this->assertSame([
+            'page' => 2,
+            'pages' => 2,
+            'total' => 10,
+            'from' => 6,
+            'to' => 10,
+            'page_numbers' => [1, 2],
+        ], $secondPage['pagination']);
+
+        $descending = $this->shorts->viewModel($workspace, 'hr', [
+            'depth' => 1,
+            'limit' => 5,
+            'order' => 'title_desc',
+            'page' => 99,
+        ]);
+        $this->assertSame(2, $descending['pagination']['page']);
+        $this->assertSame(['Džep', 'Dabar', 'Ćuk', 'Čar', 'Cesta'], $this->titles($descending));
     }
 
     /**

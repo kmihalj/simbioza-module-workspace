@@ -235,11 +235,16 @@ more** link. This leaves room for roughly five to six additional text lines
 even when the article begins with a compact image. Drafts, archived
 publications, inaccessible pages, and every
 descendant of an inaccessible page are excluded before content is loaded.
+The same active icon closes Shorts and returns to the standard Workspace view
+while preserving the selected locale.
 
-Visitors may select tree levels 1, 1–2, or 1–3; 5, 10, 25, 50, or all
-articles; and hierarchy, newest-first, or oldest-first ordering. **All** is
-available only when fewer than 100 articles pass publication and ACL checks.
-The server enforces the same limit even for a hand-crafted query string.
+Visitors may select tree levels 1, 1–2, 1–3, or all levels; 5, 10, 25, or 50
+articles per page, or all articles; and hierarchy, newest-first, oldest-first,
+title-ascending, or title-descending ordering. Final title ordering follows the
+selected interface locale. Pagination exposes the complete eligible set when
+it is larger than the selected page size. **All** is available only when fewer
+than 100 articles pass publication and ACL checks. The server enforces the same
+limit even for a hand-crafted query string.
 
 Defaults are configured under **Settings → Workspaces** and stored in the host
 application's `config/workspace.php`:

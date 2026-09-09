@@ -6,6 +6,7 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
@@ -31,7 +32,6 @@ use function preg_replace;
 use function sort;
 use function str_contains;
 use function str_starts_with;
-use function strcasecmp;
 use function strtolower;
 use function trim;
 use function usort;
@@ -104,7 +104,7 @@ final readonly class WorkspaceRepository
         return $this->rows(
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
                 ->where('is_deleted', '=', false)
-                ->orderBy('name', 'ASC')
+                ->orderByLocalized('name', 'ASC')
                 ->get(),
         );
     }
@@ -575,7 +575,7 @@ final readonly class WorkspaceRepository
 
         usort(
             $subjects,
-            static fn(array $left, array $right): int => strcasecmp(
+            static fn(array $left, array $right): int => LocaleSorter::compare(
                 (string)($left['label'] ?? ''),
                 (string)($right['label'] ?? ''),
             ),
@@ -804,13 +804,23 @@ final readonly class WorkspaceRepository
 
         $limit = $perPage + 1;
         $offset = ($page - 1) * $perPage;
+        $locale = LocaleSorter::currentLocale();
+        $lastNameOrder = $this->database->localizedOrderExpression(
+            "LOWER(COALESCE({$lastName}, ''))",
+            $locale,
+        );
+        $firstNameOrder = $this->database->localizedOrderExpression(
+            "LOWER(COALESCE({$firstName}, ''))",
+            $locale,
+        );
+        $loginOrder = $this->database->localizedOrderExpression('LOWER(u.login_identifier)', $locale);
         $rows = $this->database->fetchAll(
             "SELECT u.id, u.login_identifier, {$lastName} AS last_name,"
             . " {$firstName} AS first_name, {$displayName} AS display_name"
             . ' FROM ' . self::AUTH_USERS_TABLE . " u{$where}"
             . " ORDER BY CASE WHEN TRIM(COALESCE({$lastName}, '')) = '' THEN 1 ELSE 0 END ASC,"
-            . " LOWER(COALESCE({$lastName}, '')) ASC, LOWER(COALESCE({$firstName}, '')) ASC,"
-            . " LOWER(u.login_identifier) ASC, u.id ASC LIMIT {$limit} OFFSET {$offset}",
+            . " {$lastNameOrder} ASC, {$firstNameOrder} ASC,"
+            . " {$loginOrder} ASC, u.id ASC LIMIT {$limit} OFFSET {$offset}",
             $parameters,
         );
         $hasMore = count($rows) > $perPage;
@@ -885,7 +895,7 @@ final readonly class WorkspaceRepository
 
         usort(
             $subjects,
-            fn(array $left, array $right): int => strcasecmp(
+            fn(array $left, array $right): int => LocaleSorter::compare(
                 $this->stringValue($left['label'] ?? ''),
                 $this->stringValue($right['label'] ?? ''),
             ),
@@ -1211,11 +1221,13 @@ final readonly class WorkspaceRepository
             return [];
         }
 
+        $titleOrder = $this->database->localizedOrderExpression('n.title', LocaleSorter::currentLocale());
+
         return $this->rows($this->database->fetchAll(
             'SELECT n.* FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n '
             . 'INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS . ' l ON l.node_id = n.id '
             . 'WHERE n.workspace_id = ? AND n.node_type = ? AND n.is_enabled = ? AND l.label = ? '
-            . 'ORDER BY n.updated_at DESC, n.title ASC',
+            . "ORDER BY n.updated_at DESC, {$titleOrder} ASC",
             [$workspaceId, 'document', true, $label],
         ));
     }
@@ -1254,7 +1266,7 @@ final readonly class WorkspaceRepository
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
             ->whereIn('node_id', $nodeIds)
             ->orderBy('node_id', 'ASC')
-            ->orderBy('label', 'ASC')
+            ->orderByLocalized('label', 'ASC')
             ->get() as $row
         ) {
             if (!is_array($row)) {
@@ -1342,7 +1354,7 @@ final readonly class WorkspaceRepository
             ->whereIn('node_id', $nodeIds)
             ->orderBy('node_id', 'ASC')
             ->orderBy('sort_order', 'ASC')
-            ->orderBy('property_label', 'ASC')
+            ->orderByLocalized('property_label', 'ASC')
             ->get() as $row
         ) {
             if (!is_array($row)) {
@@ -2348,7 +2360,7 @@ final readonly class WorkspaceRepository
 
         usort(
             $subjects,
-            fn(array $left, array $right): int => strcasecmp(
+            fn(array $left, array $right): int => LocaleSorter::compare(
                 $this->stringValue($left['label'] ?? ''),
                 $this->stringValue($right['label'] ?? ''),
             ),
@@ -2772,7 +2784,7 @@ final readonly class WorkspaceRepository
         $usersById = [];
         $query = $this->database->table(self::AUTH_USERS_TABLE)
             ->where('is_active', '=', true)
-            ->orderBy('login_identifier', 'ASC')
+            ->orderByLocalized('login_identifier', 'ASC')
             ->limit($limit);
         if ($search !== '') {
             $query->where('login_identifier', 'LIKE', '%' . $search . '%');
@@ -2835,7 +2847,7 @@ final readonly class WorkspaceRepository
             $users,
             function (array $left, array $right): int {
                 foreach (['_picker_last_name', '_picker_first_name', 'label'] as $key) {
-                    $comparison = strcasecmp(
+                    $comparison = LocaleSorter::compare(
                         $this->stringValue($left[$key] ?? ''),
                         $this->stringValue($right[$key] ?? ''),
                     );
@@ -2893,7 +2905,7 @@ final readonly class WorkspaceRepository
 
         $query = $this->database->table(self::AUTH_GROUPS_TABLE)
             ->where('is_enabled', '=', true)
-            ->orderBy('group_name', 'ASC')
+            ->orderByLocalized('group_name', 'ASC')
             ->limit($limit);
         if ($search !== '') {
             $query->where('group_name', 'LIKE', '%' . $search . '%');

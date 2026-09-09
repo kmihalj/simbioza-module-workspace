@@ -326,6 +326,7 @@ return [
     'Workflow stranice nije moguće spremiti.' =>
         'The page workflow could not be saved.',
     'Sažetci' => 'Summaries',
+    'Zatvori sažetke' => 'Close summaries',
     'Sažetci stranica' => 'Page summaries',
     'Objavljene stranice koje smijete vidjeti, prikazane kao kratki isječci.' =>
         'Published pages you may view, shown as short excerpts.',
@@ -336,13 +337,18 @@ return [
     'Prikazane razine' => 'Displayed levels',
     'Samo 1. razina' => 'Level 1 only',
     'Razine 1–' => 'Levels 1–',
+    'Sve razine' => 'All levels',
     'Broj članaka' => 'Number of articles',
     'Prema hijerarhiji' => 'By hierarchy',
     'Najnovije prvo' => 'Newest first',
     'Najstarije prvo' => 'Oldest first',
+    'Po naslovu uzlazno' => 'By title, ascending',
+    'Po naslovu silazno' => 'By title, descending',
     'Prikaži' => 'Apply',
     'Sve' => 'All',
     'Dostupnih članaka:' => 'Available articles:',
+    'Prikazano %d–%d od %d članaka.' => 'Showing %d–%d of %d articles.',
+    'Stranice sažetaka' => 'Summary pages',
     'Opcija „Sve” isključena je za 100 ili više članaka.' =>
         'The “All” option is disabled for 100 or more articles.',
     'U odabranim razinama nema objavljenih stranica koje smijete vidjeti.' =>

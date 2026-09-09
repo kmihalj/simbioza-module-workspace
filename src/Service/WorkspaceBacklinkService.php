@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use HeartPhrame\Routing\UrlGenerator;
 
 use function is_array;
 use function rawurlencode;
 use function rtrim;
-use function strcasecmp;
 use function strtolower;
 use function trim;
 use function usort;
@@ -51,7 +51,7 @@ final readonly class WorkspaceBacklinkService
         $rows = WorkspaceValue::rows(
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_BACKLINKS)
                 ->where('target_node_id', '=', $targetNodeId)
-                ->orderBy('source_title', 'ASC')
+                ->orderByLocalized('source_title', 'ASC')
                 ->get(),
         );
         if ($rows === []) {
@@ -163,10 +163,12 @@ final readonly class WorkspaceBacklinkService
             ];
         }
 
-        usort($result, static function (array $left, array $right): int {
-            $workspaceOrder = strcasecmp($left['workspaceName'], $right['workspaceName']);
+        usort($result, static function (array $left, array $right) use ($language): int {
+            $workspaceOrder = LocaleSorter::compare($left['workspaceName'], $right['workspaceName'], $language);
 
-            return $workspaceOrder !== 0 ? $workspaceOrder : strcasecmp($left['title'], $right['title']);
+            return $workspaceOrder !== 0
+                ? $workspaceOrder
+                : LocaleSorter::compare($left['title'], $right['title'], $language);
         });
 
         return $result;
@@ -233,10 +235,12 @@ final readonly class WorkspaceBacklinkService
             }
         }
 
-        usort($result, static function (array $left, array $right): int {
-            $workspaceOrder = strcasecmp($left['workspaceName'], $right['workspaceName']);
+        usort($result, static function (array $left, array $right) use ($language): int {
+            $workspaceOrder = LocaleSorter::compare($left['workspaceName'], $right['workspaceName'], $language);
 
-            return $workspaceOrder !== 0 ? $workspaceOrder : strcasecmp($left['title'], $right['title']);
+            return $workspaceOrder !== 0
+                ? $workspaceOrder
+                : LocaleSorter::compare($left['title'], $right['title'], $language);
         });
 
         return $result;

@@ -12,13 +12,15 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var list<array{label:string,href:string,current:bool,icon?:string}> $breadcrumbs
  * @var list<array<string, mixed>> $tree
  * @var list<array{title:string,html:string,published_at:string,href:string}> $articles
- * @var int $depth
+ * @var int|string $depth
  * @var string $limit
  * @var string $order
  * @var int $total
  * @var bool $allAvailable
+ * @var array<string,mixed> $pagination
  * @var string $language
  * @var string $shortsPath
+ * @var string $workspacePath
  * @var bool $treeVisibleByDefault
  * @var bool $displayOptionsVisibleByDefault
  * @var string $treeBranchPath
@@ -29,7 +31,25 @@ $orderOptions = [
     'hierarchy' => __('Prema hijerarhiji'),
     'newest' => __('Najnovije prvo'),
     'oldest' => __('Najstarije prvo'),
+    'title_asc' => __('Po naslovu uzlazno'),
+    'title_desc' => __('Po naslovu silazno'),
 ];
+$page = WorkspaceValue::int($pagination['page'] ?? 1);
+$pages = WorkspaceValue::int($pagination['pages'] ?? 0);
+$from = WorkspaceValue::int($pagination['from'] ?? 0);
+$to = WorkspaceValue::int($pagination['to'] ?? 0);
+$pageNumbers = array_values(array_filter(
+    is_array($pagination['page_numbers'] ?? null) ? $pagination['page_numbers'] : [],
+    static fn(mixed $number): bool => is_numeric($number) && (int)$number > 0,
+));
+$pagePath = static fn(int $number): string => $shortsPath . '&' . http_build_query([
+    'depth' => $depth,
+    'limit' => $limit,
+    'order' => $order,
+    'page' => $number,
+    'tree' => $treeVisibleByDefault ? '1' : '0',
+    'options' => $displayOptionsVisibleByDefault ? '1' : '0',
+]);
 ?>
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
 <script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
@@ -159,10 +179,9 @@ $orderOptions = [
                     <div class="workspace-tree-card-actions">
                         <a
                             class="btn btn-primary btn-sm workspace-tree-card-action"
-                            href="<?= $this->escape($shortsPath) ?>"
-                            title="<?= $this->escape(__('Sažetci')) ?>"
-                            aria-label="<?= $this->escape(__('Sažetci')) ?>"
-                            aria-current="page"
+                            href="<?= $this->escape($workspacePath) ?>"
+                            title="<?= $this->escape(__('Zatvori sažetke')) ?>"
+                            aria-label="<?= $this->escape(__('Zatvori sažetke')) ?>"
                         >
                             <svg
                                 class="workspace-tree-card-action-icon"
@@ -260,6 +279,9 @@ $orderOptions = [
                                     : __('Razine 1–') . $option) ?>
                             </option>
                         <?php endforeach; ?>
+                        <option value="all" <?= $depth === 'all' ? 'selected' : '' ?>>
+                            <?= $this->escape(__('Sve razine')) ?>
+                        </option>
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
@@ -352,6 +374,49 @@ $orderOptions = [
                         </div>
                     </article>
                 <?php endforeach; ?>
+            </div>
+            <div
+                class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-3"
+                data-workspace-shorts-pagination
+            >
+                <p class="text-body-secondary small mb-0">
+                    <?= $this->escape(sprintf(
+                        __('Prikazano %d–%d od %d članaka.'),
+                        $from,
+                        $to,
+                        $total,
+                    )) ?>
+                </p>
+                <?php if ($pages > 1) : ?>
+                    <nav aria-label="<?= $this->escape(__('Stranice sažetaka')) ?>">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                <a
+                                    class="page-link"
+                                    href="<?= $this->escape($pagePath(max(1, $page - 1))) ?>"
+                                    aria-label="<?= $this->escape(__('Prethodna stranica')) ?>"
+                                >&lsaquo;</a>
+                            </li>
+                            <?php foreach ($pageNumbers as $number) : ?>
+                                <?php $number = (int)$number; ?>
+                                <li class="page-item <?= $number === $page ? 'active' : '' ?>">
+                                    <a
+                                        class="page-link"
+                                        href="<?= $this->escape($pagePath($number)) ?>"
+                                        <?= $number === $page ? 'aria-current="page"' : '' ?>
+                                    ><?= $this->escape((string)$number) ?></a>
+                                </li>
+                            <?php endforeach; ?>
+                            <li class="page-item <?= $page >= $pages ? 'disabled' : '' ?>">
+                                <a
+                                    class="page-link"
+                                    href="<?= $this->escape($pagePath(min($pages, $page + 1))) ?>"
+                                    aria-label="<?= $this->escape(__('Sljedeća stranica')) ?>"
+                                >&rsaquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </main>

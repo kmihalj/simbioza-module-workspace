@@ -89,4 +89,28 @@ final class WorkspaceConfigTest extends TestCase
             ['contents_visibility' => 'hidden'],
         ));
     }
+
+    /** HR: Zadani Sažetci prihvaćaju sve razine i naslovni redoslijed. EN: Shorts defaults accept all levels and title order. */
+    public function testShortsDefaultsAcceptAllLevelsAndTitleOrder(): void
+    {
+        file_put_contents(
+            $this->appRoot . '/config/workspace.php',
+            "<?php return ['shorts' => ['depth' => 'all', 'order' => 'title_desc']];",
+        );
+        $config = new class (new Helper(), [], $this->appRoot) extends Config {
+            public function __construct(Helper $helper, array $data, private readonly string $appRoot)
+            {
+                parent::__construct($helper, $data);
+            }
+
+            public function getAppRootDir(): string
+            {
+                return $this->appRoot;
+            }
+        };
+        $workspaceConfig = new WorkspaceConfig($config, dirname(__DIR__));
+
+        $this->assertSame('all', $workspaceConfig->shortsDefaultDepth());
+        $this->assertSame('title_desc', $workspaceConfig->shortsDefaultOrder());
+    }
 }

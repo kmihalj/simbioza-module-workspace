@@ -220,13 +220,19 @@ Jedan aktivni HTML dokument može pripadati samo jednom aktivnom Workspace
 
 Ikona popisa u zaglavlju svakog vidljivog stabla otvara
 `/{korijen-područja}/{slugPodručja}/shorts`. Vidi je svaki korisnik koji smije
-vidjeti Područje; to nije upravljačka akcija.
+vidjeti Područje; to nije upravljačka akcija. U aktivnom prikazu Sažetaka ista
+ikona zatvara prikaz i vraća korisnika na standardno područje, uz očuvani jezik.
 
 Stranica ima tri neovisna odabira:
 
-- samo 1., razine 1–2 ili razine 1–3 vidljivog stabla;
-- 5, 10, 25, 50 ili sve članke;
-- hijerarhijski redoslijed, najnovije ili najstarije prvo.
+- samo 1., razine 1–2, razine 1–3 ili sve razine vidljivog stabla;
+- 5, 10, 25 ili 50 članaka po stranici, odnosno sve članke;
+- hijerarhijski redoslijed, najnovije, najstarije, naslov uzlazno ili naslov
+  silazno.
+
+Naslovno sortiranje koristi pravila aktivnog jezika sučelja. Za brojčanu
+veličinu stranice prikazuje se paginacija kojom su dostupni svi dopušteni
+članci, a ne samo prvih N rezultata.
 
 Opcija `all` uključena je samo ispod 100 dopuštenih članaka. Controller na 100
 ili više odbija i ručno sastavljen `limit=all` te koristi konfiguriranu
@@ -687,7 +693,7 @@ Workspaceov `WorkspaceApiExtension` registrira rute, a
 | `POST /api/v1/workspaces` | `workspace:manage` | Koristi aplikacijsko pravilo kreiranja |
 | `GET/PATCH/DELETE /api/v1/workspaces/{slug}` | read/manage | Ponovno provjerava efektivno pravo |
 | `GET /api/v1/workspaces/{slug}/tree?lang=hr` | `workspace:read` | Filtrira naslijeđeni ACL i objavljeno stanje |
-| `GET /api/v1/workspaces/{slug}/shorts?lang=hr` | `workspace:read` | Vraća samo vidljive, točno objavljene sažetke |
+| `GET /api/v1/workspaces/{slug}/shorts?lang=hr&page=1` | `workspace:read` | Vraća samo vidljive, točno objavljene i paginirane sažetke |
 | `POST /api/v1/workspaces/{slug}/exports/html` | `workspace:manage` | Preuzima ACL-filtrirani offline HTML ZIP |
 | `GET/PUT /api/v1/workspaces/homepage/settings` | `workspace:manage` | Samo administrator čita ili sprema javnu/prijavljenu politiku |
 | `GET/PUT /api/v1/workspaces/homepage/preference` | `workspace:read` | Čita ili sprema osobni odabir isključivo vlasnika ključa |

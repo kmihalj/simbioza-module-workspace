@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use DateTimeImmutable;
 use DateTimeZone;
 use HeartPhrame\Routing\UrlGenerator;
@@ -206,7 +207,7 @@ final class WorkspaceDynamicContentService
 
         $sort = $this->text($configuration['sort'] ?? 'title');
         $direction = $this->text($configuration['direction'] ?? 'asc') === 'desc' ? -1 : 1;
-        usort($nodes, function (array $left, array $right) use ($sort, $direction, $propertyMaps): int {
+        usort($nodes, function (array $left, array $right) use ($sort, $direction, $propertyMaps, $language): int {
             if ($sort === 'updated') {
                 return $direction * strcmp(
                     $this->text($left['updated_at'] ?? ''),
@@ -221,15 +222,17 @@ final class WorkspaceDynamicContentService
                 $rightProperty = $propertyMaps[WorkspaceValue::int($right['id'] ?? 0)][$key]
                     ?? ['value' => '', 'type' => 'text'];
 
-                return $direction * strnatcasecmp(
+                return $direction * LocaleSorter::compare(
                     $this->propertySortValue($leftProperty),
                     $this->propertySortValue($rightProperty),
+                    $language,
                 );
             }
 
-            return $direction * strnatcasecmp(
+            return $direction * LocaleSorter::compare(
                 $this->text($left['title'] ?? ''),
                 $this->text($right['title'] ?? ''),
+                $language,
             );
         });
         $nodes = array_slice($nodes, 0, $this->limit($configuration['limit'] ?? 100, 100));
@@ -287,7 +290,7 @@ final class WorkspaceDynamicContentService
         $sort = $this->text($configuration['sort'] ?? 'date');
         usort($assets, static function (array $left, array $right) use ($sort): int {
             if ($sort === 'name') {
-                return strnatcasecmp(
+                return LocaleSorter::compare(
                     WorkspaceValue::string($left['name'] ?? ''),
                     WorkspaceValue::string($right['name'] ?? ''),
                 );

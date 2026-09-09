@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -72,13 +73,17 @@ final readonly class WorkspaceThemeAssetLibrary
         }
 
         $roleOrder = array_flip(self::ROLES);
-        usort($assets, static fn(array $left, array $right): int => [
-            $roleOrder[WorkspaceValue::string($left['role'] ?? 'other')] ?? count(self::ROLES),
-            strtolower(WorkspaceValue::string($left['file'] ?? '')),
-        ] <=> [
-            $roleOrder[WorkspaceValue::string($right['role'] ?? 'other')] ?? count(self::ROLES),
-            strtolower(WorkspaceValue::string($right['file'] ?? '')),
-        ]);
+        usort($assets, static function (array $left, array $right) use ($roleOrder): int {
+            $role = ($roleOrder[WorkspaceValue::string($left['role'] ?? 'other')] ?? count(self::ROLES))
+                <=> ($roleOrder[WorkspaceValue::string($right['role'] ?? 'other')] ?? count(self::ROLES));
+
+            return $role !== 0
+                ? $role
+                : LocaleSorter::compare(
+                    WorkspaceValue::string($left['file'] ?? ''),
+                    WorkspaceValue::string($right['file'] ?? ''),
+                );
+        });
 
         return WorkspaceValue::rows($assets);
     }
