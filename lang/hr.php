@@ -761,6 +761,8 @@ return [
     'Optimizacija slika je u tijeku.' => 'Optimizacija slika je u tijeku.',
     'Optimizacija slika je završena.' => 'Optimizacija slika je završena.',
     'Optimizacija slika nije uspjela.' => 'Optimizacija slika nije uspjela.',
+    'Veza sa serverom privremeno je prekinuta. Optimizacija će se automatski nastaviti.' =>
+        'Veza sa serverom privremeno je prekinuta. Optimizacija će se automatski nastaviti.',
     'Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.' =>
         'Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.',
     'HTML Editor nije dostupan pa optimizacija slika nije moguća.' =>

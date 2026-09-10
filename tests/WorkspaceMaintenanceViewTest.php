@@ -20,7 +20,11 @@ final class WorkspaceMaintenanceViewTest extends TestCase
 
         $this->assertIsString($view);
         $this->assertStringContainsString('data-image-optimization-progress', $view);
+        $this->assertStringContainsString('data-status-path', $view);
         $this->assertStringContainsString('data-step-path', $view);
         $this->assertStringContainsString("['queued', 'running']", $view);
+        $this->assertStringContainsString('labels.reconnecting', $view);
+        $this->assertStringContainsString('const recover = async (error)', $view);
+        $this->assertStringContainsString('scheduleWork(state?.worker_busy ? 1000 : 750)', $view);
     }
 }

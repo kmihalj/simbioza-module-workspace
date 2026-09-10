@@ -20,6 +20,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceShortsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
 use AaiEduHr\SimbiozaModuleWorkspace\Listener\SynchronizeWorkspaceBacklinks;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAdministrationListService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkIndexer;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
@@ -69,6 +70,10 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 $services = [
+    WorkspaceAdministrationListService::class =>
+        static fn(ContainerInterface $container): WorkspaceAdministrationListService =>
+            new WorkspaceAdministrationListService($container->get(TranslatorInterface::class)),
+
     WorkspacePresentationRegistry::class =>
         static fn(ContainerInterface $container): WorkspacePresentationRegistry =>
             new WorkspacePresentationRegistry(
@@ -400,6 +405,7 @@ $services = [
             $container->get(WorkspaceAccessService::class),
             $container->get(WorkspaceSettingsService::class),
             $container->get(WorkspaceMaintenanceService::class),
+            $container->get(WorkspaceAdministrationListService::class),
             $container->get(WorkspacePresentationRegistry::class),
             $container->get(WorkspaceConfig::class),
             $container->get(UrlGenerator::class),

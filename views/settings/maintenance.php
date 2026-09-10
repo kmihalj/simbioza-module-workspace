@@ -53,6 +53,7 @@ $imageOptimizationLabelsJson = json_encode([
     'running' => __('Optimizacija slika je u tijeku.'),
     'done' => __('Optimizacija slika je završena.'),
     'failed' => __('Optimizacija slika nije uspjela.'),
+    'reconnecting' => __('Veza sa serverom privremeno je prekinuta. Optimizacija će se automatski nastaviti.'),
     'progress' => __('Obrađeno %1$d od %2$d slika; dokumenti %3$d od %4$d; web-kopije %5$d; preskočeno %6$d.'),
 ], $jsonFlags);
 ?>
@@ -177,6 +178,11 @@ $imageOptimizationLabelsJson = json_encode([
                             <tr>
                                 <th scope="row">
                             <?= $this->escape(WorkspaceValue::string($workspace['name'] ?? '')) ?>
+                            <?php if (WorkspaceValue::int($workspace['personal_workspace_count'] ?? 0) > 0) : ?>
+                                <span class="badge text-bg-secondary ms-1">
+                                <?= WorkspaceValue::int($workspace['personal_workspace_count']) ?>
+                                </span>
+                            <?php endif; ?>
                                 </th>
                                 <td class="text-end"><?= WorkspaceValue::int($stats['history_versions'] ?? 0) ?></td>
                                 <td class="text-end text-nowrap">
@@ -427,6 +433,8 @@ $imageOptimizationLabelsJson = json_encode([
     const labels = <?= $imageOptimizationLabelsJson ?>;
     let state = <?= $imageOptimizationJson ?>;
     let working = false;
+    let retryCount = 0;
+    let timer = 0;
 
     const number = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
     const format = (template, values) => template.replace(
@@ -460,32 +468,93 @@ $imageOptimizationLabelsJson = json_encode([
         ]);
         details.classList.toggle('text-danger', status === 'failed');
     };
-    const post = async (url) => {
-        const body = new URLSearchParams(new FormData(form));
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-            body,
-        });
-        const payload = await response.json();
+    const active = () => ['queued', 'running'].includes(String(state?.status || ''));
+    const requestError = (text, retryable = false) => {
+        const error = new Error(text);
+        error.retryable = retryable;
+        return error;
+    };
+    const request = async (url, options = {}) => {
+        let response;
+        try {
+            response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(options.headers || {}),
+                },
+            });
+        } catch (error) {
+            throw requestError(error instanceof Error ? error.message : String(error), true);
+        }
+
+        let payload;
+        try {
+            payload = await response.json();
+        } catch {
+            throw requestError(`HTTP ${response.status}`, response.status >= 500);
+        }
+
         updateCsrf(payload.csrf);
-        if (!response.ok || !payload.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+        if (!response.ok || !payload.ok) {
+            throw requestError(
+                payload.error || `HTTP ${response.status}`,
+                [408, 425, 429, 500, 502, 503, 504].includes(response.status),
+            );
+        }
+
         return payload.optimization;
     };
+    const post = (url) => {
+        const body = new URLSearchParams(new FormData(form));
+        return request(url, {
+            method: 'POST',
+            body,
+        });
+    };
+    const status = () => request(form.dataset.statusPath);
+    const retryDelay = () => Math.min(10000, 500 * (2 ** Math.min(retryCount, 4)));
+    const scheduleWork = (delay) => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+            timer = 0;
+            void work();
+        }, delay);
+    };
+    const recover = async (error) => {
+        if (!error?.retryable) {
+            state = {...state, status: 'failed', message: error instanceof Error ? error.message : String(error)};
+            render();
+            return;
+        }
+
+        state = {...state, status: active() ? state.status : 'queued', message: labels.reconnecting};
+        render();
+        try {
+            state = await status();
+            retryCount = 0;
+            render();
+            if (active()) scheduleWork(state?.worker_busy ? 1000 : 750);
+        } catch {
+            retryCount += 1;
+            scheduleWork(retryDelay());
+        }
+    };
     const work = async () => {
-        if (working || !['queued', 'running'].includes(String(state?.status || ''))) return;
+        if (working || !active()) return;
         working = true;
         try {
             state = await post(form.dataset.stepPath);
+            retryCount = 0;
             render();
         } catch (error) {
-            state = {...state, status: 'failed', message: error instanceof Error ? error.message : String(error)};
-            render();
+            await recover(error);
         } finally {
             working = false;
         }
-        if (['queued', 'running'].includes(String(state?.status || ''))) {
-            window.setTimeout(work, state?.worker_busy ? 750 : 100);
+        if (active() && timer === 0) {
+            scheduleWork(state?.worker_busy ? 1000 : 250);
         }
     };
     form.addEventListener('submit', async (event) => {
@@ -494,15 +563,15 @@ $imageOptimizationLabelsJson = json_encode([
         button.disabled = true;
         try {
             state = await post(form.action);
+            retryCount = 0;
             render();
-            window.setTimeout(work, 50);
+            scheduleWork(100);
         } catch (error) {
-            state = {...state, status: 'failed', message: error instanceof Error ? error.message : String(error)};
-            render();
+            await recover(error);
         }
     });
     render();
-    if (['queued', 'running'].includes(String(state?.status || ''))) window.setTimeout(work, 100);
+    if (active()) scheduleWork(250);
 })();
 
 (() => {
