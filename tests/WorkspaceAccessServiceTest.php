@@ -295,6 +295,43 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Trenutačni auth payload može iz efektivnog konteksta isključiti stvarnu
+     *     grupu iz baze, što Simbioza koristi dok admin ovlasti nisu potvrđene.
+     * EN: The current auth payload may exclude a real database group from the
+     *     effective context, which Simbioza uses until admin rights are confirmed.
+     */
+    public function testEffectiveGroupIdsOverrideStoredMembershipForCurrentUser(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Efektivne grupe',
+            'slug' => 'efektivne-grupe',
+            'visibility' => 'restricted',
+        ], 1);
+        $this->repository->replaceWorkspaceAcl((int)$workspace['id'], [
+            'group' => [10 => ['can_view' => true, 'can_edit' => true]],
+        ]);
+
+        $this->authn->login(['id' => 2, 'is_admin' => false, 'group_ids' => []]);
+        $withoutStoredGroup = new WorkspaceAccessService(
+            $this->repository,
+            $this->authn,
+            new WorkspaceConfig(new Config(new Helper(), []), dirname(__DIR__)),
+            new WorkspaceWorkflowService($this->repository),
+        );
+        $this->assertFalse($withoutStoredGroup->workspacePermissions($workspace)['can_view']);
+
+        $this->authn->login(['id' => 2, 'is_admin' => false, 'group_ids' => [10]]);
+        $withEffectiveGroup = new WorkspaceAccessService(
+            $this->repository,
+            $this->authn,
+            new WorkspaceConfig(new Config(new Helper(), []), dirname(__DIR__)),
+            new WorkspaceWorkflowService($this->repository),
+        );
+        $this->assertTrue($withEffectiveGroup->workspacePermissions($workspace)['can_view']);
+        $this->assertTrue($withEffectiveGroup->workspacePermissions($workspace)['can_edit']);
+    }
+
+    /**
      * HR: Dokazuje da paketni ACL izračun zadržava nasljeđivanje roditeljskih
      *     ograničenja za više čvorova bez zasebnog izračuna svakoga čvora.
      * EN: Proves that batched ACL calculation preserves inherited parent

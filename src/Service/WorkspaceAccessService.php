@@ -142,7 +142,7 @@ final class WorkspaceAccessService
             return false;
         }
 
-        foreach ($this->groupIds($userId) as $groupId) {
+        foreach ($this->groupIds($userId, $user) as $groupId) {
             if (in_array($groupId, $creatorGroupIds, true)) {
                 return true;
             }
@@ -223,7 +223,7 @@ final class WorkspaceAccessService
             );
         }
 
-        $groupIds = $this->groupIds($userId);
+        $groupIds = $this->groupIds($userId, $user);
 
         return $this->workspacePermissionCache[$cacheKey] = $this->workspacePermissionsFromRows(
             $workspace,
@@ -312,7 +312,7 @@ final class WorkspaceAccessService
         }
 
         $directByNode = [];
-        $groupIds = $this->groupIds($userId);
+        $groupIds = $this->groupIds($userId, $user);
         if ($userId > 0) {
             foreach ($this->repository->nodeDirectPermissionRowsForNodes($nodeIds, $userId) as $row) {
                 $directNodeId = WorkspaceValue::int($row['node_id'] ?? 0);
@@ -909,12 +909,25 @@ final class WorkspaceAccessService
      * HR: Vraća korisnikove grupe iz cachea ili ih prvi put učitava kroz repozitorij.
      * EN: Returns a user's groups from cache or loads them through the repository once.
      *
+     * @param array<string,mixed>|null $user
      * @return list<int>
      */
-    private function groupIds(int $userId): array
+    private function groupIds(int $userId, ?array $user = null): array
     {
         if ($userId <= 0) {
             return [];
+        }
+
+        if (
+            is_array($user)
+            && $this->userId($user) === $userId
+            && array_key_exists('group_ids', $user)
+            && is_array($user['group_ids'])
+        ) {
+            return array_values(array_unique(array_filter(array_map(
+                static fn(mixed $groupId): int => is_numeric($groupId) ? (int)$groupId : 0,
+                $user['group_ids'],
+            ), static fn(int $groupId): bool => $groupId > 0)));
         }
 
         if (!array_key_exists($userId, $this->groupIdsCache)) {
