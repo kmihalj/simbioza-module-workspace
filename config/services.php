@@ -261,6 +261,7 @@ $services = [
             $container->get(WorkspaceNotificationBridge::class),
             $container->get(WorkspaceDynamicContentService::class),
             $container->get(WorkspacePresentationRegistry::class),
+            $container->get(WorkspaceThemeService::class),
         ),
 
     WorkspaceExportEditorBridge::class =>

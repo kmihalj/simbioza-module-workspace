@@ -102,6 +102,24 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Editorova ruta mora moći aktivirati temu područja iz konteksta
+     *     dokumenta prije nego zajednički layout iscrta stranicu za uređivanje.
+     * EN: The Editor route must be able to activate the Workspace theme from
+     *     document context before the shared layout renders the editing page.
+     */
+    public function testEditorAccessActivatesOwningWorkspaceTheme(): void
+    {
+        $access = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceEditorAccess.php');
+        $services = file_get_contents(dirname(__DIR__) . '/config/services.php');
+
+        $this->assertIsString($access);
+        $this->assertIsString($services);
+        $this->assertStringContainsString('function activateDocumentTheme(string $documentKey)', $access);
+        $this->assertStringContainsString('$this->themes->activate($context[\'workspace\'])', $access);
+        $this->assertStringContainsString('$container->get(WorkspaceThemeService::class)', $services);
+    }
+
+    /**
      * HR: Izvoz Područja mora prerenderirati nativne grafikone jednako kao izvoz stranice.
      * EN: Workspace export must pre-render native charts just like page export.
      */

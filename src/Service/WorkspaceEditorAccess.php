@@ -66,7 +66,24 @@ final class WorkspaceEditorAccess
         private readonly WorkspaceNotificationBridge $notifications,
         private readonly WorkspaceDynamicContentService $dynamicContent,
         private readonly WorkspacePresentationRegistry $presentations,
+        private readonly WorkspaceThemeService $themes,
     ) {
+    }
+
+    /**
+     * HR: Aktivira temu područja kojem pripada Editor dokument tako da uređivanje
+     *     i ostale radnje nad stranicom zadrže isti vizualni kontekst područja.
+     * EN: Activates the theme of the Workspace owning an Editor document so
+     *     editing and other page actions retain the Workspace visual context.
+     */
+    public function activateDocumentTheme(string $documentKey): void
+    {
+        $context = $this->documentContext($documentKey);
+        if (!is_array($context)) {
+            return;
+        }
+
+        $this->themes->activate($context['workspace']);
     }
 
     /**
