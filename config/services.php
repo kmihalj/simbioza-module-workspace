@@ -618,4 +618,74 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
             );
 }
 
+if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider::class)) {
+    // HR: Stariji site backup nakon povrata dobiva samo nedostajuće strukturne
+    //     vrijednosti privatnih tema područja.
+    // EN: An older site backup receives only missing structural values for
+    //     private Workspace themes after restore.
+    $services['heartphrame.backup.provider.workspace-theme-heights-site'] =
+        static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider =>
+            new \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider(
+                new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
+                    id: 'workspace-theme-heights-site',
+                    package: \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
+                    schemaVersion: 1,
+                    label: [
+                        'hr' => 'Nadopuna privatnih tema područja',
+                        'en' => 'Private Workspace theme upgrade',
+                    ],
+                    dependencies: ['workspace'],
+                    scopes: [
+                        \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::SITE,
+                        \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::COMPONENT,
+                    ],
+                    requiredForFullRestore: true,
+                    requiredEnabledPackages: [\AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME],
+                    automatic: true,
+                ),
+                static function (
+                    \AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext $context,
+                ) use ($container): void {
+                    unset($context);
+                    $container->get(WorkspaceThemeRepository::class)->persistMissingComponentHeights();
+                },
+            );
+
+    // HR: I selektivni povrat jednog područja nadograđuje samo njegovu privatnu temu.
+    // EN: A selective single-Workspace restore upgrades only that private theme.
+    $services['heartphrame.backup.provider.workspace-theme-heights-workspace'] =
+        static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider =>
+            new \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider(
+                new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
+                    id: 'workspace-theme-heights-workspace',
+                    package: \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
+                    schemaVersion: 1,
+                    label: [
+                        'hr' => 'Nadopuna privatne teme odabranog područja',
+                        'en' => 'Selected Workspace private-theme upgrade',
+                    ],
+                    dependencies: ['workspace-scope'],
+                    scopes: [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::WORKSPACE],
+                    requiredForFullRestore: true,
+                    requiredEnabledPackages: [\AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME],
+                    automatic: true,
+                ),
+                static function (
+                    \AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext $context,
+                ) use ($container): void {
+                    $targetSlug = trim((string)(
+                        $context->optionsFor('workspace-scope')['target_slug']
+                        ?? $context->scope->identifier
+                    ));
+                    $workspaceId = $context->state->require('workspace.id-by-slug', $targetSlug);
+                    if (!is_numeric($workspaceId)) {
+                        throw new RuntimeException('Restored Workspace identifier is unavailable.');
+                    }
+
+                    $container->get(WorkspaceThemeRepository::class)
+                        ->persistMissingComponentHeights((int)$workspaceId);
+                },
+            );
+}
+
 return $services;

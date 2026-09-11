@@ -21,6 +21,12 @@ final readonly class WorkspaceThemeRepository
 
     public const SELECTION_CUSTOM = 'custom';
 
+    /** HR: Dosadašnja visina zaglavlja prije uvođenja postavke. EN: Legacy header height. */
+    public const DEFAULT_HEADER_HEIGHT_PX = 72;
+
+    /** HR: Dosadašnja visina glavnog menija prije uvođenja postavke. EN: Legacy navigation height. */
+    public const DEFAULT_NAVIGATION_HEIGHT_PX = 56;
+
     /**
      * HR: Prima prijenosni ORM Database servis.
      * EN: Receives the portable ORM Database service.
@@ -122,6 +128,8 @@ final readonly class WorkspaceThemeRepository
                 throw new RuntimeException(__('Privatna tema područja nema konfiguraciju.'));
             }
 
+            $theme = self::withMissingComponentHeights($theme);
+
             try {
                 $themeJson = json_encode(
                     $theme,
@@ -156,6 +164,87 @@ final readonly class WorkspaceThemeRepository
             'created_at' => $now,
             ...$payload,
         ]);
+    }
+
+    /**
+     * HR: Trajno dopunjuje samo nedostajuće visine privatnih tema područja.
+     * EN: Permanently adds only missing heights to private Workspace themes.
+     */
+    public function persistMissingComponentHeights(?int $workspaceId = null): int
+    {
+        if (!$this->tablesReady() || ($workspaceId !== null && $workspaceId <= 0)) {
+            return 0;
+        }
+
+        $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
+            ->select(['id', 'theme_json']);
+        if ($workspaceId !== null) {
+            $query->where('workspace_id', '=', $workspaceId);
+        }
+
+        $changedThemes = 0;
+        foreach (WorkspaceValue::rows($query->get()) as $row) {
+            $id = WorkspaceValue::int($row['id'] ?? null);
+            $json = is_scalar($row['theme_json'] ?? null) ? trim((string)$row['theme_json']) : '';
+            if ($id <= 0 || $json === '') {
+                continue;
+            }
+
+            try {
+                $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+                $theme = WorkspaceValue::stringKeyArray($decoded);
+                if ($theme === []) {
+                    continue;
+                }
+
+                $upgraded = self::withMissingComponentHeights($theme);
+                if ($upgraded === $theme) {
+                    continue;
+                }
+
+                $encoded = json_encode(
+                    $upgraded,
+                    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+                );
+            } catch (JsonException) {
+                continue;
+            }
+
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
+                ->where('id', '=', $id)
+                ->update(['theme_json' => $encoded]);
+            ++$changedThemes;
+        }
+
+        return $changedThemes;
+    }
+
+    /**
+     * HR: Vraća temu s dosadašnjim vrijednostima samo ondje gdje novi ključevi ne postoje.
+     * EN: Returns a theme with legacy values only where the new keys are absent.
+     *
+     * @param array<string, mixed> $theme
+     * @return array<string, mixed>
+     */
+    public static function withMissingComponentHeights(array $theme): array
+    {
+        $components = WorkspaceValue::stringKeyArray($theme['components'] ?? []);
+        $header = WorkspaceValue::stringKeyArray($components['header'] ?? []);
+        $navigation = WorkspaceValue::stringKeyArray($components['navigation'] ?? []);
+
+        if (!array_key_exists('height_px', $header)) {
+            $header['height_px'] = self::DEFAULT_HEADER_HEIGHT_PX;
+        }
+
+        if (!array_key_exists('height_px', $navigation)) {
+            $navigation['height_px'] = self::DEFAULT_NAVIGATION_HEIGHT_PX;
+        }
+
+        $components['header'] = $header;
+        $components['navigation'] = $navigation;
+        $theme['components'] = $components;
+
+        return $theme;
     }
 
     /**

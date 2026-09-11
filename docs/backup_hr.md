@@ -1,6 +1,11 @@
 # Backup i povrat područja
 
-Workspace je vlasnik tri providera: potpunih site/component tablica, datoteka privatnih tema područja i selektivnog providera `workspace-scope`. Selektivna arhiva sadrži zapis područja, stablo, prenosive oznake i strukturirana svojstva stranica, ACL čvorova i workflow stanje, postavke naslovnice/prikaza, privatnu temu te prijenosne veze potrebne integracijama editora, kalendara, zadataka, komentara, menija i pretrage.
+Workspace je vlasnik tri izvorna providera: potpunih site/component tablica, datoteka privatnih tema područja i selektivnog providera `workspace-scope`. Selektivna arhiva sadrži zapis područja, stablo, prenosive oznake i strukturirana svojstva stranica, ACL čvorova i workflow stanje, postavke naslovnice/prikaza, privatnu temu te prijenosne veze potrebne integracijama editora, kalendara, zadataka, komentara, menija i pretrage.
+
+Automatski završni provideri nakon potpunog ili selektivnog povrata starijeg
+backupa dopunjuju samo nedostajuće visine zaglavlja i glavnog menija privatne
+teme. Dosadašnje vrijednosti od 72 i 56 piksela čuvaju isti izgled, a postojeće
+vrijednosti i sve ostale postavke ostaju netaknute.
 
 ## Ovlasti
 

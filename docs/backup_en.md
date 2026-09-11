@@ -1,6 +1,11 @@
 # Workspace backup and restore
 
-Workspace owns three providers: complete site/component tables, private workspace-theme files, and the selective `workspace-scope` provider. A selective archive contains the workspace record, tree, portable page labels and structured properties, node ACL and workflow state, homepage/view settings, private theme, and portable references needed by editor, calendar, task, comment, menu, and search integrations.
+Workspace owns three source providers: complete site/component tables, private workspace-theme files, and the selective `workspace-scope` provider. A selective archive contains the workspace record, tree, portable page labels and structured properties, node ACL and workflow state, homepage/view settings, private theme, and portable references needed by editor, calendar, task, comment, menu, and search integrations.
+
+Automatic finalizers add only missing private-theme header and primary-navigation
+heights after a complete or selective restore of an older backup. The previous
+72- and 56-pixel values preserve the same appearance, while existing values and
+every other setting remain untouched.
 
 ## Authorization
 
