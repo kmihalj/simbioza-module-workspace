@@ -256,6 +256,152 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
+     * HR: Upravitelj smije promijeniti cjelovitu strukturu stabla, ali mu
+     *     izravno uskraćena stranica ostaje nevidljiva i nedostupna za postavke.
+     * EN: A manager may change the complete tree structure, while a directly
+     *     denied page remains hidden and unavailable for page settings.
+     */
+    public function testManagerCanReorderCompleteTreeWithoutOpeningDeniedPage(): void
+    {
+        $admin = $this->admin();
+        $workspace = $this->service->createWorkspace([
+            'name' => 'Stablo upravitelja',
+            'slug' => 'stablo-upravitelja',
+        ], $admin);
+        $workspaceId = (int)$workspace['id'];
+        $first = $this->repository->saveNode($workspaceId, [
+            'title' => 'Prva stranica',
+            'slug' => 'prva-stranica',
+            'node_type' => 'internal_link',
+            'target_url' => '/prva-stranica',
+            'sort_order' => 10,
+        ], 1);
+        $second = $this->repository->saveNode($workspaceId, [
+            'title' => 'Druga stranica',
+            'slug' => 'druga-stranica',
+            'node_type' => 'separator',
+            'sort_order' => 20,
+        ], 1);
+        $this->service->replaceWorkspaceAcl('stablo-upravitelja', [
+            'subjects' => [[
+                'type' => WorkspaceRepository::SUBJECT_USER,
+                'id' => 2,
+                'permissions' => ['can_manage' => true],
+            ]],
+        ], $admin);
+        $this->service->replaceNodeAcl('stablo-upravitelja', (int)$first['id'], [
+            'subjects' => [[
+                'type' => WorkspaceRepository::SUBJECT_USER,
+                'id' => 2,
+                'permissions' => [
+                    'can_view' => false,
+                    'can_edit' => false,
+                    'can_publish' => false,
+                    'can_manage' => false,
+                ],
+            ]],
+        ], $admin);
+
+        $manager = ['id' => 2, 'is_admin' => false];
+        $this->service->reorderTree('stablo-upravitelja', [
+            ['id' => $second['id'], 'parent_id' => null, 'sort_order' => 10],
+            ['id' => $first['id'], 'parent_id' => $second['id'], 'sort_order' => 10],
+        ], $manager);
+
+        $tree = $this->service->getTree('stablo-upravitelja', $manager, 'hr');
+        $this->assertSame((int)$second['id'], $tree[0]['id'] ?? null);
+        $this->assertSame([], $tree[0]['children'] ?? null);
+        $stored = $this->repository->nodesForWorkspace($workspaceId);
+        $storedById = [];
+        foreach ($stored as $storedNode) {
+            $storedById[(int)$storedNode['id']] = $storedNode;
+        }
+
+        $this->assertSame((int)$second['id'], (int)($storedById[(int)$first['id']]['parent_id'] ?? 0));
+
+        try {
+            $this->service->updateNode(
+                'stablo-upravitelja',
+                (int)$first['id'],
+                ['title' => 'Ne smije se otkriti'],
+                $manager,
+            );
+            $this->fail('A manager must not edit settings of a page they cannot view.');
+        } catch (WorkspaceApiException $workspaceApiException) {
+            $this->assertSame(403, $workspaceApiException->status);
+        }
+
+        $updated = $this->service->updateWorkspace(
+            'stablo-upravitelja',
+            ['name' => 'Stablo pod upravljanjem'],
+            $manager,
+        );
+        $this->assertSame('Stablo pod upravljanjem', $updated['name']);
+    }
+
+    /**
+     * HR: Objavljivač vidljive stranice smije uređivati njezina ograničenja,
+     *     ali time ne dobiva upravljanje cijelim područjem.
+     * EN: A publisher of a visible page may edit its restrictions without
+     *     gaining management of the complete Workspace.
+     */
+    public function testPublisherCanManageVisiblePagePermissionsOnly(): void
+    {
+        $admin = $this->admin();
+        $workspace = $this->service->createWorkspace([
+            'name' => 'Ovlasti objavljivača',
+            'slug' => 'ovlasti-objavljivaca',
+        ], $admin);
+        $node = $this->repository->saveNode((int)$workspace['id'], [
+            'title' => 'Stranica za objavu',
+            'slug' => 'stranica-za-objavu',
+            'node_type' => 'internal_link',
+            'target_url' => '/objava',
+        ], 1);
+        $this->service->replaceWorkspaceAcl('ovlasti-objavljivaca', [
+            'subjects' => [
+                [
+                    'type' => WorkspaceRepository::SUBJECT_USER,
+                    'id' => 2,
+                    'permissions' => ['can_publish' => true],
+                ],
+                [
+                    'type' => WorkspaceRepository::SUBJECT_USER,
+                    'id' => 3,
+                    'permissions' => ['can_view' => true, 'can_edit' => true],
+                ],
+            ],
+        ], $admin);
+
+        $publisher = ['id' => 2, 'is_admin' => false];
+        $acl = $this->service->replaceNodeAcl(
+            'ovlasti-objavljivaca',
+            (int)$node['id'],
+            [
+                'subjects' => [[
+                    'type' => WorkspaceRepository::SUBJECT_USER,
+                    'id' => 3,
+                    'permissions' => ['can_view' => true, 'can_edit' => false],
+                ]],
+            ],
+            $publisher,
+        );
+        $this->assertSame(3, (int)($acl[0]['id'] ?? 0));
+        $this->assertFalse((bool)($acl[0]['permissions']['can_edit'] ?? true));
+
+        try {
+            $this->service->updateWorkspace(
+                'ovlasti-objavljivaca',
+                ['name' => 'Nedopuštena promjena'],
+                $publisher,
+            );
+            $this->fail('A publisher must not change Workspace settings.');
+        } catch (WorkspaceApiException $workspaceApiException) {
+            $this->assertSame(403, $workspaceApiException->status);
+        }
+    }
+
+    /**
      * HR: Vraća administratorski identitet korišten u API servisnim testovima.
      * EN: Returns the administrator identity used by API service tests.
      *
@@ -354,7 +500,7 @@ final class WorkspaceApiServiceTest extends TestCase
             $table->text('value_text')->nullable();
         });
 
-        foreach ([1, 2] as $userId) {
+        foreach ([1, 2, 3] as $userId) {
             $this->database->table('auth_users')->insert([
                 'id' => $userId,
                 'login_identifier' => 'api-user-' . $userId,
@@ -366,6 +512,11 @@ final class WorkspaceApiServiceTest extends TestCase
             'user_id' => 2,
             'field_key' => 'display_name',
             'value_text' => 'Ana Horvat',
+        ]);
+        $this->database->table('auth_user_attribute_values')->insert([
+            'user_id' => 3,
+            'field_key' => 'display_name',
+            'value_text' => 'Borna Kovač',
         ]);
     }
 }

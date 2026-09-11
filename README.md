@@ -71,15 +71,21 @@ Croatian documentation: [README_hr.md](README_hr.md)
 
 Page restrictions only narrow the permissions granted at Workspace level. They
 never grant access to a user or group that is not already a Workspace member.
-Application administrators retain management access. The creator receives
-`can_manage` through a regular user ACL row, which can later be changed like any other grant.
-In an archived Workspace, add, edit, and delete are disabled for them as well
-until they reactivate it.
+Application administrators retain all permissions. The creator receives all six
+permissions through a regular user ACL row, which can later be changed like any
+other grant. Permissions are independent: every action automatically includes
+view, but management alone does not grant content editing, publishing, or
+deletion. In an archived Workspace, add, edit, and delete remain disabled until
+a manager reactivates it.
 
-Open **Edit tree**, then the pencil beside a page, to inspect page restrictions.
-Green checkboxes show permissions inherited from the Workspace and ancestor pages; red checkboxes
-show permissions retained by a direct restriction on that page. Saving no red
-checkboxes removes the direct restriction and returns to full inheritance.
+A manager opens restrictions through **Edit tree**; a publisher opens them from
+the actions of a visible page. Green checkboxes show permissions inherited from
+the Workspace and ancestor pages; red checkboxes show permissions retained by a
+direct restriction on that page. Saving no red checkboxes removes the direct
+restriction and returns to full inheritance. A page whose view permission is
+directly denied to a manager is shown in the tree organizer only as
+**Unavailable page**, without its title or pencil action, while the complete
+branch can still be moved safely.
 
 The add-item form can create one **Links** system separator per Workspace. Its
 title is fixed as `Linkovi` in Croatian and `Links` in English, it may be moved

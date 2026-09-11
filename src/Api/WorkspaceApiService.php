@@ -645,6 +645,10 @@ final readonly class WorkspaceApiService
     ): array {
         $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
         $node = $this->requireNode($workspace, $nodeId);
+        if (!(bool)($this->access->nodePermissions($workspace, $node, $user)['can_view'] ?? false)) {
+            throw $this->forbidden(__('Nemate potrebno pravo nad stranicom.'));
+        }
+
         $payload = $this->mergeNodePayload($node, $payload);
         $payload = $this->withTranslationContext($payload);
         $payload['id'] = $nodeId;
@@ -668,16 +672,22 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Briše link i podgranu; dokument-stranice namjerno prepušta Editor API-ju.
+     * HR: Briše link i podgranu uz efektivno pravo brisanja; dokument-stranice
+     *     namjerno prepušta Editor API-ju.
      *
-     * EN: Deletes a link and its subtree; document pages are intentionally left to the Editor API.
+     * EN: Deletes a link and its subtree with effective delete permission;
+     *     document pages are intentionally left to the Editor API.
      *
      * @param array<string,mixed> $user
      */
     public function deleteLinkNode(string $slug, int $nodeId, array $user): void
     {
-        $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
+        $workspace = $this->requireWorkspace($slug, $user, 'can_delete');
         $node = $this->requireNode($workspace, $nodeId);
+        if (!(bool)($this->access->nodePermissions($workspace, $node, $user)['can_delete'] ?? false)) {
+            throw $this->forbidden(__('Nemate potrebno pravo nad stranicom.'));
+        }
+
         if (WorkspaceValue::string($node['node_type'] ?? '') === 'document') {
             throw $this->invalid(
                 __('Dokument-stranicu briše Editor API kako bi sačuvao verzije i privitke.'),
@@ -712,17 +722,18 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća izravna ograničenja jednog čvora korisniku koji upravlja područjem.
+     * HR: Vraća izravna ograničenja vidljivog čvora upravitelju područja ili
+     *     korisniku s efektivnim pravom objavljivanja na toj stranici.
      *
-     * EN: Returns direct restrictions for one node to a user who manages the Workspace.
+     * EN: Returns direct restrictions for a visible node to a Workspace manager
+     *     or a user with effective publish permission on that page.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
      */
     public function getNodeAcl(string $slug, int $nodeId, array $user): array
     {
-        $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
-        $this->requireNode($workspace, $nodeId);
+        [$workspace] = $this->requirePagePermissionManager($slug, $nodeId, $user);
 
         $workspaceSubjects = [];
         foreach (
@@ -772,9 +783,8 @@ final readonly class WorkspaceApiService
         array $payload,
         array $user,
     ): array {
-        $workspace = $this->requireWorkspace($slug, $user, 'can_manage');
+        [$workspace] = $this->requirePagePermissionManager($slug, $nodeId, $user);
         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
-        $this->requireNode($workspace, $nodeId);
         $acl = $this->aclMap($payload);
         if (array_diff(array_keys($acl), [WorkspaceRepository::SUBJECT_USER]) !== []) {
             throw $this->invalid(__('Ograničenja stranice mogu se zadati samo korisnicima.'));
@@ -784,6 +794,36 @@ final readonly class WorkspaceApiService
         $this->access->clearRequestCache();
 
         return $this->getNodeAcl($slug, $nodeId, $user);
+    }
+
+    /**
+     * HR: Učitava područje i stranicu te dopušta upravljanje ovlastima samo
+     *     upravitelju područja ili objavljivaču koji stranicu smije vidjeti.
+     * EN: Loads a Workspace and page, allowing permission management only to a
+     *     Workspace manager or publisher who may view the page.
+     *
+     * @param array<string,mixed> $user
+     * @return array{0:array<string,mixed>,1:array<string,mixed>}
+     */
+    private function requirePagePermissionManager(string $slug, int $nodeId, array $user): array
+    {
+        $workspace = $this->repository->findWorkspaceBySlug($slug);
+        if (!is_array($workspace)) {
+            throw $this->notFound(__('Područje nije pronađeno.'));
+        }
+
+        $node = $this->requireNode($workspace, $nodeId);
+        $workspacePermissions = $this->access->workspacePermissions($workspace, $user);
+        $nodePermissions = $this->access->nodePermissions($workspace, $node, $user);
+        if (
+            !(bool)($nodePermissions['can_view'] ?? false)
+            || (!(bool)($workspacePermissions['can_manage'] ?? false)
+                && !(bool)($nodePermissions['can_publish'] ?? false))
+        ) {
+            throw $this->forbidden(__('Nemate potrebno pravo nad stranicom.'));
+        }
+
+        return [$workspace, $node];
     }
 
     /**

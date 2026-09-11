@@ -177,6 +177,45 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
+     * HR: Operativna prava područja međusobno su neovisna; svako od njih
+     *     uključuje samo nužni pregled, a upravljanje više ne daje uređivanje,
+     *     objavljivanje, brisanje ni dodavanje.
+     * EN: Workspace operation permissions are independent; each implies only
+     *     the required view, while manage no longer grants edit, publish,
+     *     delete, or add.
+     */
+    public function testWorkspaceOperationPermissionsRemainIndependent(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Neovisna prava',
+            'slug' => 'neovisna-prava',
+            'visibility' => 'restricted',
+        ], 1);
+        $this->repository->replaceWorkspaceAcl((int)$workspace['id'], [
+            'user' => [
+                2 => ['can_manage' => true],
+                3 => ['can_delete' => true],
+            ],
+        ]);
+
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+        $manager = $this->access->workspacePermissions($workspace);
+        $this->assertTrue($manager['can_view']);
+        $this->assertTrue($manager['can_manage']);
+        $this->assertFalse($manager['can_add']);
+        $this->assertFalse($manager['can_edit']);
+        $this->assertFalse($manager['can_publish']);
+        $this->assertFalse($manager['can_delete']);
+
+        $this->authn->login(['id' => 3, 'is_admin' => false]);
+        $deleter = $this->access->workspacePermissions($workspace);
+        $this->assertTrue($deleter['can_view']);
+        $this->assertTrue($deleter['can_delete']);
+        $this->assertFalse($deleter['can_edit']);
+        $this->assertFalse($deleter['can_manage']);
+    }
+
+    /**
      * HR: Kreiranje područja dopušta administratoru te konfiguriranim korisnicima i grupama.
      * EN: Workspace creation allows administrators and configured users or groups.
      */

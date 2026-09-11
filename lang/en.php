@@ -170,10 +170,23 @@ return [
     'Početna Workspace migracija još nije pokrenuta.' =>
         'The initial Workspace migration has not been run.',
     'Početna stranica područja' => 'Workspace homepage',
-    'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava.' =>
-        'A user and their group grants are combined. Manage includes all permissions.',
-    'Prava korisnika i njegovih grupa se zbrajaju. Dodajte samo potrebne subjekte; upravljanje uključuje sva prava.' =>
-        'A user and their group grants are combined. Add only the required subjects; manage includes all permissions.',
+    'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.' =>
+        'A user and their group grants are combined. Each permission is independent; enabling an action also enables view.',
+    'Pregled omogućuje čitanje vidljivih stranica područja.' =>
+        'View allows reading visible Workspace pages.',
+    'Dodavanje omogućuje izradu novih stranica.' =>
+        'Add allows creating new pages.',
+    'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.' =>
+        'Edit allows changing a page, saving its draft repeatedly, and submitting it for review separately.',
+    'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.' =>
+        'Publish allows publishing pages submitted for review, receiving their notifications, and editing direct grants and restrictions on a visible page.',
+    'Brisanje omogućuje brisanje stranica i njihovih podgrana.' =>
+        'Delete allows deleting pages and their subtrees.',
+    'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.' =>
+        'Manage allows editing the tree, Workspace settings and Workspace permissions, plus direct grants and restrictions on a visible page.',
+    'Nedostupna stranica' => 'Unavailable page',
+    'Ovlasti stranice mogu se zadati samo korisnicima.' =>
+        'Page permissions may be assigned only to users.',
     'Pretraživanje nije uspjelo.' => 'Search failed.',
     'Pretražite po imenu ili korisničkoj oznaci.' => 'Search by name or login identifier.',
     'Pretraži grupe' => 'Search groups',
@@ -462,6 +475,7 @@ return [
         'The Editor API deletes document pages so versions and attachments remain consistent.',
     'Područje nije pronađeno.' => 'The Workspace was not found.',
     'Nemate potrebno pravo nad područjem.' => 'You do not have the required Workspace permission.',
+    'Nemate potrebno pravo nad stranicom.' => 'You do not have the required page permission.',
     'Stavka stabla nije pronađena.' => 'The tree item was not found.',
     'Operacija zahtijeva administratora.' => 'This operation requires an administrator.',
     'Polje "subjects" mora biti JSON lista.' => 'The "subjects" field must be a JSON list.',

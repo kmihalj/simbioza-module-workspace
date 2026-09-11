@@ -1413,6 +1413,34 @@
     }
 
     /**
+     * HR: Sva operativna prava traže pregled, ali međusobno ostaju neovisna.
+     * EN: Every operational permission requires view, while operations remain independent.
+     *
+     * @param {HTMLTableRowElement} row
+     * @param {HTMLInputElement} changed
+     * @returns {void}
+     */
+    function normalizeAclRow(row, changed) {
+        const view = row.querySelector('input[name$="[can_view]"]');
+        if (!(view instanceof HTMLInputElement)) {
+            return;
+        }
+
+        if (changed !== view && changed.checked) {
+            view.checked = true;
+            return;
+        }
+
+        if (changed === view && !changed.checked) {
+            row.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                if (input instanceof HTMLInputElement && input !== view) {
+                    input.checked = false;
+                }
+            });
+        }
+    }
+
+    /**
      * HR: Dodaje korisnika ili grupu u popis subjekata koji smiju kreirati područja.
      * EN: Adds a user or group to the subjects allowed to create workspaces.
      *
@@ -1601,11 +1629,7 @@
         const permission = String(changed.dataset.workspaceRestrictionPermission || '');
 
         if (changed.checked) {
-            if (permission === 'can_manage') {
-                setChecked(['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete'], true);
-            } else if (permission === 'can_delete') {
-                setChecked(['can_view', 'can_edit'], true);
-            } else if (['can_add', 'can_edit', 'can_publish'].includes(permission)) {
+            if (permission !== 'can_view') {
                 setChecked(['can_view'], true);
             }
             return;
@@ -1613,10 +1637,6 @@
 
         if (permission === 'can_view') {
             setChecked(['can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'], false);
-        } else if (permission === 'can_edit') {
-            setChecked(['can_delete', 'can_manage'], false);
-        } else if (['can_add', 'can_publish', 'can_delete'].includes(permission)) {
-            setChecked(['can_manage'], false);
         }
     }
 
@@ -1974,6 +1994,20 @@
 
                 row.remove();
                 refreshAclEmptyState(section);
+            });
+
+            form.addEventListener('change', (event) => {
+                const target = event.target;
+                const row = target instanceof Element
+                    ? target.closest('[data-workspace-acl-row]')
+                    : null;
+                if (
+                    target instanceof HTMLInputElement
+                    && target.type === 'checkbox'
+                    && row instanceof HTMLTableRowElement
+                ) {
+                    normalizeAclRow(row, target);
+                }
             });
         });
 

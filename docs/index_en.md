@@ -84,9 +84,11 @@ built-in audience they belong to, and all their groups are combined:
 - `can_delete`
 - `can_manage`
 
-`can_manage` implies every other permission. Application administrators receive
-the complete permission set. A new Workspace creator receives a regular user
-ACL row with `can_manage`, without a special owner status.
+Each permission is independent. Add, edit, publish, delete, or manage implies
+view, but none of those actions implies another action. Application
+administrators receive the complete permission set. A new Workspace creator
+receives a regular user ACL row with all six permissions, without a special
+owner status.
 
 The management screen does not load every user and group. It renders assigned
 ACL rows only, while a searchable picker adds new subjects. Search runs on the
@@ -113,8 +115,9 @@ In the open Workspace, select **Edit tree** and then the pencil beside a node.
 The modal shows grants inherited from the Workspace and ancestor pages in green and direct page
 restrictions in red. Red checks can only retain a permission already granted
 in green; they can never broaden it. Removing every red check and saving
-returns the node to unrestricted inheritance. Users with `can_edit` but not
-`can_manage` may inspect the matrix, while only `can_manage` may change it.
+returns the node to unrestricted inheritance. The matrix may be changed by a
+user with effective `can_publish` on a visible page, or by a Workspace manager
+who may view that page.
 The modal is attached directly to the document body so Theme or Hero stacking
 contexts cannot place it behind Bootstrap's backdrop.
 
@@ -208,11 +211,12 @@ editor document is soft-deleted through the optional bridge. The separate
 **Manage Workspace** screen retains only Workspace data, members, Workspace
 ACL, and Workspace deletion.
 
-Moving a node requires `can_edit` on the node and `can_add` on the new parent or
-tree root. The management view never sends nodes for which the user lacks
-effective `can_view`. A user with content-change rights can open tree
-management, but Workspace metadata and ACL remain editable only with
-`can_manage`.
+Editing the complete tree arrangement requires `can_manage`. The organizer
+includes every node so it can save the complete arrangement, but a node without
+effective `can_view` is rendered only as **Unavailable page**, without its title,
+link, or settings button. `can_manage` edits Workspace data and ACL plus the
+settings of visible tree items. `can_add` separately allows creating a page,
+while `can_delete` deletes a page and its subtree.
 
 An internal link accepts an existing named route or a local absolute path that
 starts with one slash, for example `/calendars`. The local path is automatically
@@ -429,7 +433,8 @@ Permissions deliberately separate editing from publication:
 - `can_edit`: submit a draft for review and withdraw it;
 - `can_publish`: publish a draft, including direct `Save and publish`, which
   then opens the public view of the published page;
-- `can_manage`: implies every permission and additionally archives or restores;
+- `can_manage`: edit structure and settings and additionally archive or restore,
+  without automatically gaining content edit or publish permission;
 - every user receives exactly the recorded published version and its historical
   attachment set on the regular view;
 - users with edit or publish permission receive separate actions for editing

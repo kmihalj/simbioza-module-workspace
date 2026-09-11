@@ -3491,9 +3491,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Korisniku idempotentno dodjeljuje upravljanje i svih pet uključenih
+     * HR: Korisniku idempotentno dodjeljuje upravljanje i svih pet zasebnih
      *     operativnih prava kroz isti ACL model koji uređuju postavke područja.
-     * EN: Idempotently grants a user Manage and all five implied operational
+     * EN: Idempotently grants a user Manage and all five separate operational
      *     permissions through the same ACL model edited in Workspace settings.
      */
     public function grantWorkspaceManagement(int $workspaceId, int $userId): void
@@ -3508,7 +3508,14 @@ final readonly class WorkspaceRepository
         }
 
         $now = date('Y-m-d H:i:s');
-        $permissions = $this->permissionValues(['can_manage' => true]);
+        $permissions = $this->permissionValues([
+            'can_view' => true,
+            'can_add' => true,
+            'can_edit' => true,
+            'can_publish' => true,
+            'can_delete' => true,
+            'can_manage' => true,
+        ]);
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_ACL)->upsert(
             [[
                 'workspace_id' => $workspaceId,
@@ -3524,8 +3531,10 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira polja ovlasti i osigurava da manage uključuje sva niža prava.
-     * EN: Normalizes permission fields and ensures manage includes every lower permission.
+     * HR: Normalizira zasebna polja ovlasti. Svaka radnja uključuje samo pregled,
+     *     jer se ne može izvoditi nad potpuno nevidljivim područjem ili stranicom.
+     * EN: Normalizes independent permission fields. Every action implies viewing
+     *     only, because it cannot operate on a completely hidden Workspace or page.
      *
      * @param array<string, mixed> $permissions
      * @return array<string, bool>
@@ -3533,11 +3542,16 @@ final readonly class WorkspaceRepository
     private function permissionValues(array $permissions): array
     {
         $manage = $this->boolValue($permissions['can_manage'] ?? false);
-        $publish = $manage || $this->boolValue($permissions['can_publish'] ?? false);
-        $delete = $manage || $this->boolValue($permissions['can_delete'] ?? false);
-        $edit = $delete || $this->boolValue($permissions['can_edit'] ?? false);
-        $add = $manage || $this->boolValue($permissions['can_add'] ?? false);
-        $view = $add || $edit || $publish || $this->boolValue($permissions['can_view'] ?? false);
+        $publish = $this->boolValue($permissions['can_publish'] ?? false);
+        $delete = $this->boolValue($permissions['can_delete'] ?? false);
+        $edit = $this->boolValue($permissions['can_edit'] ?? false);
+        $add = $this->boolValue($permissions['can_add'] ?? false);
+        $view = $add
+        || $edit
+        || $publish
+        || $delete
+        || $manage
+        || $this->boolValue($permissions['can_view'] ?? false);
 
         return [
             'can_view' => $view,

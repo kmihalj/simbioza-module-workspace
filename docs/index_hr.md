@@ -80,9 +80,11 @@ publika kojima pripada i svih njegovih grupa se zbrajaju:
 - `can_delete`
 - `can_manage`
 
-`can_manage` uključuje sva ostala prava. Administratori aplikacije dobivaju
-potpuni skup prava. Kreator novog Područja dobiva običan korisnički ACL red s
-`can_manage`, bez posebnog statusa vlasnika.
+Svako je pravo zasebno. Dodavanje, uređivanje, objavljivanje, brisanje ili
+upravljanje automatski uključuje pregled, ali nijedna od tih radnji ne uključuje
+drugu radnju. Administratori aplikacije dobivaju potpuni skup prava. Kreator
+novog Područja dobiva običan korisnički ACL red sa svih šest prava, bez posebnog
+statusa vlasnika.
 
 Ekran ne učitava sve korisnike i grupe. Prikazuje samo već dodijeljene ACL
 retke, a novi se subjekt dodaje pretraživačem. Pretraga se izvršava na serveru,
@@ -109,8 +111,9 @@ U otvorenom Području uključite **Uredi stablo** pa odaberite olovku uz čvor.
 Modal zeleno prikazuje prava naslijeđena iz Područja i nadređenih stranica, a crveno izravna
 ograničenja stranice. Crvena oznaka može samo zadržati pravo koje već postoji
 zeleno; nikada ga ne može proširiti. Uklanjanje svih crvenih oznaka i spremanje
-vraća potpuno nasljeđivanje. Korisnik s `can_edit`, ali bez `can_manage`, smije
-pregledati matricu, dok je mijenjati smije samo `can_manage`. Modal se premješta
+vraća potpuno nasljeđivanje. Matricu smije mijenjati korisnik s efektivnim
+`can_publish` pravom na vidljivoj stranici ili upravitelj područja koji tu
+stranicu smije vidjeti. Modal se premješta
 izravno pod body dokumenta kako ga stacking context teme ili Hero elementa ne
 bi smjestio ispod Bootstrap backdroppa.
 
@@ -201,11 +204,12 @@ soft-briše se kroz opcionalni servisni most. Zaseban ekran “Upravljaj
 područjem” zadržava samo podatke područja, članove, Workspace ACL i brisanje
 područja.
 
-Premještanje čvora traži `can_edit` na čvoru i `can_add` na novom roditelju
-odnosno korijenu. Upravljački prikaz uopće ne šalje korisniku čvorove za koje
-nema efektivno `can_view` pravo. Korisnik s pravom izmjene sadržaja vidi
-upravljanje stablom, ali podatke i ACL samog Područja može mijenjati samo uz
-`can_manage`.
+Uređivanje cijelog rasporeda stabla traži `can_manage`. Organizator uključuje
+svaki čvor kako bi spremio potpun raspored, ali čvor bez efektivnog `can_view`
+prikazuje samo kao **Nedostupna stranica**, bez naslova, poveznice ili gumba za
+postavke. `can_manage` uređuje podatke i ACL samog Područja te postavke vidljivih
+stavki stabla. `can_add` zasebno omogućuje stvaranje nove stranice, a
+`can_delete` brisanje stranice i njezine podgrane.
 
 Interni link prihvaća postojeću imenovanu rutu ili lokalnu apsolutnu putanju
 koja počinje jednom kosom crtom, primjerice `/calendars`. Lokalna putanja
@@ -414,7 +418,8 @@ Prava namjerno odvajaju uređivanje od objavljivanja:
 - `can_edit`: slanje nacrta na pregled i povratak s pregleda;
 - `can_publish`: objava nacrta, uključujući izravno `Spremi i objavi`, nakon
   čega se otvara javni pregled objavljene stranice;
-- `can_manage`: uključuje sva prava te dodatno arhiviranje i vraćanje;
+- `can_manage`: uređivanje strukture i postavki te dodatno arhiviranje i vraćanje,
+  bez automatskog prava uređivanja ili objavljivanja sadržaja;
 - svi korisnici na običnom pregledu vide točno zapisanu objavljenu verziju i
   njezin povijesni skup privitaka;
 - korisnici s pravom uređivanja ili objavljivanja dobivaju zasebne ikone za

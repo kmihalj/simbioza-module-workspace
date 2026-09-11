@@ -231,13 +231,7 @@ final readonly class WorkspaceController
         $workspacePermissions = is_array($workspace)
         ? $this->access->workspacePermissions($workspace)
         : $this->emptyPermissions();
-        if (
-            is_array($workspace)
-            && !$workspacePermissions['can_add']
-            && !$workspacePermissions['can_edit']
-            && !$workspacePermissions['can_delete']
-            && !$workspacePermissions['can_manage']
-        ) {
+        if (is_array($workspace) && !$workspacePermissions['can_manage']) {
             return $this->accessDenied();
         }
 
@@ -457,14 +451,6 @@ final readonly class WorkspaceController
     {
         $query = WorkspaceValue::stringKeyArray($request->getQueryParams());
         $workspace = $this->workspaceFromInput($query);
-        if (is_array($workspace)) {
-            if (!$this->access->workspacePermissions($workspace)['can_manage']) {
-                return $this->responseFactory->json(['ok' => false, 'error' => __('Nedozvoljen pristup')], 403);
-            }
-        } elseif (!$this->access->isAdministrator()) {
-            return $this->responseFactory->json(['ok' => false, 'error' => __('Nedozvoljen pristup')], 403);
-        }
-
         $category = $this->stringValue($query['type'] ?? '');
         if (
             !in_array(
@@ -477,6 +463,44 @@ final readonly class WorkspaceController
         }
 
         $mode = $this->stringValue($query['mode'] ?? '');
+        $node = null;
+        if (is_array($workspace)) {
+            if (in_array($mode, ['restriction', 'direct-permission'], true)) {
+                if ($category !== WorkspaceRepository::SUBJECT_USER) {
+                    return $this->responseFactory->json(
+                        ['ok' => false, 'error' => __('Ovlasti stranice mogu se zadati samo korisnicima.')],
+                        422,
+                    );
+                }
+
+                $node = $this->repository->findNodeById($this->intValue($query['node_id'] ?? 0));
+                if (
+                    !is_array($node)
+                    || $this->intValue($node['workspace_id'] ?? 0)
+                        !== $this->intValue($workspace['id'] ?? 0)
+                ) {
+                    return $this->responseFactory->json(
+                        ['ok' => false, 'error' => __('Stavka stabla nije pronađena.')],
+                        404,
+                    );
+                }
+
+                if (!$this->canManagePagePermissions($workspace, $node)) {
+                    return $this->responseFactory->json(
+                        ['ok' => false, 'error' => __('Nedozvoljen pristup')],
+                        403,
+                    );
+                }
+            } elseif (!$this->access->workspacePermissions($workspace)['can_manage']) {
+                return $this->responseFactory->json(
+                    ['ok' => false, 'error' => __('Nedozvoljen pristup')],
+                    403,
+                );
+            }
+        } elseif (!$this->access->isAdministrator()) {
+            return $this->responseFactory->json(['ok' => false, 'error' => __('Nedozvoljen pristup')], 403);
+        }
+
         $search = trim($this->stringValue($query['q'] ?? ''));
         if ($mode === 'restriction' && mb_strlen($search) < 2) {
             return $this->responseFactory->json([
@@ -493,24 +517,11 @@ final readonly class WorkspaceController
             && $category === WorkspaceRepository::SUBJECT_USER
             && $mode === 'restriction'
         ) {
-            $nodeId = $this->intValue($query['node_id'] ?? 0);
-            $node = $this->repository->findNodeById($nodeId);
-            if (
-                !is_array($node)
-                || $this->intValue($node['workspace_id'] ?? 0)
-                    !== $this->intValue($workspace['id'] ?? 0)
-            ) {
-                return $this->responseFactory->json(
-                    ['ok' => false, 'error' => __('Stavka stabla nije pronađena.')],
-                    404,
-                );
-            }
-
             return $this->responseFactory->json([
                 'ok' => true,
                 'results' => $this->repository->searchRestrictionUsers(
                     $this->intValue($workspace['id'] ?? 0),
-                    $nodeId,
+                    $this->intValue($node['id'] ?? 0),
                     $search,
                 ),
                 'page' => 1,
@@ -679,12 +690,13 @@ final readonly class WorkspaceController
 
         $permissions = $this->access->nodePermissions($workspace, $node);
         $workspacePermissions = $this->access->workspacePermissions($workspace);
-        $canManagePagePermissions = (bool)($workspacePermissions['can_manage'] ?? false);
+        $canEditTreeItem = (bool)($workspacePermissions['can_manage'] ?? false)
+        && (bool)($permissions['can_view'] ?? false);
+        $canManagePagePermissions = $this->canManagePagePermissions($workspace, $node);
         if (
-            !$permissions['can_edit']
-            && !$permissions['can_delete']
-            && !$permissions['can_manage']
+            !$canEditTreeItem
             && !$canManagePagePermissions
+            && !(bool)($permissions['can_delete'] ?? false)
         ) {
             return $this->responseFactory->html(
                 '<div class="modal-body"><div class="alert alert-danger mb-0">'
@@ -699,8 +711,10 @@ final readonly class WorkspaceController
         }
 
         $workspaceId = $this->intValue($workspace['id'] ?? 0);
-        $allNodes = $this->repository->nodesForWorkspace($workspaceId);
-        $permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $allNodes);
+        $allNodes = $canEditTreeItem ? $this->repository->nodesForWorkspace($workspaceId) : [];
+        $permissionsByNode = $canEditTreeItem
+        ? $this->access->nodePermissionsForNodes($workspace, $allNodes)
+        : [];
         $nodes = [];
         foreach ($allNodes as $candidate) {
             $candidatePermissions = $permissionsByNode[$this->intValue($candidate['id'] ?? 0)]
@@ -731,22 +745,29 @@ final readonly class WorkspaceController
         );
         $isAdministrator = $this->access->isAdministrator();
         $node['permissions'] = $permissions;
-        $node['restrictions'] = $this->repository->nodeAclRows(
-            $this->intValue($node['id'] ?? 0),
-        );
-        $node['labels'] = $this->repository->nodeLabels($this->intValue($node['id'] ?? 0));
-        $node['properties'] = $this->repository->nodeProperties($this->intValue($node['id'] ?? 0));
+        $node['restrictions'] = $canManagePagePermissions
+        ? $this->repository->nodeAclRows($this->intValue($node['id'] ?? 0))
+        : [];
+        $node['labels'] = $canEditTreeItem
+        ? $this->repository->nodeLabels($this->intValue($node['id'] ?? 0))
+        : [];
+        $node['properties'] = $canEditTreeItem
+        ? $this->repository->nodeProperties($this->intValue($node['id'] ?? 0))
+        : [];
 
         $html = $this->viewRenderer->renderPartial('workspace/node-dialog', [
             'workspace' => $workspace,
-            'restrictionSubjects' => $this->repository->nodeRestrictionSubjects(
-                $workspaceId,
-                $this->intValue($node['id'] ?? 0),
-            ),
+            'restrictionSubjects' => $canManagePagePermissions
+                ? $this->repository->nodeRestrictionSubjects(
+                    $workspaceId,
+                    $this->intValue($node['id'] ?? 0),
+                )
+                : [],
             'directPermissionSubjects' => $canManagePagePermissions
                 ? $this->repository->nodeDirectPermissionSubjects($this->intValue($node['id'] ?? 0))
                 : [],
             'canManagePagePermissions' => $canManagePagePermissions,
+            'canEditTreeItem' => $canEditTreeItem,
             'node' => $node,
             'nodes' => $this->orderNodesForManagement($nodes),
             'editorAvailable' => $this->editor->isAvailable(),
@@ -821,19 +842,6 @@ final readonly class WorkspaceController
         foreach ($allNodes as $candidate) {
             $permissions = $permissionsByNode[$this->intValue($candidate['id'] ?? 0)]
             ?? $this->permissionArray([]);
-            if (!(bool)($permissions['can_view'] ?? false) || !(bool)($permissions['can_edit'] ?? false)) {
-                return $this->responseFactory->html(
-                    '<div class="alert alert-danger mb-0">'
-                    . htmlspecialchars(
-                        __('Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.'),
-                        ENT_QUOTES,
-                        'UTF-8',
-                    )
-                    . '</div>',
-                    403,
-                );
-            }
-
             $candidate['permissions'] = $permissions;
             $managementNodes[] = $candidate;
         }
@@ -869,6 +877,7 @@ final readonly class WorkspaceController
                 'workspace.node.dialog',
                 '/workspaces/node/dialog',
             ),
+            'canCreateNode' => (bool)($workspacePermissions['can_add'] ?? false),
         ]);
         // The organizer contains only controls and escaped labels, so whitespace
         // between tags has no visual meaning. Removing it keeps very large trees
@@ -895,7 +904,6 @@ final readonly class WorkspaceController
         $workspacePermissions = $this->access->workspacePermissions($workspace);
         if (
             !(bool)($workspacePermissions['can_add'] ?? false)
-            && !(bool)($workspacePermissions['can_manage'] ?? false)
         ) {
             return $this->responseFactory->html('', 403);
         }
@@ -1012,8 +1020,10 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Kreira, povezuje ili premješta čvor stabla uz provjeru add/edit prava.
-     * EN: Creates, links, or moves a tree node after checking add/edit permission.
+     * HR: Kreira novu stavku uz pravo dodavanja, a postojeće strukturne podatke
+     *     mijenja samo upravitelj koji smije vidjeti ciljnu stranicu.
+     * EN: Creates a new item with add permission, while existing structural data
+     *     may be changed only by a manager who can view the target page.
      */
     public function saveNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -1037,16 +1047,26 @@ final readonly class WorkspaceController
 
         $parentId = $this->intValue($body['parent_id'] ?? 0);
         if (is_array($existing)) {
+            $workspacePermissions = $this->access->workspacePermissions($workspace);
+            $nodePermissions = $this->access->nodePermissions($workspace, $existing);
             if (
                 $this->intValue($existing['workspace_id'] ?? 0) !== $this->intValue($workspace['id'] ?? 0)
-                || !$this->access->nodePermissions($workspace, $existing)['can_edit']
+                || !(bool)($workspacePermissions['can_manage'] ?? false)
+                || !(bool)($nodePermissions['can_view'] ?? false)
             ) {
                 return $this->accessDenied();
             }
 
             $existingParentId = $this->intValue($existing['parent_id'] ?? 0);
-            if ($existingParentId !== $parentId && !$this->canAddUnderParent($workspace, $parentId)) {
-                return $this->accessDenied();
+            if ($existingParentId !== $parentId && $parentId > 0) {
+                $parent = $this->repository->findNodeById($parentId);
+                if (
+                    !is_array($parent)
+                    || $this->intValue($parent['workspace_id'] ?? 0)
+                        !== $this->intValue($workspace['id'] ?? 0)
+                ) {
+                    return $this->accessDenied();
+                }
             }
         } elseif (!$this->canAddUnderParent($workspace, $parentId)) {
             return $this->accessDenied();
@@ -1198,10 +1218,12 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema kompletan vizualno uređeni raspored stabla samo kada korisnik
-     *     smije uređivati svaki aktivni čvor područja.
-     * EN: Saves the complete visually edited tree arrangement only when the
-     *     user may edit every active node in the Workspace.
+     * HR: Sprema kompletan vizualno uređeni raspored stabla korisniku koji
+     *     ima pravo upravljanja područjem. Ograničenja pojedinih stranica
+     *     i dalje mogu zaštititi njihov sadržaj, ali upravitelju ne dijele stablo.
+     * EN: Saves the complete visually edited tree arrangement for a user with
+     *     Workspace management permission. Per-page restrictions may still
+     *     protect page content, but do not split the tree for a manager.
      */
     public function saveTreeOrder(ServerRequestInterface $request): ResponseInterface
     {
@@ -1213,16 +1235,6 @@ final readonly class WorkspaceController
 
         if (!$this->access->workspacePermissions($workspace)['can_manage']) {
             return $this->accessDenied();
-        }
-
-        $nodes = $this->repository->nodesForWorkspace($this->intValue($workspace['id'] ?? 0));
-        $permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $nodes);
-        foreach ($nodes as $node) {
-            $permissions = $permissionsByNode[$this->intValue($node['id'] ?? 0)]
-            ?? $this->permissionArray([]);
-            if (!$permissions['can_edit']) {
-                return $this->accessDenied();
-            }
         }
 
         try {
@@ -1337,8 +1349,7 @@ final readonly class WorkspaceController
             return $this->notFound();
         }
 
-        $permissions = $this->access->workspacePermissions($workspace);
-        if (!$permissions['can_manage']) {
+        if (!$this->canManagePagePermissions($workspace, $node)) {
             return $this->accessDenied();
         }
 
@@ -1373,8 +1384,7 @@ final readonly class WorkspaceController
             return $this->notFound();
         }
 
-        $workspacePermissions = $this->access->workspacePermissions($workspace);
-        if (!(bool)($workspacePermissions['can_manage'] ?? false)) {
+        if (!$this->canManagePagePermissions($workspace, $node)) {
             return $this->accessDenied();
         }
 
@@ -1618,6 +1628,8 @@ final readonly class WorkspaceController
         $editorView = null;
         $workflowView = null;
         $nodePermissions = $workspacePermissions;
+        $canManagePagePermissions = false;
+        $canOpenCurrentNodeDialog = false;
         if (is_array($node)) {
             $preloadedPermissions = $node['permissions'] ?? null;
             $nodePermissions = is_array($preloadedPermissions)
@@ -1626,6 +1638,10 @@ final readonly class WorkspaceController
             if (!$nodePermissions['can_view']) {
                 return $this->accessDenied();
             }
+
+            $canManagePagePermissions = $this->canManagePagePermissions($workspace, $node);
+            $canOpenCurrentNodeDialog = $canManagePagePermissions
+            || (bool)($nodePermissions['can_delete'] ?? false);
 
             $documentKey = $this->stringValue($node['document_key'] ?? '');
             if ($documentKey !== '') {
@@ -1689,7 +1705,7 @@ final readonly class WorkspaceController
                 $contentLanguage,
                 (bool)($editorView['isDraftPreview'] ?? false),
                 $treeVisible,
-                (bool)($workspacePermissions['can_manage'] ?? false),
+                $canOpenCurrentNodeDialog,
             );
             if (is_array($followUi)) {
                 $editorView['leadingActions'][] = [
@@ -1702,14 +1718,6 @@ final readonly class WorkspaceController
             }
         }
 
-        /*
-         * HR: Organizator dobiva sve aktivne čvorove samo kada ih korisnik sve
-         *     vidi i smije uređivati. Djelomično stablo ne smije mijenjati
-         *     globalni redoslijed jer bi skriveni čvorovi mogli biti izgubljeni.
-         * EN: The organizer receives all active nodes only when the user can see
-         *     and edit every one of them. A partial tree must not change the
-         *     global order because hidden nodes could otherwise be displaced.
-         */
         $workspaceId = $this->intValue($workspace['id'] ?? 0);
         $visibleNodes = $this->flattenTree($tree);
         $reviewQueue = [];
@@ -1722,11 +1730,8 @@ final readonly class WorkspaceController
                 WorkspaceValue::stringKeyArray($candidate['permissions'] ?? null),
             );
             if (!$candidatePermissions['can_view']) {
-                $canOrganizeTree = false;
                 continue;
             }
-
-            $canOrganizeTree = $canOrganizeTree && (bool)($candidatePermissions['can_edit'] ?? false);
 
             $candidateWorkflow = $workflows[$candidateId] ?? null;
             $candidateStatus = is_array($candidateWorkflow)
@@ -1851,8 +1856,7 @@ final readonly class WorkspaceController
             'canCreatePage' => (bool)($workspacePermissions['can_add'] ?? false)
                 && $this->editor->isAvailable(),
             'canOrganizeTree' => $canOrganizeTree,
-            'canOpenNodeDialog' => $canOrganizeTree
-                || (is_array($node) && (bool)($workspacePermissions['can_manage'] ?? false)),
+            'canOpenNodeDialog' => $canOrganizeTree || $canOpenCurrentNodeDialog,
             'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
             'nodeDialogPath' => $this->pathFor(
                 'workspace.node.dialog',
@@ -1879,7 +1883,7 @@ final readonly class WorkspaceController
                 $contentLanguage,
                 false,
                 $treeVisible,
-                (bool)($workspacePermissions['can_manage'] ?? false),
+                $canOpenCurrentNodeDialog,
             ),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
             'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
@@ -2174,6 +2178,28 @@ final readonly class WorkspaceController
         return is_array($parent)
         && $this->intValue($parent['workspace_id'] ?? 0) === $this->intValue($workspace['id'] ?? 0)
         && $this->access->nodePermissions($workspace, $parent)['can_add'];
+    }
+
+    /**
+     * HR: Upravitelj područja ili efektivni objavljivač smije mijenjati
+     *     dopuštenja i ograničenja samo stranice koju smije vidjeti.
+     * EN: A Workspace manager or effective publisher may change grants and
+     *     restrictions only for a page they are allowed to view.
+     *
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed> $node
+     */
+    private function canManagePagePermissions(array $workspace, array $node): bool
+    {
+        $nodePermissions = $this->access->nodePermissions($workspace, $node);
+        if (!(bool)($nodePermissions['can_view'] ?? false)) {
+            return false;
+        }
+
+        $workspacePermissions = $this->access->workspacePermissions($workspace);
+
+        return (bool)($workspacePermissions['can_manage'] ?? false)
+        || (bool)($nodePermissions['can_publish'] ?? false);
     }
 
     /**

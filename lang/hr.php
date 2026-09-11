@@ -170,10 +170,23 @@ return [
     'Početna Workspace migracija još nije pokrenuta.' =>
         'Početna Workspace migracija još nije pokrenuta.',
     'Početna stranica područja' => 'Početna stranica područja',
-    'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava.' =>
-        'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava.',
-    'Prava korisnika i njegovih grupa se zbrajaju. Dodajte samo potrebne subjekte; upravljanje uključuje sva prava.' =>
-        'Prava korisnika i njegovih grupa se zbrajaju. Dodajte samo potrebne subjekte; upravljanje uključuje sva prava.',
+    'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.' =>
+        'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.',
+    'Pregled omogućuje čitanje vidljivih stranica područja.' =>
+        'Pregled omogućuje čitanje vidljivih stranica područja.',
+    'Dodavanje omogućuje izradu novih stranica.' =>
+        'Dodavanje omogućuje izradu novih stranica.',
+    'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.' =>
+        'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.',
+    'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.' =>
+        'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.',
+    'Brisanje omogućuje brisanje stranica i njihovih podgrana.' =>
+        'Brisanje omogućuje brisanje stranica i njihovih podgrana.',
+    'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.' =>
+        'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.',
+    'Nedostupna stranica' => 'Nedostupna stranica',
+    'Ovlasti stranice mogu se zadati samo korisnicima.' =>
+        'Ovlasti stranice mogu se zadati samo korisnicima.',
     'Pretraživanje nije uspjelo.' => 'Pretraživanje nije uspjelo.',
     'Pretražite po imenu ili korisničkoj oznaci.' => 'Pretražite po imenu ili korisničkoj oznaci.',
     'Pretraži grupe' => 'Pretraži grupe',
@@ -462,6 +475,7 @@ return [
         'Dokument-stranicu briše Editor API kako bi sačuvao verzije i privitke.',
     'Područje nije pronađeno.' => 'Područje nije pronađeno.',
     'Nemate potrebno pravo nad područjem.' => 'Nemate potrebno pravo nad područjem.',
+    'Nemate potrebno pravo nad stranicom.' => 'Nemate potrebno pravo nad stranicom.',
     'Stavka stabla nije pronađena.' => 'Stavka stabla nije pronađena.',
     'Operacija zahtijeva administratora.' => 'Operacija zahtijeva administratora.',
     'Polje "subjects" mora biti JSON lista.' => 'Polje "subjects" mora biti JSON lista.',

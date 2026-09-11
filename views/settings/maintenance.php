@@ -238,7 +238,15 @@ $imageOptimizationLabelsJson = json_encode([
                         </form>
                     </div>
                 </div>
-                <div class="mt-3" data-image-optimization-panel>
+                <div
+                    class="mt-3"
+                    data-image-optimization-panel
+                    <?= in_array(
+                        WorkspaceValue::string($imageOptimization['status'] ?? 'idle'),
+                        ['queued', 'running', 'failed'],
+                        true,
+                    ) ? '' : 'hidden' ?>
+                >
                     <div
                         class="progress"
                         role="progressbar"
@@ -426,6 +434,7 @@ $imageOptimizationLabelsJson = json_encode([
     const form = document.querySelector('[data-image-optimization-form]');
     if (!form) return;
     const button = form.querySelector('[data-image-optimization-start]');
+    const panel = document.querySelector('[data-image-optimization-panel]');
     const progress = document.querySelector('[data-image-optimization-progress]');
     const bar = document.querySelector('[data-image-optimization-bar]');
     const message = document.querySelector('[data-image-optimization-message]');
@@ -455,6 +464,7 @@ $imageOptimizationLabelsJson = json_encode([
     const render = () => {
         const status = String(state?.status || 'idle');
         const percent = Math.max(0, Math.min(100, number(state?.percent)));
+        panel.hidden = !['queued', 'running', 'failed'].includes(status);
         progress.setAttribute('aria-valuenow', String(percent));
         bar.style.width = `${percent}%`;
         bar.textContent = `${percent}%`;

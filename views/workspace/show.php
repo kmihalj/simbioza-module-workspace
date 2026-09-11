@@ -43,13 +43,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $assetsJsPath
  */
 $activeNodeId = is_array($activeNode ?? null) ? WorkspaceValue::int($activeNode['id'] ?? 0) : null;
-$canManageContent = ($workspacePermissions['can_add'] ?? false)
-|| ($workspacePermissions['can_edit'] ?? false)
-|| ($workspacePermissions['can_delete'] ?? false)
-|| ($workspacePermissions['can_manage'] ?? false);
-$manageLabel = ($workspacePermissions['can_manage'] ?? false)
-? __('Upravljaj područjem')
-: __('Upravljaj sadržajem');
+$canManageWorkspace = (bool)($workspacePermissions['can_manage'] ?? false);
+$manageLabel = __('Upravljaj područjem');
 $reviewQueue = is_array($reviewQueue ?? null) ? array_values($reviewQueue) : [];
 $unpublishedPages = is_array($unpublishedPages ?? null) ? array_values($unpublishedPages) : [];
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
@@ -63,7 +58,7 @@ foreach ($pageParentOptions as $parentOption) {
 }
 $hasTreeActions = WorkspaceValue::string($shortsPath ?? '') !== ''
     || $canCreatePage
-    || $canManageContent
+    || $canManageWorkspace
     || $reviewQueue !== []
     || $unpublishedPages !== [];
 $fallbackLeadingActions = is_array($fallbackLeadingActions ?? null)
@@ -311,7 +306,7 @@ $workflowIcon = static function (string $action): string {
                                     </svg>
                                 </button>
                         <?php endif; ?>
-                        <?php if ($canManageContent) : ?>
+                        <?php if ($canManageWorkspace) : ?>
                                 <a
                                     class="btn btn-outline-secondary btn-sm workspace-tree-card-action"
                                     href="<?= $this->escape($managePath) ?>"

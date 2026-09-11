@@ -90,15 +90,20 @@ mora sadržavati više zasebnih riječi ili fraza, ispred svakog se pojma dodaje
 
 Ograničenja stranice mogu samo suziti prava dodijeljena na Području. Ne mogu
 dati pristup korisniku ili grupi koji već nemaju prava na Području.
-Administratori aplikacije zadržavaju pravo upravljanja, a kreator novog
-Područja dobiva `can_manage` kroz običan korisnički ACL red. U
-arhiviranom Području upraviteljima su isključeni dodavanje, uređivanje i brisanje
-sadržaja dok ga ponovno ne aktiviraju.
+Administratori aplikacije zadržavaju sva prava, a kreator novog Područja dobiva
+svih šest prava kroz običan korisnički ACL red. Prava su međusobno neovisna;
+svaka radnja automatski uključuje pregled, ali upravljanje samo po sebi ne daje
+pravo uređivanja, objavljivanja ni brisanja sadržaja. U arhiviranom Području
+dodavanje, uređivanje i brisanje sadržaja isključeni su dok ga upravitelj ponovno
+ne aktivira.
 
-Za pregled ograničenja uključite **Uredi stablo** i odaberite olovku uz
-stranicu. Zeleni checkbox prikazuje pravo naslijeđeno iz Područja, a crveni
-pravo zadržano izravnim ograničenjem te stranice. Spremanje bez ijedne crvene
-oznake uklanja izravno ograničenje i vraća potpuno nasljeđivanje.
+Upravitelj ograničenja otvara kroz **Uredi stablo**, a korisnik s pravom
+objavljivanja kroz radnje na vidljivoj stranici. Zeleni checkbox prikazuje pravo
+naslijeđeno iz Područja, a crveni pravo zadržano izravnim ograničenjem te
+stranice. Spremanje bez ijedne crvene oznake uklanja izravno ograničenje i vraća
+potpuno nasljeđivanje. Stranica kojoj je upravitelju izravno uskraćen pregled u
+organizatoru stabla prikazuje se samo kao **Nedostupna stranica**, bez naslova i
+bez olovke, ali ostaje dostupna za sigurno premještanje cijele grane.
 
 Obrazac za dodavanje stavke može izraditi jedan sistemski separator **Linkovi**
 po Području. Naslov je fiksno `Linkovi` na hrvatskom i `Links` na engleskom,

@@ -384,6 +384,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $manageView = file_get_contents(dirname(__DIR__) . '/views/workspace/manage.php');
         $organizerView = file_get_contents(dirname(__DIR__) . '/views/workspace/tree-organizer.php');
         $createDialogView = file_get_contents(dirname(__DIR__) . '/views/workspace/node-create-dialog.php');
+        $nodeDialogView = file_get_contents(dirname(__DIR__) . '/views/workspace/node-dialog.php');
         $controller = file_get_contents(dirname(__DIR__) . '/src/Controller/WorkspaceController.php');
         $workspaceScript = file_get_contents(dirname(__DIR__) . '/resources/assets/workspace.js');
 
@@ -391,6 +392,7 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertIsString($manageView);
         $this->assertIsString($organizerView);
         $this->assertIsString($createDialogView);
+        $this->assertIsString($nodeDialogView);
         $this->assertIsString($controller);
         $this->assertIsString($workspaceScript);
         $this->assertStringContainsString('data-workspace-tree-edit-toggle', $workspaceView);
@@ -400,12 +402,10 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('data-workspace-node-editor-modal', $workspaceView);
         $this->assertStringContainsString('$canOpenNodeDialog', $workspaceView);
         $this->assertStringContainsString('data-workspace-node-dialog-url', $workspaceView);
-        $this->assertStringContainsString('data-workspace-direct-permission-form', (string) file_get_contents(
-            dirname(__DIR__) . '/views/workspace/node-dialog.php',
-        ));
-        $this->assertStringContainsString('data-workspace-picker-mode="direct-permission"', (string) file_get_contents(
-            dirname(__DIR__) . '/views/workspace/node-dialog.php',
-        ));
+        $this->assertStringContainsString('data-workspace-direct-permission-form', $nodeDialogView);
+        $this->assertStringContainsString('data-workspace-picker-mode="direct-permission"', $nodeDialogView);
+        $this->assertStringContainsString('data-workspace-node-id="<?= $nodeId ?>"', $nodeDialogView);
+        $this->assertStringContainsString('<?php if ($canEditTreeItem) : ?>', $nodeDialogView);
         $this->assertStringContainsString('initializeAclControls(modal)', $workspaceScript);
         $this->assertStringContainsString('initializeModalPortals', $workspaceScript);
         $this->assertStringContainsString(
@@ -424,6 +424,27 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString('private function createNodeDialog(', $controller);
         $this->assertStringContainsString(
             '$permissionsByNode = $this->access->nodePermissionsForNodes($workspace, $allNodes);',
+            $controller,
+        );
+        $this->assertStringContainsString(
+            '$canOrganizeTree = (bool)($workspacePermissions[\'can_manage\'] ?? false);',
+            $controller,
+        );
+        $this->assertStringContainsString(
+            "if (!(bool)(\$workspacePermissions['can_manage'] ?? false))",
+            $controller,
+        );
+        $this->assertStringNotContainsString(
+            'Stablo nije moguće uređivati jer ne vidite ili ne smijete uređivati sve stavke.',
+            $controller,
+        );
+        $this->assertStringContainsString('$canManageWorkspace = (bool)(', $workspaceView);
+        $this->assertStringNotContainsString("__('Upravljaj sadržajem')", $workspaceView);
+        $this->assertStringContainsString('<?php if ($canEditNode) : ?>', $organizerView);
+        $this->assertStringContainsString('<?php if ($canCreateNode) : ?>', $organizerView);
+        $this->assertStringContainsString("__('Nedostupna stranica')", $organizerView);
+        $this->assertStringContainsString(
+            '$canManagePagePermissions = $this->canManagePagePermissions($workspace, $node);',
             $controller,
         );
         $this->assertStringNotContainsString('data-workspace-tree-order-form', $manageView);

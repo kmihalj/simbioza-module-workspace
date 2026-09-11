@@ -12,6 +12,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var list<array<string, mixed>> $restrictionSubjects
  * @var list<array<string, mixed>> $directPermissionSubjects
  * @var bool $canManagePagePermissions
+ * @var bool $canEditTreeItem
  * @var array<string, mixed> $node
  * @var list<array<string, mixed>> $nodes
  * @var list<array{id:string,title:string}> $editorDocuments
@@ -80,7 +81,7 @@ $hasPermission = static function (
     ></button>
 </div>
 <div class="modal-body">
-    <?php if ((bool)($permissions['can_edit'] ?? false)) : ?>
+    <?php if ($canEditTreeItem) : ?>
         <form method="post" action="<?= $this->escape($nodeSavePath) ?>">
             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
             <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
@@ -456,6 +457,7 @@ $hasPermission = static function (
                             data-workspace-subject-type="user"
                             data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
                             data-workspace-id="<?= $workspaceId ?>"
+                            data-workspace-node-id="<?= $nodeId ?>"
                             data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
                             data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
                             data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"

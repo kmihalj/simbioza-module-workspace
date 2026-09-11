@@ -14,6 +14,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $treeOrderSavePath
  * @var string $nodeDialogPath
  * @var string $nodeSavePath
+ * @var bool $canCreateNode
  */
 $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
 $returnNodeId = WorkspaceValue::int($activeNodeId ?? 0);
@@ -54,12 +55,16 @@ foreach ($nodes as $candidateNode) {
             $isTreeHidden = (bool)($node['is_tree_hidden'] ?? false);
             $hideLabel = $hasChildren ? __('Sakrij granu') : __('Sakrij stavku');
             $nodePermissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
+            $canViewNode = (bool)($nodePermissions['can_view'] ?? false);
+            $canEditNode = $canViewNode;
+            $nodeLabel = $canViewNode
+                ? WorkspaceValue::string($node['title'] ?? '')
+                : __('Nedostupna stranica');
             $canBeParent = in_array(
                 WorkspaceValue::string($node['node_type'] ?? ''),
                 ['document', 'separator'],
                 true,
-            )
-                && (bool)($nodePermissions['can_add'] ?? false);
+            );
             $dialogUrl = $nodeDialogPath . '?' . http_build_query([
                 'workspace_id' => $workspaceId,
                 'node_id' => $nodeId,
@@ -90,22 +95,24 @@ foreach ($nodes as $candidateNode) {
                     name="items[<?= $nodeId ?>][sort_order]"
                     value="<?= WorkspaceValue::int($node['sort_order'] ?? 100) ?>"
                 >
-                <button
-                    class="btn btn-outline-secondary btn-sm workspace-tree-node-edit"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#workspace-node-editor-modal"
-                    data-workspace-node-dialog-url="<?= $this->escape($dialogUrl) ?>"
-                    title="<?= $this->escape(__('Uredi stavku')) ?>"
-                    aria-label="<?= $this->escape(
-                        __('Uredi stavku') . ': ' . WorkspaceValue::string($node['title'] ?? ''),
-                    ) ?>"
-                >
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 20h9"/>
-                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"/>
-                    </svg>
-                </button>
+                <?php if ($canEditNode) : ?>
+                    <button
+                        class="btn btn-outline-secondary btn-sm workspace-tree-node-edit"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#workspace-node-editor-modal"
+                        data-workspace-node-dialog-url="<?= $this->escape($dialogUrl) ?>"
+                        title="<?= $this->escape(__('Uredi stavku')) ?>"
+                        aria-label="<?= $this->escape(
+                            __('Uredi stavku') . ': ' . $nodeLabel,
+                        ) ?>"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"/>
+                        </svg>
+                    </button>
+                <?php endif; ?>
                 <input
                     class="form-check-input workspace-tree-hidden-toggle"
                     type="checkbox"
@@ -114,7 +121,7 @@ foreach ($nodes as $candidateNode) {
                     data-workspace-tree-hidden-toggle
                     title="<?= $this->escape($hideLabel) ?>"
                     aria-label="<?= $this->escape(
-                        $hideLabel . ': ' . WorkspaceValue::string($node['title'] ?? ''),
+                        $hideLabel . ': ' . $nodeLabel,
                     ) ?>"
                     <?= $isTreeHidden ? 'checked' : '' ?>
                 >
@@ -124,13 +131,13 @@ foreach ($nodes as $candidateNode) {
                         $node['tree_depth'] ?? 0,
                     ) ?>;"
                 >
-                    <span><?= $this->escape(WorkspaceValue::string($node['title'] ?? '')) ?></span>
+                    <span><?= $this->escape($nodeLabel) ?></span>
                 </div>
                 <div
                     class="workspace-tree-order-controls"
                     role="group"
                     aria-label="<?= $this->escape(
-                        __('Položaj: ') . WorkspaceValue::string($node['title'] ?? ''),
+                        __('Položaj: ') . $nodeLabel,
                     ) ?>"
                 >
                     <?php foreach (
@@ -158,24 +165,28 @@ foreach ($nodes as $candidateNode) {
         <?php endforeach; ?>
     </div>
     <div class="workspace-tree-editor-footer">
-        <button
-            class="btn btn-outline-secondary btn-sm"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#workspace-node-editor-modal"
-            data-workspace-node-dialog-url="<?= $this->escape(
-                $nodeDialogPath . '?' . http_build_query([
-                    'workspace_id' => $workspaceId,
-                    'node_id' => 0,
-                    'return_node_id' => $returnNodeId,
-                ]),
-            ) ?>"
-        >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
-            <span><?= $this->escape(__('Dodaj stavku')) ?></span>
-        </button>
+        <?php if ($canCreateNode) : ?>
+            <button
+                class="btn btn-outline-secondary btn-sm"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#workspace-node-editor-modal"
+                data-workspace-node-dialog-url="<?= $this->escape(
+                    $nodeDialogPath . '?' . http_build_query([
+                        'workspace_id' => $workspaceId,
+                        'node_id' => 0,
+                        'return_node_id' => $returnNodeId,
+                    ]),
+                ) ?>"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                <span><?= $this->escape(__('Dodaj stavku')) ?></span>
+            </button>
+        <?php else : ?>
+            <span aria-hidden="true"></span>
+        <?php endif; ?>
         <?php if ($nodes !== []) : ?>
             <button class="btn btn-primary btn-sm" type="submit">
                 <?= $this->escape(__('Spremi raspored')) ?>

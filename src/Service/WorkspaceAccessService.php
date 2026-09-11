@@ -1231,11 +1231,12 @@ final class WorkspaceAccessService
     private function permissionsFromRow(array $row): array
     {
         $manage = (bool)($row['can_manage'] ?? false);
-        $publish = $manage || (bool)($row['can_publish'] ?? false);
-        $delete = $manage || (bool)($row['can_delete'] ?? false);
-        $edit = $delete || (bool)($row['can_edit'] ?? false);
-        $add = $manage || (bool)($row['can_add'] ?? false);
+        $publish = (bool)($row['can_publish'] ?? false);
+        $delete = (bool)($row['can_delete'] ?? false);
+        $edit = (bool)($row['can_edit'] ?? false);
+        $add = (bool)($row['can_add'] ?? false);
         $view = $add || $edit || $publish || (bool)($row['can_view'] ?? false);
+        $view = $view || $delete || $manage;
 
         return [
             'can_view' => $view,
