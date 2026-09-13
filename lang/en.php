@@ -873,4 +873,35 @@ return [
     'Sva ostala područja' => 'All other Workspaces',
     'Popis za odabir trenutačno nije moguće dohvatiti.' =>
         'The selection list is currently unavailable.',
+    'Kopiranje ili premještanje stranice' => 'Copy or move page',
+    'Morate imati pravo upravljanja i u ciljnom području.' =>
+        'You must also have manage permission in the target Workspace.',
+    'Odabrana nadređena stranica ne pripada ciljnom području.' =>
+        'The selected parent page does not belong to the target Workspace.',
+    'Stranicu s podređenim stavkama zasad možete kopirati, ali ne i premjestiti.' =>
+        'A page with child items can currently be copied, but not moved.',
+    'Stranica je premještena.' => 'The page was moved.',
+    'Stranica je kopirana.' => 'The page was copied.',
+    'Nemate pravo upravljanja izvornim i ciljnim područjem.' =>
+        'You do not have manage permission in both the source and target Workspaces.',
+    'Kopiraj ili premjesti stranicu' => 'Copy or move page',
+    'Backup ili uvoz jedne stranice' => 'Back up or import one page',
+    'Obriši stranicu i podgranu' => 'Delete page and subtree',
+    'Natrag na stranicu' => 'Back to page',
+    'Radnja' => 'Action',
+    'Kopiraj stranicu' => 'Copy page',
+    'Izvorna stranica ostaje nepromijenjena.' => 'The source page remains unchanged.',
+    'Premjesti stranicu' => 'Move page',
+    'Izvor se briše tek nakon uspješnog kopiranja.' =>
+        'The source is deleted only after a successful copy.',
+    'Prikazana su samo područja kojima smijete upravljati.' =>
+        'Only Workspaces you are allowed to manage are shown.',
+    'Nadređena stranica u ciljnom području' => 'Parent page in the target Workspace',
+    'Ako ništa ne odaberete, stranica se dodaje u korijen stabla.' =>
+        'If you select nothing, the page is added at the root of the tree.',
+    'Dodatne mogućnosti' => 'Additional options',
+    'Prenesi cijelu povijest verzija' => 'Transfer the complete version history',
+    'Prenesi izravna dopuštenja i ograničenja stranice' =>
+        'Transfer the page\'s direct permissions and restrictions',
+    'Nastavi s odabranom radnjom' => 'Continue with the selected action',
 ];

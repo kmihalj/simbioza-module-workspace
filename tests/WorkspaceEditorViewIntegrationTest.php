@@ -170,6 +170,26 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Backup, prijenos i brisanje stranice pripadaju javnom pregledu,
+     *     dok modal za uređivanje postavki stranice ne smije sadržavati brisanje.
+     * EN: Page backup, transfer, and deletion belong to the public view while
+     *     the page-settings modal must not contain deletion.
+     */
+    public function testPageManagementActionsStayOutsideTheEditorAndNodeDialog(): void
+    {
+        $controller = file_get_contents(dirname(__DIR__) . '/src/Controller/WorkspaceController.php');
+        $nodeDialog = file_get_contents(dirname(__DIR__) . '/views/workspace/node-dialog.php');
+
+        $this->assertIsString($controller);
+        $this->assertIsString($nodeDialog);
+        $this->assertStringContainsString("'workspace.page.transfer'", $controller);
+        $this->assertStringContainsString("'backup.settings'", $controller);
+        $this->assertStringContainsString("'workspace.node.delete'", $controller);
+        $this->assertStringNotContainsString('workspace.node.delete', $nodeDialog);
+        $this->assertStringNotContainsString('Obriši podgranu', $nodeDialog);
+    }
+
+    /**
      * HR: Akcije stabla moraju biti u zasebnom retku iznad punog naslova kako
      *     usko zaglavlje ne bi skraćivalo naziv područja.
      * EN: Tree actions must occupy a separate row above the complete title so

@@ -872,4 +872,35 @@ return [
     'Sva ostala područja' => 'Sva ostala područja',
     'Popis za odabir trenutačno nije moguće dohvatiti.' =>
         'Popis za odabir trenutačno nije moguće dohvatiti.',
+    'Kopiranje ili premještanje stranice' => 'Kopiranje ili premještanje stranice',
+    'Morate imati pravo upravljanja i u ciljnom području.' =>
+        'Morate imati pravo upravljanja i u ciljnom području.',
+    'Odabrana nadređena stranica ne pripada ciljnom području.' =>
+        'Odabrana nadređena stranica ne pripada ciljnom području.',
+    'Stranicu s podređenim stavkama zasad možete kopirati, ali ne i premjestiti.' =>
+        'Stranicu s podređenim stavkama zasad možete kopirati, ali ne i premjestiti.',
+    'Stranica je premještena.' => 'Stranica je premještena.',
+    'Stranica je kopirana.' => 'Stranica je kopirana.',
+    'Nemate pravo upravljanja izvornim i ciljnim područjem.' =>
+        'Nemate pravo upravljanja izvornim i ciljnim područjem.',
+    'Kopiraj ili premjesti stranicu' => 'Kopiraj ili premjesti stranicu',
+    'Backup ili uvoz jedne stranice' => 'Backup ili uvoz jedne stranice',
+    'Obriši stranicu i podgranu' => 'Obriši stranicu i podgranu',
+    'Natrag na stranicu' => 'Natrag na stranicu',
+    'Radnja' => 'Radnja',
+    'Kopiraj stranicu' => 'Kopiraj stranicu',
+    'Izvorna stranica ostaje nepromijenjena.' => 'Izvorna stranica ostaje nepromijenjena.',
+    'Premjesti stranicu' => 'Premjesti stranicu',
+    'Izvor se briše tek nakon uspješnog kopiranja.' =>
+        'Izvor se briše tek nakon uspješnog kopiranja.',
+    'Prikazana su samo područja kojima smijete upravljati.' =>
+        'Prikazana su samo područja kojima smijete upravljati.',
+    'Nadređena stranica u ciljnom području' => 'Nadređena stranica u ciljnom području',
+    'Ako ništa ne odaberete, stranica se dodaje u korijen stabla.' =>
+        'Ako ništa ne odaberete, stranica se dodaje u korijen stabla.',
+    'Dodatne mogućnosti' => 'Dodatne mogućnosti',
+    'Prenesi cijelu povijest verzija' => 'Prenesi cijelu povijest verzija',
+    'Prenesi izravna dopuštenja i ograničenja stranice' =>
+        'Prenesi izravna dopuštenja i ograničenja stranice',
+    'Nastavi s odabranom radnjom' => 'Nastavi s odabranom radnjom',
 ];

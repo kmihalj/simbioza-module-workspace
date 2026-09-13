@@ -9,12 +9,14 @@ use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiExtension;
 use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiService;
 use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceResourceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceScopedBackupProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspacePageBackupProvider;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspacePageTransferController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceShortsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
@@ -597,6 +599,18 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(WorkspaceRepository::class),
             );
 
+    // HR: Jedna stranica je zaseban prenosivi opseg koji uključuje Editorov
+    //     sadržaj, sve jezike, povijest i privitke.
+    // EN: A single page is a portable scope that includes Editor content,
+    //     every language, history, and attachments.
+    $services['heartphrame.backup.provider.page-transfer'] =
+        static fn(ContainerInterface $container): WorkspacePageBackupProvider =>
+            new WorkspacePageBackupProvider(
+                $container->get(Database::class),
+                $container->get(AuthBackupIdentityResolver::class),
+                $container->get(WorkspaceRepository::class),
+            );
+
     // HR: Workspace je vlasnik ACL pravila svojeg backup sučelja; generički
     // Backup modul zato ne mora poznavati ni jednu Workspace klasu.
     // EN: Workspace owns its backup-UI ACL rules, so the generic Backup module
@@ -615,6 +629,19 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupConfig::class),
                 $container->get(UrlGenerator::class),
                 $container->get(\HeartPhrame\Session\SessionInterface::class),
+            );
+
+    $services[WorkspacePageTransferController::class] =
+        static fn(ContainerInterface $container): WorkspacePageTransferController =>
+            new WorkspacePageTransferController(
+                $container->get(ResponseFactory::class),
+                $container->get(WorkspaceModuleViewRenderer::class),
+                $container->get(WorkspaceRepository::class),
+                $container->get(WorkspaceAccessService::class),
+                $container->get(WorkspaceEditorBridge::class),
+                $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager::class),
+                $container->get(UrlGenerator::class),
+                $container->get(AlertHandler::class),
             );
 }
 

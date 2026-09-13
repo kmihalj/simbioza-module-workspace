@@ -14,6 +14,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspacePageTransferController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
@@ -418,6 +419,14 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [
                     'POST', '/workspaces/backup/restore', WorkspaceBackupController::class . '@restore',
                     'workspace.backup.restore', $middleware,
+                ],
+                [
+                    'GET', '/workspaces/page/transfer', WorkspacePageTransferController::class . '@form',
+                    'workspace.page.transfer', $middleware,
+                ],
+                [
+                    'POST', '/workspaces/page/transfer', WorkspacePageTransferController::class . '@perform',
+                    'workspace.page.transfer.perform', $middleware,
                 ],
             ];
         }

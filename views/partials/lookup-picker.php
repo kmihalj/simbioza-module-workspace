@@ -26,6 +26,7 @@ declare(strict_types=1);
  * @var int|null $workspaceLookupExcludeNodeId
  * @var int|null $workspaceLookupFixedWorkspaceId
  * @var bool|null $workspaceLookupAllDisabled
+ * @var bool|null $workspaceLookupRequireCanManage
  */
 
 $workspaceLookupAudience = isset($workspaceLookupAudience) && is_string($workspaceLookupAudience)
@@ -45,6 +46,7 @@ $workspaceLookupRequireCanAdd = (bool)($workspaceLookupRequireCanAdd ?? false);
 $workspaceLookupExcludeNodeId = max(0, (int)($workspaceLookupExcludeNodeId ?? 0));
 $workspaceLookupFixedWorkspaceId = max(0, (int)($workspaceLookupFixedWorkspaceId ?? 0));
 $workspaceLookupAllDisabled = (bool)($workspaceLookupAllDisabled ?? false);
+$workspaceLookupRequireCanManage = (bool)($workspaceLookupRequireCanManage ?? false);
 $workspaceLookupPlaceholder = $workspaceLookupKind === 'workspace'
 ? __('Odaberite područje')
 : __('Odaberite stranicu');
@@ -63,6 +65,7 @@ $workspaceLookupPlaceholder = $workspaceLookupKind === 'workspace'
     data-workspace-lookup-include-shorts="<?= $workspaceLookupIncludeShorts ? '1' : '0' ?>"
     data-workspace-lookup-include-containers="<?= $workspaceLookupIncludeContainers ? '1' : '0' ?>"
     data-workspace-lookup-require-can-add="<?= $workspaceLookupRequireCanAdd ? '1' : '0' ?>"
+    data-workspace-lookup-require-can-manage="<?= $workspaceLookupRequireCanManage ? '1' : '0' ?>"
     data-workspace-lookup-exclude-node-id="<?= $workspaceLookupExcludeNodeId ?>"
     data-workspace-lookup-fixed-workspace-id="<?= $workspaceLookupFixedWorkspaceId ?>"
     data-workspace-lookup-all-global-only="<?= $workspaceLookupKind === 'page' && $workspaceLookupTargetKey !== ''

@@ -70,6 +70,8 @@ final readonly class WorkspaceLookupController
         && (string)$query['include_containers'] === '1';
         $requireCanAdd = is_scalar($query['require_can_add'] ?? null)
         && (string)$query['require_can_add'] === '1';
+        $requireCanManage = is_scalar($query['require_can_manage'] ?? null)
+        && (string)$query['require_can_manage'] === '1';
         $excludeNodeId = is_numeric($query['exclude_node_id'] ?? null) && (int)$query['exclude_node_id'] > 0
         ? (int)$query['exclude_node_id']
         : null;
@@ -87,7 +89,14 @@ final readonly class WorkspaceLookupController
                 $requireCanAdd,
                 $excludeNodeId,
             )
-            : $this->lookups->workspacePage($search, $page, $perPage, $audience, $workspaceId);
+            : $this->lookups->workspacePage(
+                $search,
+                $page,
+                $perPage,
+                $audience,
+                $workspaceId,
+                $requireCanManage,
+            );
 
             return $this->responses->json(['ok' => true, ...$result], 200, ['Cache-Control' => 'no-store']);
         } catch (Throwable) {

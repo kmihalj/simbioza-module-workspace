@@ -42,6 +42,9 @@
         "aaieduhr/heartphrame-module-email": "Sends optional e-mail copies through the Notification module.",
         "aaieduhr/heartphrame-module-theme": "Adds isolated per-Workspace themes and includes them in portable HTML exports."
     },
+    "conflict": {
+        "aaieduhr/heartphrame-module-backup": "<0.1.4"
+    },
     "require-dev": {
         "aaieduhr/heartphrame-module-api": "^0.1.0",
         "aaieduhr/heartphrame-module-backup": "^0.1.0",

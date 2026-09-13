@@ -1706,6 +1706,7 @@ final readonly class WorkspaceController
                 (bool)($editorView['isDraftPreview'] ?? false),
                 $treeVisible,
                 $canOpenCurrentNodeDialog,
+                (bool)($workspacePermissions['can_manage'] ?? false),
             );
             if (is_array($followUi)) {
                 $editorView['leadingActions'][] = [
@@ -1884,6 +1885,7 @@ final readonly class WorkspaceController
                 false,
                 $treeVisible,
                 $canOpenCurrentNodeDialog,
+                (bool)($workspacePermissions['can_manage'] ?? false),
             ),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
             'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
@@ -2516,6 +2518,7 @@ final readonly class WorkspaceController
         bool $isDraftPreview,
         bool $treeVisible,
         bool $canManagePage,
+        bool $canManageWorkspace,
     ): array {
         $actions = [[
             'type' => 'collapse',
@@ -2538,6 +2541,63 @@ final readonly class WorkspaceController
                     ]),
                 'icon' => 'page-access',
                 'style' => 'secondary',
+            ];
+        }
+
+        if (
+            is_array($node)
+            && $canManageWorkspace
+            && class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager::class)
+            && $this->urlGenerator->namedRouteExists('workspace.page.transfer')
+        ) {
+            $actions[] = [
+                'type' => 'link',
+                'label' => __('Kopiraj ili premjesti stranicu'),
+                'href' => $this->pathFor('workspace.page.transfer', '/workspaces/page/transfer')
+                    . '?' . http_build_query([
+                        'workspace_id' => $this->intValue($workspace['id'] ?? 0),
+                        'node_id' => $this->intValue($node['id'] ?? 0),
+                    ]),
+                'icon' => 'transfer',
+                'style' => 'secondary',
+            ];
+        }
+
+        if (
+            is_array($node)
+            && $this->access->isAdministrator()
+            && class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager::class)
+            && $this->urlGenerator->namedRouteExists('backup.settings')
+        ) {
+            $actions[] = [
+                'type' => 'link',
+                'label' => __('Backup ili uvoz jedne stranice'),
+                'href' => $this->pathFor('backup.settings', '/settings/backups')
+                    . '?' . http_build_query([
+                        'scope' => \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::PAGE,
+                        'page' => $this->intValue($node['id'] ?? 0),
+                        'page_label' => $this->stringValue($workspace['name'] ?? '')
+                            . ' / ' . $this->stringValue($node['title'] ?? ''),
+                    ]),
+                'icon' => 'backup',
+                'style' => 'secondary',
+            ];
+        }
+
+        if (is_array($node) && (bool)($permissions['can_delete'] ?? false)) {
+            $actions[] = [
+                'type' => 'form',
+                'label' => __('Obriši stranicu i podgranu'),
+                'path' => $this->pathFor('workspace.node.delete', '/workspaces/node/delete'),
+                'icon' => 'trash',
+                'style' => 'danger',
+                'confirm' => __('Obrisati stranicu i cijelu njezinu podgranu?'),
+                'fields' => [
+                    'workspace_id' => $this->intValue($workspace['id'] ?? 0),
+                    'node_id' => $this->intValue($node['id'] ?? 0),
+                    'return_context' => 'workspace',
+                    'return_node_id' => $this->intValue($node['id'] ?? 0),
+                ],
             ];
         }
 

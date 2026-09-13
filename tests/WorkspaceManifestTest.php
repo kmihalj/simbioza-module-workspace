@@ -10,6 +10,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceHomepageController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceLookupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceMenuController;
+use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspacePageTransferController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceSettingsController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceThemeController;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -52,7 +53,7 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(50, $routesByName);
+        $this->assertCount(52, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
@@ -177,6 +178,18 @@ final class WorkspaceManifestTest extends TestCase
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,
             $routesByName['workspace.page.create'][4],
+        );
+        $this->assertSame(
+            WorkspacePageTransferController::class . '@form',
+            $routesByName['workspace.page.transfer'][2],
+        );
+        $this->assertSame(
+            WorkspacePageTransferController::class . '@perform',
+            $routesByName['workspace.page.transfer.perform'][2],
+        );
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.page.transfer.perform'][4],
         );
         $this->assertSame(
             WorkspaceController::class . '@scripts',

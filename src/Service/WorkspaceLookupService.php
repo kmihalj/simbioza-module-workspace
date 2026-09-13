@@ -40,10 +40,16 @@ final readonly class WorkspaceLookupService
         int $perPage = self::PAGE_SIZE,
         string $audience = 'current',
         ?int $workspaceId = null,
+        bool $requireCanManage = false,
     ): array {
         [$page, $perPage] = $this->pagination($page, $perPage);
+        $user = $this->audienceUser($audience);
         $workspaces = $this->presentations->many(
-            $this->access->visibleWorkspaces($this->audienceUser($audience)),
+            array_values(array_filter(
+                $this->access->visibleWorkspaces($user),
+                fn(array $workspace): bool => !$requireCanManage
+                    || (bool)($this->access->workspacePermissions($workspace, $user)['can_manage'] ?? false),
+            )),
         );
         $needle = mb_strtolower(mb_substr(trim($search), 0, 190));
         $items = [];

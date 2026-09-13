@@ -561,29 +561,6 @@ $hasPermission = static function (
         </section>
     <?php endif; ?>
 
-    <?php if ((bool)($permissions['can_delete'] ?? false)) : ?>
-        <hr class="my-4">
-        <form
-            class="d-flex align-items-center justify-content-between gap-3"
-            method="post"
-            action="<?= $this->escape($nodeDeletePath) ?>"
-            onsubmit="return confirm('<?= $this->escape(
-                __('Obrisati stranicu i cijelu njezinu podgranu?'),
-            ) ?>')"
-        >
-            <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
-            <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
-            <input type="hidden" name="node_id" value="<?= $nodeId ?>">
-            <input type="hidden" name="return_context" value="workspace">
-            <input type="hidden" name="return_node_id" value="<?= $returnNodeId ?>">
-            <p class="small text-body-secondary mb-0">
-                <?= $this->escape(__('Brisanje obuhvaća i sve podređene stavke.')) ?>
-            </p>
-            <button class="btn btn-danger" type="submit">
-                <?= $this->escape(__('Obriši podgranu')) ?>
-            </button>
-        </form>
-    <?php endif; ?>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

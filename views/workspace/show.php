@@ -126,6 +126,8 @@ $workflowIcon = static function (string $action): string {
         'page-access' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
             . '<path d="M14 2v6h6"/><circle cx="10" cy="15" r="2"/>'
             . '<path d="M12 15h6M16 15v2M18 15v2"/>',
+        'transfer' => '<path d="M7 7h11l-3-3m3 3-3 3"/><path d="M17 17H6l3 3m-3-3 3-3"/>',
+        'backup' => '<path d="M4 4h13l3 3v13H4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/>',
         default => '<circle cx="12" cy="12" r="9"/>',
     };
 
@@ -587,7 +589,9 @@ $workflowIcon = static function (string $action): string {
                             </button>
                         <?php elseif ($actionType === 'link') : ?>
                             <a
-                                class="btn btn-outline-warning btn-sm workspace-tree-card-action"
+                                class="btn btn-outline-<?= $this->escape(
+                                    WorkspaceValue::string($action['style'] ?? 'warning'),
+                                ) ?> btn-sm workspace-tree-card-action"
                                 href="<?= $this->escape(WorkspaceValue::string($action['href'] ?? '')) ?>"
                                 title="<?= $this->escape(WorkspaceValue::string($action['label'] ?? '')) ?>"
                                 aria-label="<?= $this->escape(WorkspaceValue::string($action['label'] ?? '')) ?>"
@@ -611,9 +615,17 @@ $workflowIcon = static function (string $action): string {
                                 <?= $workflowIcon(WorkspaceValue::string($action['icon'] ?? 'page-access')) ?>
                             </button>
                         <?php elseif ($actionType === 'form') : ?>
-                            <form method="post" action="<?= $this->escape(
-                                WorkspaceValue::string($action['path'] ?? ''),
-                            ) ?>">
+                            <form
+                                method="post"
+                                action="<?= $this->escape(
+                                    WorkspaceValue::string($action['path'] ?? ''),
+                                ) ?>"
+                                <?php if (WorkspaceValue::string($action['confirm'] ?? '') !== '') : ?>
+                                    onsubmit="return confirm('<?= $this->escape(
+                                        WorkspaceValue::string($action['confirm'] ?? ''),
+                                    ) ?>')"
+                                <?php endif; ?>
+                            >
                                 <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                             <?php
                             $actionFields = WorkspaceValue::stringKeyArray($action['fields'] ?? null);

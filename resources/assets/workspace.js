@@ -2819,6 +2819,7 @@
             const includeShorts = picker.dataset.workspaceLookupIncludeShorts === '1';
             const includeContainers = picker.dataset.workspaceLookupIncludeContainers === '1';
             const requireCanAdd = picker.dataset.workspaceLookupRequireCanAdd === '1';
+            const requireCanManage = picker.dataset.workspaceLookupRequireCanManage === '1';
             const excludeNodeId = Number(picker.dataset.workspaceLookupExcludeNodeId || 0) || 0;
             const fixedWorkspaceId = Number(picker.dataset.workspaceLookupFixedWorkspaceId || 0) || 0;
             const allGlobalOnly = picker.dataset.workspaceLookupAllGlobalOnly === '1';
@@ -2879,6 +2880,9 @@
                 }
                 if (requireCanAdd) {
                     url.searchParams.set('require_can_add', '1');
+                }
+                if (requireCanManage) {
+                    url.searchParams.set('require_can_manage', '1');
                 }
                 if (excludeNodeId > 0) {
                     url.searchParams.set('exclude_node_id', String(excludeNodeId));
