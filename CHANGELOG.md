@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.30 - 2026-09-13
+
+- Keeps quality checks consistent across current Rector releases without rewriting existing path expressions.
+
 ## 0.1.29 - 2026-09-13
 
 - Adds page copying and moving between Workspaces with source/target management ACL checks.

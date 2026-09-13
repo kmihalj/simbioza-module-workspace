@@ -5,6 +5,11 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
+    // HR: Zadržava postojeći dirname stil putanja neovisno o verziji Rectora u CI-ju.
+    // EN: Keeps the existing dirname path style independent of the Rector version used in CI.
+    ->withSkip([
+        \Rector\CodeQuality\Rector\Concat\DirnameDirConcatStringToDirectStringPathRector::class,
+    ])
     ->withPaths([
         __DIR__ . '/src',
         __DIR__ . '/tests',
