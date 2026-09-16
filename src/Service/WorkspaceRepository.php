@@ -1068,13 +1068,23 @@ final readonly class WorkspaceRepository
 
         while ($currentId > 0 && !isset($visited[$currentId]) && count($chain) < 256) {
             $visited[$currentId] = true;
-            $node = $this->row(
-                $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
-                    ->where('workspace_id', '=', $workspaceId)
-                    ->where('id', '=', $currentId)
-                    ->where('is_enabled', '=', true)
-                    ->first(),
-            );
+            $node = $this->requestCache instanceof WorkspaceRepositoryRequestCache
+            ? ($this->requestCache->nodesById[$currentId] ?? null)
+            : null;
+            if (
+                !is_array($node)
+                || $this->intValue($node['workspace_id'] ?? 0) !== $workspaceId
+                || !(bool)($node['is_enabled'] ?? false)
+            ) {
+                $node = $this->rememberNode($this->row(
+                    $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+                        ->where('workspace_id', '=', $workspaceId)
+                        ->where('id', '=', $currentId)
+                        ->where('is_enabled', '=', true)
+                        ->first(),
+                ));
+            }
+
             if (!is_array($node)) {
                 break;
             }
@@ -3531,10 +3541,10 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira zasebna polja ovlasti. Svaka radnja uključuje samo pregled,
-     *     jer se ne može izvoditi nad potpuno nevidljivim područjem ili stranicom.
-     * EN: Normalizes independent permission fields. Every action implies viewing
-     *     only, because it cannot operate on a completely hidden Workspace or page.
+     * HR: Normalizira polja ovlasti. Upravljanje uključuje sve radnje, a svaka
+     *     uža radnja uključuje pregled jer se ne može izvoditi nad nevidljivim sadržajem.
+     * EN: Normalizes permission fields. Management includes every action, while
+     *     each narrower action implies viewing because hidden content cannot be operated on.
      *
      * @param array<string, mixed> $permissions
      * @return array<string, bool>
@@ -3542,10 +3552,10 @@ final readonly class WorkspaceRepository
     private function permissionValues(array $permissions): array
     {
         $manage = $this->boolValue($permissions['can_manage'] ?? false);
-        $publish = $this->boolValue($permissions['can_publish'] ?? false);
-        $delete = $this->boolValue($permissions['can_delete'] ?? false);
-        $edit = $this->boolValue($permissions['can_edit'] ?? false);
-        $add = $this->boolValue($permissions['can_add'] ?? false);
+        $publish = $manage || $this->boolValue($permissions['can_publish'] ?? false);
+        $delete = $manage || $this->boolValue($permissions['can_delete'] ?? false);
+        $edit = $manage || $this->boolValue($permissions['can_edit'] ?? false);
+        $add = $manage || $this->boolValue($permissions['can_add'] ?? false);
         $view = $add
         || $edit
         || $publish

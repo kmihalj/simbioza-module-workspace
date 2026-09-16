@@ -73,10 +73,11 @@ Page restrictions only narrow the permissions granted at Workspace level. They
 never grant access to a user or group that is not already a Workspace member.
 Application administrators retain all permissions. The creator receives all six
 permissions through a regular user ACL row, which can later be changed like any
-other grant. Permissions are independent: every action automatically includes
-view, but management alone does not grant content editing, publishing, or
-deletion. In an archived Workspace, add, edit, and delete remain disabled until
-a manager reactivates it.
+other grant. Management is the umbrella permission and includes viewing, adding,
+editing, publishing, and deleting. Other permissions remain independent. Add
+permission also lets an author continue editing pages they created, but does not
+grant edit access to other users' pages or permission to publish. In an archived
+Workspace, add, edit, and delete remain disabled until a manager reactivates it.
 
 A manager opens restrictions through **Edit tree**; a publisher opens them from
 the actions of a visible page. Green checkboxes show permissions inherited from

@@ -11,9 +11,7 @@ use function array_chunk;
 use function array_values;
 use function date;
 use function is_array;
-use function is_int;
 use function strtolower;
-use function strtotime;
 use function time;
 use function trim;
 
@@ -34,13 +32,16 @@ final class WorkspaceBacklinkIndexer
         private readonly WorkspaceWorkflowService $workflow,
         private readonly WorkspaceEditorBridge $editor,
         private readonly WorkspaceLinkExtractor $extractor,
-        private readonly WorkspaceConfig $config,
     ) {
     }
 
     /**
-     * HR: Lijeno obnavlja zastarjeli indeks; oznaka u bazi koordinira PHP procese.
-     * EN: Lazily rebuilds a stale index; the database marker coordinates PHP processes.
+     * HR: Jednokratno inicijalizira indeks ako još nije izgrađen. Redovni GET
+     *     zahtjev nikada ne pokreće skupu periodičnu obnovu cijelog indeksa;
+     *     kasnije promjene održavaju event listeneri.
+     * EN: Initializes the index once when it has not been built yet. A regular
+     *     GET request never starts an expensive periodic full-index rebuild;
+     *     event listeners maintain subsequent changes.
      */
     public function refreshIfDue(): void
     {
@@ -48,19 +49,15 @@ final class WorkspaceBacklinkIndexer
             return;
         }
 
-        $interval = $this->config->backlinkRefreshSeconds();
-        if (time() - $this->lastRefreshTimestamp < $interval) {
+        if ($this->lastRefreshTimestamp > 0) {
             return;
         }
 
         $state = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_BACKLINK_INDEX_STATE)
             ->where('id', '=', 1)
             ->first();
-        $rebuiltAt = is_array($state)
-        ? strtotime(WorkspaceValue::string($state['rebuilt_at'] ?? ''))
-        : false;
-        if (is_int($rebuiltAt) && $rebuiltAt > 0 && time() - $rebuiltAt < $interval) {
-            $this->lastRefreshTimestamp = $rebuiltAt;
+        if (is_array($state) && WorkspaceValue::string($state['rebuilt_at'] ?? '') !== '') {
+            $this->lastRefreshTimestamp = time();
 
             return;
         }

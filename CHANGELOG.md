@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.31 - 2026-09-16
+
+- Makes Manage include edit, publish, add, and delete actions, while Add lets a page
+  creator continue editing only pages they created under that grant.
+- Lets publishers open the editor's attachment metadata and history view even when
+  they do not otherwise have page-edit permission.
+- Avoids recurring full backlink rebuilds during ordinary page views and reuses the
+  request node cache while resolving ancestor chains, reducing database queries.
+- Clarifies permission labels and documentation in Croatian and English.
+
 ## 0.1.30 - 2026-09-13
 
 - Keeps quality checks consistent across current Rector releases without rewriting existing path expressions.

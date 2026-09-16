@@ -170,20 +170,20 @@ return [
     'Početna Workspace migracija još nije pokrenuta.' =>
         'The initial Workspace migration has not been run.',
     'Početna stranica područja' => 'Workspace homepage',
-    'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.' =>
-        'A user and their group grants are combined. Each permission is independent; enabling an action also enables view.',
+    'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava, a svaka uža radnja automatski uključuje pregled.' =>
+        'A user and their group grants are combined. Manage includes every permission, while each narrower action also enables view.',
     'Pregled omogućuje čitanje vidljivih stranica područja.' =>
         'View allows reading visible Workspace pages.',
-    'Dodavanje omogućuje izradu novih stranica.' =>
-        'Add allows creating new pages.',
+    'Dodavanje omogućuje izradu novih stranica i uređivanje vlastitih stranica.' =>
+        'Add allows creating new pages and editing pages you created.',
     'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.' =>
         'Edit allows changing a page, saving its draft repeatedly, and submitting it for review separately.',
     'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.' =>
         'Publish allows publishing pages submitted for review, receiving their notifications, and editing direct grants and restrictions on a visible page.',
     'Brisanje omogućuje brisanje stranica i njihovih podgrana.' =>
         'Delete allows deleting pages and their subtrees.',
-    'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.' =>
-        'Manage allows editing the tree, Workspace settings and Workspace permissions, plus direct grants and restrictions on a visible page.',
+    'Upravljanje uključuje sva prava te omogućuje uređivanje stabla, postavki i ovlasti područja.' =>
+        'Manage includes every permission and allows editing the tree, Workspace settings, and permissions.',
     'Nedostupna stranica' => 'Unavailable page',
     'Ovlasti stranice mogu se zadati samo korisnicima.' =>
         'Page permissions may be assigned only to users.',
@@ -322,6 +322,7 @@ return [
     'Pošalji na pregled' => 'Submit for review',
     'Poslano na pregled' => 'Submitted for review',
     'Pregledaj nacrt' => 'Preview draft',
+    'Privitci i povijest' => 'Attachments and history',
     'Radna verzija' => 'Working version',
     'Status stranice je promijenjen: ' => 'Page status changed: ',
     'Stranica čeka pregled' => 'Page awaiting review',

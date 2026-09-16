@@ -170,20 +170,20 @@ return [
     'Početna Workspace migracija još nije pokrenuta.' =>
         'Početna Workspace migracija još nije pokrenuta.',
     'Početna stranica područja' => 'Početna stranica područja',
-    'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.' =>
-        'Prava korisnika i njegovih grupa se zbrajaju. Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.',
+    'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava, a svaka uža radnja automatski uključuje pregled.' =>
+        'Prava korisnika i njegovih grupa se zbrajaju. Upravljanje uključuje sva prava, a svaka uža radnja automatski uključuje pregled.',
     'Pregled omogućuje čitanje vidljivih stranica područja.' =>
         'Pregled omogućuje čitanje vidljivih stranica područja.',
-    'Dodavanje omogućuje izradu novih stranica.' =>
-        'Dodavanje omogućuje izradu novih stranica.',
+    'Dodavanje omogućuje izradu novih stranica i uređivanje vlastitih stranica.' =>
+        'Dodavanje omogućuje izradu novih stranica i uređivanje vlastitih stranica.',
     'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.' =>
         'Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.',
     'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.' =>
         'Objavljivanje omogućuje objavu stranica poslanih na pregled, obavijesti o njima te uređivanje izravnih dopuštenja i ograničenja vidljive stranice.',
     'Brisanje omogućuje brisanje stranica i njihovih podgrana.' =>
         'Brisanje omogućuje brisanje stranica i njihovih podgrana.',
-    'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.' =>
-        'Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.',
+    'Upravljanje uključuje sva prava te omogućuje uređivanje stabla, postavki i ovlasti područja.' =>
+        'Upravljanje uključuje sva prava te omogućuje uređivanje stabla, postavki i ovlasti područja.',
     'Nedostupna stranica' => 'Nedostupna stranica',
     'Ovlasti stranice mogu se zadati samo korisnicima.' =>
         'Ovlasti stranice mogu se zadati samo korisnicima.',
@@ -322,6 +322,7 @@ return [
     'Pošalji na pregled' => 'Pošalji na pregled',
     'Poslano na pregled' => 'Poslano na pregled',
     'Pregledaj nacrt' => 'Pregledaj nacrt',
+    'Privitci i povijest' => 'Privitci i povijest',
     'Radna verzija' => 'Radna verzija',
     'Status stranice je promijenjen: ' => 'Status stranice je promijenjen: ',
     'Stranica čeka pregled' => 'Stranica čeka pregled',

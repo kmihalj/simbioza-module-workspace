@@ -2615,6 +2615,19 @@ final readonly class WorkspaceController
             $this->stringValue($workspace['slug'] ?? ''),
             $this->stringValue($node['slug'] ?? ''),
         );
+        if (
+            (bool)($permissions['can_publish'] ?? false)
+            && !(bool)($permissions['can_edit'] ?? false)
+        ) {
+            $actions[] = [
+                'type' => 'link',
+                'label' => __('Privitci i povijest'),
+                'href' => $this->editor->editorPath($documentKey, $language),
+                'icon' => 'attachments',
+                'style' => 'secondary',
+            ];
+        }
+
         if ($hasDraft && (bool)($permissions['can_edit'] ?? false)) {
             $actions[] = [
                 'type' => 'link',

@@ -175,7 +175,6 @@ $services = [
             $container->get(WorkspaceWorkflowService::class),
             $container->get(WorkspaceEditorBridge::class),
             $container->get(WorkspaceLinkExtractor::class),
-            $container->get(WorkspaceConfig::class),
         ),
 
     WorkspaceBacklinkService::class => static fn(ContainerInterface $container): WorkspaceBacklinkService =>

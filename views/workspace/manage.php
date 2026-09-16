@@ -395,14 +395,16 @@ foreach ($workspaceAclSubjects as $subject) {
                     <?= $this->escape(
                         __(
                             'Prava korisnika i njegovih grupa se zbrajaju. '
-                            . 'Svako pravo je zasebno; uključivanje radnje automatski uključuje pregled.',
+                            . 'Upravljanje uključuje sva prava, a svaka uža radnja automatski uključuje pregled.',
                         ),
                     ) ?>
                 </p>
                 <div class="alert alert-info py-2 mb-3" role="note">
                     <ul class="small mb-0 ps-3">
                         <li><?= $this->escape(__('Pregled omogućuje čitanje vidljivih stranica područja.')) ?></li>
-                        <li><?= $this->escape(__('Dodavanje omogućuje izradu novih stranica.')) ?></li>
+                        <li><?= $this->escape(
+                            __('Dodavanje omogućuje izradu novih stranica i uređivanje vlastitih stranica.'),
+                        ) ?></li>
                         <li><?= $this->escape(
                             __('Uređivanje omogućuje izmjenu stranice, višestruko spremanje nacrta i zasebno slanje na pregled.'),
                         ) ?></li>
@@ -411,7 +413,7 @@ foreach ($workspaceAclSubjects as $subject) {
                         ) ?></li>
                         <li><?= $this->escape(__('Brisanje omogućuje brisanje stranica i njihovih podgrana.')) ?></li>
                         <li><?= $this->escape(
-                            __('Upravljanje omogućuje uređivanje stabla i postavki područja, ovlasti područja te izravnih dopuštenja i ograničenja vidljive stranice.'),
+                            __('Upravljanje uključuje sva prava te omogućuje uređivanje stabla, postavki i ovlasti područja.'),
                         ) ?></li>
                     </ul>
                 </div>

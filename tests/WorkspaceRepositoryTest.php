@@ -153,15 +153,15 @@ final class WorkspaceRepositoryTest extends TestCase
         $this->assertSame(1, $nodeSelects);
         $this->assertCount(1, $repository->ancestorNodes(1, 1));
         $this->assertCount(1, $repository->ancestorNodes(1, 1));
-        $this->assertSame(1, $ancestorSelects);
+        $this->assertSame(0, $ancestorSelects);
 
         $repository->updateNodeContentsVisibility(1, 'shown', 1);
         $updated = $repository->findNodeById(1);
         $this->assertIsArray($updated);
         $this->assertSame('shown', $updated['contents_visibility']);
         $this->assertCount(1, $repository->ancestorNodes(1, 1));
-        $this->assertSame(4, $nodeSelects);
-        $this->assertSame(2, $ancestorSelects);
+        $this->assertSame(2, $nodeSelects);
+        $this->assertSame(0, $ancestorSelects);
     }
 
     /**

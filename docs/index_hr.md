@@ -80,11 +80,13 @@ publika kojima pripada i svih njegovih grupa se zbrajaju:
 - `can_delete`
 - `can_manage`
 
-Svako je pravo zasebno. Dodavanje, uređivanje, objavljivanje, brisanje ili
-upravljanje automatski uključuje pregled, ali nijedna od tih radnji ne uključuje
-drugu radnju. Administratori aplikacije dobivaju potpuni skup prava. Kreator
-novog Područja dobiva običan korisnički ACL red sa svih šest prava, bez posebnog
-statusa vlasnika.
+`Upravljanje` je nadređena ovlast i uključuje pregled, dodavanje, uređivanje,
+objavljivanje i brisanje. Ostala prava međusobno su neovisna i svako automatski
+uključuje pregled. Korisnik s pravom `Dodavanje` može stvoriti novu stranicu te
+nastaviti uređivati stranice koje je sam stvorio, ali ne može uređivati tuđe
+stranice niti ih objaviti bez zasebne ovlasti. Administratori aplikacije dobivaju
+potpuni skup prava. Kreator novog Područja dobiva običan korisnički ACL red sa
+svih šest prava, bez posebnog statusa vlasnika.
 
 Ekran ne učitava sve korisnike i grupe. Prikazuje samo već dodijeljene ACL
 retke, a novi se subjekt dodaje pretraživačem. Pretraga se izvršava na serveru,

@@ -177,14 +177,12 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Operativna prava područja međusobno su neovisna; svako od njih
-     *     uključuje samo nužni pregled, a upravljanje više ne daje uređivanje,
-     *     objavljivanje, brisanje ni dodavanje.
-     * EN: Workspace operation permissions are independent; each implies only
-     *     the required view, while manage no longer grants edit, publish,
-     *     delete, or add.
+     * HR: Upravljanje je nadređena ovlast koja uključuje sve radnje, dok ostala
+     *     operativna prava ostaju međusobno neovisna.
+     * EN: Manage is the umbrella permission that includes every action, while
+     *     the other operation permissions remain independent.
      */
-    public function testWorkspaceOperationPermissionsRemainIndependent(): void
+    public function testWorkspaceManagePermissionIncludesEveryOperation(): void
     {
         $workspace = $this->repository->saveWorkspace([
             'name' => 'Neovisna prava',
@@ -202,10 +200,10 @@ final class WorkspaceAccessServiceTest extends TestCase
         $manager = $this->access->workspacePermissions($workspace);
         $this->assertTrue($manager['can_view']);
         $this->assertTrue($manager['can_manage']);
-        $this->assertFalse($manager['can_add']);
-        $this->assertFalse($manager['can_edit']);
-        $this->assertFalse($manager['can_publish']);
-        $this->assertFalse($manager['can_delete']);
+        $this->assertTrue($manager['can_add']);
+        $this->assertTrue($manager['can_edit']);
+        $this->assertTrue($manager['can_publish']);
+        $this->assertTrue($manager['can_delete']);
 
         $this->authn->login(['id' => 3, 'is_admin' => false]);
         $deleter = $this->access->workspacePermissions($workspace);
@@ -213,6 +211,50 @@ final class WorkspaceAccessServiceTest extends TestCase
         $this->assertTrue($deleter['can_delete']);
         $this->assertFalse($deleter['can_edit']);
         $this->assertFalse($deleter['can_manage']);
+    }
+
+    /**
+     * HR: Pravo dodavanja autoru daje uređivanje samo stranice koju je sam
+     *     stvorio; tuđe stranice i objavljivanje ostaju nedostupni.
+     * EN: Add permission grants the author edit access only to the page they
+     *     created; other users' pages and publishing remain unavailable.
+     */
+    public function testAddPermissionAllowsEditingOnlyOwnCreatedPage(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Autorske stranice',
+            'slug' => 'autorske-stranice',
+            'visibility' => 'restricted',
+        ], 1);
+        $workspaceId = (int)$workspace['id'];
+        $this->repository->replaceWorkspaceAcl($workspaceId, [
+            'user' => [
+                2 => ['can_add' => true],
+            ],
+        ]);
+        $ownPage = $this->repository->saveNode($workspaceId, [
+            'title' => 'Moja stranica',
+            'slug' => 'moja-stranica',
+            'node_type' => 'document',
+            'document_key' => 'moja-stranica',
+        ], 2);
+        $otherPage = $this->repository->saveNode($workspaceId, [
+            'title' => 'Tuđa stranica',
+            'slug' => 'tuda-stranica',
+            'node_type' => 'document',
+            'document_key' => 'tuda-stranica',
+        ], 1);
+
+        $this->authn->login(['id' => 2, 'is_admin' => false]);
+        $ownPermissions = $this->access->nodePermissions($workspace, $ownPage);
+        $otherPermissions = $this->access->nodePermissions($workspace, $otherPage);
+
+        $this->assertTrue($ownPermissions['can_add']);
+        $this->assertTrue($ownPermissions['can_edit']);
+        $this->assertFalse($ownPermissions['can_publish']);
+        $this->assertTrue($otherPermissions['can_add']);
+        $this->assertFalse($otherPermissions['can_edit']);
+        $this->assertFalse($otherPermissions['can_publish']);
     }
 
     /**

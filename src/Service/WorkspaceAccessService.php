@@ -284,6 +284,7 @@ final class WorkspaceAccessService
         $base = $this->workspacePermissions($workspace, $user);
 
         $nodeIds = [];
+        $nodesById = [];
         $parentIds = [];
         foreach ($nodes as $node) {
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
@@ -292,6 +293,7 @@ final class WorkspaceAccessService
             }
 
             $nodeIds[] = $nodeId;
+            $nodesById[$nodeId] = $node;
             $parentIds[$nodeId] = WorkspaceValue::int($node['parent_id'] ?? 0);
         }
 
@@ -333,9 +335,13 @@ final class WorkspaceAccessService
             );
             $permissions[$nodeId] = $this->applyArchivedReadOnly(
                 $workspace,
-                $this->unionPermissions(
-                    $inherited,
-                    $directByNode[$nodeId] ?? $this->emptyPermissions(),
+                $this->applyCreatorEditPermission(
+                    $this->unionPermissions(
+                        $inherited,
+                        $directByNode[$nodeId] ?? $this->emptyPermissions(),
+                    ),
+                    $nodesById[$nodeId] ?? [],
+                    $userId,
                 ),
             );
         }
@@ -419,9 +425,13 @@ final class WorkspaceAccessService
                 );
                 $permissions = $this->applyArchivedReadOnly(
                     $workspace,
-                    $this->unionPermissions(
-                        $permissions,
-                        $directByUser[$userId] ?? $this->emptyPermissions(),
+                    $this->applyCreatorEditPermission(
+                        $this->unionPermissions(
+                            $permissions,
+                            $directByUser[$userId] ?? $this->emptyPermissions(),
+                        ),
+                        $node,
+                        $userId,
                     ),
                 );
             }
@@ -1231,10 +1241,10 @@ final class WorkspaceAccessService
     private function permissionsFromRow(array $row): array
     {
         $manage = (bool)($row['can_manage'] ?? false);
-        $publish = (bool)($row['can_publish'] ?? false);
-        $delete = (bool)($row['can_delete'] ?? false);
-        $edit = (bool)($row['can_edit'] ?? false);
-        $add = (bool)($row['can_add'] ?? false);
+        $publish = $manage || (bool)($row['can_publish'] ?? false);
+        $delete = $manage || (bool)($row['can_delete'] ?? false);
+        $edit = $manage || (bool)($row['can_edit'] ?? false);
+        $add = $manage || (bool)($row['can_add'] ?? false);
         $view = $add || $edit || $publish || (bool)($row['can_view'] ?? false);
         $view = $view || $delete || $manage;
 
@@ -1285,6 +1295,30 @@ final class WorkspaceAccessService
         }
 
         return $left;
+    }
+
+    /**
+     * HR: Autor nove stranice s važećim pravom dodavanja smije nastaviti
+     *     uređivati upravo tu stranicu, bez dobivanja prava nad tuđim stranicama.
+     * EN: The author of a new page with an effective add grant may continue
+     *     editing that page without receiving edit access to other users' pages.
+     *
+     * @param array<string, bool> $permissions
+     * @param array<string, mixed> $node
+     * @return array<string, bool>
+     */
+    private function applyCreatorEditPermission(array $permissions, array $node, int $userId): array
+    {
+        if (
+            $userId > 0
+            && $permissions['can_add']
+            && WorkspaceValue::int($node['created_by_user_id'] ?? 0) === $userId
+        ) {
+            $permissions['can_view'] = true;
+            $permissions['can_edit'] = true;
+        }
+
+        return $permissions;
     }
 
     /**
