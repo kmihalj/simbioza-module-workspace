@@ -1903,7 +1903,7 @@ final readonly class WorkspaceRepository
         );
         $title = $titleTranslations[$primaryLanguage] ?? '';
         if ($title === '') {
-            throw new RuntimeException(__('Naslov čvora je obavezan.'));
+            throw new RuntimeException(__('Naslov stavke je obavezan.'));
         }
 
         $slugInput = $this->stringValue($data['slug'] ?? '');

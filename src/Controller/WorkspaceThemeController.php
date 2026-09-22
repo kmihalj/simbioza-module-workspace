@@ -188,12 +188,12 @@ final readonly class WorkspaceThemeController
     {
         $workspaceRow = $this->repository->findWorkspaceBySlug($workspace);
         if (!is_array($workspaceRow) || !$this->access->workspacePermissions($workspaceRow)['can_view']) {
-            return $this->responseFactory->text(__('Not Found'), 404);
+            return $this->responseFactory->text(__('Nije pronađeno'), 404);
         }
 
         $path = $this->assets->assetPath(WorkspaceValue::int($workspaceRow['id'] ?? 0), $file);
         if (!is_string($path)) {
-            return $this->responseFactory->text(__('Not Found'), 404);
+            return $this->responseFactory->text(__('Nije pronađeno'), 404);
         }
 
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($path);

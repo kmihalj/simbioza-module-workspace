@@ -242,7 +242,7 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         <?php endif; ?>
     </div>
     <div class="col-12 col-md-6" data-workspace-node-types="internal_link">
-        <label class="form-label"><?= $this->escape(__('Interna named ruta')) ?></label>
+        <label class="form-label"><?= $this->escape(__('Interna imenovana ruta')) ?></label>
         <input
             class="form-control font-monospace"
             name="route_name"

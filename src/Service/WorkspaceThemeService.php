@@ -203,7 +203,7 @@ final readonly class WorkspaceThemeService
             $themeData['label'] = $this->privateLabels(
                 WorkspaceValue::stringMap($themeData['label'] ?? null),
                 WorkspaceValue::stringMap($source['label'] ?? null),
-                is_scalar($workspace['name'] ?? null) ? (string)$workspace['name'] : 'Workspace',
+                is_scalar($workspace['name'] ?? null) ? (string)$workspace['name'] : 'Područje',
             );
         }
 
@@ -257,7 +257,7 @@ final readonly class WorkspaceThemeService
     {
         $state = $this->state($workspace);
         if ($state['selection_type'] !== WorkspaceThemeRepository::SELECTION_CUSTOM || !is_array($state['theme'])) {
-            throw new InvalidArgumentException('System theme files are read only in workspace settings.');
+            throw new InvalidArgumentException('Datoteke sistemske teme u postavkama područja samo su za čitanje.');
         }
 
         $theme = WorkspaceValue::stringKeyArray($state['theme']);
@@ -302,7 +302,7 @@ final readonly class WorkspaceThemeService
         : $this->systemAssets(WorkspaceValue::string($selected['id'] ?? ''));
 
         return [
-            'title' => 'Workspace theme',
+            'title' => 'Tema područja',
             'themes' => $themes,
             'settings' => [
                 'enabled' => true,
@@ -360,7 +360,7 @@ final readonly class WorkspaceThemeService
         $renderer = $this->requireService(self::THEME_VIEW_RENDERER);
         $response = $this->invoke($renderer, 'render', ['settings/index', $data]);
         if (!($response instanceof ResponseInterface)) {
-            throw new RuntimeException('Theme editor did not return an HTTP response.');
+            throw new RuntimeException('Uređivač teme nije vratio valjan HTTP odgovor.');
         }
 
         return $response;
@@ -386,7 +386,7 @@ final readonly class WorkspaceThemeService
         $theme['label'] = $this->privateLabels(
             $labels,
             $labels,
-            is_scalar($workspace['name'] ?? null) ? (string)$workspace['name'] : 'Workspace',
+            is_scalar($workspace['name'] ?? null) ? (string)$workspace['name'] : 'Područje',
         );
         $theme['id'] = 'workspace-' . $this->workspaceId($workspace);
         $theme['system'] = false;
@@ -572,7 +572,7 @@ final readonly class WorkspaceThemeService
             }
         }
 
-        throw new InvalidArgumentException('Selected system theme does not exist.');
+        throw new InvalidArgumentException('Odabrana sistemska tema ne postoji.');
     }
 
     /**
@@ -585,7 +585,7 @@ final readonly class WorkspaceThemeService
     {
         $id = is_numeric($workspace['id'] ?? null) ? (int)$workspace['id'] : 0;
         if ($id <= 0) {
-            throw new InvalidArgumentException('Workspace ID is invalid.');
+            throw new InvalidArgumentException('ID područja nije valjan.');
         }
 
         return $id;
@@ -608,7 +608,7 @@ final readonly class WorkspaceThemeService
     {
         $service = $this->service($id);
         if ($service === null) {
-            throw new RuntimeException(sprintf(__('Theme module service is unavailable: %s'), $id));
+            throw new RuntimeException(sprintf(__('Servis Theme modula nije dostupan: %s'), $id));
         }
 
         return $service;
@@ -641,7 +641,7 @@ final readonly class WorkspaceThemeService
     private function invoke(object $service, string $method, array $arguments = []): mixed
     {
         if (!method_exists($service, $method)) {
-            throw new RuntimeException(sprintf(__('Theme module service does not support: %s'), $method));
+            throw new RuntimeException(sprintf(__('Servis Theme modula ne podržava: %s'), $method));
         }
 
         return $service->{$method}(...$arguments);
@@ -738,7 +738,7 @@ final readonly class WorkspaceThemeService
             $this->invoke($repository, 'normalizePrivateTheme', [$theme, $existing]),
         );
         if ($normalized === []) {
-            throw new RuntimeException('Theme module returned an invalid private theme.');
+            throw new RuntimeException('Theme modul vratio je nevaljanu privatnu temu.');
         }
 
         return $normalized;

@@ -59,7 +59,7 @@ $pagePath = static fn(int $number): string => $shortsPath . '&' . http_build_que
         <?php if ($breadcrumbs !== []) : ?>
             <nav
                 class="workspace-shorts-breadcrumb-nav"
-                aria-label="<?= $this->escape(__('Breadcrumb navigacija')) ?>"
+                aria-label="<?= $this->escape(__('Navigacijska putanja')) ?>"
             >
                 <ol class="breadcrumb workspace-breadcrumb">
                     <?php foreach ($breadcrumbs as $breadcrumb) : ?>
@@ -351,7 +351,12 @@ $pagePath = static fn(int $number): string => $shortsPath . '&' . http_build_que
                                 <time class="small text-body-secondary" datetime="<?= $this->escape(
                                     $publishedAt,
                                 ) ?>">
-                                    <?= $this->escape(date('d. m. Y.', strtotime($publishedAt) ?: 0)) ?>
+                                    <?= $this->escape(
+                                        \AaiEduHr\HeartPhrameModuleOrm\Database\LocaleDateFormatter::date(
+                                            $publishedAt,
+                                            $language,
+                                        ),
+                                    ) ?>
                                 </time>
                             <?php endif; ?>
                             <div class="workspace-short-excerpt mt-3">

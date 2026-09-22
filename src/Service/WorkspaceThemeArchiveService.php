@@ -54,7 +54,7 @@ final readonly class WorkspaceThemeArchiveService
         ? WorkspaceValue::stringKeyArray($state['theme'])
         : null;
         if ($state['selection_type'] !== WorkspaceThemeRepository::SELECTION_CUSTOM || $theme === null) {
-            throw new RuntimeException('Only a private workspace theme can be exported.');
+            throw new RuntimeException('Moguće je izvesti samo privatnu temu područja.');
         }
 
         $exportId = $this->exportThemeId($theme, $workspaceId);
@@ -65,7 +65,7 @@ final readonly class WorkspaceThemeArchiveService
         $zip = new ZipArchive();
         if ($zip->open($temporary, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             @unlink($temporary);
-            throw new RuntimeException('Unable to create the workspace theme export.');
+            throw new RuntimeException('Izvoz teme područja nije moguće kreirati.');
         }
 
         try {
@@ -92,7 +92,7 @@ final readonly class WorkspaceThemeArchiveService
                     $archivePath = 'theme-files/' . $relative;
                     $checksum = hash_file('sha256', $entry->getPathname());
                     if (!is_string($checksum) || !$zip->addFile($entry->getPathname(), $archivePath)) {
-                        throw new RuntimeException('Unable to add a workspace theme file to the export.');
+                        throw new RuntimeException('Datoteku teme područja nije moguće dodati u izvoz.');
                     }
 
                     $files[] = ['path' => $relative, 'archive_path' => $archivePath, 'sha256' => $checksum];
@@ -113,7 +113,7 @@ final readonly class WorkspaceThemeArchiveService
         $contents = file_get_contents($temporary);
         @unlink($temporary);
         if (!is_string($contents)) {
-            throw new RuntimeException('Unable to read the workspace theme export.');
+            throw new RuntimeException('Izvoz teme područja nije moguće pročitati.');
         }
 
         return $contents;
@@ -133,7 +133,7 @@ final readonly class WorkspaceThemeArchiveService
     ): void {
         $this->requireZip();
         if ($file->getError() !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('Theme export upload failed.');
+            throw new RuntimeException('Prijenos izvoza teme nije uspio.');
         }
 
         $archive = $this->temporaryPath('hph-workspace-theme-import-');
@@ -141,7 +141,7 @@ final readonly class WorkspaceThemeArchiveService
         $zip = new ZipArchive();
         if ($zip->open($archive) !== true) {
             @unlink($archive);
-            throw new RuntimeException('Theme export archive cannot be opened.');
+            throw new RuntimeException('Arhivu izvoza teme nije moguće otvoriti.');
         }
 
         $workspaceId = $this->workspaceId($workspace);
@@ -155,12 +155,12 @@ final readonly class WorkspaceThemeArchiveService
                 WorkspaceValue::string($manifest['format'] ?? '') !== self::FORMAT
                 || WorkspaceValue::int($manifest['version'] ?? 0) !== self::VERSION
             ) {
-                throw new RuntimeException('Unsupported theme export format.');
+                throw new RuntimeException('Format izvoza teme nije podržan.');
             }
 
             $sourceId = trim(WorkspaceValue::string($manifest['theme_id'] ?? ''));
             if ($sourceId === '' || WorkspaceValue::string($theme['id'] ?? '') !== $sourceId) {
-                throw new RuntimeException('Theme export identity does not match.');
+                throw new RuntimeException('Identitet izvoza teme nije usklađen.');
             }
 
             $this->extractFiles($zip, $manifest, $temporaryRoot);
@@ -171,22 +171,22 @@ final readonly class WorkspaceThemeArchiveService
             $normalized = $this->invoke($themeRepository, 'normalizePrivateTheme', [$theme, []]);
             $theme = WorkspaceValue::stringKeyArray($normalized);
             if ($theme === []) {
-                throw new RuntimeException('Theme module returned an invalid imported theme.');
+                throw new RuntimeException('Theme modul vratio je nevaljanu uvezenu temu.');
             }
 
             $targetRoot = $this->config->workspaceThemePath($workspaceId);
             $backupRoot = is_dir($targetRoot) ? $targetRoot . '.backup-' . bin2hex(random_bytes(5)) : '';
             if ($backupRoot !== '' && !rename($targetRoot, $backupRoot)) {
-                throw new RuntimeException('Existing workspace theme files cannot be prepared for import.');
+                throw new RuntimeException('Postojeće datoteke teme područja nije moguće pripremiti za uvoz.');
             }
 
             try {
                 if (!is_dir($temporaryRoot) && !mkdir($temporaryRoot, 0775, true) && !is_dir($temporaryRoot)) {
-                    throw new RuntimeException('Imported workspace theme directory cannot be created.');
+                    throw new RuntimeException('Direktorij uvezene teme područja nije moguće kreirati.');
                 }
 
                 if (!rename($temporaryRoot, $targetRoot)) {
-                    throw new RuntimeException('Imported workspace theme files cannot be activated.');
+                    throw new RuntimeException('Datoteke uvezene teme područja nije moguće aktivirati.');
                 }
 
                 $this->assetLibrary->readManifest($workspaceId);
@@ -226,34 +226,34 @@ final readonly class WorkspaceThemeArchiveService
     {
         $files = is_array($manifest['files'] ?? null) ? $manifest['files'] : [];
         if (count($files) > self::MAX_FILES) {
-            throw new RuntimeException('Theme export contains too many files.');
+            throw new RuntimeException('Izvoz teme sadrži previše datoteka.');
         }
 
         foreach ($files as $file) {
             if (!is_array($file)) {
-                throw new RuntimeException('Theme export file manifest is invalid.');
+                throw new RuntimeException('Manifest datoteka izvoza teme nije ispravan.');
             }
 
             $relative = is_scalar($file['path'] ?? null) ? (string)$file['path'] : '';
             $archivePath = is_scalar($file['archive_path'] ?? null) ? (string)$file['archive_path'] : '';
             $expected = is_scalar($file['sha256'] ?? null) ? strtolower((string)$file['sha256']) : '';
             if (!$this->safeRelativePath($relative) || $archivePath !== 'theme-files/' . $relative) {
-                throw new RuntimeException('Theme export contains an unsafe file path.');
+                throw new RuntimeException('Izvoz teme sadrži nesigurnu putanju datoteke.');
             }
 
             $contents = $zip->getFromName($archivePath);
             if (!is_string($contents) || !hash_equals($expected, hash('sha256', $contents))) {
-                throw new RuntimeException('Theme export file integrity check failed.');
+                throw new RuntimeException('Provjera integriteta datoteke izvoza teme nije uspjela.');
             }
 
             $target = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
             $directory = dirname($target);
             if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-                throw new RuntimeException('Imported theme directory cannot be created.');
+                throw new RuntimeException('Direktorij uvezene teme nije moguće kreirati.');
             }
 
             if (file_put_contents($target, $contents) === false) {
-                throw new RuntimeException('Imported theme file cannot be stored.');
+                throw new RuntimeException('Datoteku uvezene teme nije moguće spremiti.');
             }
         }
     }
@@ -265,13 +265,13 @@ final readonly class WorkspaceThemeArchiveService
     private function validateEntries(ZipArchive $zip): void
     {
         if ($zip->numFiles > self::MAX_FILES + 2) {
-            throw new RuntimeException('Theme export contains too many entries.');
+            throw new RuntimeException('Izvoz teme sadrži previše zapisa.');
         }
 
         for ($index = 0; $index < $zip->numFiles; ++$index) {
             $name = $zip->getNameIndex($index);
             if (!is_string($name) || !$this->safeRelativePath(rtrim($name, '/'))) {
-                throw new RuntimeException('Theme export contains an unsafe entry.');
+                throw new RuntimeException('Izvoz teme sadrži nesiguran zapis.');
             }
         }
     }
@@ -286,17 +286,17 @@ final readonly class WorkspaceThemeArchiveService
     {
         $contents = $zip->getFromName($name);
         if (!is_string($contents)) {
-            throw new RuntimeException(sprintf(__('Theme export is missing %s.'), $name));
+            throw new RuntimeException(sprintf(__('U izvozu teme nedostaje %s.'), $name));
         }
 
         try {
             $decoded = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $jsonException) {
-            throw new RuntimeException('Theme export contains invalid JSON.', 0, $jsonException);
+            throw new RuntimeException('Izvoz teme sadrži neispravan JSON.', 0, $jsonException);
         }
 
         if (!is_array($decoded)) {
-            throw new RuntimeException('Theme export JSON root must be an object.');
+            throw new RuntimeException('Korijen JSON-a izvoza teme mora biti objekt.');
         }
 
         return WorkspaceValue::stringKeyArray($decoded);
@@ -310,7 +310,7 @@ final readonly class WorkspaceThemeArchiveService
     {
         $target = fopen($path, 'wb');
         if ($target === false) {
-            throw new RuntimeException('Theme import temporary file cannot be created.');
+            throw new RuntimeException('Privremenu datoteku za uvoz teme nije moguće kreirati.');
         }
 
         $stream = $file->getStream();
@@ -324,11 +324,11 @@ final readonly class WorkspaceThemeArchiveService
                 $chunk = $stream->read(1_048_576);
                 $written += strlen($chunk);
                 if ($written > self::MAX_ARCHIVE_BYTES) {
-                    throw new RuntimeException('Theme export archive is too large.');
+                    throw new RuntimeException('Arhiva izvoza teme je prevelika.');
                 }
 
                 if ($chunk !== '' && fwrite($target, $chunk) === false) {
-                    throw new RuntimeException('Theme export upload cannot be stored.');
+                    throw new RuntimeException('Preneseni izvoz teme nije moguće spremiti.');
                 }
             }
         } finally {
@@ -419,7 +419,7 @@ final readonly class WorkspaceThemeArchiveService
     {
         $id = is_numeric($workspace['id'] ?? null) ? (int)$workspace['id'] : 0;
         if ($id <= 0) {
-            throw new RuntimeException('Workspace ID is invalid.');
+            throw new RuntimeException('ID područja nije valjan.');
         }
 
         return $id;
@@ -432,12 +432,12 @@ final readonly class WorkspaceThemeArchiveService
     private function themeRepository(): object
     {
         if (!$this->container->has(self::THEME_REPOSITORY)) {
-            throw new RuntimeException('Theme module repository is unavailable.');
+            throw new RuntimeException('Repozitorij Theme modula nije dostupan.');
         }
 
         $service = $this->container->get(self::THEME_REPOSITORY);
         if (!is_object($service) || !method_exists($service, 'normalizePrivateTheme')) {
-            throw new RuntimeException('Theme module does not support private workspace themes.');
+            throw new RuntimeException('Theme modul ne podržava privatne teme područja.');
         }
 
         return $service;
@@ -452,7 +452,7 @@ final readonly class WorkspaceThemeArchiveService
     private function invoke(object $service, string $method, array $arguments = []): mixed
     {
         if (!method_exists($service, $method)) {
-            throw new RuntimeException(sprintf(__('Theme module service does not support: %s'), $method));
+            throw new RuntimeException(sprintf(__('Servis Theme modula ne podržava: %s'), $method));
         }
 
         return $service->{$method}(...$arguments);
@@ -480,7 +480,7 @@ final readonly class WorkspaceThemeArchiveService
     {
         $path = tempnam(sys_get_temp_dir(), $prefix);
         if (!is_string($path)) {
-            throw new RuntimeException('Temporary theme archive cannot be created.');
+            throw new RuntimeException('Privremenu arhivu teme nije moguće kreirati.');
         }
 
         return $path;
@@ -493,7 +493,7 @@ final readonly class WorkspaceThemeArchiveService
     private function requireZip(): void
     {
         if (!class_exists(ZipArchive::class)) {
-            throw new RuntimeException('ZIP extension is required for theme transfer.');
+            throw new RuntimeException('Za prijenos teme potrebna je ZIP ekstenzija.');
         }
     }
 

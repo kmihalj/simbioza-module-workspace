@@ -31,7 +31,7 @@
         "php": ">=8.2",
         "aaieduhr/heartphrame-framework": "^0.0.25",
         "aaieduhr/heartphrame-module-auth": "^0.1.0",
-        "aaieduhr/heartphrame-module-orm": "^0.1.0"
+        "aaieduhr/heartphrame-module-orm": "^0.1.5"
     },
     "suggest": {
         "aaieduhr/heartphrame-module-backup": "Adds complete site backup and scoped Workspace backup/import with ACL, trees, themes, and related content.",

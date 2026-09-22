@@ -2223,7 +2223,7 @@ final readonly class WorkspaceController
             && !$this->urlGenerator->namedRouteExists($routeName)
             && $targetPath === ''
         ) {
-            throw new RuntimeException(__('Interna named ruta ne postoji i nema rezervnu putanju.'));
+            throw new RuntimeException(__('Interna imenovana ruta ne postoji i nema rezervnu putanju.'));
         }
     }
 

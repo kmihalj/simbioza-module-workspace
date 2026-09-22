@@ -142,7 +142,7 @@ $workflowIcon = static function (string $action): string {
     <?php if ($breadcrumbs !== []) : ?>
         <nav
             class="workspace-breadcrumb-nav"
-            aria-label="<?= $this->escape(__('Breadcrumb navigacija')) ?>"
+            aria-label="<?= $this->escape(__('Navigacijska putanja')) ?>"
         >
             <ol class="breadcrumb workspace-breadcrumb">
                 <?php foreach ($breadcrumbs as $breadcrumb) : ?>

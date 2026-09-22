@@ -97,13 +97,13 @@ final readonly class WorkspaceThemeAssetLibrary
     public function upload(int $workspaceId, UploadedFileInterface $uploadedFile, string $role): array
     {
         if ($uploadedFile->getError() !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('Workspace theme asset upload failed.');
+            throw new RuntimeException('Prijenos datoteke teme područja nije uspio.');
         }
 
         $role = in_array($role, self::ROLES, true) ? $role : 'other';
         $root = $this->config->workspaceThemePath($workspaceId);
         if (!is_dir($root) && !mkdir($root, 0775, true) && !is_dir($root)) {
-            throw new RuntimeException('Workspace theme directory cannot be created.');
+            throw new RuntimeException('Direktorij teme područja nije moguće kreirati.');
         }
 
         $temporary = $root . DIRECTORY_SEPARATOR . '.upload-' . bin2hex(random_bytes(8));
@@ -113,7 +113,7 @@ final readonly class WorkspaceThemeAssetLibrary
             [$mime, $extension] = $this->validateMediaFile($temporary, $uploadedFile->getClientFilename());
             $checksum = hash_file('sha256', $temporary);
             if (!is_string($checksum)) {
-                throw new RuntimeException('Workspace theme asset checksum cannot be calculated.');
+                throw new RuntimeException('Kontrolni zbroj datoteke teme područja nije moguće izračunati.');
             }
 
             $manifest = $this->readManifest($workspaceId);
@@ -131,7 +131,7 @@ final readonly class WorkspaceThemeAssetLibrary
             $file = $this->availableFileName($workspaceId, $uploadedFile->getClientFilename(), $extension);
             $target = $this->config->workspaceThemeAssetsPath($workspaceId) . DIRECTORY_SEPARATOR . $file;
             if (!rename($temporary, $target)) {
-                throw new RuntimeException('Workspace theme asset cannot be stored.');
+                throw new RuntimeException('Datoteku teme područja nije moguće spremiti.');
             }
 
             [$width, $height] = $this->imageDimensions($target, $mime);
@@ -167,14 +167,14 @@ final readonly class WorkspaceThemeAssetLibrary
     public function copyFile(int $workspaceId, string $sourcePath, string $role, string $label): string
     {
         if (!is_file($sourcePath)) {
-            throw new InvalidArgumentException('Source theme asset does not exist.');
+            throw new InvalidArgumentException('Izvorna datoteka teme ne postoji.');
         }
 
         [$mime, $extension] = $this->validateMediaFile($sourcePath, basename($sourcePath));
         $file = $this->availableFileName($workspaceId, basename($sourcePath), $extension);
         $target = $this->config->workspaceThemeAssetsPath($workspaceId) . DIRECTORY_SEPARATOR . $file;
         if (!copy($sourcePath, $target)) {
-            throw new RuntimeException('System theme asset cannot be copied to the workspace.');
+            throw new RuntimeException('Datoteku sistemske teme nije moguće kopirati u područje.');
         }
 
         [$width, $height] = $this->imageDimensions($target, $mime);
@@ -205,17 +205,17 @@ final readonly class WorkspaceThemeAssetLibrary
     {
         $path = $this->assetPath($workspaceId, $file);
         if ($path === null) {
-            throw new InvalidArgumentException('Workspace theme asset does not exist.');
+            throw new InvalidArgumentException('Datoteka teme područja ne postoji.');
         }
 
         if ($this->containsReference($theme, '@runtime-theme-assets/' . $file)) {
             throw new InvalidArgumentException(
-                'A workspace theme asset in use cannot be deleted. Select and save a replacement first.',
+                'Datoteku teme područja koja se koristi nije moguće obrisati. Najprije odaberite i spremite zamjenu.',
             );
         }
 
         if (!unlink($path)) {
-            throw new RuntimeException('Workspace theme asset cannot be deleted.');
+            throw new RuntimeException('Datoteku teme područja nije moguće obrisati.');
         }
 
         $manifest = $this->readManifest($workspaceId);
@@ -312,7 +312,7 @@ final readonly class WorkspaceThemeAssetLibrary
     {
         $root = $this->config->workspaceThemePath($workspaceId);
         if (!is_dir($root) && !mkdir($root, 0775, true) && !is_dir($root)) {
-            throw new RuntimeException('Workspace theme directory cannot be created.');
+            throw new RuntimeException('Direktorij teme područja nije moguće kreirati.');
         }
 
         $path = $root . DIRECTORY_SEPARATOR . 'theme-assets.json';
@@ -323,7 +323,7 @@ final readonly class WorkspaceThemeAssetLibrary
         ) . "\n";
         if (file_put_contents($temporary, $json) === false || !rename($temporary, $path)) {
             @unlink($temporary);
-            throw new RuntimeException('Workspace theme asset manifest cannot be written.');
+            throw new RuntimeException('Manifest datoteka teme područja nije moguće zapisati.');
         }
     }
 
@@ -335,7 +335,7 @@ final readonly class WorkspaceThemeAssetLibrary
     {
         $target = fopen($path, 'wb');
         if ($target === false) {
-            throw new RuntimeException('Workspace theme temporary file cannot be created.');
+            throw new RuntimeException('Privremenu datoteku teme područja nije moguće kreirati.');
         }
 
         $stream = $file->getStream();
@@ -349,11 +349,11 @@ final readonly class WorkspaceThemeAssetLibrary
                 $chunk = $stream->read(1_048_576);
                 $written += strlen($chunk);
                 if ($written > self::MAX_FILE_BYTES) {
-                    throw new InvalidArgumentException('Workspace theme asset is larger than 25 MB.');
+                    throw new InvalidArgumentException('Datoteka teme područja veća je od 25 MB.');
                 }
 
                 if ($chunk !== '' && fwrite($target, $chunk) === false) {
-                    throw new RuntimeException('Workspace theme upload cannot be stored.');
+                    throw new RuntimeException('Prenesenu temu područja nije moguće spremiti.');
                 }
             }
         } finally {
@@ -361,7 +361,7 @@ final readonly class WorkspaceThemeAssetLibrary
         }
 
         if ($written === 0) {
-            throw new InvalidArgumentException('Workspace theme asset is empty.');
+            throw new InvalidArgumentException('Datoteka teme područja je prazna.');
         }
     }
 
@@ -380,11 +380,11 @@ final readonly class WorkspaceThemeAssetLibrary
 
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($path);
         if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime]) || $mime === 'image/svg+xml') {
-            throw new InvalidArgumentException('Unsupported workspace theme asset format.');
+            throw new InvalidArgumentException('Format datoteke teme područja nije podržan.');
         }
 
         if (@getimagesize($path) === false) {
-            throw new InvalidArgumentException('Workspace theme asset is not a valid image.');
+            throw new InvalidArgumentException('Datoteka teme područja nije valjana slika.');
         }
 
         return [$mime, self::MIME_EXTENSIONS[$mime]];
@@ -398,7 +398,7 @@ final readonly class WorkspaceThemeAssetLibrary
     {
         $contents = file_get_contents($path);
         if (!is_string($contents) || stripos($contents, '<svg') === false) {
-            throw new InvalidArgumentException('Uploaded SVG is invalid.');
+            throw new InvalidArgumentException('Preneseni SVG nije ispravan.');
         }
 
         $previous = libxml_use_internal_errors(true);
@@ -408,7 +408,7 @@ final readonly class WorkspaceThemeAssetLibrary
         libxml_use_internal_errors($previous);
         $root = $document->documentElement;
         if (!$loaded || !($root instanceof DOMElement) || strtolower($root->localName ?? '') !== 'svg') {
-            throw new InvalidArgumentException('Uploaded SVG is invalid.');
+            throw new InvalidArgumentException('Preneseni SVG nije ispravan.');
         }
 
         $xpath = new DOMXPath($document);
@@ -417,12 +417,12 @@ final readonly class WorkspaceThemeAssetLibrary
             . ' or local-name()="object" or local-name()="embed"]',
         );
         if ($active === false || $active->length > 0) {
-            throw new InvalidArgumentException('Uploaded SVG contains active content.');
+            throw new InvalidArgumentException('Preneseni SVG sadrži aktivni sadržaj.');
         }
 
         $attributes = $xpath->query('//@*');
         if ($attributes === false) {
-            throw new InvalidArgumentException('Uploaded SVG is invalid.');
+            throw new InvalidArgumentException('Preneseni SVG nije ispravan.');
         }
 
         foreach ($attributes as $attribute) {
@@ -433,7 +433,7 @@ final readonly class WorkspaceThemeAssetLibrary
                 || (in_array($name, ['href', 'xlink:href'], true) && $value !== '' && !str_starts_with($value, '#'))
                 || preg_match('/(?:javascript:|expression\s*\(|@import|url\s*\()/i', $value) === 1
             ) {
-                throw new InvalidArgumentException('Uploaded SVG contains unsafe content.');
+                throw new InvalidArgumentException('Preneseni SVG sadrži nesiguran sadržaj.');
             }
         }
     }
