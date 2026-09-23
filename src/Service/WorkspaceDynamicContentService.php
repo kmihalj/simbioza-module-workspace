@@ -1023,9 +1023,7 @@ final class WorkspaceDynamicContentService
             return $value;
         }
 
-        return str_starts_with(strtolower($language), 'hr')
-        ? $date->format('j. n. Y. H:i')
-        : $date->format('Y-m-d H:i');
+        return \AaiEduHr\HeartPhrameModuleOrm\Database\LocaleDateFormatter::dateTime($date, $language);
     }
 
     /** HR: Ograničava traženi broj rezultata na siguran raspon. EN: Constrains a requested result count to a safe range. */
