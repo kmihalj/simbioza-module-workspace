@@ -270,8 +270,9 @@ default. Their always-visible, theme-aware icon buttons expose accessible labels
 and tooltips. A direct link can override either state with `tree=0|1` or
 `options=0|1`; the filter form preserves the visitor's current state. Article
 content first uses an exact published version for the active locale, then the
-site default from `app.localization.locale` in `config/app.php`. It never falls
-back to a draft.
+site default from `app.localization.locale` in `config/app.php`, English, and
+finally another language in which the page has a published version. It never
+falls back to a draft.
 
 These are site configuration, not Theme design data. Include
 `config/workspace.php` in a complete site backup; Theme package export does

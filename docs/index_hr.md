@@ -266,9 +266,10 @@ pravo pregleda nacrta nikada ne izlaže nacrt u Sažetcima. Editor dobiva samo v
 ograničenu mapu dokument/verzija i skupno učitava točno te nepromjenjive
 verzije. View renderira Editorom sanitizirani HTML unutar isječka od dvanaest
 redaka s fadeom prilagođenim temi i vodi na kanonsku Workspace stranicu. Za
-svaku stranicu prvo traži aktivni jezik, a zatim isključivo točno objavljenu
-verziju zadanog jezika sitea iz `app.localization.locale`. Nacrt nikada nije
-jezični fallback.
+svaku stranicu prvo traži aktivni jezik, a zatim točno objavljenu
+verziju zadanog jezika sitea iz `app.localization.locale`, potom engleski te
+naposljetku drugi jezik s objavljenom verzijom. Nacrt nikada nije jezični
+fallback.
 
 Sažetci ne dodaju tablicu baze. Zadane vrijednosti pripadaju konfiguraciji
 sitea, pa potpuni backup uključuje `config/workspace.php`; izvoz paketa teme
@@ -889,14 +890,14 @@ područje jer njihov rezultat semantički obuhvaća sve njegove stranice.
 Kada site ima više podržanih jezika, **naziv i opis područja** te **naslov
 stranice** uređuju se kroz izbornik jezika uz polje. Vrijednost na primarnom
 jeziku sitea je obvezna. Prijevod na ostalim jezicima nije obvezan; ako nije
-upisan, prikazuje se vrijednost primarnog jezika. Slug ostaje jedna zajednička,
-stabilna vrijednost neovisna o jeziku i zato se poveznice ne mijenjaju pri
-promjeni jezika.
+upisan, prikazuje se vrijednost primarnog jezika, zatim engleski te naposljetku
+drugi dostupni prijevod. Slug ostaje jedna zajednička, stabilna vrijednost
+neovisna o jeziku i zato se poveznice ne mijenjaju pri promjeni jezika.
 
 Isti višejezični naslov koristi se u obrascu za novu stranicu, postavkama stavke
 stabla, HTML editoru, stablu stranica, navigacijskoj putanji, popisima i
 rezultatima pretrage. Padajući popisi za izradu menija i povezivanje sadržaja
-prikazuju naziv na aktivnom jeziku, uz isti fallback na primarni jezik.
+prikazuju naziv na aktivnom jeziku, uz isti potpuni redoslijed fallbacka.
 
 API i obavijesti vraćaju lokalizirani naziv za aktivni jezik zahtjeva. Backup i
 povrat čuvaju cijele mape prijevoda područja i stranica. Prenosivi HTML izvoz

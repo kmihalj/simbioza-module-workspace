@@ -18,6 +18,7 @@ use function array_values;
 use function base64_decode;
 use function base64_encode;
 use function htmlspecialchars;
+use function implode;
 use function in_array;
 use function is_array;
 use function is_scalar;
@@ -573,8 +574,9 @@ final class WorkspaceDynamicContentService
         ? strtolower(trim($language))
         : $this->config->siteDefaultLanguage();
         $defaultLanguage = strtolower(trim($this->config->siteDefaultLanguage()));
+        $languagePriority = $this->config->contentLanguagePriority($language, $defaultLanguage);
         $userId = WorkspaceValue::int($user['id'] ?? 0);
-        $cacheKey = $workspaceId . ':' . $userId . ':' . $language . ':' . $defaultLanguage;
+        $cacheKey = $workspaceId . ':' . $userId . ':' . implode(',', $languagePriority);
 
         $this->readableNodeCache[$cacheKey] ??= [];
         $this->checkedNodeCache[$cacheKey] ??= [];
@@ -609,10 +611,7 @@ final class WorkspaceDynamicContentService
                 array_values($uncheckedNodes),
                 $user,
             );
-            $workflows = $this->repository->nodeWorkflowsForNodes($uncheckedNodeIds, $language);
-            $fallbackWorkflows = $defaultLanguage !== $language
-            ? $this->repository->nodeWorkflowsForNodes($uncheckedNodeIds, $defaultLanguage)
-            : $workflows;
+            $workflows = $this->repository->nodeWorkflowsForNodesAllLanguages($uncheckedNodeIds);
 
             foreach ($uncheckedNodes as $nodeId => $candidate) {
                 $this->checkedNodeCache[$cacheKey][$nodeId] = true;
@@ -621,8 +620,10 @@ final class WorkspaceDynamicContentService
                 }
 
                 if (
-                    !$this->workflow->isReadableWorkflow($workflows[$nodeId] ?? null)
-                    && !$this->workflow->isReadableWorkflow($fallbackWorkflows[$nodeId] ?? null)
+                    !$this->hasReadableWorkflow(
+                        WorkspaceValue::rows($workflows[$nodeId] ?? null),
+                        $languagePriority,
+                    )
                 ) {
                     continue;
                 }
@@ -649,6 +650,36 @@ final class WorkspaceDynamicContentService
         }
 
         return $result;
+    }
+
+    /**
+     * HR: Provjerava prioritetne jezike pa dopušta bilo koju drugu objavljenu inačicu.
+     * EN: Checks priority locales before allowing any other published variant.
+     *
+     * @param list<array<string,mixed>> $workflows
+     * @param list<string> $languagePriority
+     */
+    private function hasReadableWorkflow(array $workflows, array $languagePriority): bool
+    {
+        $readable = [];
+        foreach ($workflows as $workflow) {
+            if (!$this->workflow->isReadableWorkflow($workflow)) {
+                continue;
+            }
+
+            $workflowLanguage = strtolower(WorkspaceValue::string($workflow['language_code'] ?? ''));
+            if ($workflowLanguage !== '') {
+                $readable[$workflowLanguage] = true;
+            }
+        }
+
+        foreach ($languagePriority as $language) {
+            if (isset($readable[$language])) {
+                return true;
+            }
+        }
+
+        return $readable !== [];
     }
 
     /**

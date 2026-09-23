@@ -272,9 +272,10 @@ so their access to drafts never leaks draft text into Shorts. The Editor
 receives only the already limited document/version map and batch-loads those
 exact immutable versions. The view renders Editor-sanitized HTML inside a
 twelve-line, theme-aware fade and links to the canonical Workspace page. For
-every page it requests the active locale first and falls back only to an
+every page it requests the active locale first and falls back to an
 exactly published version in the site default locale from
-`app.localization.locale`. Draft content is never a language fallback.
+`app.localization.locale`, then English, and finally another locale with a
+published version. Draft content is never a language fallback.
 
 Shorts adds no database table. Its defaults are host-site configuration, so a
 complete backup includes `config/workspace.php`; Theme package export does not
@@ -904,13 +905,14 @@ When the site supports multiple languages, the **Workspace name and
 description** and every **page title** are edited through the language selector
 attached to the field. The value in the site's primary language is required.
 Translations in other languages are optional; when one is missing, the primary
-language value is shown. A slug remains one shared, stable, language-independent
-value, so switching language never changes existing URLs.
+language value is shown, followed by English and then another available
+translation. A slug remains one shared, stable, language-independent value, so
+switching language never changes existing URLs.
 
 The same multilingual page title is used by the new-page form, tree-item
 settings, HTML Editor, page tree, breadcrumbs, lists, and search results. Menu
 and content-target selectors show the active-language name with the same
-primary-language fallback.
+complete fallback order.
 
 The API and notifications expose the localized value for the request's active
 language. Backup and restore retain the complete Workspace and page translation

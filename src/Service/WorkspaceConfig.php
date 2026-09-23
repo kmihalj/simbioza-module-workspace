@@ -283,6 +283,41 @@ final readonly class WorkspaceConfig
     }
 
     /**
+     * HR: Gradi redoslijed jezika javnog sadržaja: traženi jezik, njegov
+     *     osnovni oblik, zadani jezik aplikacije, engleski i ostali podržani jezici.
+     * EN: Builds the public-content locale order: requested locale, its base
+     *     form, the application default, English, and the remaining supported locales.
+     *
+     * @return list<string>
+     */
+    public function contentLanguagePriority(
+        string $requestedLanguage,
+        ?string $defaultLanguage = null,
+    ): array {
+        $defaultLanguage ??= $this->siteDefaultLanguage();
+        $candidates = [
+            $requestedLanguage,
+            (string)preg_replace('/[-_].*$/', '', $requestedLanguage),
+            $defaultLanguage,
+            (string)preg_replace('/[-_].*$/', '', $defaultLanguage),
+            'en',
+            ...$this->supportedLanguages(),
+        ];
+        $languages = [];
+        foreach ($candidates as $candidate) {
+            $candidate = strtolower(trim($candidate));
+            if (
+                preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/', $candidate) === 1
+                && !in_array($candidate, $languages, true)
+            ) {
+                $languages[] = $candidate;
+            }
+        }
+
+        return $languages;
+    }
+
+    /**
      * HR: Vraća vremensku zonu aplikacije za lokalizirani prikaz vremena.
      * EN: Returns the application timezone for localized time rendering.
      */

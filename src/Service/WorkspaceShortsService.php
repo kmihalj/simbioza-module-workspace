@@ -8,8 +8,6 @@ use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use HeartPhrame\Routing\UrlGenerator;
 
 use function array_slice;
-use function array_unique;
-use function array_values;
 use function ceil;
 use function count;
 use function in_array;
@@ -19,6 +17,7 @@ use function min;
 use function preg_match;
 use function range;
 use function rawurlencode;
+use function reset;
 use function rtrim;
 use function strcmp;
 use function strtolower;
@@ -74,6 +73,7 @@ final readonly class WorkspaceShortsService
             $defaultLanguage ?? $this->config->siteDefaultLanguage(),
             $this->config->siteDefaultLanguage(),
         );
+        $languagePriority = $this->config->contentLanguagePriority($language, $defaultLanguage);
         $depth = $this->allowedDepth(
             $query['depth'] ?? null,
             $this->config->shortsDefaultDepth(),
@@ -90,7 +90,8 @@ final readonly class WorkspaceShortsService
         $visibleTree = $this->access->visibleTreeForLanguages(
             $workspace,
             $user,
-            array_values(array_unique([$language, $defaultLanguage])),
+            $languagePriority,
+            true,
         );
         $visibleTree = $this->repository->localizeTree(
             $visibleTree,
@@ -124,8 +125,7 @@ final readonly class WorkspaceShortsService
 
             $workflow = $this->preferredReadableWorkflow(
                 WorkspaceValue::rows($workflows[$nodeId] ?? null),
-                $language,
-                $defaultLanguage,
+                $languagePriority,
             );
             if ($workflow === null) {
                 continue;
@@ -474,16 +474,18 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Bira čitljivu objavu traženog jezika, a zatim zadanog jezika sitea.
-     * EN: Chooses a readable publication in the requested locale, then the site default locale.
+     * HR: Bira prvu čitljivu objavu prema zadanom jezičnom prioritetu, a zatim
+     *     bilo koju drugu čitljivu objavu.
+     * EN: Chooses the first readable publication in the supplied locale priority,
+     *     then any other readable publication.
      *
      * @param list<array<string, mixed>> $workflows
+     * @param list<string> $languagePriority
      * @return array<string, mixed>|null
      */
     private function preferredReadableWorkflow(
         array $workflows,
-        string $requestedLanguage,
-        string $defaultLanguage,
+        array $languagePriority,
     ): ?array {
         $indexed = [];
         foreach ($workflows as $workflow) {
@@ -500,13 +502,15 @@ final readonly class WorkspaceShortsService
             }
         }
 
-        foreach (array_values(array_unique([$requestedLanguage, $defaultLanguage])) as $language) {
+        foreach ($languagePriority as $language) {
             if (isset($indexed[$language])) {
                 return $indexed[$language];
             }
         }
 
-        return null;
+        $fallback = reset($indexed);
+
+        return is_array($fallback) ? $fallback : null;
     }
 
     /**

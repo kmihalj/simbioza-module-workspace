@@ -3626,10 +3626,10 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća prijevod za aktivni jezik, zatim njegov osnovni jezik i na kraju
-     *     primarni jezik sitea. Ne bira proizvoljan prijevod.
-     * EN: Returns the active-locale translation, then its base language, and
-     *     finally the site's primary language. It never picks an arbitrary value.
+     * HR: Vraća prijevod za aktivni jezik, njegov osnovni oblik, primarni jezik
+     *     sitea, engleski te naposljetku prvi stvarno dostupan prijevod.
+     * EN: Returns the active locale, its base form, the site's primary locale,
+     *     English, and finally the first translation that actually exists.
      */
     public function localizedValue(mixed $translations, string $language, string $primaryLanguage): string
     {
@@ -3638,9 +3638,15 @@ final readonly class WorkspaceRepository
         $primaryLanguage = $this->languageCode($primaryLanguage);
         $baseLanguage = (string)preg_replace('/[-_].*$/', '', $language);
 
-        foreach (array_unique([$language, $baseLanguage, $primaryLanguage]) as $candidate) {
+        foreach (array_unique([$language, $baseLanguage, $primaryLanguage, 'en']) as $candidate) {
             if (($translations[$candidate] ?? '') !== '') {
                 return $translations[$candidate];
+            }
+        }
+
+        foreach ($translations as $translation) {
+            if ($translation !== '') {
+                return $translation;
             }
         }
 

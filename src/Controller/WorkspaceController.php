@@ -139,8 +139,9 @@ final readonly class WorkspaceController
         $visibleTree = $this->access->visibleTreeWindowForLanguages(
             $workspace,
             null,
-            [$language],
+            $this->config->contentLanguagePriority($language),
             $homepageId,
+            true,
         );
         $workflows = $this->repository->nodeWorkflowsForNodes(
             $this->treeNodeIds($visibleTree),
@@ -193,8 +194,9 @@ final readonly class WorkspaceController
         $visibleTree = $this->access->visibleTreeWindowForLanguages(
             $workspace,
             null,
-            [$language],
+            $this->config->contentLanguagePriority($language),
             $this->intValue($node['id'] ?? 0),
+            true,
         );
         $workflows = $this->repository->nodeWorkflowsForNodes(
             $this->treeNodeIds($visibleTree),
@@ -998,8 +1000,9 @@ final readonly class WorkspaceController
         $visibleTree = $this->access->visibleTreeBranchForLanguages(
             $workspace,
             null,
-            [$language],
+            $this->config->contentLanguagePriority($language),
             $parentId,
+            true,
         );
         $workflows = $this->repository->nodeWorkflowsForNodes(
             $this->treeNodeIds($visibleTree),

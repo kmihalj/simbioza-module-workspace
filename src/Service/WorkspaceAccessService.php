@@ -477,11 +477,18 @@ final class WorkspaceAccessService
         array $workspace,
         ?array $user,
         array $languages,
+        bool $allowAnyLanguageFallback = false,
     ): array {
         $nodes = $this->nodesForWorkspace(WorkspaceValue::int($workspace['id'] ?? 0));
         $nodes = $this->navigationNodes($nodes);
 
-        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+        $visible = $this->visibleNodesForLanguages(
+            $workspace,
+            $user,
+            $languages,
+            $nodes,
+            $allowAnyLanguageFallback,
+        );
 
         return $this->buildTree($this->promoteVisibleOrphans($visible), null);
     }
@@ -502,6 +509,7 @@ final class WorkspaceAccessService
         ?array $user,
         array $languages,
         int $activeNodeId = 0,
+        bool $allowAnyLanguageFallback = false,
     ): array {
         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
         $nodes = $this->repository->treeWindowNodes(
@@ -519,7 +527,13 @@ final class WorkspaceAccessService
             $this->mergeNodesById($nodes, $directNodes),
             $activeNodeId,
         );
-        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+        $visible = $this->visibleNodesForLanguages(
+            $workspace,
+            $user,
+            $languages,
+            $nodes,
+            $allowAnyLanguageFallback,
+        );
 
         return $this->buildTree($this->promoteVisibleOrphans($visible), null);
     }
@@ -538,6 +552,7 @@ final class WorkspaceAccessService
         ?array $user,
         array $languages,
         int $parentId,
+        bool $allowAnyLanguageFallback = false,
     ): array {
         $nodes = $this->repository->treeBranchNodes(
             WorkspaceValue::int($workspace['id'] ?? 0),
@@ -545,7 +560,13 @@ final class WorkspaceAccessService
         );
         $nodes = $this->navigationNodes($nodes);
 
-        $visible = $this->visibleNodesForLanguages($workspace, $user, $languages, $nodes);
+        $visible = $this->visibleNodesForLanguages(
+            $workspace,
+            $user,
+            $languages,
+            $nodes,
+            $allowAnyLanguageFallback,
+        );
 
         return array_values(array_filter(
             $visible,
@@ -568,6 +589,7 @@ final class WorkspaceAccessService
         ?array $user,
         array $languages,
         array $nodes,
+        bool $allowAnyLanguageFallback = false,
     ): array {
         $user ??= $this->currentUser();
         $languages = array_values(array_unique(array_filter(array_map(
@@ -603,6 +625,7 @@ final class WorkspaceAccessService
                 && !$this->hasReadableLanguage(
                     WorkspaceValue::rows($workflowStates[$nodeId] ?? null),
                     $languages,
+                    $allowAnyLanguageFallback,
                 )
             ) {
                 continue;
@@ -622,8 +645,11 @@ final class WorkspaceAccessService
      * @param list<array<string, mixed>> $workflows
      * @param list<string> $languages
      */
-    private function hasReadableLanguage(array $workflows, array $languages): bool
-    {
+    private function hasReadableLanguage(
+        array $workflows,
+        array $languages,
+        bool $allowAnyLanguageFallback = false,
+    ): bool {
         foreach ($workflows as $workflow) {
             if (
                 in_array(
@@ -634,6 +660,14 @@ final class WorkspaceAccessService
                 && $this->workflow->isReadableWorkflow($workflow)
             ) {
                 return true;
+            }
+        }
+
+        if ($allowAnyLanguageFallback) {
+            foreach ($workflows as $workflow) {
+                if ($this->workflow->isReadableWorkflow($workflow)) {
+                    return true;
+                }
             }
         }
 

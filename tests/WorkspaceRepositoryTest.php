@@ -474,6 +474,34 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
+     * HR: Lokalizirani metapodaci slijede traženi, zadani, engleski i bilo koji
+     *     stvarno dostupan jezik, bez pretpostavke da je fallback hrvatski.
+     * EN: Localized metadata follows the requested, default, English, and any
+     *     actually available locale without assuming Croatian as the fallback.
+     */
+    public function testLocalizedValueUsesCompleteLanguageFallbackOrder(): void
+    {
+        $repository = new WorkspaceRepository($this->database());
+
+        $this->assertSame('Italiano', $repository->localizedValue([
+            'hr' => 'Hrvatski',
+            'it' => 'Italiano',
+        ], 'it', 'fr'));
+        $this->assertSame('Français', $repository->localizedValue([
+            'hr' => 'Hrvatski',
+            'en' => 'English',
+            'fr' => 'Français',
+        ], 'de', 'fr'));
+        $this->assertSame('English', $repository->localizedValue([
+            'hr' => 'Hrvatski',
+            'en' => 'English',
+        ], 'de', 'fr'));
+        $this->assertSame('Español', $repository->localizedValue([
+            'es' => 'Español',
+        ], 'de', 'fr'));
+    }
+
+    /**
      * HR: Priprema prijenosnu SQLite bazu s aktualnom inicijalnom Workspace shemom.
      * EN: Prepares a portable SQLite database with the current initial Workspace schema.
      */

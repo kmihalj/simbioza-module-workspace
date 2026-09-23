@@ -268,9 +268,10 @@ Stablo je početno otvoreno, a ploča **Opcije prikaza** sklopljena. Njihovi
 uvijek dostupni ikon-gumbi prate temu te imaju pristupačne nazive i opise.
 Izravna poveznica može promijeniti bilo koje stanje parametrima `tree=0|1` i
 `options=0|1`; obrazac filtra čuva trenutačni odabir posjetitelja. Sadržaj prvo
-koristi točno objavljenu verziju aktivnog jezika, a zatim zadani jezik sitea iz
-`app.localization.locale` u `config/app.php`; nikada ne koristi nacrt kao
-jezični fallback.
+koristi točno objavljenu verziju aktivnog jezika, zatim zadani jezik sitea iz
+`app.localization.locale` u `config/app.php`, engleski te naposljetku drugi
+jezik na kojem postoji objavljena verzija stranice. Nacrt nikada nije jezični
+fallback.
 
 To su postavke sitea, a ne dizajn teme. Potpuni backup sitea treba uključiti
 `config/workspace.php`; izvoz paketa teme ne preuzima i ne treba preuzimati te

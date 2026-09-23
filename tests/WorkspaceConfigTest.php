@@ -113,4 +113,30 @@ final class WorkspaceConfigTest extends TestCase
         $this->assertSame('all', $workspaceConfig->shortsDefaultDepth());
         $this->assertSame('title_desc', $workspaceConfig->shortsDefaultOrder());
     }
+
+    /**
+     * HR: Prioritet javnog sadržaja slijedi odabrani, zadani, engleski i ostale jezike.
+     * EN: Public-content priority follows the selected, default, English, and remaining locales.
+     */
+    public function testContentLanguagePriorityIsDeterministic(): void
+    {
+        $config = new Config(new Helper(), [
+            'app' => [
+                'localization' => [
+                    'locale' => 'fr',
+                    'supported_locales' => ['fr', 'it', 'de', 'hr'],
+                ],
+            ],
+        ]);
+        $workspaceConfig = new WorkspaceConfig($config, dirname(__DIR__));
+
+        $this->assertSame(
+            ['it', 'fr', 'en', 'de', 'hr'],
+            $workspaceConfig->contentLanguagePriority('it'),
+        );
+        $this->assertSame(
+            ['pt-br', 'pt', 'fr', 'en', 'it', 'de', 'hr'],
+            $workspaceConfig->contentLanguagePriority('pt-BR'),
+        );
+    }
 }

@@ -329,8 +329,8 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Nedostajući aktivni jezik koristi samo objavljenu inačicu zadanog jezika sitea.
-     * EN: A missing active locale falls back only to the published site-default locale.
+     * HR: Nedostajući aktivni jezik koristi objavljenu inačicu zadanog jezika sitea.
+     * EN: A missing active locale falls back to the published site-default locale.
      */
     public function testMissingRequestedLanguageFallsBackToPublishedSiteDefaultLanguage(): void
     {
@@ -358,6 +358,46 @@ final class WorkspaceShortsServiceTest extends TestCase
             '/workspace/multilingual-summaries/root-doc?lang=en',
             $model['articles'][0]['href'],
         );
+    }
+
+    /**
+     * HR: Sažetci nakon nedostajućeg zadanog jezika biraju engleski, a zatim
+     *     bilo koju drugu objavljenu inačicu.
+     * EN: Shorts choose English after a missing default locale, then any other
+     *     published variant.
+     */
+    public function testMissingDefaultLanguageFallsBackToEnglishAndAnyPublishedLanguage(): void
+    {
+        $workspace = $this->repository->saveWorkspace([
+            'name' => 'Fallback sažetci',
+            'slug' => 'fallback-summaries',
+            'visibility' => 'public',
+        ], 1);
+        $english = $this->node((int)$workspace['id'], 'English', 'root-doc');
+        $spanish = $this->node((int)$workspace['id'], 'Español', 'spanish-doc');
+        $this->editor->documents['spanish-doc'] = $this->editorDocument('Español', 'Contenido');
+        $this->repository->saveNodeWorkflow((int)$english['id'], 'en', [
+            'status' => 'published',
+            'current_version_number' => 1,
+            'published_version_number' => 1,
+            'published_by_user_id' => 1,
+            'published_at' => '2026-08-03 10:00:00',
+        ], 1);
+        $this->repository->saveNodeWorkflow((int)$spanish['id'], 'es', [
+            'status' => 'published',
+            'current_version_number' => 1,
+            'published_version_number' => 1,
+            'published_by_user_id' => 1,
+            'published_at' => '2026-08-04 10:00:00',
+        ], 1);
+
+        $model = $this->shorts->viewModel($workspace, 'it', [
+            'depth' => 1,
+            'limit' => 'all',
+            'order' => 'hierarchy',
+        ], 'fr');
+
+        $this->assertSame(['en', 'es'], array_column($model['articles'], 'language'));
     }
 
     /**
