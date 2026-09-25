@@ -2990,6 +2990,9 @@
                 if (window.bootstrap?.Dropdown) {
                     window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
                 }
+                // HR: Odabrani gumb nestaje s popisom; fokus se vraća na pokretač.
+                // EN: The selected button disappears with the popup; focus returns to its trigger.
+                toggle.focus();
             });
 
             if (kind === 'page' && workspaceSelector !== '') {

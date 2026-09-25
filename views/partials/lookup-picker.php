@@ -96,18 +96,21 @@ $workspaceLookupPlaceholder = $workspaceLookupKind === 'workspace'
         <input
             class="form-control form-control-sm mb-2"
             type="search"
+            aria-label="<?= $this->escape(
+                $workspaceLookupKind === 'workspace' ? __('Pretraži područja') : __('Pretraži stranice'),
+            ) ?>"
             autocomplete="off"
             placeholder="<?= $this->escape(
                 $workspaceLookupKind === 'workspace' ? __('Pretraži područja') : __('Pretraži stranice'),
             ) ?>"
             data-workspace-lookup-search
         >
-        <div class="small text-body-secondary mb-2" data-workspace-lookup-loading hidden>
+        <div class="small text-body-secondary mb-2" role="status" data-workspace-lookup-loading hidden>
             <?= $this->escape(__('Učitavanje...')) ?>
         </div>
-        <div class="alert alert-danger py-2" data-workspace-lookup-error hidden></div>
+        <div class="alert alert-danger py-2" role="alert" data-workspace-lookup-error hidden></div>
         <div class="list-group list-group-flush workspace-lookup-list" data-workspace-lookup-list></div>
-        <div class="small text-body-secondary mt-2" data-workspace-lookup-empty hidden>
+        <div class="small text-body-secondary mt-2" role="status" data-workspace-lookup-empty hidden>
             <?= $this->escape(__('Nema rezultata.')) ?>
         </div>
         <button class="btn btn-sm btn-outline-secondary mt-2" type="button" data-workspace-lookup-more hidden>

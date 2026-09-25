@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+// HR: Glavni orijentir daje aplikacijski raspored; ovaj je prikaz samo njegov sadržaj.
+// EN: The host layout owns the main landmark; this view only supplies its content.
+
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 // phpcs:disable Generic.WhiteSpace.ScopeIndent
@@ -393,7 +396,7 @@ $workflowIcon = static function (string $action): string {
     </button>
     <div class="workspace-mobile-panel-backdrop" data-workspace-mobile-panel-backdrop hidden></div>
 
-    <main class="workspace-main">
+    <div class="workspace-main">
         <?php if ($canCreatePage) : ?>
             <div id="workspace-create-page" class="collapse">
                 <form
@@ -784,7 +787,7 @@ $workflowIcon = static function (string $action): string {
                 </div>
             </div>
         <?php endif; ?>
-    </main>
+    </div>
 </div>
 
 <?php if ($unpublishedPages !== []) : ?>

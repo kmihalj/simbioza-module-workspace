@@ -114,22 +114,27 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         </div>
     </div>
     <div class="col-12 col-md-6 col-lg-3" data-workspace-node-types="document internal_link external_link">
-        <label class="form-label"><?= $this->escape(__('Slug')) ?></label>
+        <label class="form-label" for="workspace-node-slug-<?= $nodeId ?>"><?= $this->escape(__('Slug')) ?></label>
         <input
+            id="workspace-node-slug-<?= $nodeId ?>"
             class="form-control font-monospace"
             name="slug"
             value="<?= $this->escape(WorkspaceValue::string($node['slug'] ?? '')) ?>"
         >
     </div>
     <div class="col-12 col-md-6 col-lg-3">
-        <label class="form-label"><?= $this->escape(__('Vrsta stavke')) ?></label>
+        <label class="form-label" for="workspace-node-type-<?= $nodeId ?>">
+            <?= $this->escape(__('Vrsta stavke')) ?>
+        </label>
         <?php if ($nodeType === 'separator' && $nodeId > 0) : ?>
             <input type="hidden" name="node_type" value="separator">
-            <select class="form-select" data-workspace-node-type disabled>
+            <select id="workspace-node-type-<?= $nodeId ?>" class="form-select" data-workspace-node-type disabled>
                 <option value="separator" selected><?= $this->escape(__('separator')) ?></option>
             </select>
         <?php else : ?>
-            <select class="form-select" name="node_type" data-workspace-node-type>
+            <select
+                id="workspace-node-type-<?= $nodeId ?>"
+                class="form-select" name="node_type" data-workspace-node-type>
             <?php foreach (['document', 'internal_link', 'external_link', 'separator'] as $type) : ?>
                     <option value="<?= $type ?>" <?= $nodeType === $type ? 'selected' : '' ?>>
                 <?= $this->escape(__($type)) ?>
@@ -140,8 +145,11 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
     </div>
     <?php if (!$treeOrganizerAvailable) : ?>
         <div class="col-12 col-md-4 col-lg-2">
-            <label class="form-label"><?= $this->escape(__('Redoslijed')) ?></label>
+            <label class="form-label" for="workspace-node-order-<?= $nodeId ?>">
+        <?= $this->escape(__('Redoslijed')) ?>
+            </label>
             <input
+                id="workspace-node-order-<?= $nodeId ?>"
                 class="form-control"
                 type="number"
                 name="sort_order"
@@ -212,9 +220,13 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         </div>
     </div>
     <div class="col-12 col-md-6" data-workspace-node-types="document">
-        <label class="form-label"><?= $this->escape(__('HTML dokument')) ?></label>
+        <label class="form-label" for="workspace-node-document-<?= $nodeId ?>">
+            <?= $this->escape(__('HTML dokument')) ?>
+        </label>
         <?php if ($canAttachExistingDocuments) : ?>
-            <select class="form-select" name="document_key" <?= $editorAvailable ? '' : 'disabled' ?>>
+            <select
+                id="workspace-node-document-<?= $nodeId ?>"
+                class="form-select" name="document_key" <?= $editorAvailable ? '' : 'disabled' ?>>
                 <option value=""><?= $this->escape(__('Kreiraj novi dokument ako je tip Dokument')) ?></option>
             <?php foreach ($editorDocuments as $editorDocument) : ?>
                     <option
@@ -230,20 +242,26 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
             <input type="hidden" name="document_key" value="<?= $this->escape($currentDocumentKey) ?>">
             <?php if ($currentDocumentKey !== '') : ?>
                 <input
+                    id="workspace-node-document-<?= $nodeId ?>"
                     class="form-control font-monospace"
                     value="<?= $this->escape($currentDocumentKey) ?>"
                     disabled
                 >
             <?php else : ?>
-                <div class="form-control text-body-secondary" aria-live="polite">
+                <output
+                    id="workspace-node-document-<?= $nodeId ?>"
+                    class="form-control text-body-secondary" aria-live="polite">
                 <?= $this->escape(__('Novi HTML dokument bit će automatski kreiran.')) ?>
-                </div>
+                </output>
             <?php endif; ?>
         <?php endif; ?>
     </div>
     <div class="col-12 col-md-6" data-workspace-node-types="internal_link">
-        <label class="form-label"><?= $this->escape(__('Interna imenovana ruta')) ?></label>
+        <label class="form-label" for="workspace-node-route-<?= $nodeId ?>">
+            <?= $this->escape(__('Interna imenovana ruta')) ?>
+        </label>
         <input
+            id="workspace-node-route-<?= $nodeId ?>"
             class="form-control font-monospace"
             name="route_name"
             value="<?= $this->escape(WorkspaceValue::string($node['route_name'] ?? '')) ?>"
@@ -254,8 +272,11 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         class="col-12 col-md-6"
         data-workspace-node-types="internal_link external_link"
     >
-        <label class="form-label"><?= $this->escape(__('Ciljni URL ili interna putanja')) ?></label>
+        <label class="form-label" for="workspace-node-url-<?= $nodeId ?>">
+            <?= $this->escape(__('Ciljni URL ili interna putanja')) ?>
+        </label>
         <input
+            id="workspace-node-url-<?= $nodeId ?>"
             class="form-control"
             name="target_url"
             value="<?= $this->escape(WorkspaceValue::string($node['target_url'] ?? '')) ?>"

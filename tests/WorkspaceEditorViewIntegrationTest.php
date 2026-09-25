@@ -11,6 +11,24 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceEditorViewIntegrationTest extends TestCase
 {
     /**
+     * HR: Polja čvora imaju jedinstvene veze oznaka; udaljena pretraga ima naziv i poruke stanja.
+     * EN: Node fields have unique label associations; remote search has a name and status messages.
+     */
+    public function testNodeFieldsAndLookupExposeAccessibleNames(): void
+    {
+        $view = (string)file_get_contents(dirname(__DIR__) . '/views/workspace/node-fields.php');
+        foreach (['slug', 'type', 'order', 'document', 'route', 'url'] as $field) {
+            $this->assertStringContainsString('for="workspace-node-' . $field . '-<?= $nodeId ?>"', $view);
+            $this->assertStringContainsString('id="workspace-node-' . $field . '-<?= $nodeId ?>"', $view);
+        }
+
+        $picker = (string)file_get_contents(dirname(__DIR__) . '/views/partials/lookup-picker.php');
+        $this->assertStringContainsString('aria-label="<?= $this->escape(', $picker);
+        $this->assertStringContainsString('role="status" data-workspace-lookup-empty', $picker);
+        $this->assertStringContainsString('role="alert" data-workspace-lookup-error', $picker);
+    }
+
+    /**
      * HR: Svojstva stranice moraju biti jedan dinamički popis koji dopušta
      *     dodavanje i uklanjanje više redaka prije atomarnog spremanja.
      * EN: Page properties must be one dynamic list that allows multiple rows
