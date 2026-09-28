@@ -330,6 +330,15 @@ final readonly class WorkspaceRepository
             throw new RuntimeException(__('Obrisano područje nije pronađeno.'));
         }
 
+        if (
+            is_scalar($workspace['purge_started_at'] ?? null)
+            && trim((string)$workspace['purge_started_at']) !== ''
+        ) {
+            throw new RuntimeException(__(
+                'Započeto trajno brisanje područja mora se dovršiti; vraćanje više nije moguće.',
+            ));
+        }
+
         $slug = $this->uniqueWorkspaceSlug(
             $this->slug($preferredSlug !== '' ? $preferredSlug : $workspace['slug'] ?? '', 'workspace'),
             $workspaceId,

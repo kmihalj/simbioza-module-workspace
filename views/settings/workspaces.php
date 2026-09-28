@@ -19,9 +19,11 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var string $settingsMenuActiveSection
  * @var object|null $menuRenderer
  * @var string $assetsCssPath
+ * @var string $assetsJsPath
  */
 ?>
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
+<script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
 
 <div class="row g-4">
     <aside class="col-lg-3">
@@ -82,6 +84,11 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
                         $exportPath = WorkspaceValue::string($workspace['export_path'] ?? '#');
                         $purgeTitle = __('Trajno izbriši područje i sav sadržaj');
                         $purgePrompt = __('Za trajno brisanje upišite slug:') . ' ' . $slug;
+                        $purgeStarted = WorkspaceValue::string($workspace['purge_started_at'] ?? '') !== '';
+                        $purgeProcessed = WorkspaceValue::int($workspace['purge_completed_items'] ?? 0);
+                        $purgeTotal = WorkspaceValue::int($workspace['purge_total_items'] ?? 0);
+                        $purgePercent = min(99, (int)floor($purgeProcessed * 100 / max(1, $purgeTotal)));
+                        $purgeProgressLabel = $this->escape(__('Trajno brisanje je u tijeku.'));
                         ?>
                                 <tr>
                                     <th scope="row"><?= $this->escape($name) ?></th>
@@ -111,8 +118,10 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
                                                         name="slug"
                                                         value="<?= $this->escape($slug) ?>"
                                                         aria-label="<?= $this->escape(__('Slug za vraćanje')) ?>"
+                            <?= $purgeStarted ? 'disabled' : '' ?>
                                                     >
-                                                    <button class="btn btn-primary" type="submit">
+                                                    <button class="btn btn-primary" type="submit"
+                            <?= $purgeStarted ? 'disabled' : '' ?>>
                             <?= $this->escape(__('Vrati')) ?>
                                                     </button>
                                                 </div>
@@ -121,6 +130,10 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
                                                 class="workspace-deleted-actions__form"
                                                 method="post"
                                                 action="<?= $this->escape($purgePath) ?>"
+                                                data-workspace-purge-form
+                                                data-progress-label="<?= $purgeProgressLabel ?>"
+                                                data-initial-processed="<?= $purgeProcessed ?>"
+                                                data-initial-total="<?= $purgeTotal ?>"
                                             >
                             <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                                                 <input
@@ -158,6 +171,20 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
                                                     ><?= $this->escape(__('Trajno izbriši')) ?></button>
                                                 </div>
                                             </form>
+                                            <div class="small text-body-secondary mt-2" role="status"
+                                                data-workspace-purge-status
+                            <?= $purgeStarted ? '' : 'hidden' ?>>
+                            <?= $this->escape(__('Trajno brisanje je u tijeku.')) ?>
+                                            </div>
+                                            <div data-workspace-purge-progress-wrap
+                            <?= $purgeStarted ? '' : 'hidden' ?>>
+                                                <progress data-workspace-purge-progress max="100"
+                                                    value="<?= $purgePercent ?>"
+                                                    style="width:100%"></progress>
+                                                <span data-workspace-purge-count class="small">
+                            <?= $purgeProcessed ?> / <?= $purgeTotal ?>
+                                                </span>
+                                            </div>
                                             </div>
                         <?php else : ?>
                                             <a

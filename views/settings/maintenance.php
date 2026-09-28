@@ -385,11 +385,19 @@ $imageOptimizationLabelsJson = json_encode([
                         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
                         $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
                         $workspaceSlug = WorkspaceValue::string($workspace['slug'] ?? '');
+                        $purgeStarted = WorkspaceValue::string($workspace['purge_started_at'] ?? '') !== '';
+                        $purgeProcessed = WorkspaceValue::int($workspace['purge_completed_items'] ?? 0);
+                        $purgeTotal = WorkspaceValue::int($workspace['purge_total_items'] ?? 0);
+                        $purgePercent = min(99, (int)floor($purgeProcessed * 100 / max(1, $purgeTotal)));
                         ?>
                             <form
                                 class="border border-danger rounded p-3"
                                 method="post"
                                 action="<?= $this->escape($purgePath) ?>"
+                                data-workspace-purge-form
+                                data-progress-label="<?= $tr('Trajno brisanje je u tijeku.') ?>"
+                                data-initial-processed="<?= $purgeProcessed ?>"
+                                data-initial-total="<?= $purgeTotal ?>"
                             >
                         <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                                 <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">
@@ -419,6 +427,20 @@ $imageOptimizationLabelsJson = json_encode([
                         <?= $tr('Trajno izbriši') ?>
                                         </button>
                                     </div>
+                                </div>
+                                <div class="small text-body-secondary mt-2" role="status"
+                                    data-workspace-purge-status
+                        <?= $purgeStarted ? '' : 'hidden' ?>>
+                        <?= $tr('Trajno brisanje je u tijeku.') ?>
+                                </div>
+                                <div data-workspace-purge-progress-wrap
+                        <?= $purgeStarted ? '' : 'hidden' ?>>
+                                    <progress data-workspace-purge-progress max="100"
+                                        value="<?= $purgePercent ?>"
+                                        style="width:100%"></progress>
+                                    <span data-workspace-purge-count class="small">
+                        <?= $purgeProcessed ?> / <?= $purgeTotal ?>
+                                    </span>
                                 </div>
                             </form>
                     <?php endforeach; ?>

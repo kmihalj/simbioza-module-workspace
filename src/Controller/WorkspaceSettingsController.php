@@ -25,6 +25,7 @@ use Throwable;
 
 use function is_string;
 use function rawurlencode;
+use function str_contains;
 
 final readonly class WorkspaceSettingsController
 {
@@ -323,6 +324,8 @@ final readonly class WorkspaceSettingsController
             return $this->accessDenied();
         }
 
+        $json = str_contains($request->getHeaderLine('Accept'), 'application/json');
+
         $body = WorkspaceValue::stringKeyArray($request->getParsedBody());
         $returnTo = WorkspaceValue::string($body['return_to'] ?? 'deleted');
         $redirect = $returnTo === 'maintenance'
@@ -334,11 +337,28 @@ final readonly class WorkspaceSettingsController
                 throw new \RuntimeException(__('Potvrdite da razumijete da je trajno brisanje nepovratno.'));
             }
 
-            $result = $this->maintenance->permanentlyDeleteWorkspace(
+            $result = $this->maintenance->permanentlyDeleteWorkspaceStep(
                 WorkspaceValue::int($body['workspace_id'] ?? 0),
                 WorkspaceValue::string($body['confirm_slug'] ?? ''),
                 $this->currentUserId(),
             );
+            if ($json) {
+                return $this->responseFactory->json([
+                    'ok' => true,
+                    'complete' => (bool)($result['complete'] ?? false),
+                    'result' => $result,
+                    'csrf' => $this->csrfPayload(),
+                ]);
+            }
+
+            if (!(bool)($result['complete'] ?? false)) {
+                $this->alertHandler->add(new Alert(
+                    __('Brisanje je u tijeku. Ponovite radnju za nastavak.'),
+                    AlertLevelEnum::Success,
+                ));
+                return $this->responseFactory->redirect($redirect);
+            }
+
             $message = __('Područje i njegov sadržaj trajno su uklonjeni.')
             . ' '
             . __('Stranice:') . ' ' . WorkspaceValue::int($result['purged_nodes'] ?? 0)
@@ -352,6 +372,14 @@ final readonly class WorkspaceSettingsController
 
             $this->alertHandler->add(new Alert($message, AlertLevelEnum::Success));
         } catch (Throwable $throwable) {
+            if ($json) {
+                return $this->responseFactory->json([
+                    'ok' => false,
+                    'error' => $throwable->getMessage(),
+                    'csrf' => $this->csrfPayload(),
+                ], 400);
+            }
+
             $this->alertHandler->add(new Alert($throwable->getMessage(), AlertLevelEnum::Danger));
         }
 
@@ -411,6 +439,7 @@ final readonly class WorkspaceSettingsController
             : 'workspace.settings.all',
             'tablesReady' => $this->repository->tablesReady(),
             'assetsCssPath' => $this->pathFor('workspace.assets.css', '/workspaces/assets.css'),
+            'assetsJsPath' => $this->pathFor('workspace.assets.js', '/workspaces/assets.js'),
         ]);
     }
 

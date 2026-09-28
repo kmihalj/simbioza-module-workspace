@@ -265,6 +265,29 @@ final class WorkspaceRepositoryTest extends TestCase
             ->where('workspace_id', '=', 2)->get());
     }
 
+    /** HR: Započeto trajno brisanje ne dopušta vraćanje nepotpunog područja. EN: A started purge prevents restoring an incomplete Workspace. */
+    public function testStartedPermanentDeletionCannotBeRestored(): void
+    {
+        $database = $this->database();
+        $database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
+            'id' => 1,
+            'uuid' => '30000000-0000-4000-8000-000000000001',
+            'slug' => 'partial',
+            'name' => 'Partial',
+            'visibility' => 'restricted',
+            'is_deleted' => true,
+            'purge_started_at' => '2026-09-28 10:00:00',
+            'purge_total_items' => 10,
+            'purge_completed_items' => 5,
+            'created_at' => '2026-09-28 09:00:00',
+            'updated_at' => '2026-09-28 09:00:00',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Započeto trajno brisanje');
+        (new WorkspaceRepository($database))->restoreWorkspace(1, 'partial', 1);
+    }
+
     /** HR: Oznake se normaliziraju, dohvaćaju skupno i filtriraju stranice područja. EN: Labels are normalized, batch-loaded, and filter Workspace pages. */
     public function testStoresAndQueriesPageLabels(): void
     {
@@ -522,6 +545,10 @@ final class WorkspaceRepositoryTest extends TestCase
         $migration = require dirname(__DIR__) . '/resources/migrations/initial_workspace_schema.php';
         $this->assertInstanceOf(ReversibleMigrationInterface::class, $migration);
         $migration->up($database);
+        $purgeMigration = require dirname(__DIR__)
+        . '/resources/migrations/20260928090000_add_workspace_purge_marker.php';
+        $this->assertInstanceOf(ReversibleMigrationInterface::class, $purgeMigration);
+        $purgeMigration->up($database);
 
         return $database;
     }

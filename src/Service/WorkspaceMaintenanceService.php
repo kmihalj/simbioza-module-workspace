@@ -286,6 +286,80 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
+     * HR: U web zahtjevu uklanja samo malu Editor seriju; završni korak čisti ostale module i područje.
+     * EN: Removes only a small Editor batch per web request; the final step cleans other modules and the Workspace.
+     *
+     * @return array<string, int>
+     */
+    public function permanentlyDeleteWorkspaceStep(int $workspaceId, string $confirmedSlug, int $actorUserId): array
+    {
+        $workspace = $this->repository->findWorkspaceById($workspaceId, true);
+        if (!is_array($workspace) || !(bool)($workspace['is_deleted'] ?? false)) {
+            throw new RuntimeException(__('Obrisano područje nije pronađeno.'));
+        }
+
+        if ($confirmedSlug === '' || $confirmedSlug !== WorkspaceValue::string($workspace['slug'] ?? '')) {
+            throw new RuntimeException(__('Za potvrdu trajnog brisanja upišite točan slug područja.'));
+        }
+
+        $documentKeys = $this->documentKeys($workspaceId);
+        $newPurge = WorkspaceValue::string($workspace['purge_started_at'] ?? '') === '';
+        $total = WorkspaceValue::int($workspace['purge_total_items'] ?? 0);
+        $completed = WorkspaceValue::int($workspace['purge_completed_items'] ?? 0);
+        if ($newPurge) {
+            $inventory = $this->editor->purgeDocumentInventory($documentKeys);
+            if ($inventory === []) {
+                throw new RuntimeException(__(
+                    'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.',
+                ));
+            }
+
+            $total = max(1, WorkspaceValue::int($inventory['total'] ?? 0));
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
+                ->where('id', '=', $workspaceId)
+                ->update([
+                    'purge_started_at' => date('Y-m-d H:i:s'),
+                    'purge_total_items' => $total,
+                    'purge_completed_items' => 0,
+                ]);
+        }
+
+        $batch = $this->editor->purgeDocumentsBatch($documentKeys);
+        if ($documentKeys !== [] && $batch === []) {
+            if ($newPurge) {
+                $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
+                    ->where('id', '=', $workspaceId)
+                    ->update(['purge_started_at' => null]);
+            }
+
+            throw new RuntimeException(__(
+                'HTML Editor nije dostupan pa dokumente područja nije moguće trajno ukloniti.',
+            ));
+        }
+
+        $completed = min($total, $completed
+            + WorkspaceValue::int($batch['purged_documents'] ?? 0)
+            + WorkspaceValue::int($batch['purged_assets'] ?? 0));
+        $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
+            ->where('id', '=', $workspaceId)
+            ->update(['purge_completed_items' => $completed]);
+        if ((bool)($batch['remaining'] ?? false)) {
+            return [
+                'complete' => 0,
+                'total' => $total,
+                'processed' => $completed,
+                'percent' => min(99, (int)floor($completed * 100 / max(1, $total))),
+                'purged_documents' => WorkspaceValue::int($batch['purged_documents'] ?? 0),
+                'purged_versions' => WorkspaceValue::int($batch['purged_versions'] ?? 0),
+                'purged_assets' => WorkspaceValue::int($batch['purged_assets'] ?? 0),
+            ];
+        }
+
+        return ['complete' => 1, 'total' => $total, 'processed' => $total, 'percent' => 100,
+            ...$this->permanentlyDeleteWorkspace($workspaceId, $confirmedSlug, $actorUserId)];
+    }
+
+    /**
      * HR: Vraća sve aktivne i onemogućene ključeve dokumenata nekog područja.
      * EN: Returns every active and disabled document key belonging to a Workspace.
      *

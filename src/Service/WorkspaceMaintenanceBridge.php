@@ -116,6 +116,50 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
+     * HR: Opcionalnom Editoru delegira samo jednu ograničenu seriju trajnog brisanja.
+     * EN: Delegates only one bounded permanent-deletion batch to the optional Editor.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string, mixed>
+     */
+    public function purgeDocumentsBatch(array $documentKeys): array
+    {
+        if ($documentKeys === []) {
+            return ['remaining' => false];
+        }
+
+        $service = $this->service();
+        if (!is_object($service) || !method_exists($service, 'purgeDocumentsBatch')) {
+            return [];
+        }
+
+        $result = $service->purgeDocumentsBatch($documentKeys);
+        return $this->stringKeyedArray(is_array($result) ? $result : []);
+    }
+
+    /**
+     * HR: Dohvaća mali sažetak ukupnog rada za napredak trajnog brisanja.
+     * EN: Retrieves a compact total-work estimate for permanent deletion progress.
+     *
+     * @param list<string> $documentKeys
+     * @return array<string, mixed>
+     */
+    public function purgeDocumentInventory(array $documentKeys): array
+    {
+        if ($documentKeys === []) {
+            return ['total' => 0];
+        }
+
+        $service = $this->service();
+        if (!is_object($service) || !method_exists($service, 'purgeDocumentInventory')) {
+            return [];
+        }
+
+        $result = $service->purgeDocumentInventory($documentKeys);
+        return $this->stringKeyedArray(is_array($result) ? $result : []);
+    }
+
+    /**
      * HR: Izrađuje nedostajuće web-varijante svih postojećih slika bez
      *     mijenjanja ili uklanjanja izvornih datoteka.
      * EN: Creates missing web variants for all existing images without

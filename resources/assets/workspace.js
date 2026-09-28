@@ -2794,6 +2794,78 @@
         initializeMobilePanels();
         initializeBacklinkLayout();
         initializeLookupPickers();
+        initializeWorkspacePurge();
+    }
+
+    /**
+     * HR: Trajno brisanje vodi u kratkim nastavivim zahtjevima umjesto jednog velikog zahtjeva.
+     * EN: Runs permanent deletion as short resumable requests instead of one large request.
+     */
+    function initializeWorkspacePurge() {
+        document.querySelectorAll('[data-workspace-purge-form]').forEach((form) => {
+            if (!(form instanceof HTMLFormElement) || form.dataset.purgeReady === '1') return;
+            form.dataset.purgeReady = '1';
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (form.dataset.purgeRunning === '1') return;
+                form.dataset.purgeRunning = '1';
+                const button = form.querySelector('button[type="submit"]');
+                const status = form.querySelector('[data-workspace-purge-status]')
+                    || form.parentElement?.querySelector('[data-workspace-purge-status]');
+                const progressWrap = form.querySelector('[data-workspace-purge-progress-wrap]')
+                    || form.parentElement?.querySelector('[data-workspace-purge-progress-wrap]');
+                const progress = progressWrap?.querySelector('[data-workspace-purge-progress]');
+                const count = progressWrap?.querySelector('[data-workspace-purge-count]');
+                const csrfInput = form.querySelector('input[type="hidden"]');
+                if (button) button.disabled = true;
+                if (status) status.hidden = false;
+                if (progressWrap) progressWrap.hidden = false;
+                const render = (processed, total, percent) => {
+                    if (progress) progress.value = Math.max(0, Math.min(100, percent));
+                    if (count) count.textContent = `${processed} / ${total}`;
+                    if (status) status.textContent = `${form.dataset.progressLabel || ''} ${percent}%`;
+                };
+                const initialProcessed = Number(form.dataset.initialProcessed || 0);
+                const initialTotal = Number(form.dataset.initialTotal || 0);
+                render(initialProcessed, initialTotal,
+                    initialTotal > 0 ? Math.min(99, Math.floor(initialProcessed * 100 / initialTotal)) : 0);
+                try {
+                    for (;;) {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: new FormData(form),
+                            credentials: 'same-origin',
+                            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        });
+                        const result = await response.json();
+                        if (csrfInput && result.csrf?.name && result.csrf?.token) {
+                            csrfInput.name = result.csrf.name;
+                            csrfInput.value = result.csrf.token;
+                        }
+                        if (!response.ok || !result.ok) {
+                            throw new Error(result.error || `HTTP ${response.status}`);
+                        }
+                        if (result.result) {
+                            render(Number(result.result.processed || 0), Number(result.result.total || 0),
+                                Number(result.result.percent || 0));
+                        }
+                        if (result.complete) {
+                            window.location.reload();
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    // HR: Prekid ne gubi već dovršene serije; isti obrazac nastavlja ostatak.
+                    // EN: An interruption does not lose completed batches; the same form resumes the rest.
+                    if (status) {
+                        status.textContent = error instanceof Error ? error.message : String(error);
+                        status.classList.add('text-danger');
+                    }
+                    form.dataset.purgeRunning = '0';
+                    if (button) button.disabled = false;
+                }
+            });
+        });
     }
 
     /**
