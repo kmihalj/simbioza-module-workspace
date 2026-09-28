@@ -218,6 +218,14 @@ vendor/bin/hph workspace:install-node-properties-migration
 vendor/bin/hph orm-migrate:up
 ```
 
+The initial schema includes resumable permanent-deletion counters. An older
+installation adds them before using permanent Workspace deletion:
+
+```bash
+vendor/bin/hph workspace:install-purge-marker-migration
+vendor/bin/hph orm-migrate:up
+```
+
 Breadcrumbs are built only from the already ACL-filtered page tree. Backlinks
 are extracted from exact published HTML versions and are checked again against
 page ACL and publication state whenever they are displayed. The active locale

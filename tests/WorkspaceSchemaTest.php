@@ -73,6 +73,9 @@ final class WorkspaceSchemaTest extends TestCase
                     'contents_visibility',
                     'is_archived',
                     'is_deleted',
+                    'purge_started_at',
+                    'purge_total_items',
+                    'purge_completed_items',
                 ],
             ),
         );

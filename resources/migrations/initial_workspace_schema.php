@@ -37,6 +37,9 @@ return new class implements ReversibleMigrationInterface {
                 $table->bigInteger('updated_by_user_id')->unsigned()->nullable()->index();
                 $table->bigInteger('deleted_by_user_id')->unsigned()->nullable()->index();
                 $table->timestamp('deleted_at')->nullable()->index();
+                $table->timestamp('purge_started_at')->nullable();
+                $table->bigInteger('purge_total_items')->unsigned()->default(0);
+                $table->bigInteger('purge_completed_items')->unsigned()->default(0);
                 $table->timestamps();
             });
         }

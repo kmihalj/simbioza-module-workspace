@@ -705,4 +705,6 @@ return array (
   'Prenesi cijelu povijest verzija' => 'Transfer the complete version history',
   'Prenesi izravna dopuštenja i ograničenja stranice' => 'Transfer the page\'s direct permissions and restrictions',
   'Nastavi s odabranom radnjom' => 'Continue with the selected action',
+  'Predložak migracije trajnog brisanja nije pronađen.' => 'The permanent-deletion migration template was not found.',
+  'Kreirana je migracija trajnog brisanja područja: ' => 'Created the Workspace permanent-deletion migration: ',
 );

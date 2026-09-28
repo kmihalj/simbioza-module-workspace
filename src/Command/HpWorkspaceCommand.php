@@ -40,6 +40,9 @@ final readonly class HpWorkspaceCommand
     private const TREE_HIDING_TEMPLATE_FILE =
     'resources/migrations/20260905223000_add_workspace_tree_hiding.php';
 
+    private const PURGE_MARKER_TEMPLATE_FILE =
+    'resources/migrations/20260928090000_add_workspace_purge_marker.php';
+
     /**
      * HR: Prima konfiguraciju host aplikacije za određivanje cilja migracije.
      * EN: Receives host-application configuration for resolving the migration target.
@@ -87,6 +90,8 @@ final readonly class HpWorkspaceCommand
             $this->installMetadataTranslationsMigration($subArguments, $options),
             'tree-hiding', 'tree-hiding:install', 'install-tree-hiding-migration' =>
             $this->installTreeHidingMigration($subArguments, $options),
+            'purge-marker', 'purge-marker:install', 'install-purge-marker-migration' =>
+            $this->installPurgeMarkerMigration($subArguments, $options),
             'help', '--help', '-h' => $this->help(),
             default => $this->unknownSubcommand($subcommand),
         };
@@ -536,6 +541,46 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
+     * HR: Kopira nadogradnju za nastavivo trajno brisanje područja.
+     * EN: Copies the upgrade for resumable permanent Workspace deletion.
+     *
+     * @param array<int, string> $arguments
+     * @param array<string, mixed> $options
+     */
+    public function installPurgeMarkerMigration(array $arguments = [], array $options = []): int
+    {
+        $targetDirectory = $this->targetDirectory($options);
+        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::PURGE_MARKER_TEMPLATE_FILE;
+        if (!is_file($template)) {
+            throw new RuntimeException(__('Predložak migracije trajnog brisanja nije pronađen.'));
+        }
+
+        $options['name'] = $this->option($options, ['name'])
+        ?? trim((string)($arguments[0] ?? ''))
+        ?: 'add_workspace_purge_marker';
+        $suffix = $this->migrationSuffix([], $options);
+        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
+        . DIRECTORY_SEPARATOR
+        . date('YmdHis')
+        . '_'
+        . $suffix
+        . '.php';
+        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
+        }
+
+        $content = file_get_contents($template);
+        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
+            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
+        }
+
+        $this->write(__('Kreirana je migracija trajnog brisanja područja: ') . $target);
+        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
+
+        return 0;
+    }
+
+    /**
      * HR: Ispisuje kratke upute za CLI helper.
      * EN: Prints brief CLI helper usage.
      */
@@ -553,6 +598,7 @@ final readonly class HpWorkspaceCommand
         $this->write('  vendor/bin/hph workspace:install-remove-owner-migration');
         $this->write('  vendor/bin/hph workspace:install-metadata-translations-migration');
         $this->write('  vendor/bin/hph workspace:install-tree-hiding-migration');
+        $this->write('  vendor/bin/hph workspace:install-purge-marker-migration');
 
         return 0;
     }

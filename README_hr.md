@@ -217,6 +217,14 @@ vendor/bin/hph workspace:install-node-labels-migration
 vendor/bin/hph orm-migrate:up
 ```
 
+Početna shema sadrži brojače za nastavivo trajno brisanje. Starija instalacija
+dodaje ih prije uporabe trajnog brisanja područja:
+
+```bash
+vendor/bin/hph workspace:install-purge-marker-migration
+vendor/bin/hph orm-migrate:up
+```
+
 Navigacijska putanja gradi se samo iz stabla koje je već filtrirano ACL-om.
 Povratne poveznice izdvajaju se iz točnih objavljenih HTML verzija, a pri
 svakom prikazu ponovno se provjeravaju ACL stranice i stanje objave. Prednost

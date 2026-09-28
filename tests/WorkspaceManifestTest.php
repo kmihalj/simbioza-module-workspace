@@ -37,6 +37,7 @@ final class WorkspaceManifestTest extends TestCase
         $this->assertContains('workspace:install-node-properties-migration', $commandNames);
         $this->assertContains('workspace:install-node-direct-permissions-migration', $commandNames);
         $this->assertContains('workspace:install-remove-owner-migration', $commandNames);
+        $this->assertContains('workspace:install-purge-marker-migration', $commandNames);
     }
 
     /**

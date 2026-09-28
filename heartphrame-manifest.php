@@ -515,6 +515,14 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                     'installRemoveOwnerMigration',
                 ],
             ),
+            new CommandDefinition(
+                'workspace:install-purge-marker-migration',
+                'Copy the resumable Workspace purge migration into the host application.',
+                [
+                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
+                    'installPurgeMarkerMigration',
+                ],
+            ),
         ];
     }
 

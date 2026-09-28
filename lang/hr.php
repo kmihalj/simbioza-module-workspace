@@ -705,4 +705,6 @@ return array (
   'Prenesi cijelu povijest verzija' => 'Prenesi cijelu povijest verzija',
   'Prenesi izravna dopuštenja i ograničenja stranice' => 'Prenesi izravna dopuštenja i ograničenja stranice',
   'Nastavi s odabranom radnjom' => 'Nastavi s odabranom radnjom',
+  'Predložak migracije trajnog brisanja nije pronađen.' => 'Predložak migracije trajnog brisanja nije pronađen.',
+  'Kreirana je migracija trajnog brisanja područja: ' => 'Kreirana je migracija trajnog brisanja područja: ',
 );
