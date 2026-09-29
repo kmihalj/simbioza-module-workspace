@@ -138,6 +138,31 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
+     * HR: Sinkronizacija naslova mora podržati i web-sesiju i eksplicitnog API
+     *     korisnika kako naslov stabla ne bi ostao na jeziku izvornika.
+     * EN: Title synchronization must support both the web session and an
+     *     explicit API user so the tree title does not remain in the source locale.
+     */
+    public function testEditorAccessSynchronizesLocalizedTitlesForWebAndApiUsers(): void
+    {
+        $access = file_get_contents(dirname(__DIR__) . '/src/Service/WorkspaceEditorAccess.php');
+
+        $this->assertIsString($access);
+        $this->assertStringContainsString(
+            'function saveDocumentTitleTranslation(',
+            $access,
+        );
+        $this->assertStringContainsString(
+            '$this->access->currentUser()',
+            $access,
+        );
+        $this->assertStringContainsString(
+            'function saveDocumentTitleTranslationForUser(',
+            $access,
+        );
+    }
+
+    /**
      * HR: Izvoz Područja mora prerenderirati nativne grafikone jednako kao izvoz stranice.
      * EN: Workspace export must pre-render native charts just like page export.
      */
@@ -205,6 +230,36 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringContainsString("'workspace.node.delete'", $controller);
         $this->assertStringNotContainsString('workspace.node.delete', $nodeDialog);
         $this->assertStringNotContainsString('Obriši podgranu', $nodeDialog);
+    }
+
+    /**
+     * HR: Obrazac prijenosa mora lokalizirati izvorne nazive i svaku pomoćnu
+     *     poruku imati u oba ugrađena jezična paketa.
+     * EN: The transfer form must localize source names and include every help
+     *     message in both bundled language packs.
+     */
+    public function testPageTransferLocalizesSourceNamesAndHelpMessages(): void
+    {
+        $controller = file_get_contents(
+            dirname(__DIR__) . '/src/Controller/WorkspacePageTransferController.php',
+        );
+        $english = require dirname(__DIR__) . '/lang/en.php';
+        $croatian = require dirname(__DIR__) . '/lang/hr.php';
+        $messages = [
+            'Sadržaj, sve jezične verzije i privitci uvijek se prenose. '
+                . 'Povijest i prava možete uključiti zasebno.',
+            'Ova stranica ima podređene stavke. Kopira se samo odabrana stranica; '
+                . 'premještanje nije dostupno dok postoje podređene stavke.',
+            'Prava se prenose samo za korisnike i grupe koji postoje na ciljnom sustavu.',
+        ];
+
+        $this->assertIsString($controller);
+        $this->assertStringContainsString('localizeWorkspace(', $controller);
+        $this->assertStringContainsString('localizeNode(', $controller);
+        foreach ($messages as $message) {
+            $this->assertArrayHasKey($message, $english);
+            $this->assertArrayHasKey($message, $croatian);
+        }
     }
 
     /**

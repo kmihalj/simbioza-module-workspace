@@ -9,6 +9,7 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupExportContext;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceModuleViewRenderer;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
@@ -17,6 +18,7 @@ use HeartPhrame\Alert\Alert;
 use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\CodeBook\AlertLevelEnum;
 use HeartPhrame\Http\ResponseFactory;
+use HeartPhrame\Localization\TranslatorInterface;
 use HeartPhrame\Routing\UrlGenerator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -46,9 +48,11 @@ final readonly class WorkspacePageTransferController
         private WorkspaceRepository $repository,
         private WorkspaceAccessService $access,
         private WorkspaceEditorBridge $editor,
+        private WorkspaceConfig $config,
         private BackupManager $backups,
         private UrlGenerator $urls,
         private AlertHandler $alerts,
+        private TranslatorInterface $translator,
     ) {
     }
 
@@ -63,6 +67,11 @@ final readonly class WorkspacePageTransferController
         if (!$this->canManage($workspace)) {
             return $this->denied();
         }
+
+        $language = $this->language($request);
+        $primaryLanguage = $this->config->siteDefaultLanguage();
+        $workspace = $this->repository->localizeWorkspace($workspace, $language, $primaryLanguage);
+        $node = $this->repository->localizeNode($node, $language, $primaryLanguage);
 
         return $this->views->render('workspace/page-transfer', [
             'title' => __('Kopiranje ili premještanje stranice'),
@@ -231,6 +240,22 @@ final readonly class WorkspacePageTransferController
         }
 
         return [$workspace, $node];
+    }
+
+    /**
+     * HR: Čita aktivni jezik sučelja uz siguran povratak na zadani jezik sitea.
+     * EN: Reads the active UI locale with a safe fallback to the site default.
+     */
+    private function language(ServerRequestInterface $request): string
+    {
+        $query = $request->getQueryParams();
+        $language = strtolower(WorkspaceValue::string(
+            $query['lang'] ?? $this->translator->getLocale(),
+        ));
+
+        return preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/', $language) === 1
+        ? $language
+        : $this->config->siteDefaultLanguage();
     }
 
     /** HR: Provjerava upravljanje područjem. EN: Checks Workspace management permission.

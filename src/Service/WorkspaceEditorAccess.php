@@ -427,6 +427,29 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * HR: Sprema naslov jezične varijante za korisnika trenutačne web-sesije.
+     * EN: Saves a localized page title for the user in the current web session.
+     */
+    public function saveDocumentTitleTranslation(
+        string $documentKey,
+        string $language,
+        string $title,
+    ): void {
+        $this->documentContext($documentKey);
+        $user = $this->access->currentUser();
+        if (!is_array($user)) {
+            throw new \RuntimeException(__('Nemate pravo uređivanja ove stranice.'));
+        }
+
+        $this->saveDocumentTitleTranslationForUser(
+            $documentKey,
+            $language,
+            $title,
+            $user,
+        );
+    }
+
+    /**
      * HR: Sprema naslov Editor dokumenta u jezičnu kartu pripadajuće stavke
      * stabla. Primarni naslov ostaje obavezan, a ostali jezici koriste njegov
      * fallback kada prijevod nije upisan.

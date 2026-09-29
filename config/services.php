@@ -638,9 +638,11 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(WorkspaceRepository::class),
                 $container->get(WorkspaceAccessService::class),
                 $container->get(WorkspaceEditorBridge::class),
+                $container->get(WorkspaceConfig::class),
                 $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager::class),
                 $container->get(UrlGenerator::class),
                 $container->get(AlertHandler::class),
+                $container->get(TranslatorInterface::class),
             );
 }
 
