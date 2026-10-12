@@ -25,16 +25,17 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Opcionalno povezuje postavke jednog područja s editorom posebnih menija.
- *     Workspace ostaje upotrebljiv bez Menu modula, a opseg spremanja uvijek određuje server.
  * EN: Optionally connects one Workspace's settings to the special-menu editor.
  *     Workspace remains usable without Menu, while the server always defines the saved scope.
+ *
+ * HR: Opcionalno povezuje postavke jednog područja s editorom posebnih menija.
+ *     Workspace ostaje upotrebljiv bez Menu modula, a opseg spremanja uvijek određuje server.
  */
 final readonly class WorkspaceMenuService
 {
     private const MENU_PACKAGE = 'aaieduhr/heartphrame-module-menu';
 
-    private const REPOSITORY = 'AaiEduHr\\HeartPhrameModuleMenu\\Service\\MenuConfigRepository';
+    private const REPOSITORY = \AaiEduHr\HeartPhrameModuleMenu\Service\MenuConfigRepository::class;
 
     private const NAVIGATION_CATALOG = 'AaiEduHr\\HeartPhrameModuleMenu\\Service\\MenuNavigationCatalog';
 
@@ -45,8 +46,9 @@ final readonly class WorkspaceMenuService
     private const MODE_LEFT = 'contexts_left';
 
     /**
-     * HR: Prima samo framework servise kako Menu modul ne bi postao obavezna Composer ovisnost.
      * EN: Receives only framework services so Menu does not become a required Composer dependency.
+     *
+     * HR: Prima samo framework servise kako Menu modul ne bi postao obavezna Composer ovisnost.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -58,8 +60,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Provjerava je li opcionalni Menu modul instaliran, uključen i dostupan u containeru.
      * EN: Checks whether the optional Menu module is installed, enabled, and available in the container.
+     *
+     * HR: Provjerava je li opcionalni Menu modul instaliran, uključen i dostupan u containeru.
      */
     public function isAvailable(): bool
     {
@@ -70,8 +73,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Renderira potpuno odvojeni editor posebnog gornjeg ili lijevog menija za jedno područje.
      * EN: Renders a fully separated special top- or left-menu editor for one Workspace.
+     *
+     * HR: Renderira potpuno odvojeni editor posebnog gornjeg ili lijevog menija za jedno područje.
      *
      * @param array<string, mixed> $workspace
      */
@@ -121,8 +125,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Sprema samo odabranu vrstu menija i prisilno vraća context na zadano područje.
      * EN: Saves only the selected menu type and forcibly scopes the context to the supplied Workspace.
+     *
+     * HR: Sprema samo odabranu vrstu menija i prisilno vraća context na zadano područje.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $postedContext
@@ -139,8 +144,9 @@ final readonly class WorkspaceMenuService
         $labels = $this->workspaceLabels($workspace, is_array($locales) ? $locales : ['hr', 'en']);
         $paths = $this->scopePaths($workspace);
 
-        // HR: Klijent ne smije promijeniti ID, labelu ni patterne izvan područja kojim upravlja.
         // EN: The client must not change the ID, label, or patterns outside the managed Workspace.
+        //
+        // HR: Klijent ne smije promijeniti ID, labelu ni patterne izvan područja kojim upravlja.
         $postedContext = $this->lockedContext($workspace, $postedContext, $existing, $labels);
 
         if (!method_exists($repository, 'saveContext')) {
@@ -160,18 +166,30 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Uklanja obje privatne definicije menija područja, a ostale contexte ne mijenja.
-     * EN: Removes both private Workspace menu definitions without changing other contexts.
+     * EN: Removes all explicitly owned workspace/page menus, preserving shared and other-owner contexts.
+     * Older Menu modules retain their top/left cleanup path.
+     *
+     * HR: Uklanja sve izričito vlasničke menije područja/stranica, čuvajući zajedničke i tuđe kontekste.
+     * Stariji Menu moduli zadržavaju svoj način čišćenja gornjeg/lijevog menija.
      *
      * @param array<string, mixed> $workspace
      */
     public function deleteForWorkspace(array $workspace): void
     {
+        $repository = $this->service(self::REPOSITORY);
+        if ($repository === null) {
+            return;
+        }
+
+        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+        if ($workspaceId > 0 && $this->removeOwnedContexts($repository, ['workspace.' . $workspaceId], true)) {
+            return;
+        }
+
         if (!$this->isAvailable()) {
             return;
         }
 
-        $repository = $this->requiredService(self::REPOSITORY);
         $catalog = $this->requiredService(self::NAVIGATION_CATALOG);
         foreach ([self::MODE_TOP, self::MODE_LEFT] as $mode) {
             $context = $this->contextForWorkspace($repository, $workspace, $mode);
@@ -197,8 +215,92 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Gradi zaključani context prije zapisa; odvojeno je radi sigurnosnog regresijskog testa.
+     * EN: Removes page-owned files before permanently deleting their tree nodes; soft deletion keeps menus.
+     * No Menu GUI service is required for this optional data cleanup.
+     *
+     * HR: Uklanja vlasničke datoteke stranica prije trajnog brisanja čvorova; meko brisanje čuva menije.
+     * Ovaj opcionalni zahvat nad podatcima ne zahtijeva Menu GUI servis.
+     *
+     * @param list<array{workspace_id:int,node_id:int,document_key?:string}> $pages
+     */
+    public function deleteForPages(array $pages): void
+    {
+        $repository = $this->service(self::REPOSITORY);
+        if (!$this->config->isAppModuleEnabled(self::MENU_PACKAGE) || $repository === null) {
+            return;
+        }
+
+        $targets = [];
+        foreach ($pages as $page) {
+            if ($page['workspace_id'] > 0 && $page['node_id'] > 0) {
+                $targets[] = 'workspace.' . $page['workspace_id'] . '.page.' . $page['node_id'];
+            }
+        }
+
+        if ($targets !== []) {
+            $this->removeOwnedContexts($repository, $targets);
+        }
+    }
+
+    /**
+     * EN: Filters explicit owner targets in one transactional Menu file write, never by URL patterns.
+     *
+     * HR: Filtrira izričite vlasnike jednim transakcijskim zapisom Menu datoteka, nikad po URL patternima.
+     *
+     * @param list<string> $targets
+     */
+    private function removeOwnedContexts(object $repository, array $targets, bool $descendants = false): bool
+    {
+        if (!method_exists($repository, 'contextFiles')) {
+            throw new RuntimeException('Menu context storage is unavailable for owned cleanup.');
+        }
+
+        $files = $repository->contextFiles();
+        if (!is_object($files) || !method_exists($files, 'read') || !method_exists($files, 'write')) {
+            throw new RuntimeException('Menu context storage has an invalid contract.');
+        }
+
+        $contexts = $files->read();
+        if (!is_array($contexts)) {
+            throw new RuntimeException('Menu contexts are unavailable for owned cleanup.');
+        }
+
+        $remaining = [];
+        $changed = false;
+        foreach ($contexts as $context) {
+            if (!is_array($context)) {
+                throw new RuntimeException('Invalid Menu context during owned cleanup.');
+            }
+
+            $target = WorkspaceValue::string($context['owner_target'] ?? '');
+            $remove = in_array($target, $targets, true);
+            if (!$remove && $descendants) {
+                foreach ($targets as $owner) {
+                    if (preg_match('/^' . preg_quote($owner, '/') . '\\.page\\.[1-9][0-9]*$/D', $target) === 1) {
+                        $remove = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($remove) {
+                $changed = true;
+            } else {
+                $remaining[] = $context;
+            }
+        }
+
+        if ($changed) {
+            $files->write($remaining);
+        }
+
+        return true;
+    }
+
+    /**
      * EN: Builds the locked context before persistence; separated for a security regression test.
+     *
+     * HR: Gradi zaključani context prije zapisa; odvojeno je radi sigurnosnog regresijskog testa.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $postedContext
@@ -219,13 +321,15 @@ final readonly class WorkspaceMenuService
         $postedContext['label'] = $labels;
         $postedContext['route_patterns'] = '';
         $postedContext['path_patterns'] = implode("\n", $paths);
+        $postedContext['owner_target'] = 'workspace.' . WorkspaceValue::int($workspace['id'] ?? 0);
 
         return $postedContext;
     }
 
     /**
-     * HR: Vraća podržanu internu oznaku zasebnog editora.
      * EN: Returns a supported internal separated-editor identifier.
+     *
+     * HR: Vraća podržanu internu oznaku zasebnog editora.
      */
     public function mode(string $mode): string
     {
@@ -237,8 +341,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Nalazi postojeću definiciju istog tipa i opsega ili priprema novi odvojeni zapis.
      * EN: Finds an existing definition of the same type and scope or prepares a new separated record.
+     *
+     * HR: Nalazi postojeću definiciju istog tipa i opsega ili priprema novi odvojeni zapis.
      *
      * @param array<string, mixed> $workspace
      * @return array<string, mixed>
@@ -294,8 +399,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Gradi instalacijski neovisne putanje područja i svih njegovih stranica.
      * EN: Builds installation-independent paths for a Workspace and all its pages.
+     *
+     * HR: Gradi instalacijski neovisne putanje područja i svih njegovih stranica.
      *
      * @param array<string, mixed> $workspace
      * @return list<string>
@@ -309,8 +415,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Vraća lokalizirano ime područja kao početnu labelu za svaki jezik aplikacije.
      * EN: Returns the localized Workspace name as the initial label for each application locale.
+     *
+     * HR: Vraća lokalizirano ime područja kao početnu labelu za svaki jezik aplikacije.
      *
      * @param array<string, mixed> $workspace
      * @param array<mixed> $locales
@@ -337,8 +444,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Pretvara tekstualne patterne u usporediv popis redaka.
      * EN: Converts textual patterns into a comparable list of lines.
+     *
+     * HR: Pretvara tekstualne patterne u usporediv popis redaka.
      *
      * @return list<string>
      */
@@ -348,8 +456,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Normalizira proizvoljni povrat opcionalnog Menu servisa u listu tekstova.
      * EN: Normalizes an arbitrary optional Menu-service result into a string list.
+     *
+     * HR: Normalizira proizvoljni povrat opcionalnog Menu servisa u listu tekstova.
      *
      * @return list<string>
      */
@@ -370,8 +479,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Gradi URL-ove zastavica bez izravne ovisnosti o Menu klasi.
      * EN: Builds flag URLs without a direct dependency on a Menu class.
+     *
+     * HR: Gradi URL-ove zastavica bez izravne ovisnosti o Menu klasi.
      *
      * @param array<mixed> $locales
      * @return array<string, string>
@@ -397,8 +507,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Vraća obavezni opcionalni servis ili jasnu kompatibilnosnu grešku.
      * EN: Returns a required optional service or a clear compatibility error.
+     *
+     * HR: Vraća obavezni opcionalni servis ili jasnu kompatibilnosnu grešku.
      */
     private function requiredService(string $serviceId): object
     {
@@ -411,8 +522,9 @@ final readonly class WorkspaceMenuService
     }
 
     /**
-     * HR: Kasno dohvaća servis Menu modula bez rušenja Workspace modula kada Menu nije instaliran.
      * EN: Resolves a Menu service late without breaking Workspace when Menu is not installed.
+     *
+     * HR: Kasno dohvaća servis Menu modula bez rušenja Workspace modula kada Menu nije instaliran.
      */
     private function service(string $serviceId): ?object
     {

@@ -20,29 +20,29 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceManifestTest extends TestCase
 {
     /**
-     * HR: Svaka dokumentirana nadogradnja Workspace sheme mora biti dostupna
-     *     kao izravna CLI naredba host aplikaciji.
-     * EN: Every documented Workspace schema upgrade must be exposed as a
-     *     direct CLI command to the host application.
+     * EN: The initial schema is complete; historical upgrade commands are not registered.
+     *
+     * HR: Početna shema je potpuna; povijesne naredbe za nadogradnju nisu registrirane.
      */
-    public function testManifestRegistersHomepageViewOptionsMigrationCommand(): void
+    public function testManifestRegistersOnlyCurrentSchemaCommand(): void
     {
         $manifest = require dirname(__DIR__) . '/heartphrame-manifest.php';
         $commandNames = array_map(
             static fn(object $command): string => $command->getName(),
             $manifest->getCommands(),
         );
-
-        $this->assertContains('workspace:install-homepage-view-options-migration', $commandNames);
-        $this->assertContains('workspace:install-node-properties-migration', $commandNames);
-        $this->assertContains('workspace:install-node-direct-permissions-migration', $commandNames);
-        $this->assertContains('workspace:install-remove-owner-migration', $commandNames);
-        $this->assertContains('workspace:install-purge-marker-migration', $commandNames);
+        $this->assertContains('workspace:install-migration', $commandNames);
+        foreach ($commandNames as $name) {
+            if (str_contains($name, 'migration')) {
+                $this->assertSame('workspace:install-migration', $name);
+            }
+        }
     }
 
     /**
-     * HR: Provjerava javni ugovor početne rute bez pokretanja cijele aplikacije.
      * EN: Verifies the initial route contract without booting the complete application.
+     *
+     * HR: Provjerava javni ugovor početne rute bez pokretanja cijele aplikacije.
      */
     public function testManifestRegistersWorkspaceRouteContract(): void
     {

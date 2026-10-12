@@ -21,16 +21,16 @@ use RuntimeException;
 use Throwable;
 
 /**
- * HR: Pretvara verzionirane HTTP zahtjeve u ACL-svjesne Workspace operacije.
- *
  * EN: Translates versioned HTTP requests into ACL-aware Workspace operations.
+ *
+ * HR: Pretvara verzionirane HTTP zahtjeve u ACL-svjesne Workspace operacije.
  */
 final readonly class WorkspaceResourceController
 {
     /**
-     * HR: Inicijalizira HTTP adapter zajedničkom tvornicom odgovora i Workspace servisom.
-     *
      * EN: Initializes the HTTP adapter with the shared response factory and Workspace service.
+     *
+     * HR: Inicijalizira HTTP adapter zajedničkom tvornicom odgovora i Workspace servisom.
      */
     public function __construct(
         private ApiResponseFactory $responses,
@@ -43,8 +43,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća područja vidljiva vlasniku API ključa.
      * EN: Returns workspaces visible to the API key owner.
+     *
+     * HR: Vraća područja vidljiva vlasniku API ključa.
      */
     public function listWorkspaces(ServerRequestInterface $request): ResponseInterface
     {
@@ -60,8 +61,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća jedno područje ako ga vlasnik ključa smije vidjeti.
      * EN: Returns one Workspace when the key owner may view it.
+     *
+     * HR: Vraća jedno područje ako ga vlasnik ključa smije vidjeti.
      */
     public function getWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -76,8 +78,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća filtrirano stablo područja i efektivna prava čvorova.
      * EN: Returns the filtered Workspace tree and effective node permissions.
+     *
+     * HR: Vraća filtrirano stablo područja i efektivna prava čvorova.
      */
     public function getTree(ServerRequestInterface $request): ResponseInterface
     {
@@ -93,8 +96,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća ACL-filtrirane sažetke objavljenih stranica područja.
      * EN: Returns ACL-filtered summaries of published Workspace pages.
+     *
+     * HR: Vraća ACL-filtrirane sažetke objavljenih stranica područja.
      */
     public function getShorts(ServerRequestInterface $request): ResponseInterface
     {
@@ -111,8 +115,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Preuzima ACL-filtrirani offline HTML ZIP cijelog područja ili izabranih stranica.
      * EN: Downloads an ACL-filtered offline HTML ZIP of a Workspace or selected pages.
+     *
+     * HR: Preuzima ACL-filtrirani offline HTML ZIP cijelog područja ili izabranih stranica.
      */
     public function exportWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -172,8 +177,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća postavke teme područja, sistemske izbore i privatne datoteke.
      * EN: Returns Workspace theme settings, system choices, and private files.
+     *
+     * HR: Vraća postavke teme područja, sistemske izbore i privatne datoteke.
      */
     public function getWorkspaceTheme(ServerRequestInterface $request): ResponseInterface
     {
@@ -188,8 +194,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Odabire nasljeđivanje ili jednu nepromijenjenu sistemsku temu područja.
      * EN: Selects inheritance or one unchanged system theme for a Workspace.
+     *
+     * HR: Odabire nasljeđivanje ili jednu nepromijenjenu sistemsku temu područja.
      */
     public function selectWorkspaceTheme(ServerRequestInterface $request): ResponseInterface
     {
@@ -205,8 +212,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Sprema privatnu konfiguraciju teme samo za zadano područje.
      * EN: Stores a private theme configuration only for the supplied Workspace.
+     *
+     * HR: Sprema privatnu konfiguraciju teme samo za zadano područje.
      */
     public function saveWorkspaceTheme(ServerRequestInterface $request): ResponseInterface
     {
@@ -222,8 +230,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Uvozi ZIP teme iz multipart polja `theme` u privatnu temu područja.
      * EN: Imports a theme ZIP from the `theme` multipart field into a private Workspace theme.
+     *
+     * HR: Uvozi ZIP teme iz multipart polja `theme` u privatnu temu područja.
      */
     public function importWorkspaceTheme(ServerRequestInterface $request): ResponseInterface
     {
@@ -246,8 +255,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Administratoru preuzima ZIP privatne teme područja.
      * EN: Downloads a Workspace private-theme ZIP for an administrator.
+     *
+     * HR: Administratoru preuzima ZIP privatne teme područja.
      */
     public function exportWorkspaceTheme(ServerRequestInterface $request): ResponseInterface
     {
@@ -264,8 +274,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Sprema sliku iz multipart polja `asset` u privatnu biblioteku teme.
      * EN: Stores an image from the `asset` multipart field in the private theme library.
+     *
+     * HR: Sprema sliku iz multipart polja `asset` u privatnu biblioteku teme.
      */
     public function uploadWorkspaceThemeAsset(ServerRequestInterface $request): ResponseInterface
     {
@@ -286,8 +297,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Briše nekorištenu datoteku privatne teme područja.
      * EN: Deletes an unused Workspace private-theme file.
+     *
+     * HR: Briše nekorištenu datoteku privatne teme područja.
      */
     public function deleteWorkspaceThemeAsset(ServerRequestInterface $request): ResponseInterface
     {
@@ -303,8 +315,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća administratorsku javnu i prijavljenu politiku naslovnice.
      * EN: Returns administrator-only public and authenticated homepage policy.
+     *
+     * HR: Vraća administratorsku javnu i prijavljenu politiku naslovnice.
      */
     public function getHomepageSettings(ServerRequestInterface $request): ResponseInterface
     {
@@ -316,8 +329,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Sprema administratorsku javnu i prijavljenu politiku naslovnice.
      * EN: Stores administrator-only public and authenticated homepage policy.
+     *
+     * HR: Sprema administratorsku javnu i prijavljenu politiku naslovnice.
      */
     public function saveHomepageSettings(ServerRequestInterface $request): ResponseInterface
     {
@@ -332,8 +346,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća osobnu naslovnicu vlasnika API ključa kada je odabir omogućen.
      * EN: Returns the API-key owner's personal homepage when selection is enabled.
+     *
+     * HR: Vraća osobnu naslovnicu vlasnika API ključa kada je odabir omogućen.
      */
     public function getHomepagePreference(ServerRequestInterface $request): ResponseInterface
     {
@@ -345,8 +360,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Sprema osobnu naslovnicu vlasnika API ključa uz novu ACL provjeru.
      * EN: Stores the API-key owner's personal homepage after a fresh ACL check.
+     *
+     * HR: Sprema osobnu naslovnicu vlasnika API ključa uz novu ACL provjeru.
      */
     public function saveHomepagePreference(ServerRequestInterface $request): ResponseInterface
     {
@@ -373,8 +389,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Kreira novo područje uz aplikacijsko pravilo o dozvoli kreiranja.
      * EN: Creates a new Workspace subject to the application's creation policy.
+     *
+     * HR: Kreira novo područje uz aplikacijsko pravilo o dozvoli kreiranja.
      */
     public function createWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -390,8 +407,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Djelomično mijenja područje uz efektivno can_manage pravo.
      * EN: Partially updates a Workspace with the effective can_manage permission.
+     *
+     * HR: Djelomično mijenja područje uz efektivno can_manage pravo.
      */
     public function updateWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -415,8 +433,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Soft-briše područje uz efektivno can_manage pravo.
      * EN: Soft-deletes a Workspace with the effective can_manage permission.
+     *
+     * HR: Soft-briše područje uz efektivno can_manage pravo.
      */
     public function deleteWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -441,8 +460,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća administratorski popis soft-obrisanih područja.
      * EN: Returns the administrator-only list of soft-deleted workspaces.
+     *
+     * HR: Vraća administratorski popis soft-obrisanih područja.
      */
     public function listDeletedWorkspaces(ServerRequestInterface $request): ResponseInterface
     {
@@ -458,8 +478,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća soft-obrisano područje pod slobodnim slugom.
      * EN: Restores a soft-deleted Workspace under an available slug.
+     *
+     * HR: Vraća soft-obrisano područje pod slobodnim slugom.
      */
     public function restoreWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -479,8 +500,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća izravni ACL područja korisniku koji njime smije upravljati.
      * EN: Returns the direct Workspace ACL to a user who may manage it.
+     *
+     * HR: Vraća izravni ACL područja korisniku koji njime smije upravljati.
      */
     public function getWorkspaceAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -495,8 +517,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Zamjenjuje potpuni ACL područja.
      * EN: Replaces the complete Workspace ACL.
+     *
+     * HR: Zamjenjuje potpuni ACL područja.
      */
     public function replaceWorkspaceAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -512,8 +535,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Pretražuje korisnike ili grupe za Workspace ACL picker.
      * EN: Searches users or groups for the Workspace ACL picker.
+     *
+     * HR: Pretražuje korisnike ili grupe za Workspace ACL picker.
      */
     public function searchAclSubjects(ServerRequestInterface $request): ResponseInterface
     {
@@ -534,8 +558,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Dodaje interni ili vanjski link u stablo.
      * EN: Adds an internal or external link to the tree.
+     *
+     * HR: Dodaje interni ili vanjski link u stablo.
      */
     public function createLinkNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -553,8 +578,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Mijenja strukturne podatke jednog čvora stabla.
      * EN: Updates structural data for one tree node.
+     *
+     * HR: Mijenja strukturne podatke jednog čvora stabla.
      */
     public function updateNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -571,8 +597,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Briše link-čvor; dokumenti ostaju odgovornost Editor API-ja.
      * EN: Deletes a link node; documents remain the Editor API's responsibility.
+     *
+     * HR: Briše link-čvor; dokumenti ostaju odgovornost Editor API-ja.
      */
     public function deleteLinkNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -593,8 +620,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Sprema potpuni poredak i hijerarhiju stabla.
      * EN: Stores the complete tree order and hierarchy.
+     *
+     * HR: Sprema potpuni poredak i hijerarhiju stabla.
      */
     public function reorderTree(ServerRequestInterface $request): ResponseInterface
     {
@@ -628,8 +656,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća izravna ACL ograničenja jednog čvora.
      * EN: Returns direct ACL restrictions for one node.
+     *
+     * HR: Vraća izravna ACL ograničenja jednog čvora.
      */
     public function getNodeAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -645,8 +674,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Zamjenjuje izravna ACL ograničenja jednog čvora.
      * EN: Replaces direct ACL restrictions for one node.
+     *
+     * HR: Zamjenjuje izravna ACL ograničenja jednog čvora.
      */
     public function replaceNodeAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -663,8 +693,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Provjerava scope, poziva operaciju i ujednačeno mapira očekivane greške.
      * EN: Checks the scope, invokes the operation, and consistently maps expected failures.
+     *
+     * HR: Provjerava scope, poziva operaciju i ujednačeno mapira očekivane greške.
      *
      * @param callable(array<string,mixed>):mixed $operation
      */
@@ -750,8 +781,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća autentificirani identitet koji je postavio API middleware.
      * EN: Returns the authenticated identity attached by the API middleware.
+     *
+     * HR: Vraća autentificirani identitet koji je postavio API middleware.
      */
     private function identity(ServerRequestInterface $request): AuthApiIdentity
     {
@@ -764,8 +796,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Preuzima binarni Workspace ZIP uz jedinstvenu provjeru scopea i grešaka.
      * EN: Downloads a binary Workspace ZIP with consistent scope and error handling.
+     *
+     * HR: Preuzima binarni Workspace ZIP uz jedinstvenu provjeru scopea i grešaka.
      *
      * @param callable(array<string,mixed>):\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExport $operation
      */
@@ -826,8 +859,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Dekodira i validira JSON objekt iz tijela zahtjeva.
      * EN: Decodes and validates a JSON object from the request body.
+     *
+     * HR: Dekodira i validira JSON objekt iz tijela zahtjeva.
      *
      * @return array<string,mixed>
      * @throws JsonException
@@ -848,8 +882,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Normalizira standardno multipart tijelo u polje sa string ključevima.
      * EN: Normalizes a standard multipart body into a string-keyed array.
+     *
+     * HR: Normalizira standardno multipart tijelo u polje sa string ključevima.
      *
      * @return array<string,mixed>
      */
@@ -861,8 +896,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća obaveznu datoteku iz imenovanog multipart polja.
      * EN: Returns the required file from a named multipart field.
+     *
+     * HR: Vraća obaveznu datoteku iz imenovanog multipart polja.
      */
     private function uploadedFile(
         ServerRequestInterface $request,
@@ -879,8 +915,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Čita pozitivni numerički ID iz route atributa.
      * EN: Reads a positive numeric ID from a route attribute.
+     *
+     * HR: Čita pozitivni numerički ID iz route atributa.
      */
     private function routeId(ServerRequestInterface $request, string $name): int
     {
@@ -890,8 +927,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Čita tekstualnu vrijednost route atributa.
      * EN: Reads a string value from a route attribute.
+     *
+     * HR: Čita tekstualnu vrijednost route atributa.
      */
     private function routeString(ServerRequestInterface $request, string $name): string
     {
@@ -901,8 +939,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Vraća sigurni jezik stabla iz queryja ili zadane aplikacijske lokalizacije.
      * EN: Returns a safe tree language from the query or the application default locale.
+     *
+     * HR: Vraća sigurni jezik stabla iz queryja ili zadane aplikacijske lokalizacije.
      */
     private function language(ServerRequestInterface $request): string
     {
@@ -922,8 +961,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Zadržava samo string ključeve ulaznog polja.
      * EN: Keeps only string keys from an input array.
+     *
+     * HR: Zadržava samo string ključeve ulaznog polja.
      *
      * @param array<mixed,mixed> $values
      * @return array<string,mixed>
@@ -941,8 +981,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Normalizira opcionalnu JSON listu ID-eva; prazna lista znači cijelo područje.
      * EN: Normalizes an optional JSON ID list; an empty list means the complete Workspace.
+     *
+     * HR: Normalizira opcionalnu JSON listu ID-eva; prazna lista znači cijelo područje.
      *
      * @return list<int>
      */
@@ -969,8 +1010,9 @@ final readonly class WorkspaceResourceController
     }
 
     /**
-     * HR: Gradi stabilnu validacijsku grešku za neispravnu strukturu zahtjeva.
      * EN: Builds a stable validation failure for an invalid request structure.
+     *
+     * HR: Gradi stabilnu validacijsku grešku za neispravnu strukturu zahtjeva.
      */
     private function validationError(string $message): WorkspaceApiException
     {

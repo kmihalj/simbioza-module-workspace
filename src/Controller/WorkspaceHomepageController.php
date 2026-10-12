@@ -22,14 +22,16 @@ use function is_array;
 use function is_numeric;
 
 /**
- * HR: Poslužuje administratorsku i osobnu postavku naslovnice aplikacije.
  * EN: Serves administrator and personal application-homepage settings.
+ *
+ * HR: Poslužuje administratorsku i osobnu postavku naslovnice aplikacije.
  */
 final readonly class WorkspaceHomepageController
 {
     /**
-     * HR: Prima Workspace ovlasti, poslovni servis i zajedničke HTTP/UI servise.
      * EN: Receives Workspace authorization, business logic, and shared HTTP/UI services.
+     *
+     * HR: Prima Workspace ovlasti, poslovni servis i zajedničke HTTP/UI servise.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -42,8 +44,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Prikazuje zasebnu stavku naslovnice u grupi Postavke područja.
      * EN: Displays the dedicated homepage item in the Workspace settings group.
+     *
+     * HR: Prikazuje zasebnu stavku naslovnice u grupi Postavke područja.
      */
     public function settings(): ResponseInterface
     {
@@ -90,8 +93,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Sprema javnu, prijavljenu i korisničku politiku nakon admin provjere.
      * EN: Saves public, authenticated, and user policy after an administrator check.
+     *
+     * HR: Sprema javnu, prijavljenu i korisničku politiku nakon admin provjere.
      */
     public function saveSettings(ServerRequestInterface $request): ResponseInterface
     {
@@ -118,8 +122,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Sprema osobni odabir i vraća korisnika na postojeći Auth profil.
      * EN: Saves the personal selection and returns the user to the existing Auth profile.
+     *
+     * HR: Sprema osobni odabir i vraća korisnika na postojeći Auth profil.
      */
     public function savePreference(ServerRequestInterface $request): ResponseInterface
     {
@@ -143,8 +148,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Vraća ID prijavljenog korisnika ili zaustavlja neispravan session.
      * EN: Returns the authenticated user ID or stops an invalid session.
+     *
+     * HR: Vraća ID prijavljenog korisnika ili zaustavlja neispravan session.
      */
     private function currentUserId(): int
     {
@@ -158,8 +164,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Vraća administratorski 403 bez izlaganja postavki.
      * EN: Returns an administrator-only 403 without exposing settings.
+     *
+     * HR: Vraća administratorski 403 bez izlaganja postavki.
      */
     private function accessDenied(): ResponseInterface
     {
@@ -171,8 +178,9 @@ final readonly class WorkspaceHomepageController
     }
 
     /**
-     * HR: Generira named rutu ili stabilni fallback.
      * EN: Generates a named route or stable fallback.
+     *
+     * HR: Generira named rutu ili stabilni fallback.
      */
     private function pathFor(string $routeName, string $fallback): string
     {

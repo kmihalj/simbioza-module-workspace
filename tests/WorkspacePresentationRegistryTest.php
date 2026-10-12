@@ -18,11 +18,17 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(WorkspacePresentationRegistry::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 final class WorkspacePresentationRegistryTest extends TestCase
 {
-    /** HR: Registry grupno primjenjuje provider i koristi aktivni jezik. EN: The registry applies a provider in a batch using the active locale. */
+    /**
+     * EN: The registry applies a provider in a batch using the active locale.
+     *
+     * HR: Registry grupno primjenjuje provider i koristi aktivni jezik.
+     */
     public function testRegisteredProviderReceivesActiveLocaleOnce(): void
     {
         $translator = new class implements TranslatorInterface {

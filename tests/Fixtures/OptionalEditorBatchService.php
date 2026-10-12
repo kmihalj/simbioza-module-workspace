@@ -7,8 +7,9 @@ namespace AaiEduHr\HeartPhrameModuleEditorHtml\Service;
 use stdClass;
 
 /**
- * HR: Testni opcionalni Editor servis bez stvarne Composer ovisnosti.
  * EN: Test-only optional Editor service without a real Composer dependency.
+ *
+ * HR: Testni opcionalni Editor servis bez stvarne Composer ovisnosti.
  */
 final class EditorService
 {

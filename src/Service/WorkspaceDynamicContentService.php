@@ -45,10 +45,11 @@ use const JSON_UNESCAPED_SLASHES;
 use const JSON_UNESCAPED_UNICODE;
 
 /**
- * HR: Materijalizira nativne, ACL-sigurne blokove područja koji su spremljeni
- *     kao mali deklarativni elementi u HTML dokumentu.
  * EN: Materializes native ACL-safe Workspace blocks stored as small declarative
  *     elements in an HTML document.
+ *
+ * HR: Materijalizira nativne, ACL-sigurne blokove područja koji su spremljeni
+ *     kao mali deklarativni elementi u HTML dokumentu.
  */
 final class WorkspaceDynamicContentService
 {
@@ -58,32 +59,35 @@ final class WorkspaceDynamicContentService
     private const PERSONAL_WORKSPACES_SCOPE = '__personal__';
 
     /**
-     * HR: Čitljivi kandidati dijele se između svih dinamičkih blokova u istom
-     *     HTTP zahtjevu. Provjeravaju se samo stranice koje konkretni blokovi
-     *     trebaju, a promjena stranice ili ovlasti vrijedi pri sljedećem prikazu.
      * EN: Readable candidates are shared by every dynamic block in the same
      *     HTTP request. Only pages needed by the actual blocks are checked, and
      *     page or permission changes apply on the next render.
+     *
+     * HR: Čitljivi kandidati dijele se između svih dinamičkih blokova u istom
+     *     HTTP zahtjevu. Provjeravaju se samo stranice koje konkretni blokovi
+     *     trebaju, a promjena stranice ili ovlasti vrijedi pri sljedećem prikazu.
      *
      * @var array<string,array<int,array<string,mixed>>>
      */
     private array $readableNodeCache = [];
 
     /**
-     * HR: Bilježi već provjerene kandidate kako preklapajući izvještaji ne bi
-     *     ponavljali iste skupne ACL i workflow upite.
      * EN: Tracks checked candidates so overlapping reports do not repeat the
      *     same batched ACL and workflow queries.
+     *
+     * HR: Bilježi već provjerene kandidate kako preklapajući izvještaji ne bi
+     *     ponavljali iste skupne ACL i workflow upite.
      *
      * @var array<string,array<int,true>>
      */
     private array $checkedNodeCache = [];
 
     /**
-     * HR: Prima samo generičke servise; ACL servis se razrješava kasno kako se
-     *     ne bi stvorila kružna ovisnost s Editor mostom.
      * EN: Receives only generic services; ACL is resolved lazily to avoid a
      *     circular dependency with the Editor bridge.
+     *
+     * HR: Prima samo generičke servise; ACL servis se razrješava kasno kako se
+     *     ne bi stvorila kružna ovisnost s Editor mostom.
      */
     public function __construct(
         private readonly ContainerInterface $container,
@@ -97,8 +101,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Gradi kanonski HTML element jednog nativnog bloka.
      * EN: Builds the canonical HTML element for one native block.
+     *
+     * HR: Gradi kanonski HTML element jednog nativnog bloka.
      *
      * @param array<string,mixed> $configuration
      */
@@ -121,8 +126,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Zamjenjuje sve blokove stvarnim prikazom za područje dokumenta.
      * EN: Replaces every block with its actual document Workspace rendering.
+     *
+     * HR: Zamjenjuje sve blokove stvarnim prikazom za područje dokumenta.
      */
     public function render(
         string $html,
@@ -166,8 +172,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Prikazuje ACL-filtrirano izvješće stranica i strukturiranih svojstava.
      * EN: Renders an ACL-filtered report of pages and structured properties.
+     *
+     * HR: Prikazuje ACL-filtrirano izvješće stranica i strukturiranih svojstava.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $configuration
@@ -194,12 +201,13 @@ final class WorkspaceDynamicContentService
 
         $columns = $this->columns($configuration['columns'] ?? []);
         if ($columns !== []) {
-            // HR: Page Properties Report prikazuje samo stranice koje stvarno
-            //     imaju strukturirana svojstva, iako oznaku mogu dijeliti i
-            //     druge stranice područja.
             // EN: A Page Properties Report includes only pages that actually
             //     have structured properties even when other workspace pages
             //     share the same label.
+            //
+            // HR: Page Properties Report prikazuje samo stranice koje stvarno
+            //     imaju strukturirana svojstva, iako oznaku mogu dijeliti i
+            //     druge stranice područja.
             $nodes = array_values(array_filter(
                 $nodes,
                 static fn(array $node): bool => ($propertyMaps[WorkspaceValue::int($node['id'] ?? 0)] ?? []) !== [],
@@ -279,8 +287,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Prikazuje galeriju javno dostupnih privitaka trenutačne stranice.
      * EN: Renders a gallery of publicly available attachments for the current page.
+     *
+     * HR: Prikazuje galeriju javno dostupnih privitaka trenutačne stranice.
      *
      * @param array<string,mixed> $node
      * @param array<string,mixed> $configuration
@@ -342,10 +351,11 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Gradi pretragu ograničenu na jedno ili više odabranih područja.
-     *     Vanjske oznake ostaju neriješene dok njihov importer ne registrira cilj.
      * EN: Builds a search form scoped to one or more selected Workspaces.
      *     External references remain unresolved until their importer registers a target.
+     *
+     * HR: Gradi pretragu ograničenu na jedno ili više odabranih područja.
+     *     Vanjske oznake ostaju neriješene dok njihov importer ne registrira cilj.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $configuration
@@ -404,10 +414,11 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Razrješava lokalne i prijenosne ciljeve te vraća samo područja koja
-     *     trenutačni posjetitelj stvarno smije vidjeti.
      * EN: Resolves local and portable targets and returns only Workspaces the
      *     current visitor is actually allowed to see.
+     *
+     * HR: Razrješava lokalne i prijenosne ciljeve te vraća samo područja koja
+     *     trenutačni posjetitelj stvarno smije vidjeti.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $configuration
@@ -486,8 +497,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Prikazuje posljednje korisniku dostupne promjene područja.
      * EN: Renders the latest workspace changes visible to the user.
+     *
+     * HR: Prikazuje posljednje korisniku dostupne promjene područja.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $configuration
@@ -550,8 +562,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Filtrira dokumente prema objavi, jeziku i trenutačnim ACL ovlastima.
      * EN: Filters documents by publication, language, and current ACL permissions.
+     *
+     * HR: Filtrira dokumente prema objavi, jeziku i trenutačnim ACL ovlastima.
      *
      * @param array<string,mixed> $workspace
      * @param list<array<string,mixed>> $nodes
@@ -602,10 +615,11 @@ final class WorkspaceDynamicContentService
         }
 
         if ($uncheckedNodes !== []) {
-            // HR: Izvještaj s oznakom provjerava samo označene stranice. Tek
-            //     blokovi koji stvarno traže cijelo područje obrađuju sve čvorove.
             // EN: A labelled report checks only labelled pages. Only blocks that
             //     genuinely request the whole workspace process every node.
+            //
+            // HR: Izvještaj s oznakom provjerava samo označene stranice. Tek
+            //     blokovi koji stvarno traže cijelo područje obrađuju sve čvorove.
             $permissionsByNode = $access->nodePermissionsForNodes(
                 $workspace,
                 array_values($uncheckedNodes),
@@ -653,8 +667,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Provjerava prioritetne jezike pa dopušta bilo koju drugu objavljenu inačicu.
      * EN: Checks priority locales before allowing any other published variant.
+     *
+     * HR: Provjerava prioritetne jezike pa dopušta bilo koju drugu objavljenu inačicu.
      *
      * @param list<array<string,mixed>> $workflows
      * @param list<string> $languagePriority
@@ -683,8 +698,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Otkriva stupce izvještaja iz pohranjenih svojstava stranica.
      * EN: Discovers report columns from stored page properties.
+     *
+     * HR: Otkriva stupce izvještaja iz pohranjenih svojstava stranica.
      *
      * @param array<int,list<array{key:string,label:string,type:string,value:string,sort_order:int}>> $properties
      * @return list<array{key:string,label:string}>
@@ -705,8 +721,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Normalizira korisnički odabrane stupce izvještaja.
      * EN: Normalizes user-selected report columns.
+     *
+     * HR: Normalizira korisnički odabrane stupce izvještaja.
      *
      * @return list<array{key:string,label:string}>
      */
@@ -737,8 +754,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Pretvara popis svojstava u mapu prikladnu za prikaz izvještaja.
      * EN: Converts a property list into a report-friendly map.
+     *
+     * HR: Pretvara popis svojstava u mapu prikladnu za prikaz izvještaja.
      *
      * @param list<array{key:string,label:string,type:string,value:string,sort_order:int}> $properties
      * @return array<string,array{value:string,type:string}>
@@ -760,8 +778,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Sigurno prikazuje jednu vrijednost svojstva prema njezinoj vrsti.
      * EN: Safely renders one property value according to its type.
+     *
+     * HR: Sigurno prikazuje jednu vrijednost svojstva prema njezinoj vrsti.
      *
      * @param array{value:string,type:string} $property
      */
@@ -785,8 +804,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Gradi stabilnu vrijednost za sortiranje svojstava i statusa.
      * EN: Builds a stable sorting value for properties and statuses.
+     *
+     * HR: Gradi stabilnu vrijednost za sortiranje svojstava i statusa.
      *
      * @param array{value:string,type:string} $property
      */
@@ -809,10 +829,11 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Dodjeljuje semantičku, Bootstrap-kompatibilnu boju statusu bez
-     *     spremanja prezentacijskog HTML-a u podatke stranice.
      * EN: Assigns a semantic Bootstrap-compatible colour to a status without
      *     storing presentation HTML in page data.
+     *
+     * HR: Dodjeljuje semantičku, Bootstrap-kompatibilnu boju statusu bez
+     *     spremanja prezentacijskog HTML-a u podatke stranice.
      */
     private function statusBadgeClass(string $value): string
     {
@@ -828,8 +849,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Gradi lokalnu putanju do stranice područja uz odabrani jezik.
      * EN: Builds a local workspace-page path for the selected language.
+     *
+     * HR: Gradi lokalnu putanju do stranice područja uz odabrani jezik.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $node
@@ -852,8 +874,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Ograničava i normalizira konfiguraciju dinamičkog bloka.
      * EN: Constrains and normalizes dynamic-block configuration.
+     *
+     * HR: Ograničava i normalizira konfiguraciju dinamičkog bloka.
      *
      * @param array<string,mixed> $configuration
      * @return array<string,mixed>
@@ -891,7 +914,11 @@ final class WorkspaceDynamicContentService
         return $result;
     }
 
-    /** HR: Prihvaća samo podržanu vrstu dinamičkog bloka. EN: Accepts only a supported dynamic-block kind. */
+    /**
+     * EN: Accepts only a supported dynamic-block kind.
+     *
+     * HR: Prihvaća samo podržanu vrstu dinamičkog bloka.
+     */
     private function kind(mixed $value): string
     {
         $kind = strtolower($this->text($value));
@@ -899,7 +926,11 @@ final class WorkspaceDynamicContentService
         ? $kind : '';
     }
 
-    /** HR: Vraća lokalizirani naziv dinamičkog bloka. EN: Returns a localized dynamic-block label. */
+    /**
+     * EN: Returns a localized dynamic-block label.
+     *
+     * HR: Vraća lokalizirani naziv dinamičkog bloka.
+     */
     private function blockLabel(string $kind): string
     {
         return match ($kind) {
@@ -912,8 +943,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Kodira konfiguraciju bloka za sigurno spremanje u HTML atribut.
      * EN: Encodes block configuration for safe storage in an HTML attribute.
+     *
+     * HR: Kodira konfiguraciju bloka za sigurno spremanje u HTML atribut.
      *
      * @param array<string,mixed> $configuration
      */
@@ -924,8 +956,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Dekodira i provjerava konfiguraciju spremljenu u HTML atributu.
      * EN: Decodes and validates configuration stored in an HTML attribute.
+     *
+     * HR: Dekodira i provjerava konfiguraciju spremljenu u HTML atributu.
      *
      * @return array<string,mixed>
      */
@@ -962,8 +995,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Normalizira ograničeni popis jedinstvenih tekstnih vrijednosti.
      * EN: Normalizes a bounded list of unique text values.
+     *
+     * HR: Normalizira ograničeni popis jedinstvenih tekstnih vrijednosti.
      *
      * @return list<string>
      */
@@ -989,8 +1023,9 @@ final class WorkspaceDynamicContentService
     }
 
     /**
-     * HR: Normalizira prijenosne reference područja iz konfiguracije bloka.
      * EN: Normalizes portable Workspace references from block configuration.
+     *
+     * HR: Normalizira prijenosne reference područja iz konfiguracije bloka.
      *
      * @return list<array{provider:string,reference:string}>
      */
@@ -1021,7 +1056,11 @@ final class WorkspaceDynamicContentService
         return array_values($result);
     }
 
-    /** HR: Sigurno čita imenovani atribut iz kanonskog elementa. EN: Safely reads a named attribute from a canonical element. */
+    /**
+     * EN: Safely reads a named attribute from a canonical element.
+     *
+     * HR: Sigurno čita imenovani atribut iz kanonskog elementa.
+     */
     private function attribute(string $html, string $name): string
     {
         $quotedName = preg_quote($name, '~');
@@ -1036,7 +1075,11 @@ final class WorkspaceDynamicContentService
         );
     }
 
-    /** HR: Pretvara naziv svojstva u stabilan ključ. EN: Converts a property label into a stable key. */
+    /**
+     * EN: Converts a property label into a stable key.
+     *
+     * HR: Pretvara naziv svojstva u stabilan ključ.
+     */
     private function propertyKey(mixed $value): string
     {
         $value = mb_strtolower($this->text($value), 'UTF-8');
@@ -1044,7 +1087,11 @@ final class WorkspaceDynamicContentService
         return mb_substr(trim($value, '-.'), 0, 128, 'UTF-8');
     }
 
-    /** HR: Lokalizira vrijeme promjene prema jeziku prikaza. EN: Localizes a change timestamp for the display language. */
+    /**
+     * EN: Localizes a change timestamp for the display language.
+     *
+     * HR: Lokalizira vrijeme promjene prema jeziku prikaza.
+     */
     private function formatDateTime(string $value, string $language): string
     {
         try {
@@ -1057,20 +1104,32 @@ final class WorkspaceDynamicContentService
         return \AaiEduHr\HeartPhrameModuleOrm\Database\LocaleDateFormatter::dateTime($date, $language);
     }
 
-    /** HR: Ograničava traženi broj rezultata na siguran raspon. EN: Constrains a requested result count to a safe range. */
+    /**
+     * EN: Constrains a requested result count to a safe range.
+     *
+     * HR: Ograničava traženi broj rezultata na siguran raspon.
+     */
     private function limit(mixed $value, int $fallback): int
     {
         $limit = is_scalar($value) ? (int)$value : $fallback;
         return min(200, max(1, $limit));
     }
 
-    /** HR: Normalizira skalarnu vrijednost u tekst. EN: Normalizes a scalar value into text. */
+    /**
+     * EN: Normalizes a scalar value into text.
+     *
+     * HR: Normalizira skalarnu vrijednost u tekst.
+     */
     private function text(mixed $value): string
     {
         return is_scalar($value) ? trim((string)$value) : '';
     }
 
-    /** HR: Kodira tekst za siguran HTML prikaz. EN: Encodes text for safe HTML rendering. */
+    /**
+     * EN: Encodes text for safe HTML rendering.
+     *
+     * HR: Kodira tekst za siguran HTML prikaz.
+     */
     private function escape(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

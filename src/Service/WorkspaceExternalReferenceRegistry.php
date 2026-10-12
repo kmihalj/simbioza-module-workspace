@@ -13,17 +13,22 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Drži opcionalne resolvere vanjskih oznaka bez vezivanja Workspace modula
- *     uz konkretan importer.
  * EN: Holds optional external-reference resolvers without coupling Workspace to
  *     a concrete importer.
+ *
+ * HR: Drži opcionalne resolvere vanjskih oznaka bez vezivanja Workspace modula
+ *     uz konkretan importer.
  */
 final class WorkspaceExternalReferenceRegistry
 {
     /** @var array<string,WorkspaceExternalReferenceProviderInterface> */
     private array $providers = [];
 
-    /** HR: Registrira jedan provider idempotentno. EN: Registers one provider idempotently. */
+    /**
+     * EN: Registers one provider idempotently.
+     *
+     * HR: Registrira jedan provider idempotentno.
+     */
     public function register(WorkspaceExternalReferenceProviderInterface $provider): void
     {
         $name = strtolower(trim($provider->provider()));
@@ -33,10 +38,11 @@ final class WorkspaceExternalReferenceRegistry
     }
 
     /**
-     * HR: Sigurno razrješava vanjsku oznaku; kvar opcionalnog providera ne smije
-     *     prekinuti prikaz stranice.
      * EN: Safely resolves an external reference; an optional provider failure
      *     must not break page rendering.
+     *
+     * HR: Sigurno razrješava vanjsku oznaku; kvar opcionalnog providera ne smije
+     *     prekinuti prikaz stranice.
      *
      * @return array{slug:string,title:string}|null
      */

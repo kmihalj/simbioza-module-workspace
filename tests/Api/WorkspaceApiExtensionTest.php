@@ -11,12 +11,20 @@ use HeartPhrame\Routing\Routes;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/** HR: Provjerava Workspace API oglas. EN: Verifies the Workspace API declaration. */
+/**
+ * EN: Verifies the Workspace API declaration.
+ *
+ * HR: Provjerava Workspace API oglas.
+ */
 #[CoversClass(WorkspaceApiExtension::class)]
 #[CoversClass(ApiRouteRegistry::class)]
 final class WorkspaceApiExtensionTest extends TestCase
 {
-    /** HR: Registrira sve Workspace rute sa zaštitom. EN: Registers every protected Workspace route. */
+    /**
+     * EN: Registers every protected Workspace route.
+     *
+     * HR: Registrira sve Workspace rute sa zaštitom.
+     */
     public function testRegistersOwnedRoutes(): void
     {
         $routes = new Routes();

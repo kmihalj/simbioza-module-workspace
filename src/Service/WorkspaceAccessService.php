@@ -22,64 +22,72 @@ final class WorkspaceAccessService
     ];
 
     /**
-     * HR: Pamti grupne identifikatore po korisniku tijekom jednog zahtjeva.
      * EN: Caches group identifiers per user during one request.
+     *
+     * HR: Pamti grupne identifikatore po korisniku tijekom jednog zahtjeva.
      *
      * @var array<int, list<int>>
      */
     private array $groupIdsCache = [];
 
     /**
-     * HR: Pamti ACL retke područja tijekom jednog zahtjeva.
      * EN: Caches Workspace ACL rows during one request.
+     *
+     * HR: Pamti ACL retke područja tijekom jednog zahtjeva.
      *
      * @var array<int, list<array<string, mixed>>>
      */
     private array $workspaceAclCache = [];
 
     /**
-     * HR: Pamti već izračunata prava područja po korisniku.
      * EN: Caches already calculated Workspace permissions per user.
+     *
+     * HR: Pamti već izračunata prava područja po korisniku.
      *
      * @var array<string, array<string, bool>>
      */
     private array $workspacePermissionCache = [];
 
     /**
-     * HR: Pamti čvorove područja tijekom jednog zahtjeva.
      * EN: Caches Workspace nodes during one request.
+     *
+     * HR: Pamti čvorove područja tijekom jednog zahtjeva.
      *
      * @var array<int, list<array<string, mixed>>>
      */
     private array $workspaceNodesCache = [];
 
     /**
-     * HR: Pamti paketni rezultat nasljednog ACL izračuna.
      * EN: Caches batched inherited ACL calculation results.
+     *
+     * HR: Pamti paketni rezultat nasljednog ACL izračuna.
      *
      * @var array<string, array<int, array<string, bool>>>
      */
     private array $nodePermissionCache = [];
 
     /**
-     * HR: Pamti područja s barem jednom izravno dopuštenom stranicom po korisniku.
      * EN: Caches Workspaces with at least one directly granted page per user.
+     *
+     * HR: Pamti područja s barem jednom izravno dopuštenom stranicom po korisniku.
      *
      * @var array<int, array<int, bool>>
      */
     private array $directWorkspaceAccessCache = [];
 
     /**
-     * HR: Pamti izravno dopuštene čvorove područja po korisniku.
      * EN: Caches directly granted Workspace nodes per user.
+     *
+     * HR: Pamti izravno dopuštene čvorove područja po korisniku.
      *
      * @var array<string, list<array<string, mixed>>>
      */
     private array $directNodesCache = [];
 
     /**
-     * HR: Prima repozitorij, auth kontekst i konfiguraciju potrebnu za jedinstveni ACL izračun.
      * EN: Receives the repository, auth context, and configuration required for one ACL calculation.
+     *
+     * HR: Prima repozitorij, auth kontekst i konfiguraciju potrebnu za jedinstveni ACL izračun.
      */
     public function __construct(
         private readonly WorkspaceRepository $repository,
@@ -90,8 +98,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća normalizirani session payload trenutnog korisnika ili null za gosta.
      * EN: Returns the normalized current-user session payload or null for a guest.
+     *
+     * HR: Vraća normalizirani session payload trenutnog korisnika ili null za gosta.
      *
      * @return array<string, mixed>|null
      */
@@ -103,8 +112,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava administratorski status trenutnog ili proslijeđenog korisnika.
      * EN: Checks administrator status for the current or supplied user.
+     *
+     * HR: Provjerava administratorski status trenutnog ili proslijeđenog korisnika.
      *
      * @param array<string, mixed>|null $user
      */
@@ -116,8 +126,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća smije li korisnik kreirati novo područje.
      * EN: Returns whether the user may create a new workspace.
+     *
+     * HR: Vraća smije li korisnik kreirati novo područje.
      *
      * @param array<string, mixed>|null $user
      */
@@ -152,8 +163,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Filtrira područja koja korisnik stvarno smije vidjeti.
      * EN: Filters workspaces the user may actually view.
+     *
+     * HR: Filtrira područja koja korisnik stvarno smije vidjeti.
      *
      * @param array<string, mixed>|null $user
      * @return list<array<string, mixed>>
@@ -182,8 +194,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava može li korisnik otvoriti područje baznim pravom ili izravnim pravom na stranicu.
      * EN: Checks whether a user may open a Workspace through base access or a direct page grant.
+     *
+     * HR: Provjerava može li korisnik otvoriti područje baznim pravom ili izravnim pravom na stranicu.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -197,8 +210,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Računa bazna prava područja kao uniju direktnog korisničkog i grupnog ACL-a.
      * EN: Calculates base workspace permissions as the union of direct user and group ACL entries.
+     *
+     * HR: Računa bazna prava područja kao uniju direktnog korisničkog i grupnog ACL-a.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -234,8 +248,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Primjenjuje ograničenja od korijena do čvora kao presjek naslijeđenih prava.
      * EN: Applies restrictions from root to node as an intersection of inherited permissions.
+     *
+     * HR: Primjenjuje ograničenja od korijena do čvora kao presjek naslijeđenih prava.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node
@@ -256,13 +271,13 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Grupno računa efektivna prava svih zadanih čvorova iz jednog skupa
-     *     Workspace ACL-a, grupa i ograničenja. Početnička napomena: lanac
-     *     roditelja računa se u memoriji pa veliko stablo ne izvodi upit po retku.
-     *
      * EN: Calculates effective permissions for all supplied nodes in one batch
      *     from Workspace ACL, groups, and restrictions. Beginner note: parent
      *     chains are calculated in memory so a large tree does not query per row.
+     *
+     * HR: Grupno računa efektivna prava svih zadanih čvorova iz jednog skupa
+     *     Workspace ACL-a, grupa i ograničenja. Početnička napomena: lanac
+     *     roditelja računa se u memoriji pa veliko stablo ne izvodi upit po retku.
      *
      * @param array<string, mixed> $workspace
      * @param list<array<string, mixed>> $nodes
@@ -350,10 +365,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Grupno vraća aktivne korisnike koji na odabranom čvoru imaju traženo
-     *     efektivno pravo, uključujući administratore.
      * EN: Returns active users who hold the requested effective permission on
      *     the selected node in one batch, including administrators.
+     *
+     * HR: Grupno vraća aktivne korisnike koji na odabranom čvoru imaju traženo
+     *     efektivno pravo, uključujući administratore.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node
@@ -445,8 +461,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća vidljivo stablo s efektivnim pravima svakog čvora.
      * EN: Returns the visible tree with effective permissions for every node.
+     *
+     * HR: Vraća vidljivo stablo s efektivnim pravima svakog čvora.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -465,8 +482,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća stablo čitljivo u prvom objavljenom jeziku iz zadanog prioriteta.
      * EN: Returns the tree readable in the first published locale from the supplied priority.
+     *
+     * HR: Vraća stablo čitljivo u prvom objavljenom jeziku iz zadanog prioriteta.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -494,10 +512,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća početni, mali prozor vidljivog stabla. Velika područja zato
-     *     ne računaju ACL i workflow za svaku skrivenu stranicu pri svakom prikazu.
      * EN: Returns the initial compact visible-tree window. Large Workspaces no
      *     longer calculate ACL and workflow for every hidden page on each view.
+     *
+     * HR: Vraća početni, mali prozor vidljivog stabla. Velika područja zato
+     *     ne računaju ACL i workflow za svaku skrivenu stranicu pri svakom prikazu.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $user
@@ -539,8 +558,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća neposrednu ACL-filtriranu djecu grane za naknadno učitavanje.
      * EN: Returns immediate ACL-filtered branch children for on-demand loading.
+     *
+     * HR: Vraća neposrednu ACL-filtriranu djecu grane za naknadno učitavanje.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $user
@@ -575,8 +595,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Primjenjuje paketni ACL i jezični workflow na već ciljano dohvaćene čvorove.
      * EN: Applies batched ACL and locale workflow checks to already targeted nodes.
+     *
+     * HR: Primjenjuje paketni ACL i jezični workflow na već ciljano dohvaćene čvorove.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $user
@@ -639,8 +660,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava postoji li čitljiva objava u dopuštenom jezičnom prioritetu.
      * EN: Checks whether a readable publication exists in the allowed locale priority.
+     *
+     * HR: Provjerava postoji li čitljiva objava u dopuštenom jezičnom prioritetu.
      *
      * @param list<array<string, mixed>> $workflows
      * @param list<string> $languages
@@ -675,10 +697,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Briše kratkotrajne ACL cacheve nakon promjene prava u istom zahtjevu.
-     *     Početnička napomena: sljedeći izračun tada ponovno čita bazu.
      * EN: Clears short-lived ACL caches after permissions change in the same
      *     request. Beginner note: the next calculation then reads the database again.
+     *
+     * HR: Briše kratkotrajne ACL cacheve nakon promjene prava u istom zahtjevu.
+     *     Početnička napomena: sljedeći izračun tada ponovno čita bazu.
      */
     public function clearRequestCache(): void
     {
@@ -692,8 +715,109 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Paketno sprema područja s izravnim pravima kako popis područja ne bi radio upit po retku.
+     * EN: Calculates fresh batch visibility across Workspaces with the existing ACL rules.
+     * No permission result is cached: later reads see mutations made in the same request.
+     * Ancestors, direct page grants and imported restrictions retain normal semantics;
+     * incomplete/cyclic paths deny access rather than omit an unknown ancestor ACL.
+     *
+     * HR: Računa svježu skupnu vidljivost kroz područja uz postojeća ACL pravila.
+     * Rezultat prava ne cacheira se: kasniji dohvat vidi promjene iz istog zahtjeva.
+     * Preci, izravna prava stranice i importna ograničenja zadržavaju semantiku;
+     * nepotpun/cikličan put uskraćuje pristup, ne preskače nepoznati ACL pretka.
+     *
+     * @param list<array<string,mixed>> $workspaces
+     * @param list<array<string,mixed>> $nodes
+     * @param array<string,mixed>|null $user
+     * @return array{workspaces:array<int,bool>,nodes:array<int,bool>}
+     */
+    public function viewPermissionsForTargets(array $workspaces, array $nodes, ?array $user): array
+    {
+        $userId = $this->userId($user);
+        $groupIds = is_array($user['group_ids'] ?? null)
+        ? $this->groupIds($userId, $user)
+        : ($userId > 0 ? $this->repository->groupIdsForUser($userId) : []);
+        $workspaceIds = array_map(static fn(array $row): int => WorkspaceValue::int($row['id'] ?? 0), $workspaces);
+        $workspaceRows = [];
+        foreach ($this->repository->workspaceAclRowsForWorkspaces($workspaceIds) as $row) {
+            $workspaceRows[WorkspaceValue::int($row['workspace_id'] ?? 0)][] = $row;
+        }
+
+        $base = [];
+        $byWorkspace = [];
+        $visibleWorkspaces = [];
+        foreach ($workspaces as $workspace) {
+            $id = WorkspaceValue::int($workspace['id'] ?? 0);
+            $byWorkspace[$id] = $workspace;
+            $base[$id] = $this->workspacePermissionsFromRows($workspace, $user, $groupIds, $workspaceRows[$id] ?? []);
+            $visibleWorkspaces[$id] = $base[$id]['can_view'];
+        }
+
+        $byNode = [];
+        foreach ($nodes as $node) {
+            $byNode[WorkspaceValue::int($node['id'] ?? 0)] = $node;
+        }
+
+        $restrictions = [];
+        $direct = [];
+        foreach (array_chunk(array_keys($byNode), 500) as $ids) {
+            foreach ($this->repository->nodeAclRowsForNodes($ids) as $row) {
+                $restrictions[WorkspaceValue::int($row['node_id'] ?? 0)][] = $row;
+            }
+
+            if ($userId > 0) {
+                foreach ($this->repository->nodeDirectPermissionRowsForNodes($ids, $userId) as $row) {
+                    $direct[WorkspaceValue::int($row['node_id'] ?? 0)] = $this->permissionsFromDirectRow($row);
+                }
+            }
+        }
+
+        $visibleNodes = [];
+        foreach ($byNode as $id => $node) {
+            $workspaceId = WorkspaceValue::int($node['workspace_id'] ?? 0);
+            $visibleNodes[$id] = false;
+            if (!isset($byWorkspace[$workspaceId])) {
+                continue;
+            }
+
+            $path = [];
+            $cursor = $id;
+            while ($cursor > 0 && !isset($path[$cursor]) && count($path) < 256) {
+                $parent = $byNode[$cursor] ?? null;
+                if (!is_array($parent) || WorkspaceValue::int($parent['workspace_id'] ?? 0) !== $workspaceId) {
+                    break;
+                }
+
+                $path[$cursor] = $cursor;
+                $cursor = WorkspaceValue::int($parent['parent_id'] ?? 0);
+            }
+
+            if ($cursor > 0) {
+                continue;
+            }
+
+            if ($this->isAdministrator($user)) {
+                $visibleNodes[$id] = $base[$workspaceId]['can_view'];
+                continue;
+            }
+
+            $permissions = $this->restrictPermissionsFromRows(
+                $base[$workspaceId],
+                array_reverse(array_values($path)),
+                $restrictions,
+                $userId,
+                $groupIds,
+            );
+            $permissions = $this->unionPermissions($permissions, $direct[$id] ?? $this->emptyPermissions());
+            $visibleNodes[$id] = $permissions['can_view'];
+        }
+
+        return ['workspaces' => $visibleWorkspaces, 'nodes' => $visibleNodes];
+    }
+
+    /**
      * EN: Batch-caches directly accessible Workspaces so the Workspace list does not query per row.
+     *
+     * HR: Paketno sprema područja s izravnim pravima kako popis područja ne bi radio upit po retku.
      *
      * @param list<array<string, mixed>> $workspaces
      */
@@ -714,8 +838,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava ima li korisnik izravno pravo na neku stranicu područja.
      * EN: Checks whether the user has a direct permission on any Workspace page.
+     *
+     * HR: Provjerava ima li korisnik izravno pravo na neku stranicu područja.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -736,8 +861,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Dohvaća i predmemorira stranice područja na kojima korisnik ima izravna prava.
      * EN: Loads and caches Workspace pages on which the user has direct permissions.
+     *
+     * HR: Dohvaća i predmemorira stranice područja na kojima korisnik ima izravna prava.
      *
      * @return list<array<string, mixed>>
      */
@@ -759,8 +885,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Spaja ciljane skupove čvorova bez duplikata.
      * EN: Merges targeted node sets without duplicates.
+     *
+     * HR: Spaja ciljane skupove čvorova bez duplikata.
      *
      * @param list<array<string, mixed>> $left
      * @param list<array<string, mixed>> $right
@@ -780,12 +907,13 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Iz navigacije uklanja označenu stavku i cijelu njezinu podgranu. Ako
-     *     je izravnim URL-om otvorena stranica unutar skrivene grane, zadržava
-     *     samo potreban put i označava ga za prigušeni prikaz.
      * EN: Removes a marked item and its complete subtree from navigation. When
      *     a direct URL opens a page inside a hidden branch, only the required
      *     path is retained and marked for a dimmed presentation.
+     *
+     * HR: Iz navigacije uklanja označenu stavku i cijelu njezinu podgranu. Ako
+     *     je izravnim URL-om otvorena stranica unutar skrivene grane, zadržava
+     *     samo potreban put i označava ga za prigušeni prikaz.
      *
      * @param list<array<string,mixed>> $nodes
      * @return list<array<string,mixed>>
@@ -873,10 +1001,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Izravno dopušteni čvor može biti dohvaćen bez predaka; zato mu
-     *     zasebno prenosimo naslijeđeno stanje skrivene navigacijske grane.
      * EN: A directly granted node may be loaded without its ancestors, so its
      *     inherited hidden-navigation state is carried separately.
+     *
+     * HR: Izravno dopušteni čvor može biti dohvaćen bez predaka; zato mu
+     *     zasebno prenosimo naslijeđeno stanje skrivene navigacijske grane.
      *
      * @param list<array<string,mixed>> $nodes
      * @return list<array<string,mixed>>
@@ -899,10 +1028,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Izravno dopuštenu stranicu bez vidljivog roditelja prikazuje kao korijen,
-     *     bez otkrivanja naziva ili strukture nedostupnih predaka.
      * EN: Promotes a directly granted page with no visible parent to a root item
      *     without revealing inaccessible ancestor names or structure.
+     *
+     * HR: Izravno dopuštenu stranicu bez vidljivog roditelja prikazuje kao korijen,
+     *     bez otkrivanja naziva ili strukture nedostupnih predaka.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -927,10 +1057,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Gradi lanac predaka iz već učitane mape roditelja i zaustavlja se
-     *     na nedostajućem čvoru ili ciklusu neispravnih podataka.
      * EN: Builds an ancestor chain from a preloaded parent map and stops at a
      *     missing node or a cycle in malformed data.
+     *
+     * HR: Gradi lanac predaka iz već učitane mape roditelja i zaustavlja se
+     *     na nedostajućem čvoru ili ciklusu neispravnih podataka.
      *
      * @param array<int, int> $parentIds
      * @return list<int>
@@ -950,8 +1081,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća korisnikove grupe iz cachea ili ih prvi put učitava kroz repozitorij.
      * EN: Returns a user's groups from cache or loads them through the repository once.
+     *
+     * HR: Vraća korisnikove grupe iz cachea ili ih prvi put učitava kroz repozitorij.
      *
      * @param array<string,mixed>|null $user
      * @return list<int>
@@ -982,8 +1114,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća ACL retke područja iz cachea ili ih prvi put učitava.
      * EN: Returns Workspace ACL rows from cache or loads them once.
+     *
+     * HR: Vraća ACL retke područja iz cachea ili ih prvi put učitava.
      *
      * @return list<array<string, mixed>>
      */
@@ -997,8 +1130,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Unaprijed puni request cache ACL retcima svih područja jednim upitom.
      * EN: Preloads the request cache with ACL rows for all Workspaces in one query.
+     *
+     * HR: Unaprijed puni request cache ACL retcima svih područja jednim upitom.
      *
      * @param list<array<string, mixed>> $workspaces
      */
@@ -1029,8 +1163,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća sve čvorove područja iz cachea ili ih prvi put učitava.
      * EN: Returns all Workspace nodes from cache or loads them once.
+     *
+     * HR: Vraća sve čvorove područja iz cachea ili ih prvi put učitava.
      *
      * @return list<array<string, mixed>>
      */
@@ -1044,10 +1179,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Gradi stabilan ključ prava područja iz korisnika i sigurnosno bitnih
-     *     svojstava područja.
      * EN: Builds a stable Workspace-permission key from the user and
      *     security-relevant Workspace properties.
+     *
+     * HR: Gradi stabilan ključ prava područja iz korisnika i sigurnosno bitnih
+     *     svojstava područja.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -1066,10 +1202,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Gradi ključ paketnog ACL rezultata iz područja, korisnika i strukture
-     *     zadanih čvorova.
      * EN: Builds a batched ACL result key from the Workspace, user, and supplied
      *     node structure.
+     *
+     * HR: Gradi ključ paketnog ACL rezultata iz područja, korisnika i strukture
+     *     zadanih čvorova.
      *
      * @param array<string, mixed> $workspace
      * @param list<array<string, mixed>> $nodes
@@ -1089,8 +1226,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava editorov dokument kroz njegov Workspace čvor i nasljedni ACL.
      * EN: Checks an editor document through its Workspace node and inherited ACL.
+     *
+     * HR: Provjerava editorov dokument kroz njegov Workspace čvor i nasljedni ACL.
      */
     public function canUseDocument(string $documentKey, string $permission): bool
     {
@@ -1114,10 +1252,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Provjerava pripada li ACL red gostima, svim prijavljenima, trenutnom
-     *     korisniku ili jednoj njegovoj stvarnoj Auth grupi.
      * EN: Checks whether an ACL row belongs to guests, all authenticated users,
      *     the current user, or one of their real Auth groups.
+     *
+     * HR: Provjerava pripada li ACL red gostima, svim prijavljenima, trenutnom
+     *     korisniku ili jednoj njegovoj stvarnoj Auth grupi.
      *
      * @param array<string, mixed> $row
      * @param list<int> $groupIds
@@ -1140,8 +1279,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Računa bazna prava iz već učitanih Workspace ACL redaka.
      * EN: Calculates base permissions from preloaded Workspace ACL rows.
+     *
+     * HR: Računa bazna prava iz već učitanih Workspace ACL redaka.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $user
@@ -1181,8 +1321,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Primjenjuje već učitana ograničenja svih predaka na bazna prava.
      * EN: Applies preloaded restrictions from all ancestors to base permissions.
+     *
+     * HR: Primjenjuje već učitana ograničenja svih predaka na bazna prava.
      *
      * @param array<string, bool> $permissions
      * @param list<int> $ancestorIds
@@ -1266,8 +1407,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Normalizira jedan DB ACL red u skup prava.
      * EN: Normalizes one database ACL row into a permission set.
+     *
+     * HR: Normalizira jedan DB ACL red u skup prava.
      *
      * @param array<string, mixed> $row
      * @return array<string, bool>
@@ -1293,8 +1435,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Izravno pravo može dati samo pregled, uređivanje ili objavljivanje ove stranice.
      * EN: A direct grant may provide only viewing, editing, or publishing of this page.
+     *
+     * HR: Izravno pravo može dati samo pregled, uređivanje ili objavljivanje ove stranice.
      *
      * @param array<string, mixed> $row
      * @return array<string, bool>
@@ -1315,8 +1458,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Spaja prava iz više korisničkih ili grupnih ACL redaka.
      * EN: Unions permissions from multiple user or group ACL rows.
+     *
+     * HR: Spaja prava iz više korisničkih ili grupnih ACL redaka.
      *
      * @param array<string, bool> $left
      * @param array<string, bool> $right
@@ -1332,10 +1476,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Autor nove stranice s važećim pravom dodavanja smije nastaviti
-     *     uređivati upravo tu stranicu, bez dobivanja prava nad tuđim stranicama.
      * EN: The author of a new page with an effective add grant may continue
      *     editing that page without receiving edit access to other users' pages.
+     *
+     * HR: Autor nove stranice s važećim pravom dodavanja smije nastaviti
+     *     uređivati upravo tu stranicu, bez dobivanja prava nad tuđim stranicama.
      *
      * @param array<string, bool> $permissions
      * @param array<string, mixed> $node
@@ -1356,8 +1501,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća početni skup bez prava.
      * EN: Returns an initial permission set with no grants.
+     *
+     * HR: Vraća početni skup bez prava.
      *
      * @return array<string, bool>
      */
@@ -1374,8 +1520,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Vraća puni skup prava za administratora.
      * EN: Returns the complete permission set for administrators.
+     *
+     * HR: Vraća puni skup prava za administratora.
      *
      * @return array<string, bool>
      */
@@ -1392,8 +1539,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Arhivirano područje ostavlja pregled i upravljanje postavkama, ali svima isključuje promjene sadržaja.
      * EN: An archived workspace keeps viewing and settings management while disabling content changes for everyone.
+     *
+     * HR: Arhivirano područje ostavlja pregled i upravljanje postavkama, ali svima isključuje promjene sadržaja.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, bool> $permissions
@@ -1414,10 +1562,11 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Rekurzivno slaže ravne čvorove u stablo koristeći isključivo spremljeni
-     *     poredak, neovisno o redoslijedu kojim su dohvaćeni iz baze.
      * EN: Recursively turns flat nodes into a tree using only their persisted
      *     ordering, regardless of the order in which the database returned them.
+     *
+     * HR: Rekurzivno slaže ravne čvorove u stablo koristeći isključivo spremljeni
+     *     poredak, neovisno o redoslijedu kojim su dohvaćeni iz baze.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -1435,20 +1584,22 @@ final class WorkspaceAccessService
             $branch[] = $node;
         }
 
-        // HR: Aktivni čvor smije dobiti oznaku i otvorenu granu, ali nikada novu poziciju.
         // EN: The active node may be marked and expanded, but it must never gain a new position.
+        //
+        // HR: Aktivni čvor smije dobiti oznaku i otvorenu granu, ali nikada novu poziciju.
         usort($branch, $this->compareTreeNodes(...));
 
         return $branch;
     }
 
     /**
-     * HR: Uspoređuje čvorove prema spremljenoj poziciji i trajnom ID-u. Naslov
-     *     nije dio poretka jer bi preimenovanje ili odabir aktivne stranice tada
-     *     moglo prividno premjestiti stavku bez izričitog uređivanja stabla.
      * EN: Compares nodes by persisted position and durable ID. A title is not
      *     part of the order because renaming or selecting an active page could
      *     otherwise appear to move it without an explicit tree edit.
+     *
+     * HR: Uspoređuje čvorove prema spremljenoj poziciji i trajnom ID-u. Naslov
+     *     nije dio poretka jer bi preimenovanje ili odabir aktivne stranice tada
+     *     moglo prividno premjestiti stavku bez izričitog uređivanja stabla.
      *
      * @param array<string, mixed> $left
      * @param array<string, mixed> $right
@@ -1466,8 +1617,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Čita pozitivan user ID iz auth payload-a.
      * EN: Reads a positive user ID from the authentication payload.
+     *
+     * HR: Čita pozitivan user ID iz auth payload-a.
      *
      * @param array<string, mixed>|null $user
      */
@@ -1477,8 +1629,9 @@ final class WorkspaceAccessService
     }
 
     /**
-     * HR: Zadržava samo string ključeve iz auth payload-a.
      * EN: Keeps only string keys from the authentication payload.
+     *
+     * HR: Zadržava samo string ključeve iz auth payload-a.
      *
      * @param array<mixed> $values
      * @return array<string, mixed>

@@ -22,8 +22,9 @@ use function token_get_all;
 final class WorkspaceTranslationsTest extends TestCase
 {
     /**
-     * HR: Svaki statički UI ključ mora postojati u zasebnom HR i EN katalogu.
      * EN: Every static UI key must exist in the separate HR and EN catalogues.
+     *
+     * HR: Svaki statički UI ključ mora postojati u zasebnom HR i EN katalogu.
      */
     public function testEveryStaticTranslationKeyExistsInBothCatalogues(): void
     {
@@ -74,8 +75,9 @@ final class WorkspaceTranslationsTest extends TestCase
     }
 
     /**
-     * HR: Izdvaja samo literalne i spojene literalne argumente bez izvršavanja koda.
      * EN: Extracts only literal and concatenated-literal arguments without executing code.
+     *
+     * HR: Izdvaja samo literalne i spojene literalne argumente bez izvršavanja koda.
      *
      * @return list<string>
      */

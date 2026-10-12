@@ -15,12 +15,14 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(WorkspaceLinkExtractor::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceLinkExtractorTest extends TestCase
 {
     /**
-     * HR: Prepoznaje relativne i apsolutne Workspace putanje neovisno o poddirektoriju instalacije.
      * EN: Recognizes relative and absolute Workspace paths independently of the installation subdirectory.
+     *
+     * HR: Prepoznaje relativne i apsolutne Workspace putanje neovisno o poddirektoriju instalacije.
      */
     public function testExtractsInternalWorkspaceLinksFromPublishedHtml(): void
     {
@@ -43,8 +45,9 @@ final class WorkspaceLinkExtractorTest extends TestCase
     }
 
     /**
-     * HR: Kod bez poveznica ili prazni HTML ne stvara lažne backlinkove.
      * EN: Markup without links or empty HTML creates no false backlinks.
+     *
+     * HR: Kod bez poveznica ili prazni HTML ne stvara lažne backlinkove.
      */
     public function testIgnoresNonWorkspaceTargets(): void
     {
@@ -54,7 +57,11 @@ final class WorkspaceLinkExtractorTest extends TestCase
         $this->assertSame([], $extractor->extract('<a href="https://example.test/about">O nama</a>'));
     }
 
-    /** HR: Gradi stvarnu konfiguraciju modula. EN: Builds the real module configuration. */
+    /**
+     * EN: Builds the real module configuration.
+     *
+     * HR: Gradi stvarnu konfiguraciju modula.
+     */
     private function workspaceConfig(): WorkspaceConfig
     {
         return new WorkspaceConfig(new Config(new Helper(), []), dirname(__DIR__));

@@ -20,14 +20,19 @@ use function is_array;
 use function is_scalar;
 
 /**
- * HR: Orkestrira pregled zauzeća i čišćenje područja, dok specijalizirani
- *     Editor servis ostaje jedini vlasnik HTML verzija i privitaka.
  * EN: Orchestrates Workspace storage reporting and cleanup while the
  *     specialized Editor service remains the sole owner of HTML versions and attachments.
+ *
+ * HR: Orkestrira pregled zauzeća i čišćenje područja, dok specijalizirani
+ *     Editor servis ostaje jedini vlasnik HTML verzija i privitaka.
  */
 final readonly class WorkspaceMaintenanceService
 {
-    /** HR: Prima spremište područja i izolirani most prema Editor održavanju. EN: Receives Workspace storage and the isolated Editor-maintenance bridge. */
+    /**
+     * EN: Receives Workspace storage and the isolated Editor-maintenance bridge.
+     *
+     * HR: Prima spremište područja i izolirani most prema Editor održavanju.
+     */
     public function __construct(
         private Database $database,
         private WorkspaceRepository $repository,
@@ -39,8 +44,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Gradi cijelu nadzornu ploču jednim skupnim pozivom editoru.
      * EN: Builds the complete dashboard with one bulk editor call.
+     *
+     * HR: Gradi cijelu nadzornu ploču jednim skupnim pozivom editoru.
      *
      * @return array{workspaces: list<array<string, mixed>>, statistics: array<string, array<string, int>>}
      */
@@ -64,8 +70,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Pokreće izradu optimiziranih web-kopija postojećih slika.
      * EN: Starts generation of optimized web copies for existing images.
+     *
+     * HR: Pokreće izradu optimiziranih web-kopija postojećih slika.
      *
      * @return array{documents: int, generated: int, skipped: int}
      */
@@ -82,7 +89,10 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Pokreće nastavivi posao optimizacije slika. EN: Starts the resumable image optimization job.
+     * EN: Starts the resumable image optimization job.
+     *
+     * HR: Pokreće nastavivi posao optimizacije slika.
+     *
      * @return array<string, mixed>
      */
     public function startImageOptimization(): array
@@ -91,7 +101,10 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Vraća napredak optimizacije za administratorski UI. EN: Returns optimization progress for the admin UI.
+     * EN: Returns optimization progress for the admin UI.
+     *
+     * HR: Vraća napredak optimizacije za administratorski UI.
+     *
      * @return array<string, mixed>
      */
     public function imageOptimizationStatus(): array
@@ -115,7 +128,10 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Delegira jednu malu seriju editoru. EN: Delegates one small batch to the editor.
+     * EN: Delegates one small batch to the editor.
+     *
+     * HR: Delegira jednu malu seriju editoru.
+     *
      * @return array<string, mixed>
      */
     public function stepImageOptimization(int $limit = 3): array
@@ -124,8 +140,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Zahtijeva dostupnu editor integraciju za radnje koje mijenjaju stanje.
      * EN: Requires an available editor integration for state-changing actions.
+     *
+     * HR: Zahtijeva dostupnu editor integraciju za radnje koje mijenjaju stanje.
      *
      * @param array<string, mixed> $result
      * @return array<string, mixed>
@@ -140,10 +157,11 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Validira administratorski obrazac, čisti editor i zatim uklanja
-     *     metapodatke onih Workspace čvorova čiji je dokument trajno uklonjen.
      * EN: Validates the administrator form, cleans the editor, and then removes
      *     metadata for Workspace nodes whose document was permanently purged.
+     *
+     * HR: Validira administratorski obrazac, čisti editor i zatim uklanja
+     *     metapodatke onih Workspace čvorova čiji je dokument trajno uklonjen.
      *
      * @return array<string, mixed>
      */
@@ -216,12 +234,13 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Nepovratno uklanja soft-obrisano područje. Dodatni moduli prvo
-     *     dobivaju stabilan događaj za svoje podatke, zatim Editor uklanja
-     *     dokumente i datoteke, a Workspace na kraju svoje retke i theme assete.
      * EN: Irreversibly removes a soft-deleted Workspace. Optional modules first
      *     receive a stable event for their data, then Editor removes documents
      *     and files, and Workspace finally removes its rows and theme assets.
+     *
+     * HR: Nepovratno uklanja soft-obrisano područje. Dodatni moduli prvo
+     *     dobivaju stabilan događaj za svoje podatke, zatim Editor uklanja
+     *     dokumente i datoteke, a Workspace na kraju svoje retke i theme assete.
      *
      * @return array<string, int>
      */
@@ -286,8 +305,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: U web zahtjevu uklanja samo malu Editor seriju; završni korak čisti ostale module i područje.
      * EN: Removes only a small Editor batch per web request; the final step cleans other modules and the Workspace.
+     *
+     * HR: U web zahtjevu uklanja samo malu Editor seriju; završni korak čisti ostale module i područje.
      *
      * @return array<string, int>
      */
@@ -360,8 +380,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Vraća sve aktivne i onemogućene ključeve dokumenata nekog područja.
      * EN: Returns every active and disabled document key belonging to a Workspace.
+     *
+     * HR: Vraća sve aktivne i onemogućene ključeve dokumenata nekog područja.
      *
      * @return list<string>
      */
@@ -387,8 +408,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Čuva radne i objavljene verzije na koje pokazuju Workspace workflowi.
      * EN: Protects working and published versions referenced by Workspace workflows.
+     *
+     * HR: Čuva radne i objavljene verzije na koje pokazuju Workspace workflowi.
      *
      * @return array<string, array<string, list<int>>>
      */
@@ -441,8 +463,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Uklanja samo dovoljno stare onemogućene čvorove čiji su dokumenti već trajno obrisani.
      * EN: Removes only old disabled nodes whose documents were already permanently purged.
+     *
+     * HR: Uklanja samo dovoljno stare onemogućene čvorove čiji su dokumenti već trajno obrisani.
      *
      * @param list<string> $documentKeys
      */
@@ -486,6 +509,10 @@ final readonly class WorkspaceMaintenanceService
 
         $pages = array_values($pages);
         if ($pages !== []) {
+            // EN: Remove owned menu references while their page identities still exist.
+            //
+            // HR: Ukloni vlasničke reference menija dok identiteti stranica još postoje.
+            $this->menus->deleteForPages($pages);
             $this->events->dispatch(new WorkspacePagesPermanentlyDeleting($pages, $actorUserId));
         }
 
@@ -509,8 +536,9 @@ final readonly class WorkspaceMaintenanceService
     }
 
     /**
-     * HR: Normalizira rezultat opcionalnog bridgea na jedinstven popis ključeva.
      * EN: Normalizes an optional bridge result to a unique key list.
+     *
+     * HR: Normalizira rezultat opcionalnog bridgea na jedinstven popis ključeva.
      *
      * @return list<string>
      */

@@ -31,14 +31,16 @@ use function strlen;
 use function trim;
 
 /**
- * HR: Upravlja ACL-zaštićenim HTML izvozom cijelog područja ili izabranih stranica.
  * EN: Handles ACL-protected HTML export of a complete Workspace or selected pages.
+ *
+ * HR: Upravlja ACL-zaštićenim HTML izvozom cijelog područja ili izabranih stranica.
  */
 final readonly class WorkspaceExportController
 {
     /**
-     * HR: Prima servise za autorizaciju, pripremu forme, stvaranje ZIP-a i lokalizirane poruke.
      * EN: Receives services for authorization, form preparation, ZIP creation, and localized messages.
+     *
+     * HR: Prima servise za autorizaciju, pripremu forme, stvaranje ZIP-a i lokalizirane poruke.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -54,8 +56,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Prikazuje izbor cijelog područja ili pojedinih objavljenih stranica.
      * EN: Displays the choice between the complete Workspace and individual published pages.
+     *
+     * HR: Prikazuje izbor cijelog područja ili pojedinih objavljenih stranica.
      */
     public function form(ServerRequestInterface $request): ResponseInterface
     {
@@ -78,8 +81,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Ponovno provjerava manage pravo, filtrira odabrane ID-eve i šalje ZIP bez spremanja na disk.
      * EN: Rechecks manage permission, filters selected IDs, and streams the ZIP without storing it on disk.
+     *
+     * HR: Ponovno provjerava manage pravo, filtrira odabrane ID-eve i šalje ZIP bez spremanja na disk.
      */
     public function download(ServerRequestInterface $request): ResponseInterface
     {
@@ -110,10 +114,11 @@ final readonly class WorkspaceExportController
 
         try {
             /*
-             * HR: Servis ponovno presijeca odabrane ID-eve s ACL-vidljivim i objavljenim
-             *     stablom. Zato ručno izmijenjen POST ne može proširiti sadržaj ZIP-a.
              * EN: The service intersects selected IDs again with the ACL-visible,
              *     published tree, so a tampered POST cannot broaden ZIP contents.
+             *
+             * HR: Servis ponovno presijeca odabrane ID-eve s ACL-vidljivim i objavljenim
+             *     stablom. Zato ručno izmijenjen POST ne može proširiti sadržaj ZIP-a.
              */
             $export = $this->exporter->export($workspace, $selectedNodeIds);
         } catch (Throwable $throwable) {
@@ -137,8 +142,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Priprema prikazni model forme bez ponavljanja ACL i tree logike u viewu.
      * EN: Prepares the form view model without duplicating ACL and tree logic in the view.
+     *
+     * HR: Priprema prikazni model forme bez ponavljanja ACL i tree logike u viewu.
      *
      * @param array<string, mixed> $workspace
      */
@@ -159,8 +165,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Izvoz smije pokrenuti samo administrator ili korisnik s efektivnim manage pravom.
      * EN: Only an administrator or a user with effective manage permission may start an export.
+     *
+     * HR: Izvoz smije pokrenuti samo administrator ili korisnik s efektivnim manage pravom.
      *
      * @param array<string, mixed> $workspace
      */
@@ -174,8 +181,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Učitava područje iz numeričkog ID-a ili sluga, jednako za GET i POST.
      * EN: Loads a Workspace from a numeric ID or slug, consistently for GET and POST.
+     *
+     * HR: Učitava područje iz numeričkog ID-a ili sluga, jednako za GET i POST.
      *
      * @param array<string, mixed> $input
      * @return array<string, mixed>|null
@@ -193,8 +201,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Pretvara ugniježđeno stablo u listu checkboxa uz očuvanu dubinu prikaza.
      * EN: Converts the nested tree into checkbox options while preserving display depth.
+     *
+     * HR: Pretvara ugniježđeno stablo u listu checkboxa uz očuvanu dubinu prikaza.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array{id:int,title:string,depth:int,is_homepage:bool}>
@@ -222,8 +231,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Prihvaća samo pozitivne numeričke ID-eve iz višestrukog checkbox polja.
      * EN: Accepts only positive numeric IDs from the multi-checkbox field.
+     *
+     * HR: Prihvaća samo pozitivne numeričke ID-eve iz višestrukog checkbox polja.
      *
      * @return list<int>
      */
@@ -249,8 +259,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Gradi povratni URL forme s trenutačnim područjem.
      * EN: Builds the return URL of the form with the current Workspace.
+     *
+     * HR: Gradi povratni URL forme s trenutačnim područjem.
      *
      * @param array<string, mixed> $workspace
      */
@@ -261,8 +272,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Vraća lokalizirani 403 prikaz bez otkrivanja stabla ili naziva stranica.
      * EN: Returns a localized 403 view without exposing the tree or page names.
+     *
+     * HR: Vraća lokalizirani 403 prikaz bez otkrivanja stabla ili naziva stranica.
      */
     private function accessDenied(): ResponseInterface
     {
@@ -274,8 +286,9 @@ final readonly class WorkspaceExportController
     }
 
     /**
-     * HR: Generira named rutu ili stabilni fallback za samostalni rad modula.
      * EN: Generates a named route or stable fallback for standalone module operation.
+     *
+     * HR: Generira named rutu ili stabilni fallback za samostalni rad modula.
      */
     private function pathFor(string $routeName, string $fallback): string
     {

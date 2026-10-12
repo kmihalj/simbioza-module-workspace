@@ -1,11 +1,8 @@
 # Workspace backup and restore
 
-Workspace owns three source providers: complete site/component tables, private workspace-theme files, and the selective `workspace-scope` provider. A selective archive contains the workspace record, tree, portable page labels and structured properties, node ACL and workflow state, homepage/view settings, private theme, and portable references needed by editor, calendar, task, comment, menu, and search integrations.
+Workspace owns site/component database and global JSON-configuration providers, private workspace-theme files, and the selective `workspace-scope` provider. A selective archive contains the workspace record, tree, portable page labels and structured properties, node ACL and workflow state, workspace-local homepage/view settings, private theme, and portable references needed by editor, calendar, task, comment, menu, and search integrations. It does not replace the site's global homepage policy. Full configuration backup follows `HPH_CONFIG_PATH`, shares the GUI lock, and remaps creator/homepage references after database imports; see [configuration](configuration_en.md).
 
-Automatic finalizers add only missing private-theme header and primary-navigation
-heights after a complete or selective restore of an older backup. The previous
-72- and 56-pixel values preserve the same appearance, while existing values and
-every other setting remain untouched.
+Only current archive format 2 and exact provider schemas are accepted. Private theme values are restored as stored, without historical default backfills.
 
 ## Authorization
 
@@ -30,6 +27,4 @@ Use preflight before restore. A missing required provider, checksum mismatch, un
 Selective and complete backups retain every language variant of the Workspace
 name and description and every page title. `merge`, `copy`, and `replace` carry
 the translation maps together with stable slugs, so restoring a multilingual
-Workspace does not collapse it to the currently active language. A legacy
-record without a translation map is displayed through the primary-language
-fallback.
+Workspace does not collapse it to the currently active language. Translation maps are current domain data, not an old-archive conversion.

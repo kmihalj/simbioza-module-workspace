@@ -15,10 +15,11 @@ use function rtrim;
 use function sprintf;
 
 /**
- * HR: Opcionalno povezuje Workspace workflow sa zajedničkim korisničkim inboxom.
- *     Workspace ostaje samostalan kada Notification modul nije instaliran.
  * EN: Optionally connects the Workspace workflow to the shared user inbox.
  *     Workspace remains standalone when the Notification module is absent.
+ *
+ * HR: Opcionalno povezuje Workspace workflow sa zajedničkim korisničkim inboxom.
+ *     Workspace ostaje samostalan kada Notification modul nije instaliran.
  */
 final readonly class WorkspaceNotificationBridge
 {
@@ -29,10 +30,11 @@ final readonly class WorkspaceNotificationBridge
     self::NOTIFICATION_NAMESPACE . 'NotificationService';
 
     /**
-     * HR: Prima container, ACL servis i URL generator bez Composer ovisnosti o
-     *     opcionalnom Notification modulu.
      * EN: Receives the container, ACL service, and URL generator without a
      *     Composer dependency on the optional Notification module.
+     *
+     * HR: Prima container, ACL servis i URL generator bez Composer ovisnosti o
+     *     opcionalnom Notification modulu.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -44,8 +46,9 @@ final readonly class WorkspaceNotificationBridge
     }
 
     /**
-     * HR: Obavještava sve efektivne objavljivače da stranica čeka pregled.
      * EN: Notifies all effective publishers that a page is awaiting review.
+     *
+     * HR: Obavještava sve efektivne objavljivače da stranica čeka pregled.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node
@@ -103,8 +106,9 @@ final readonly class WorkspaceNotificationBridge
     }
 
     /**
-     * HR: Nakon objave obavještava korisnika koji je nacrt poslao na pregled.
      * EN: After publication, notifies the user who submitted the draft for review.
+     *
+     * HR: Nakon objave obavještava korisnika koji je nacrt poslao na pregled.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node
@@ -156,8 +160,9 @@ final readonly class WorkspaceNotificationBridge
     }
 
     /**
-     * HR: Poziva grupno slanje samo kada je Notification servis raspoloživ.
      * EN: Invokes batch notification delivery only when the service is available.
+     *
+     * HR: Poziva grupno slanje samo kada je Notification servis raspoloživ.
      *
      * @param list<int> $userIds
      * @param array<string, mixed> $data
@@ -191,14 +196,16 @@ final readonly class WorkspaceNotificationBridge
                 true,
             );
         } catch (Throwable) {
-            // HR: Obavijesti su pomoćni kanal i ne smiju poništiti workflow prijelaz.
             // EN: Notifications are an auxiliary channel and must not undo a workflow transition.
+            //
+            // HR: Obavijesti su pomoćni kanal i ne smiju poništiti workflow prijelaz.
         }
     }
 
     /**
-     * HR: Poziva pojedinačno slanje samo kada je Notification servis raspoloživ.
      * EN: Invokes single-user delivery only when the Notification service is available.
+     *
+     * HR: Poziva pojedinačno slanje samo kada je Notification servis raspoloživ.
      *
      * @param array<string, mixed> $data
      */
@@ -231,14 +238,16 @@ final readonly class WorkspaceNotificationBridge
                 true,
             );
         } catch (Throwable) {
-            // HR: Neuspjeh pomoćnog kanala ne mijenja već objavljenu stranicu.
             // EN: An auxiliary-channel failure does not change an already published page.
+            //
+            // HR: Neuspjeh pomoćnog kanala ne mijenja već objavljenu stranicu.
         }
     }
 
     /**
-     * HR: Sigurno dohvaća opcionalni servis iz zajedničkog containera.
      * EN: Safely resolves the optional service from the shared container.
+     *
+     * HR: Sigurno dohvaća opcionalni servis iz zajedničkog containera.
      */
     private function notificationService(): ?object
     {
@@ -252,8 +261,9 @@ final readonly class WorkspaceNotificationBridge
     }
 
     /**
-     * HR: Gradi link na objavljenu stranicu ili izravni pregled nacrta.
      * EN: Builds a link to the published page or directly to the draft preview.
+     *
+     * HR: Gradi link na objavljenu stranicu ili izravni pregled nacrta.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node

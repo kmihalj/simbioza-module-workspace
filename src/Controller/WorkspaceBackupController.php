@@ -25,17 +25,18 @@ use RuntimeException;
 use Throwable;
 
 /**
- * HR: Povezuje generički Backup s ACL pravilima jednog područja bez obrnutog
- *     povezivanja Backup modula na Workspace poslovni model.
- *
  * EN: Connects generic Backup orchestration to one Workspace's ACL rules
  *     without coupling the Backup module back to the Workspace domain model.
+ *
+ * HR: Povezuje generički Backup s ACL pravilima jednog područja bez obrnutog
+ *     povezivanja Backup modula na Workspace poslovni model.
  */
 final readonly class WorkspaceBackupController
 {
     /**
-     * HR: Prima samo javne Backup servise i Workspace ACL/repository servise.
      * EN: Receives only public Backup services and Workspace ACL/repository services.
+     *
+     * HR: Prima samo javne Backup servise i Workspace ACL/repository servise.
      */
     public function __construct(
         private ResponseFactory $responses,
@@ -53,8 +54,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Prikazuje sigurni izvoz/import samo upravitelju odabranog područja.
      * EN: Shows secure export/import only to a manager of the selected Workspace.
+     *
+     * HR: Prikazuje sigurni izvoz/import samo upravitelju odabranog područja.
      */
     public function index(ServerRequestInterface $request): ResponseInterface
     {
@@ -89,8 +91,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Vraća aktualni CSRF token samo upravitelju zadanog područja.
      * EN: Returns the current CSRF token only to a manager of the requested Workspace.
+     *
+     * HR: Vraća aktualni CSRF token samo upravitelju zadanog područja.
      */
     public function csrf(ServerRequestInterface $request): ResponseInterface
     {
@@ -105,8 +108,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Izrađuje šifrirani prenosivi arhiv samo od Workspace-scope providera.
      * EN: Creates an encrypted portable archive from Workspace-scope providers only.
+     *
+     * HR: Izrađuje šifrirani prenosivi arhiv samo od Workspace-scope providera.
      */
     public function create(ServerRequestInterface $request): ResponseInterface
     {
@@ -122,7 +126,7 @@ final readonly class WorkspaceBackupController
                 'export',
                 new BackupScope(BackupScope::WORKSPACE, $slug),
                 [],
-                [],
+                ['site_base_url' => $this->requestSiteUrl($request)],
                 $this->actorUserId(),
             );
             $path = $this->runner->runExport(
@@ -138,8 +142,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Otvara nastavivi upload samo prijavljenom upravitelju cilja.
      * EN: Opens a resumable upload only for an authenticated target manager.
+     *
+     * HR: Otvara nastavivi upload samo prijavljenom upravitelju cilja.
      */
     public function uploadStart(ServerRequestInterface $request): ResponseInterface
     {
@@ -160,8 +165,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Prima jedan binarni dio arhiva uz provjeru vlasnika upload sesije.
      * EN: Receives one binary archive chunk after checking upload-session ownership.
+     *
+     * HR: Prima jedan binarni dio arhiva uz provjeru vlasnika upload sesije.
      */
     public function uploadChunk(ServerRequestInterface $request): ResponseInterface
     {
@@ -189,8 +195,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Zaključuje upload i prihvaća isključivo Workspace arhiv.
      * EN: Completes the upload and accepts Workspace archives only.
+     *
+     * HR: Zaključuje upload i prihvaća isključivo Workspace arhiv.
      */
     public function uploadFinish(ServerRequestInterface $request): ResponseInterface
     {
@@ -214,8 +221,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Provjerava identitete, ovisnosti, ACL i konfliktni način bez izmjena.
      * EN: Validates identities, dependencies, ACL, and conflict mode without mutations.
+     *
+     * HR: Provjerava identitete, ovisnosti, ACL i konfliktni način bez izmjena.
      */
     public function preflight(ServerRequestInterface $request): ResponseInterface
     {
@@ -231,8 +239,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Ponavlja preflight i pokreće transakcijski restore sa safety snapshotom.
      * EN: Repeats preflight and runs a transactional restore with a safety snapshot.
+     *
+     * HR: Ponavlja preflight i pokreće transakcijski restore sa safety snapshotom.
      */
     public function restore(ServerRequestInterface $request): ResponseInterface
     {
@@ -254,16 +263,30 @@ final readonly class WorkspaceBackupController
                 $archive,
             );
             $snapshot = $this->runner->runRestore($job, $context->passphrase);
+            $completed = $this->jobs->findByUuid(WorkspaceValue::string($job['uuid'] ?? ''));
+            $result = json_decode(
+                WorkspaceValue::string($completed['result_json'] ?? '{}'),
+                true,
+                flags: JSON_THROW_ON_ERROR,
+            );
+            if (!is_array($result)) {
+                throw new BackupException('Backup job result must be a structured report.');
+            }
 
-            return $this->responses->json(['restored' => true, 'safety_snapshot' => $snapshot]);
+            return $this->responses->json([
+                'restored' => true,
+                'links' => $result['links'] ?? [],
+                'safety_snapshot' => $snapshot,
+            ]);
         } catch (Throwable $throwable) {
             return $this->errorJson($throwable);
         }
     }
 
     /**
-     * HR: Gradi i autorizira kontekst importa iz završene upload sesije.
      * EN: Builds and authorizes an import context from a completed upload session.
+     *
+     * HR: Gradi i autorizira kontekst importa iz završene upload sesije.
      *
      * @return array{0:array<string,mixed>,1:BackupImportContext}
      */
@@ -295,15 +318,39 @@ final readonly class WorkspaceBackupController
             $mode,
             [],
             [],
-            ['workspace-scope' => ['target_slug' => $target]],
+            [
+                'site_base_url' => $this->requestSiteUrl($request),
+                'workspace-scope' => ['target_slug' => $target],
+            ],
             $this->actorUserId(),
             $this->passphrase($body),
         )];
     }
 
     /**
-     * HR: Provjerava da je korisnik upravitelj područja navedenog uz upload.
+     * EN: Uses a configured URL or the proxy-normalized request URI with the application base path.
+     * Client-supplied target URLs and raw forwarded headers are not used.
+     *
+     * HR: Koristi podešeni URL ili proxy-normalizirani URI zahtjeva s osnovnom putanjom aplikacije.
+     * Ne koristi ciljne URL-ove iz korisničkog unosa ni sirova forwarded zaglavlja.
+     */
+    private function requestSiteUrl(ServerRequestInterface $request): string
+    {
+        $configured = $this->manager->siteBaseUrl();
+        if ($configured !== null) {
+            return $configured;
+        }
+
+        $uri = $request->getUri();
+        return $this->manager->siteBaseUrl($uri->getScheme() . '://' . $uri->getHost()
+            . ($uri->getPort() !== null ? ':' . $uri->getPort() : '') . $this->urls->getBasePath())
+        ?? throw new BackupException('Unable to determine the public application URL.');
+    }
+
+    /**
      * EN: Checks that the user manages the Workspace supplied with the upload.
+     *
+     * HR: Provjerava da je korisnik upravitelj područja navedenog uz upload.
      *
      * @param array<string,mixed> $body
      */
@@ -316,8 +363,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Pronalazi područje prema ID-u ili stabilnom slugu iz ulaza.
      * EN: Finds a Workspace by ID or stable slug from the input.
+     *
+     * HR: Pronalazi područje prema ID-u ili stabilnom slugu iz ulaza.
      *
      * @param array<string,mixed> $input
      * @return array<string,mixed>|null
@@ -335,8 +383,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Provjerava efektivno pravo upravljanja područjem.
      * EN: Checks the effective Workspace manage permission.
+     *
+     * HR: Provjerava efektivno pravo upravljanja područjem.
      *
      * @param array<string,mixed> $workspace
      */
@@ -346,8 +395,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Čita formular ili sirovo JSON tijelo zahtjeva.
      * EN: Reads a form body or a raw JSON request body.
+     *
+     * HR: Čita formular ili sirovo JSON tijelo zahtjeva.
      *
      * @return array<string,mixed>
      */
@@ -358,8 +408,9 @@ final readonly class WorkspaceBackupController
             return WorkspaceValue::stringKeyArray($body);
         }
 
-        // HR: JSON upload pozivi nemaju nužno unaprijed parsirano tijelo.
         // EN: JSON upload requests do not necessarily have a pre-parsed body.
+        //
+        // HR: JSON upload pozivi nemaju nužno unaprijed parsirano tijelo.
         $decoded = json_decode((string)$request->getBody(), true);
         return is_array($decoded)
         ? WorkspaceValue::stringKeyArray($decoded)
@@ -367,8 +418,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Normalizira opcionalnu zaporku arhiva bez pohrane.
      * EN: Normalizes the optional archive passphrase without storing it.
+     *
+     * HR: Normalizira opcionalnu zaporku arhiva bez pohrane.
      *
      * @param array<string,mixed> $body
      */
@@ -378,7 +430,11 @@ final readonly class WorkspaceBackupController
         return $value !== '' ? $value : null;
     }
 
-    /** HR: Vraća ID prijavljenog izvršitelja. EN: Returns the authenticated actor ID. */
+    /**
+     * EN: Returns the authenticated actor ID.
+     *
+     * HR: Vraća ID prijavljenog izvršitelja.
+     */
     private function actorUserId(): ?int
     {
         $id = WorkspaceValue::int($this->access->currentUser()['id'] ?? 0);
@@ -386,8 +442,9 @@ final readonly class WorkspaceBackupController
     }
 
     /**
-     * HR: Svodi zapis upload sesije na siguran javni odgovor.
      * EN: Reduces an upload-session record to a safe public response.
+     *
+     * HR: Svodi zapis upload sesije na siguran javni odgovor.
      *
      * @param array<string,mixed> $upload
      * @return array<string,mixed>
@@ -404,25 +461,41 @@ final readonly class WorkspaceBackupController
         ];
     }
 
-    /** HR: Vraća lokalizirani HTML 403 odgovor. EN: Returns a localized HTML 403 response. */
+    /**
+     * EN: Returns a localized HTML 403 response.
+     *
+     * HR: Vraća lokalizirani HTML 403 odgovor.
+     */
     private function denied(): ResponseInterface
     {
         return $this->responses->text(__('Nedozvoljen pristup'), 403);
     }
 
-    /** HR: Vraća lokalizirani JSON 403 odgovor. EN: Returns a localized JSON 403 response. */
+    /**
+     * EN: Returns a localized JSON 403 response.
+     *
+     * HR: Vraća lokalizirani JSON 403 odgovor.
+     */
     private function deniedJson(): ResponseInterface
     {
         return $this->responses->json(['error' => __('Nedozvoljen pristup')], 403);
     }
 
-    /** HR: Pretvara iznimku u HTML odgovor. EN: Converts an exception to an HTML response. */
+    /**
+     * EN: Converts an exception to an HTML response.
+     *
+     * HR: Pretvara iznimku u HTML odgovor.
+     */
     private function error(Throwable $throwable): ResponseInterface
     {
         return $this->responses->text($throwable->getMessage(), $throwable instanceof BackupException ? 422 : 500);
     }
 
-    /** HR: Pretvara iznimku u JSON odgovor. EN: Converts an exception to a JSON response. */
+    /**
+     * EN: Converts an exception to a JSON response.
+     *
+     * HR: Pretvara iznimku u JSON odgovor.
+     */
     private function errorJson(Throwable $throwable): ResponseInterface
     {
         return $this->responses->json(

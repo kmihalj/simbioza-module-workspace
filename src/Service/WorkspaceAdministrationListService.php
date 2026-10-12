@@ -15,21 +15,27 @@ use function is_scalar;
 use function usort;
 
 /**
- * HR: Sažima osobna područja u općim administratorskim popisima, dok ih
- *     specijalizirani modul i popis obrisanih stavki zadržavaju pojedinačno.
  * EN: Collapses personal Workspaces in general administration lists while
  *     their dedicated module and deleted-item list keep individual entries.
+ *
+ * HR: Sažima osobna područja u općim administratorskim popisima, dok ih
+ *     specijalizirani modul i popis obrisanih stavki zadržavaju pojedinačno.
  */
 final readonly class WorkspaceAdministrationListService
 {
-    /** HR: Prima prevoditelj za lokalizirani naziv i redoslijed. EN: Receives the translator for localized naming and ordering. */
+    /**
+     * EN: Receives the translator for localized naming and ordering.
+     *
+     * HR: Prima prevoditelj za lokalizirani naziv i redoslijed.
+     */
     public function __construct(private TranslatorInterface $translator)
     {
     }
 
     /**
-     * HR: Vraća samo obična aktivna područja za opći administratorski popis.
      * EN: Returns only ordinary active Workspaces for the general admin list.
+     *
+     * HR: Vraća samo obična aktivna područja za opći administratorski popis.
      *
      * @param list<array<string,mixed>> $workspaces
      * @return list<array<string,mixed>>
@@ -43,8 +49,9 @@ final readonly class WorkspaceAdministrationListService
     }
 
     /**
-     * HR: Zbraja statistike svih osobnih područja u jedan lokalizirani red.
      * EN: Aggregates every personal Workspace statistic into one localized row.
+     *
+     * HR: Zbraja statistike svih osobnih područja u jedan lokalizirani red.
      *
      * @param list<array<string,mixed>> $workspaces
      * @return list<array<string,mixed>>

@@ -12,7 +12,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(WorkspaceExternalReferenceRegistry::class)]
 final class WorkspaceExternalReferenceRegistryTest extends TestCase
 {
-    /** HR: Servisni config ne smije zamijeniti registar koji su ranije popunili drugi moduli. EN: Service config must not replace a registry populated earlier by other modules. */
+    /**
+     * EN: Service config must not replace a registry populated earlier by other modules.
+     *
+     * HR: Servisni config ne smije zamijeniti registar koji su ranije popunili drugi moduli.
+     */
     public function testServiceConfigurationKeepsTheAutowireSingleton(): void
     {
         $services = file_get_contents(dirname(__DIR__) . '/config/services.php');
@@ -24,7 +28,11 @@ final class WorkspaceExternalReferenceRegistryTest extends TestCase
         );
     }
 
-    /** HR: Nepoznate oznake ostaju neriješene, a registrirani provider vraća lokalni cilj. EN: Unknown references remain unresolved while a registered provider returns a local target. */
+    /**
+     * EN: Unknown references remain unresolved while a registered provider returns a local target.
+     *
+     * HR: Nepoznate oznake ostaju neriješene, a registrirani provider vraća lokalni cilj.
+     */
     public function testRegisteredProviderResolvesPortableWorkspaceReference(): void
     {
         $registry = new WorkspaceExternalReferenceRegistry();

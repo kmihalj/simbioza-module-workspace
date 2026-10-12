@@ -362,8 +362,9 @@ $pagePath = static fn(int $number): string => $shortsPath . '&' . http_build_que
                             <div class="workspace-short-excerpt mt-3">
                                 <?php
                                 /*
-                                 * HR: HTML je točno objavljena verzija koju je Editor već sanitizirao.
                                  * EN: HTML is the exact published version already sanitized by the Editor.
+                                 *
+                                 * HR: HTML je točno objavljena verzija koju je Editor već sanitizirao.
                                  */
                                 ?>
                                 <?= WorkspaceValue::string($article['html'] ?? '') ?>

@@ -27,6 +27,8 @@ use Psr\Container\ContainerInterface;
 #[CoversClass(WorkspaceShortsService::class)]
 #[UsesClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceEditorBridge::class)]
 #[UsesClass(WorkspaceRepository::class)]
 #[UsesClass(WorkspaceValue::class)]
@@ -44,8 +46,9 @@ final class WorkspaceShortsServiceTest extends TestCase
     private object $editor;
 
     /**
-     * HR: Priprema stvarno SQLite stablo, workflow i opcionalni batch Editor most.
      * EN: Prepares a real SQLite tree, workflow, and optional batch Editor bridge.
+     *
+     * HR: Priprema stvarno SQLite stablo, workflow i opcionalni batch Editor most.
      */
     protected function setUp(): void
     {
@@ -131,8 +134,9 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Razine, datum, objavljeno stanje i nasljedni ACL zajedno određuju Sažetke.
      * EN: Depth, date, publication state, and inherited ACL jointly determine Shorts.
+     *
+     * HR: Razine, datum, objavljeno stanje i nasljedni ACL zajedno određuju Sažetke.
      */
     public function testShortsRespectDepthOrderingPublicationAndInheritedAcl(): void
     {
@@ -227,11 +231,11 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Serverska validacija odbija `all` čim postoji 100 dostupnih članaka,
-     *     neovisno o ručno sastavljenom query stringu.
-     *
      * EN: Server-side validation rejects `all` as soon as 100 articles are
      *     available, regardless of a hand-crafted query string.
+     *
+     * HR: Serverska validacija odbija `all` čim postoji 100 dostupnih članaka,
+     *     neovisno o ručno sastavljenom query stringu.
      */
     public function testAllOptionIsRejectedAtOneHundredArticles(): void
     {
@@ -276,8 +280,9 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Broj članaka određuje veličinu stranice, a naslovni redoslijed prati hrvatsku abecedu.
      * EN: Article count determines page size, while title ordering follows the Croatian alphabet.
+     *
+     * HR: Broj članaka određuje veličinu stranice, a naslovni redoslijed prati hrvatsku abecedu.
      */
     public function testTitleOrderingAndPaginationExposeAllEligibleArticles(): void
     {
@@ -329,8 +334,9 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Nedostajući aktivni jezik koristi objavljenu inačicu zadanog jezika sitea.
      * EN: A missing active locale falls back to the published site-default locale.
+     *
+     * HR: Nedostajući aktivni jezik koristi objavljenu inačicu zadanog jezika sitea.
      */
     public function testMissingRequestedLanguageFallsBackToPublishedSiteDefaultLanguage(): void
     {
@@ -361,10 +367,11 @@ final class WorkspaceShortsServiceTest extends TestCase
     }
 
     /**
-     * HR: Sažetci nakon nedostajućeg zadanog jezika biraju engleski, a zatim
-     *     bilo koju drugu objavljenu inačicu.
      * EN: Shorts choose English after a missing default locale, then any other
      *     published variant.
+     *
+     * HR: Sažetci nakon nedostajućeg zadanog jezika biraju engleski, a zatim
+     *     bilo koju drugu objavljenu inačicu.
      */
     public function testMissingDefaultLanguageFallsBackToEnglishAndAnyPublishedLanguage(): void
     {

@@ -34,14 +34,19 @@ use function trim;
 use function unlink;
 
 /**
- * HR: Kopira ili premješta jednu Workspace stranicu kroz isti prenosivi Backup
- *     format koji se koristi i za ručni izvoz/import.
  * EN: Copies or moves one Workspace page through the same portable Backup
  *     format used by manual export/import.
+ *
+ * HR: Kopira ili premješta jednu Workspace stranicu kroz isti prenosivi Backup
+ *     format koji se koristi i za ručni izvoz/import.
  */
 final readonly class WorkspacePageTransferController
 {
-    /** HR: Prima servise prijenosa i ACL-a. EN: Receives transfer and ACL services. */
+    /**
+     * EN: Receives transfer and ACL services.
+     *
+     * HR: Prima servise prijenosa i ACL-a.
+     */
     public function __construct(
         private ResponseFactory $responses,
         private WorkspaceModuleViewRenderer $views,
@@ -56,7 +61,11 @@ final readonly class WorkspacePageTransferController
     ) {
     }
 
-    /** HR: Prikazuje jasan izbor ciljnog područja i opcija. EN: Shows target and transfer options. */
+    /**
+     * EN: Shows target and transfer options.
+     *
+     * HR: Prikazuje jasan izbor ciljnog područja i opcija.
+     */
     public function form(ServerRequestInterface $request): ResponseInterface
     {
         [$workspace, $node] = $this->source(WorkspaceValue::stringKeyArray($request->getQueryParams()));
@@ -90,7 +99,11 @@ final readonly class WorkspacePageTransferController
         ]);
     }
 
-    /** HR: Izvršava kopiranje te izvor briše tek nakon uspješnog importa. EN: Copies, then deletes source after success. */
+    /**
+     * EN: Copies, then deletes source after success.
+     *
+     * HR: Izvršava kopiranje te izvor briše tek nakon uspješnog importa.
+     */
     public function perform(ServerRequestInterface $request): ResponseInterface
     {
         $body = WorkspaceValue::stringKeyArray($request->getParsedBody());
@@ -217,8 +230,10 @@ final readonly class WorkspacePageTransferController
     }
 
     /**
-     * HR: Pronalazi dosljedan izvorni čvor i područje.
      * EN: Finds a consistent source node and Workspace.
+     *
+     * HR: Pronalazi dosljedan izvorni čvor i područje.
+     *
      * @param array<string,mixed> $input
      * @return array{0:?array<string,mixed>,1:?array<string,mixed>}
      */
@@ -243,8 +258,9 @@ final readonly class WorkspacePageTransferController
     }
 
     /**
-     * HR: Čita aktivni jezik sučelja uz siguran povratak na zadani jezik sitea.
      * EN: Reads the active UI locale with a safe fallback to the site default.
+     *
+     * HR: Čita aktivni jezik sučelja uz siguran povratak na zadani jezik sitea.
      */
     private function language(ServerRequestInterface $request): string
     {
@@ -258,8 +274,13 @@ final readonly class WorkspacePageTransferController
         : $this->config->siteDefaultLanguage();
     }
 
-    /** HR: Provjerava upravljanje područjem. EN: Checks Workspace management permission.
-     * @param array<string,mixed> $workspace */
+    /**
+     * EN: Checks Workspace management permission.
+     *
+     * HR: Provjerava upravljanje područjem.
+     *
+     * @param array<string,mixed> $workspace
+     */
     private function canManage(array $workspace): bool
     {
         return $this->access->isAdministrator()
@@ -267,7 +288,10 @@ final readonly class WorkspacePageTransferController
     }
 
     /**
-     * HR: Gradi adresu obrasca prijenosa. EN: Builds the transfer-form address.
+     * EN: Builds the transfer-form address.
+     *
+     * HR: Gradi adresu obrasca prijenosa.
+     *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $node
      */
@@ -280,7 +304,10 @@ final readonly class WorkspacePageTransferController
     }
 
     /**
-     * HR: Gradi adresu prikaza stranice. EN: Builds the page-view address.
+     * EN: Builds the page-view address.
+     *
+     * HR: Gradi adresu prikaza stranice.
+     *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $node
      */
@@ -292,7 +319,11 @@ final readonly class WorkspacePageTransferController
         );
     }
 
-    /** HR: Gradi stabilnu adresu čvora. EN: Builds the stable node address. */
+    /**
+     * EN: Builds the stable node address.
+     *
+     * HR: Gradi stabilnu adresu čvora.
+     */
     private function nodePath(string $workspaceSlug, string $nodeSlug): string
     {
         if ($this->urls->namedRouteExists('workspace.node.show')) {
@@ -305,7 +336,11 @@ final readonly class WorkspacePageTransferController
         return '/workspaces/' . rawurlencode($workspaceSlug) . '/' . rawurlencode($nodeSlug);
     }
 
-    /** HR: Prikazuje odbijeni pristup. EN: Displays denied access. */
+    /**
+     * EN: Displays denied access.
+     *
+     * HR: Prikazuje odbijeni pristup.
+     */
     private function denied(): ResponseInterface
     {
         return $this->views->render('workspace/access-denied', [
@@ -315,7 +350,11 @@ final readonly class WorkspacePageTransferController
         ], true, 403);
     }
 
-    /** HR: Prikazuje neuspjeh radnje. EN: Displays an operation failure. */
+    /**
+     * EN: Displays an operation failure.
+     *
+     * HR: Prikazuje neuspjeh radnje.
+     */
     private function failure(string $message): void
     {
         $this->alerts->add(new Alert(

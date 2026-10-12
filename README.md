@@ -1,6 +1,8 @@
 # Simbioza Workspace Module
 
-[Hrvatska verzija](README_hr.md)
+> Release 0.3.0 preparation: the tagged installation commands below apply after coordinated publication of the application and modules. Development verification uses local packages; older releases cannot replace this configuration and schema.
+
+[Croatian version](README_hr.md)
 
 The Workspace module organizes related content into **Workspaces** (`Područja`
 in Croatian). Each Workspace has its own URL, visibility, members,
@@ -11,9 +13,9 @@ permissions, and hierarchical page tree.
 Required, in enable order:
 
 1. `aaieduhr/heartphrame-framework` (`^0.0.25`)
-2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
-3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
-4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
+2. `aaieduhr/heartphrame-module-orm` (`^0.3.0`)
+3. `aaieduhr/heartphrame-module-auth` (`^0.3.0`)
+4. `aaieduhr/simbioza-module-workspace` (`^0.3.0`)
 
 Optional integrations:
 
@@ -24,7 +26,7 @@ Optional integrations:
 - API adds ACL-aware Workspace resources and tree-management endpoints.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.11
+composer require aaieduhr/simbioza-module-workspace:^0.3.0
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -167,64 +169,15 @@ Add the package after Auth and ORM in `app.modules.enabled`:
 'aaieduhr/simbioza-module-workspace',
 ```
 
-Copy `config/workspace.php` into the host application when its defaults need
-to be changed.
+For manual configuration, copy package `config/workspace.json.dist` into
+`HPH_CONFIG_PATH/workspace/workspace.json`. The existing GUI reads and writes it; see the
+[separate configuration guide](docs/configuration_en.md).
 
 No sample Workspace, user, group, or page is created by the migration.
 
-For an application that already ran the older Workspace migration, install the
-additive homepage migration once:
-
-```bash
-vendor/bin/hph workspace:install-homepage-migration
-vendor/bin/hph orm-migrate:up
-```
-
-If that homepage migration was already applied before structured Shorts targets
-were introduced, add its backward-compatible view-option columns as well:
-
-```bash
-vendor/bin/hph workspace:install-homepage-view-options-migration
-vendor/bin/hph orm-migrate:up
-```
-
-For an existing installation, add private Workspace-theme storage once:
-
-```bash
-vendor/bin/hph workspace:install-themes-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Existing installations also add the rebuildable backlink index once:
-
-```bash
-vendor/bin/hph workspace:install-backlinks-migration
-vendor/bin/hph orm-migrate:up
-```
-
-To retain portable source labels from imports and integrations, an existing
-installation adds label storage once:
-
-```bash
-vendor/bin/hph workspace:install-node-labels-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Structured page properties used by dynamic reports require one additional
-migration in an existing installation:
-
-```bash
-vendor/bin/hph workspace:install-node-properties-migration
-vendor/bin/hph orm-migrate:up
-```
-
-The initial schema includes resumable permanent-deletion counters. An older
-installation adds them before using permanent Workspace deletion:
-
-```bash
-vendor/bin/hph workspace:install-purge-marker-migration
-vendor/bin/hph orm-migrate:up
-```
+The initial migration creates the complete current schema, including homepage
+preferences, themes, backlinks, labels, properties and purge counters. No old
+upgrade commands or schema conversion are distributed.
 
 Breadcrumbs are built only from the already ACL-filtered page tree. Backlinks
 are extracted from exact published HTML versions and are checked again against
@@ -262,15 +215,17 @@ than 100 articles pass publication and ACL checks. The server enforces the same
 limit even for a hand-crafted query string.
 
 Defaults are configured under **Settings → Workspaces** and stored in the host
-application's `config/workspace.php`:
+application's `HPH_CONFIG_PATH/workspace/workspace.json`:
 
-```php
-'shorts' => [
-    'depth' => 2,
-    'limit' => 10,
-    'order' => 'newest',
-    'display_options_visible' => false,
-],
+```json
+{
+    "shorts": {
+        "depth": 2,
+        "limit": 10,
+        "order": "newest",
+        "display_options_visible": false
+    }
+}
 ```
 
 The page tree is expanded and the **Display options** panel is collapsed by
@@ -283,7 +238,7 @@ finally another language in which the page has a published version. It never
 falls back to a draft.
 
 These are site configuration, not Theme design data. Include
-`config/workspace.php` in a complete site backup; Theme package export does
+`HPH_CONFIG_PATH/workspace/workspace.json` in a complete site backup; Theme package export does
 not and should not own these values.
 
 ## Application homepage
@@ -307,13 +262,11 @@ temporary, non-cacheable redirect to the canonical Workspace page. Auth has no
 dependency on Workspace: the profile section is registered only by Workspace
 while that module is enabled.
 
-The settings and personal preferences are stored in
-`workspace_homepage_settings` and `workspace_user_homepages`. A complete
-database/site backup must include both tables. These values are site content
-configuration and intentionally do not belong to Theme package export. The
-structured target type, Workspace ID, and both visibility switches are stored
-in those tables, so ordinary database backup and restore preserves the exact
-homepage behavior.
+Global targets and personal-selection permission are stored only in
+`HPH_CONFIG_PATH/workspace/workspace.json`. Personal selections remain in
+`workspace_user_homepages`. Full backup includes the JSON provider and database
+with identity remapping during restore; Theme does not own this policy.
+The initial schema does not create a global-settings table; settings belong only to JSON.
 
 ## Workspace themes
 
@@ -326,7 +279,7 @@ The first edit or asset upload creates a private copy stored only for that
 Workspace. Unless the manager changes the label, the Workspace name is appended
 to the source label. Configuration is stored in the `workspace_themes` database
 row; private image assets are stored under
-`data/workspaces/themes/<workspace-id>/assets`. Other Workspaces and global Theme
+`data/workspaces/<storage-slug>--<workspace-ID>/theme/assets`. Other Workspaces and global Theme
 settings cannot see or modify this private copy.
 
 Managers may import a complete Theme v3 ZIP into their Workspace. Only an
@@ -348,7 +301,20 @@ different Workspace or another application page. System-wide Menu settings
 remain administrator-only. Without Menu, Workspace remains fully usable and
 the integration link is omitted.
 
+Owned special-menu files live under `data/workspaces/<storage-slug>--<ID>/menus/` or
+`data/workspaces/<storage-slug>--<ID>/pages/<page-label>--<document-UUID>/menus/`. Permanent deletion removes
+their files and shared-index references; soft deletion keeps them for restoration.
+Unowned shared contexts remain untouched. Cleanup does not require Menu GUI services.
+
 ## HTML Editor Integration
+
+Workspace storage uses a readable initial label plus the stable database ID.
+`workspaces.storage_slug` retains that label independently of later public slug
+changes. Page folders combine a readable initial document-key label and the full
+document UUID; existing file references retain it after rename or trash/restore.
+Labels are ASCII and limited to 48 characters. Fresh installations include this
+technical column in the module schema; old Simbioza installations receive the
+schema and verified file/reference move through the application updater only.
 
 The Workspace module does not store HTML. It links a tree node to the editor's
 stable document key through an optional service bridge.
@@ -484,5 +450,5 @@ personal notifications. Workspace does not depend on that optional module.
 ## Dependency policy
 
 The Framework is constrained to `^0.0.25` and internal modules to the
-compatible `^0.1.0` release line. This module does not commit `composer.lock`; CI resolves
+compatible `^0.3.0` release line. This module does not commit `composer.lock`; CI resolves
 the latest development heads and runs the complete `composer on-commit` suite.

@@ -22,18 +22,30 @@ use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
 
 /**
- * HR: Prenosivi backup jednog područja, njegova stabla, workflowa, ACL-a i
- *     privatne teme. Brojčane veze nikada ne napuštaju izvornu instalaciju.
- *
  * EN: Portable backup of one workspace, its tree, workflow, ACL, and private
  *     theme. Numeric relations never leave the source installation.
+ *
+ * HR: Prenosivi backup jednog područja, njegova stabla, workflowa, ACL-a i
+ *     privatne teme. Brojčane veze nikada ne napuštaju izvornu instalaciju.
  */
 // phpcs:ignore Generic.Files.LineLength.TooLong -- PSR-2 multi-line and project indentation sniffs conflict here.
-final class WorkspaceScopedBackupProvider implements BackupProviderInterface, BackupCommitAwareProviderInterface, BackupScopeOptionsProviderInterface
+final class WorkspaceScopedBackupProvider implements BackupProviderInterface, BackupCommitAwareProviderInterface, BackupScopeOptionsProviderInterface, \AaiEduHr\HeartPhrameModuleBackup\Contract\BackupLinkAwareProviderInterface
 {
+    /**
+     * EN: Registers local targets after every import and publication of routing policy.
+     *
+     * HR: Registrira lokalne ciljeve nakon svih uvoza i objave politike ruta.
+     */
+    public function registerImportLinks(BackupImportContext $context, BackupArchiveReader $reader): void
+    {
+        $this->config->refresh();
+        (new WorkspaceBackupLinks($this->database, $this->config->rootPath()))->register($context, $reader, self::ID);
+    }
+
     private const ID = 'workspace-scope';
 
     private ?string $stagedTheme = null;
@@ -44,7 +56,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
 
     private bool $publishedThemeHadOriginal = false;
 
-    /** HR: Prima bazu, identitete i direktorij tema područja. EN: Receives the database, identities, and Workspace theme directory. */
+    /**
+     * EN: Receives the database, identities, and Workspace theme directory.
+     *
+     * HR: Prima bazu, identitete i direktorij tema područja.
+     */
     public function __construct(
         private readonly Database $database,
         private readonly AuthBackupIdentityResolver $identities,
@@ -54,7 +70,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     ) {
     }
 
-    /** HR: Opisuje jezgreni Workspace backup skup. EN: Describes the core Workspace backup dataset. */
+    /**
+     * EN: Describes the core Workspace backup dataset.
+     *
+     * HR: Opisuje jezgreni Workspace backup skup.
+     */
     public function metadata(): BackupProviderMetadata
     {
         return new BackupProviderMetadata(
@@ -70,15 +90,20 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         );
     }
 
-    /** HR: Ponuđene stavke pripadaju opsegu područja. EN: Offered options belong to Workspace scope. */
+    /**
+     * EN: Offered options belong to Workspace scope.
+     *
+     * HR: Ponuđene stavke pripadaju opsegu područja.
+     */
     public function scopeType(): string
     {
         return BackupScope::WORKSPACE;
     }
 
     /**
-     * HR: Vraća sva neobrisana područja za administratorski Backup GUI.
      * EN: Returns all non-deleted workspaces for the administrator Backup GUI.
+     *
+     * HR: Vraća sva neobrisana područja za administratorski Backup GUI.
      *
      * @return list<array{identifier:string,label:string}>
      */
@@ -113,9 +138,14 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         return $options;
     }
 
-    /** HR: Izvozi područje, stablo, ACL, tijekove i privatnu temu. EN: Exports the Workspace, tree, ACL, workflows, and private theme. */
+    /**
+     * EN: Exports the Workspace, tree, ACL, workflows, and private theme.
+     *
+     * HR: Izvozi područje, stablo, ACL, tijekove i privatnu temu.
+     */
     public function export(BackupExportContext $context, BackupArchiveWriter $writer): void
     {
+        $writer->setLinkRouteRoot('workspace', $this->config->rootPath());
         $workspace = $this->workspace($context->scope->identifier);
         if ($workspace === null) {
             throw new BackupException('Workspace does not exist.');
@@ -291,7 +321,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Provjerava identitet područja i cjelovitost skupa. EN: Validates Workspace identity and dataset integrity. */
+    /**
+     * EN: Validates Workspace identity and dataset integrity.
+     *
+     * HR: Provjerava identitet područja i cjelovitost skupa.
+     */
     public function preflight(BackupImportContext $context, BackupArchiveReader $reader): BackupPreflightResult
     {
         $workspace = $this->singleRecord($reader, 'workspace');
@@ -347,7 +381,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         );
     }
 
-    /** HR: Priprema cilj i čisti replace zapise. EN: Prepares the target and clears replace records. */
+    /**
+     * EN: Prepares the target and clears replace records.
+     *
+     * HR: Priprema cilj i čisti replace zapise.
+     */
     public function prepareImport(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         if ($context->conflictMode !== BackupImportContext::CONFLICT_REPLACE) {
@@ -396,7 +434,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             ->delete();
     }
 
-    /** HR: Uvozi područje i sve njegove jezgrene odnose. EN: Imports the Workspace and all core relationships. */
+    /**
+     * EN: Imports the Workspace and all core relationships.
+     *
+     * HR: Uvozi područje i sve njegove jezgrene odnose.
+     */
     public function import(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         $record = $this->singleRecord($reader, 'workspace');
@@ -458,6 +500,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 ->update($values);
             $workspaceId = BackupValue::integer($existing['id'], 'workspace.id');
         } else {
+            $values['storage_slug'] = WorkspaceDataDirectory::label($targetSlug, 'workspace');
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert($values);
             $row = $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
                 ->select(['id'])
@@ -490,11 +533,17 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         $this->importNodeDirectPermissions($context, $reader);
         $this->importWorkflows($context, $reader);
         $this->importTheme($workspaceId, $context, $reader);
+        (new WorkspaceBackupLinks($this->database, $this->config->rootPath()))->register($context, $reader, self::ID);
     }
 
-    /** HR: Objavljuje pripremljenu privatnu temu područja. EN: Publishes the staged private Workspace theme. */
+    /**
+     * EN: Publishes the staged private Workspace theme.
+     *
+     * HR: Objavljuje pripremljenu privatnu temu područja.
+     */
     public function finalizeImport(BackupImportContext $context, BackupArchiveReader $reader): void
     {
+        (new WorkspaceBackupLinks($this->database, $this->config->rootPath()))->rewriteTargets($context);
         if ($this->stagedTheme === null || $this->publishedTheme === null) {
             return;
         }
@@ -502,13 +551,13 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         $rollback = dirname($this->publishedTheme) . '/.backup-rollback-workspace-theme-' . bin2hex(random_bytes(8));
         $hadPublishedTheme = is_dir($this->publishedTheme);
 
-        // HR: Postojeća tema prvo se atomski sklanja. Ako objava staginga ne
-        // uspije, odmah se vraća prethodna verzija umjesto da područje ostane
-        // bez svojih datoteka.
-        //
         // EN: The existing theme is moved aside atomically first. If staging
         // publication fails, the previous version is restored immediately so
         // the workspace is never left without its files.
+        //
+        // HR: Postojeća tema prvo se atomski sklanja. Ako objava staginga ne
+        // uspije, odmah se vraća prethodna verzija umjesto da područje ostane
+        // bez svojih datoteka.
         if ($hadPublishedTheme && !rename($this->publishedTheme, $rollback)) {
             throw new BackupException('Unable to preserve the current workspace theme before restore.');
         }
@@ -526,7 +575,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         $this->stagedTheme = null;
     }
 
-    /** HR: Uklanja pripremljene datoteke teme nakon pogreške. EN: Removes staged theme files after failure. */
+    /**
+     * EN: Removes staged theme files after failure.
+     *
+     * HR: Uklanja pripremljene datoteke teme nakon pogreške.
+     */
     public function abortImport(BackupImportContext $context): void
     {
         if ($this->publishedTheme !== null && $this->themeRollback !== null) {
@@ -549,7 +602,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         $this->publishedThemeHadOriginal = false;
     }
 
-    /** HR: Nakon DB commita uklanja rollback privatne teme. EN: Removes the private-theme rollback after the DB commit. */
+    /**
+     * EN: Removes the private-theme rollback after the DB commit.
+     *
+     * HR: Nakon DB commita uklanja rollback privatne teme.
+     */
     public function completeImport(BackupImportContext $context): void
     {
         if ($this->themeRollback !== null && is_dir($this->themeRollback)) {
@@ -563,8 +620,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Svodi zapis područja na prenosiva polja.
      * EN: Reduces a Workspace record to portable fields.
+     *
+     * HR: Svodi zapis područja na prenosiva polja.
      *
      * @param array<string,mixed> $row
      *
@@ -603,7 +661,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         ];
     }
 
-    /** HR: Izvozi prenosivi Workspace ili node ACL. EN: Exports portable Workspace or node ACL. */
+    /**
+     * EN: Exports portable Workspace or node ACL.
+     *
+     * HR: Izvozi prenosivi Workspace ili node ACL.
+     */
     private function exportAcl(
         string $table,
         string $foreignKey,
@@ -637,7 +699,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi ACL područja. EN: Imports Workspace ACL. */
+    /**
+     * EN: Imports Workspace ACL.
+     *
+     * HR: Uvozi ACL područja.
+     */
     private function importWorkspaceAcl(int $workspaceId, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'workspace-acl') as $row) {
@@ -645,7 +711,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi stablo redoslijedom roditelj prije djeteta. EN: Imports the tree in parent-before-child order. */
+    /**
+     * EN: Imports the tree in parent-before-child order.
+     *
+     * HR: Uvozi stablo redoslijedom roditelj prije djeteta.
+     */
     private function importNodes(int $workspaceId, BackupImportContext $context, BackupArchiveReader $reader): void
     {
         $pending = iterator_to_array($reader->records(self::ID, 'nodes'), false);
@@ -722,6 +792,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 }
 
                 $context->state->map('workspace.node-id', $sourceUuid, $nodeId);
+                $context->state->map(
+                    'workspace.node-source-id',
+                    BackupValue::integer($row['source_id'], 'node.source_id'),
+                    $nodeId,
+                );
                 $context->state->map('workspace.node-uuid', $sourceUuid, $targetUuid);
                 $progress = true;
             }
@@ -734,7 +809,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi izravna ograničenja čvorova. EN: Imports direct node restrictions. */
+    /**
+     * EN: Imports direct node restrictions.
+     *
+     * HR: Uvozi izravna ograničenja čvorova.
+     */
     private function importNodeAcl(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'node-acl') as $row) {
@@ -754,7 +833,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi izravna korisnička prava stranica. EN: Imports direct page user grants. */
+    /**
+     * EN: Imports direct page user grants.
+     *
+     * HR: Uvozi izravna korisnička prava stranica.
+     */
     private function importNodeDirectPermissions(
         BackupImportContext $context,
         BackupArchiveReader $reader,
@@ -804,7 +887,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi oznake stranica prema stabilnom UUID-u. EN: Imports page labels by stable UUID. */
+    /**
+     * EN: Imports page labels by stable UUID.
+     *
+     * HR: Uvozi oznake stranica prema stabilnom UUID-u.
+     */
     private function importNodeLabels(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'node-labels') as $row) {
@@ -829,7 +916,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi strukturirana svojstva stranica prema stabilnom UUID-u. EN: Imports structured page properties by stable UUID. */
+    /**
+     * EN: Imports structured page properties by stable UUID.
+     *
+     * HR: Uvozi strukturirana svojstva stranica prema stabilnom UUID-u.
+     */
     private function importNodeProperties(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'node-properties') as $row) {
@@ -864,8 +955,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Upisuje ACL prema stabilnom subjektu.
      * EN: Upserts ACL by stable subject.
+     *
+     * HR: Upisuje ACL prema stabilnom subjektu.
      *
      * @param array<string,mixed> $row
      */
@@ -898,7 +990,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         : $this->database->table($table)->insert($values);
     }
 
-    /** HR: Uvozi jezične tijekove objave stranica. EN: Imports page publication workflows by language. */
+    /**
+     * EN: Imports page publication workflows by language.
+     *
+     * HR: Uvozi jezične tijekove objave stranica.
+     */
     private function importWorkflows(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'workflows') as $row) {
@@ -934,7 +1030,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
     }
 
-    /** HR: Uvozi privatnu temu i priprema njezine datoteke. EN: Imports a private theme and stages its files. */
+    /**
+     * EN: Imports a private theme and stages its files.
+     *
+     * HR: Uvozi privatnu temu i priprema njezine datoteke.
+     */
     private function importTheme(int $workspaceId, BackupImportContext $context, BackupArchiveReader $reader): void
     {
         $theme = $this->singleRecord($reader, 'theme');
@@ -973,8 +1073,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Čita najviše jedan zapis skupa.
      * EN: Reads at most one dataset record.
+     *
+     * HR: Čita najviše jedan zapis skupa.
      *
      * @return array<string,mixed>|null
      */
@@ -988,8 +1089,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Dohvaća područje i po izboru zahtijeva postojanje.
      * EN: Fetches a Workspace and optionally requires it to exist.
+     *
+     * HR: Dohvaća područje i po izboru zahtijeva postojanje.
      *
      * @return array<string,mixed>|null
      */
@@ -1006,8 +1108,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Određuje i provjerava ciljni slug područja.
      * EN: Determines and validates the target Workspace slug.
+     *
+     * HR: Određuje i provjerava ciljni slug područja.
      *
      * @param array<string,mixed> $record
      */
@@ -1025,15 +1128,20 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         return $target;
     }
 
-    /** HR: Razrješava prenosivi ključ korisnika. EN: Resolves a portable user key. */
+    /**
+     * EN: Resolves a portable user key.
+     *
+     * HR: Razrješava prenosivi ključ korisnika.
+     */
     private function user(mixed $key, BackupImportContext $context): ?int
     {
         return $this->identities->userIdForKey(is_scalar($key) ? (string)$key : null, $context->actorUserId, true);
     }
 
     /**
-     * HR: Čita cjelobrojnu vrijednost iz mape identiteta importa.
      * EN: Reads an integer value from the import identity map.
+     *
+     * HR: Čita cjelobrojnu vrijednost iz mape identiteta importa.
      */
     private function mappedInteger(BackupImportContext $context, string $namespace, int|string $key): int
     {
@@ -1043,7 +1151,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         );
     }
 
-    /** HR: Prihvaća samo sigurnu relativnu putanju. EN: Accepts only a safe relative path. */
+    /**
+     * EN: Accepts only a safe relative path.
+     *
+     * HR: Prihvaća samo sigurnu relativnu putanju.
+     */
     private function safeRelative(string $path): string
     {
         $path = str_replace('\\', '/', trim($path));
@@ -1055,8 +1167,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Čuva sve prijevode, a stare zapise bez mape smješta u primarni jezik.
      * EN: Preserves every translation and places legacy scalar values in the primary language.
+     *
+     * HR: Čuva sve prijevode, a stare zapise bez mape smješta u primarni jezik.
      *
      * @return array<string,string>
      */
@@ -1072,8 +1185,9 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
     }
 
     /**
-     * HR: Serijalizira mapu prijevoda za bazu.
      * EN: Serializes a translation map for database storage.
+     *
+     * HR: Serijalizira mapu prijevoda za bazu.
      *
      * @param array<string,string> $translations
      */
@@ -1091,7 +1205,11 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         return $json;
     }
 
-    /** HR: Generira UUID v4 za kopirani zapis. EN: Generates a UUID v4 for a copied record. */
+    /**
+     * EN: Generates a UUID v4 for a copied record.
+     *
+     * HR: Generira UUID v4 za kopirani zapis.
+     */
     private function uuid(): string
     {
         $bytes = random_bytes(16);

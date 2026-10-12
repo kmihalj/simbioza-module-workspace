@@ -12,8 +12,9 @@ use PHPUnit\Framework\TestCase;
 final class ModuleWorkspaceTest extends TestCase
 {
     /**
-     * HR: Provjerava stabilni Composer identitet koji koriste manifest i host aplikacija.
      * EN: Verifies the stable Composer identity used by the manifest and host application.
+     *
+     * HR: Provjerava stabilni Composer identitet koji koriste manifest i host aplikacija.
      */
     public function testPackageNameIsStable(): void
     {

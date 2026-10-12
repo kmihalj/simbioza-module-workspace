@@ -8,8 +8,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Account\WorkspaceHomepageAccountSectionProv
 use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiExtension;
 use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceApiService;
 use AaiEduHr\SimbiozaModuleWorkspace\Api\WorkspaceResourceController;
-use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceScopedBackupProvider;
 use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspacePageBackupProvider;
+use AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceScopedBackupProvider;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceBackupController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceController;
 use AaiEduHr\SimbiozaModuleWorkspace\Controller\WorkspaceExportController;
@@ -28,17 +28,17 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBreadcrumbService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentChangeBatch;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDynamicContentService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorAccess;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
-use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDynamicContentService;
-use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExternalReferenceRegistry;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExportService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceExternalReferenceRegistry;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceIndexService;
-use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLookupService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLinkExtractor;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceLookupService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMaintenanceService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuIntegration;
@@ -57,6 +57,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeAssetLibrary;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceThemeService;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceWorkflowService;
 use HeartPhrame\Alert\AlertHandler;
 use HeartPhrame\Authn\AuthnHandlerInterface;
@@ -103,7 +104,7 @@ $services = [
         ),
 
     WorkspaceConfig::class => static fn(ContainerInterface $container): WorkspaceConfig =>
-        new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__)),
+        new WorkspaceConfig($container->get(ConfigInterface::class), dirname(__DIR__), $container->get(Database::class)),
 
     WorkspaceContentChangeBatch::class =>
         static fn(ContainerInterface $container): WorkspaceContentChangeBatch =>
@@ -152,7 +153,10 @@ $services = [
 
     WorkspaceHomepageRepository::class =>
         static fn(ContainerInterface $container): WorkspaceHomepageRepository =>
-            new WorkspaceHomepageRepository($container->get(Database::class)),
+            new WorkspaceHomepageRepository(
+                $container->get(Database::class),
+                $container->get(WorkspaceConfig::class),
+            ),
 
     WorkspaceWorkflowService::class => static fn(ContainerInterface $container): WorkspaceWorkflowService =>
         new WorkspaceWorkflowService($container->get(WorkspaceRepository::class)),
@@ -227,8 +231,9 @@ $services = [
             $container->get(ConfigInterface::class),
         ),
 
-    // HR: Host aplikacija koristi neutralni servisni ID i zato ne ovisi o Workspace klasi.
     // EN: The host application uses a neutral service ID and therefore does not depend on a Workspace class.
+    //
+    // HR: Host aplikacija koristi neutralni servisni ID i zato ne ovisi o Workspace klasi.
     'heartphrame.application_homepage_resolver' =>
         static fn(ContainerInterface $container): WorkspaceHomepageService =>
             $container->get(WorkspaceHomepageService::class),
@@ -472,8 +477,9 @@ $services = [
             ),
 ];
 
-// HR: Workspace sam registrira svoje ACL-aware API rute uz API jezgru.
 // EN: Workspace registers its own ACL-aware API routes with the API core.
+//
+// HR: Workspace sam registrira svoje ACL-aware API rute uz API jezgru.
 if (interface_exists(\AaiEduHr\HeartPhrameModuleApi\Contract\ApiExtensionInterface::class)) {
     $services[WorkspaceApiExtension::class] =
     static fn(): WorkspaceApiExtension => new WorkspaceApiExtension();
@@ -492,12 +498,12 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleApi\Contract\ApiExtensionInterfa
 if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupProvider::class)) {
     $services['heartphrame.backup.provider.workspace'] =
     static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupProvider =>
-            new \AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupProvider(
+            new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceDatabaseBackupProvider(
                 $container->get(Database::class),
                 new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
                     'workspace',
                     \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
-                    2,
+                    3,
                     ['hr' => 'Područja, stabla i ovlasti', 'en' => 'Workspaces, trees, and permissions'],
                     ['auth', 'editor-html'],
                     [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::SITE, \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::COMPONENT],
@@ -538,56 +544,43 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                         ['column' => 'archived_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
-                    ['dataset' => 'homepage-settings', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS, 'primary_key' => 'id', 'conflict_keys' => ['id'], 'foreign_keys' => [
-                        ['column' => 'public_node_id', 'namespace' => 'workspace.node', 'nullable' => true, 'defer' => true],
-                        ['column' => 'public_workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
-                        ['column' => 'authenticated_node_id', 'namespace' => 'workspace.node', 'nullable' => true, 'defer' => true],
-                        ['column' => 'authenticated_workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
-                        ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
-                    ]],
                     ['dataset' => 'user-homepages', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES, 'primary_key' => 'id', 'conflict_keys' => ['user_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'user_id', 'namespace' => 'auth.user'],
                         ['column' => 'node_id', 'namespace' => 'workspace.node', 'defer' => true],
                         ['column' => 'workspace_id', 'namespace' => 'workspace.workspace', 'nullable' => true, 'defer' => true],
                     ]],
                     ['dataset' => 'workspace-themes', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_THEMES, 'primary_key' => 'id', 'conflict_keys' => ['workspace_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
-                        // HR: Područja su već uvezena prije privatnih tema, a
-                        // workspace_id je obvezan. Izravno mapiranje sprječava
-                        // privremeni NULL koji bi SQLite/PostgreSQL/MySQL
-                        // ispravno odbili prije odgođene završne faze.
                         // EN: Workspaces have already been imported before
                         // private themes and workspace_id is required. Direct
                         // mapping avoids a temporary NULL correctly rejected
                         // by SQLite/PostgreSQL/MySQL before deferred finalizing.
+                        //
+                        // HR: Područja su već uvezena prije privatnih tema, a
+                        // workspace_id je obvezan. Izravno mapiranje sprječava
+                        // privremeni NULL koji bi SQLite/PostgreSQL/MySQL
+                        // ispravno odbili prije odgođene završne faze.
                         ['column' => 'workspace_id', 'namespace' => 'workspace.workspace'],
                         ['column' => 'updated_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
                     ]],
                 ],
+                $container->get(WorkspaceConfig::class),
             );
 }
 
 if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\FilesystemBackupProvider::class)) {
     $services['heartphrame.backup.provider.workspace-files'] =
-    static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\FilesystemBackupProvider =>
-            new \AaiEduHr\HeartPhrameModuleBackup\Service\FilesystemBackupProvider(
-                new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
-                    'workspace-files',
-                    \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
-                    1,
-                    ['hr' => 'Privatne teme područja', 'en' => 'Private workspace themes'],
-                    ['workspace'],
-                    [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::SITE, \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::COMPONENT],
-                    true,
-                    componentGroups: [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupComponentGroup::WORKSPACES],
-                ),
+    static fn(ContainerInterface $container): \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceFilesBackupProvider =>
+            new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceFilesBackupProvider(
+                $container->get(Database::class),
+                $container->get(WorkspaceConfig::class),
                 $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupFilesystem::class),
-                [['key' => 'workspace-themes', 'path' => $container->get(ConfigInterface::class)->getAppRootDir() . '/data/workspaces/themes']],
             );
 }
 
 if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderInterface::class)) {
-    // HR: Selektivni backup područja koristi stabilne poslovne identitete.
     // EN: Selective workspace backup uses stable business identities.
+    //
+    // HR: Selektivni backup područja koristi stabilne poslovne identitete.
     $services['heartphrame.backup.provider.workspace-scope'] =
     static fn(ContainerInterface $container): WorkspaceScopedBackupProvider =>
             new WorkspaceScopedBackupProvider(
@@ -598,22 +591,25 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(WorkspaceRepository::class),
             );
 
-    // HR: Jedna stranica je zaseban prenosivi opseg koji uključuje Editorov
-    //     sadržaj, sve jezike, povijest i privitke.
     // EN: A single page is a portable scope that includes Editor content,
     //     every language, history, and attachments.
+    //
+    // HR: Jedna stranica je zaseban prenosivi opseg koji uključuje Editorov
+    //     sadržaj, sve jezike, povijest i privitke.
     $services['heartphrame.backup.provider.page-transfer'] =
-        static fn(ContainerInterface $container): WorkspacePageBackupProvider =>
+    static fn(ContainerInterface $container): WorkspacePageBackupProvider =>
             new WorkspacePageBackupProvider(
                 $container->get(Database::class),
                 $container->get(AuthBackupIdentityResolver::class),
                 $container->get(WorkspaceRepository::class),
+                $container->get(WorkspaceConfig::class),
             );
 
-    // HR: Workspace je vlasnik ACL pravila svojeg backup sučelja; generički
-    // Backup modul zato ne mora poznavati ni jednu Workspace klasu.
     // EN: Workspace owns its backup-UI ACL rules, so the generic Backup module
     // does not need to know any Workspace class.
+    //
+    // HR: Workspace je vlasnik ACL pravila svojeg backup sučelja; generički
+    // Backup modul zato ne mora poznavati ni jednu Workspace klasu.
     $services[WorkspaceBackupController::class] =
     static fn(ContainerInterface $container): WorkspaceBackupController =>
             new WorkspaceBackupController(
@@ -631,7 +627,7 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
             );
 
     $services[WorkspacePageTransferController::class] =
-        static fn(ContainerInterface $container): WorkspacePageTransferController =>
+    static fn(ContainerInterface $container): WorkspacePageTransferController =>
             new WorkspacePageTransferController(
                 $container->get(ResponseFactory::class),
                 $container->get(WorkspaceModuleViewRenderer::class),
@@ -646,74 +642,47 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
             );
 }
 
-if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider::class)) {
-    // HR: Stariji site backup nakon povrata dobiva samo nedostajuće strukturne
-    //     vrijednosti privatnih tema područja.
-    // EN: An older site backup receives only missing structural values for
-    //     private Workspace themes after restore.
-    $services['heartphrame.backup.provider.workspace-theme-heights-site'] =
-        static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider =>
-            new \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider(
-                new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
-                    id: 'workspace-theme-heights-site',
-                    package: \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
-                    schemaVersion: 1,
-                    label: [
-                        'hr' => 'Nadopuna privatnih tema područja',
-                        'en' => 'Private Workspace theme upgrade',
-                    ],
-                    dependencies: ['workspace'],
-                    scopes: [
-                        \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::SITE,
-                        \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::COMPONENT,
-                    ],
-                    requiredForFullRestore: true,
-                    requiredEnabledPackages: [\AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME],
-                    automatic: true,
-                ),
-                static function (
-                    \AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext $context,
-                ) use ($container): void {
-                    unset($context);
-                    $container->get(WorkspaceThemeRepository::class)->persistMissingComponentHeights();
-                },
-            );
+if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\StructuredConfigBackupProvider::class)) {
+    $services['heartphrame.backup.provider.workspace-configuration'] =
+    static function (ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\StructuredConfigBackupProvider {
+        $config = $container->get(WorkspaceConfig::class);
+        $store = $config->configurationStore();
+        $keys = ['routing', 'defaults', 'creation', 'shorts', 'backlinks', 'menu', 'homepage'];
+        $transform = new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceConfigurationIdentityTransform();
+        return new \AaiEduHr\HeartPhrameModuleBackup\Service\StructuredConfigBackupProvider(
+            new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
+                'workspace-configuration',
+                \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
+                1,
+                ['hr' => 'Globalne postavke područja', 'en' => 'Global Workspace settings'],
+                ['workspace'],
+                [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::SITE, \AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::COMPONENT],
+                true,
+                componentGroups: [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupComponentGroup::SETTINGS],
+            ),
+            $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupFilesystem::class),
+            [[
+                'key' => 'workspace-config', 'path' => $store->path(), 'read_paths' => $store->paths(),
+                'include_keys' => $keys,
+                'restore_targets' => [[
+                    'path' => $store->path(), 'read_paths' => $store->paths(),
+                    'key_map' => array_combine($keys, $keys), 'lock_path' => $store->path() . '.lock',
+                    'transform' => $transform->transform(...),
+                    'validate' => static function (array $values) use ($store): void {
+                        $store->validate(WorkspaceValue::stringKeyArray(
+                            \HeartPhrame\Config\ConfigArrayMerger::merge($store->read(), $values),
+                        ));
+                    },
+                ]],
+            ]],
+        );
+    };
+}
 
-    // HR: I selektivni povrat jednog područja nadograđuje samo njegovu privatnu temu.
-    // EN: A selective single-Workspace restore upgrades only that private theme.
-    $services['heartphrame.backup.provider.workspace-theme-heights-workspace'] =
-        static fn(ContainerInterface $container): \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider =>
-            new \AaiEduHr\HeartPhrameModuleBackup\Service\CallbackFinalizerBackupProvider(
-                new \AaiEduHr\HeartPhrameModuleBackup\Value\BackupProviderMetadata(
-                    id: 'workspace-theme-heights-workspace',
-                    package: \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME,
-                    schemaVersion: 1,
-                    label: [
-                        'hr' => 'Nadopuna privatne teme odabranog područja',
-                        'en' => 'Selected Workspace private-theme upgrade',
-                    ],
-                    dependencies: ['workspace-scope'],
-                    scopes: [\AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope::WORKSPACE],
-                    requiredForFullRestore: true,
-                    requiredEnabledPackages: [\AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::PACKAGE_NAME],
-                    automatic: true,
-                ),
-                static function (
-                    \AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext $context,
-                ) use ($container): void {
-                    $targetSlug = trim((string)(
-                        $context->optionsFor('workspace-scope')['target_slug']
-                        ?? $context->scope->identifier
-                    ));
-                    $workspaceId = $context->state->require('workspace.id-by-slug', $targetSlug);
-                    if (!is_numeric($workspaceId)) {
-                        throw new RuntimeException('Restored Workspace identifier is unavailable.');
-                    }
-
-                    $container->get(WorkspaceThemeRepository::class)
-                        ->persistMissingComponentHeights((int)$workspaceId);
-                },
-            );
+if (interface_exists(\AaiEduHr\HeartPhrameModuleMenu\Service\MenuContextOwnerResolverInterface::class)) {
+    $services[\AaiEduHr\HeartPhrameModuleMenu\Service\MenuContextOwnerResolverInterface::class] =
+    static fn(ContainerInterface $container): \AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuContextOwnerResolver =>
+            new \AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceMenuContextOwnerResolver($container->get(Database::class));
 }
 
 return $services;

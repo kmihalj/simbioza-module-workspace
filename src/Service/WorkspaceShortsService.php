@@ -25,8 +25,9 @@ use function trim;
 use function usort;
 
 /**
- * HR: Gradi ACL-siguran, paginirani prikaz sažetaka objavljenih Workspace stranica.
  * EN: Builds an ACL-safe, paginated Shorts view of published Workspace pages.
+ *
+ * HR: Gradi ACL-siguran, paginirani prikaz sažetaka objavljenih Workspace stranica.
  */
 final readonly class WorkspaceShortsService
 {
@@ -37,8 +38,9 @@ final readonly class WorkspaceShortsService
     private const ORDERS = ['hierarchy', 'newest', 'oldest', 'title_asc', 'title_desc'];
 
     /**
-     * HR: Prima jedinstvene izvore stabla, ACL-a, objava i HTML sadržaja.
      * EN: Receives the canonical tree, ACL, publication, and HTML-content sources.
+     *
+     * HR: Prima jedinstvene izvore stabla, ACL-a, objava i HTML sadržaja.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -51,11 +53,11 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Filtrira vidljivo stablo, zatim objavljene stranice odabranih razina,
-     *     pa tek nakon sortiranja i ograničenja skupno učitava njihov HTML.
-     *
      * EN: Filters the visible tree, then published pages at selected depths,
      *     and only after sorting and limiting batch-loads their HTML.
+     *
+     * HR: Filtrira vidljivo stablo, zatim objavljene stranice odabranih razina,
+     *     pa tek nakon sortiranja i ograničenja skupno učitava njihov HTML.
      *
      * @param array<string, mixed> $workspace
      * @param array<mixed, mixed> $query
@@ -272,8 +274,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Vraća javnu putanju Sažetaka s odabranim jezikom.
      * EN: Returns the public Shorts path with the selected locale.
+     *
+     * HR: Vraća javnu putanju Sažetaka s odabranim jezikom.
      */
     public function shortsPath(string $workspaceSlug, string $language): string
     {
@@ -289,8 +292,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Vraća kanonsku putanju standardnog prikaza područja uz očuvani jezik.
      * EN: Returns the canonical standard Workspace path while preserving locale.
+     *
+     * HR: Vraća kanonsku putanju standardnog prikaza područja uz očuvani jezik.
      */
     private function workspaceViewPath(string $workspaceSlug, string $language): string
     {
@@ -306,8 +310,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Rekurzivno pretvara vidljivo stablo u stabilan hijerarhijski niz.
      * EN: Recursively flattens the visible tree into a stable hierarchy sequence.
+     *
+     * HR: Rekurzivno pretvara vidljivo stablo u stabilan hijerarhijski niz.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array{node:array<string,mixed>,depth:int,index:int}>
@@ -328,8 +333,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Dodaje javnu putanju svakom već ACL-filtriranom čvoru stabla.
      * EN: Adds a public path to every already ACL-filtered tree node.
+     *
+     * HR: Dodaje javnu putanju svakom već ACL-filtriranom čvoru stabla.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array<string, mixed>>
@@ -360,8 +366,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Gradi javnu putanju Područja iz aktivne konfiguracije ruta.
      * EN: Builds the public Workspace path from active route configuration.
+     *
+     * HR: Gradi javnu putanju Područja iz aktivne konfiguracije ruta.
      */
     private function workspacePath(string $workspaceSlug): string
     {
@@ -380,8 +387,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Gradi kanonsku javnu putanju dokument-čvora i čuva jezik.
      * EN: Builds a document node's canonical public path while preserving locale.
+     *
+     * HR: Gradi kanonsku javnu putanju dokument-čvora i čuva jezik.
      */
     private function nodePath(string $workspaceSlug, string $nodeSlug, string $language): string
     {
@@ -401,8 +409,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Prihvaća samo izričito dopuštenu brojčanu vrijednost filtra.
      * EN: Accepts only an explicitly allowed numeric filter value.
+     *
+     * HR: Prihvaća samo izričito dopuštenu brojčanu vrijednost filtra.
      *
      * @param list<int> $allowed
      */
@@ -414,8 +423,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Prihvaća brojčanu najveću dubinu ili sve razine bez umjetnog ograničenja stabla.
      * EN: Accepts a numeric maximum depth or all levels without an artificial tree limit.
+     *
+     * HR: Prihvaća brojčanu najveću dubinu ili sve razine bez umjetnog ograničenja stabla.
      */
     private function allowedDepth(mixed $value, int|string $fallback): int|string
     {
@@ -432,15 +442,20 @@ final readonly class WorkspaceShortsService
         return $fallback;
     }
 
-    /** HR: Provjerava ulazi li razina u odabrani raspon. EN: Checks whether a level is in range. */
+    /**
+     * EN: Checks whether a level is in range.
+     *
+     * HR: Provjerava ulazi li razina u odabrani raspon.
+     */
     private function depthIncludes(int $candidate, int|string $depth): bool
     {
         return $depth === 'all' || $candidate <= $depth;
     }
 
     /**
-     * HR: Vraća mali prozor stranica kako velik broj članaka ne bi prepunio navigaciju.
      * EN: Returns a compact page window so a large article count cannot flood navigation.
+     *
+     * HR: Vraća mali prozor stranica kako velik broj članaka ne bi prepunio navigaciju.
      *
      * @return list<int>
      */
@@ -461,8 +476,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Prihvaća samo izričito dopuštenu tekstualnu vrijednost filtra.
      * EN: Accepts only an explicitly allowed string filter value.
+     *
+     * HR: Prihvaća samo izričito dopuštenu tekstualnu vrijednost filtra.
      *
      * @param list<string> $allowed
      */
@@ -474,10 +490,11 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Bira prvu čitljivu objavu prema zadanom jezičnom prioritetu, a zatim
-     *     bilo koju drugu čitljivu objavu.
      * EN: Chooses the first readable publication in the supplied locale priority,
      *     then any other readable publication.
+     *
+     * HR: Bira prvu čitljivu objavu prema zadanom jezičnom prioritetu, a zatim
+     *     bilo koju drugu čitljivu objavu.
      *
      * @param list<array<string, mixed>> $workflows
      * @param list<string> $languagePriority
@@ -514,8 +531,9 @@ final readonly class WorkspaceShortsService
     }
 
     /**
-     * HR: Normalizira kratku BCP-47 oznaku jezika ili vraća zadanu vrijednost.
      * EN: Normalizes a short BCP-47 locale tag or returns the supplied fallback.
+     *
+     * HR: Normalizira kratku BCP-47 oznaku jezika ili vraća zadanu vrijednost.
      */
     private function normalizedLanguage(string $language, string $fallback): string
     {

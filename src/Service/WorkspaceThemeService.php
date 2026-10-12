@@ -14,8 +14,9 @@ use RuntimeException;
 use Throwable;
 
 /**
- * HR: Povezuje područje s opcionalnim Theme modulom i čuva svaku prilagodbu izvan sistemskih JSON tema.
  * EN: Connects a workspace to the optional Theme module and keeps every customization outside system JSON themes.
+ *
+ * HR: Povezuje područje s opcionalnim Theme modulom i čuva svaku prilagodbu izvan sistemskih JSON tema.
  */
 final readonly class WorkspaceThemeService
 {
@@ -30,8 +31,9 @@ final readonly class WorkspaceThemeService
     private const THEME_VIEW_RENDERER = 'AaiEduHr\\HeartPhrameModuleTheme\\Service\\ThemeModuleViewRenderer';
 
     /**
-     * HR: Prima spremište područja i opcionalne Theme servise bez obavezne ovisnosti o Theme modulu.
      * EN: Receives Workspace storage and optional Theme services without requiring the Theme module.
+     *
+     * HR: Prima spremište područja i opcionalne Theme servise bez obavezne ovisnosti o Theme modulu.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -44,8 +46,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća može li instalacija koristiti teme područja.
      * EN: Returns whether the installation can use workspace themes.
+     *
+     * HR: Vraća može li instalacija koristiti teme područja.
      */
     public function isAvailable(): bool
     {
@@ -55,8 +58,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća postavku područja zajedno s trenutno razriješenom temom.
      * EN: Returns workspace settings together with the currently resolved theme.
+     *
+     * HR: Vraća postavku područja zajedno s trenutno razriješenom temom.
      *
      * @param array<string, mixed> $workspace
      * @return array<string, mixed>
@@ -92,8 +96,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Aktivira odabranu sistemsku ili privatnu temu samo za renderiranje trenutačnog područja.
      * EN: Activates the selected system or private theme only while rendering the current workspace.
+     *
+     * HR: Aktivira odabranu sistemsku ili privatnu temu samo za renderiranje trenutačnog područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -107,10 +112,11 @@ final readonly class WorkspaceThemeService
         $repository = $this->requireThemeRepository();
         if ($state['selection_type'] === WorkspaceThemeRepository::SELECTION_DEFAULT) {
             /*
-             * HR: Servis je singleton unutar zahtjeva pa povratak na zadanu temu mora
-             *     ukloniti ranije postavljen override, primjerice u integracijskom testu.
              * EN: The service is request-scoped singleton, so returning to the default
              *     theme must clear a previously set override, for example in an integration test.
+             *
+             * HR: Servis je singleton unutar zahtjeva pa povratak na zadanu temu mora
+             *     ukloniti ranije postavljen override, primjerice u integracijskom testu.
              */
             $this->invoke($repository, 'clearRuntimeTheme');
             return;
@@ -138,8 +144,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Sprema nasljeđivanje ili izričiti izbor sistemske teme bez kopiranja njezine konfiguracije.
      * EN: Saves inheritance or an explicit system-theme selection without copying its configuration.
+     *
+     * HR: Sprema nasljeđivanje ili izričiti izbor sistemske teme bez kopiranja njezine konfiguracije.
      *
      * @param array<string, mixed> $workspace
      */
@@ -179,8 +186,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Normalizira GUI podatke i sprema privatnu kopiju; izvorna sistemska tema ostaje nepromijenjena.
      * EN: Normalizes GUI data and stores a private copy; the source system theme remains unchanged.
+     *
+     * HR: Normalizira GUI podatke i sprema privatnu kopiju; izvorna sistemska tema ostaje nepromijenjena.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $themeData
@@ -224,8 +232,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Uploadom asseta po potrebi prvo stvara privatnu kopiju aktivne teme područja.
      * EN: Uploading an asset creates a private copy of the active workspace theme when needed.
+     *
+     * HR: Uploadom asseta po potrebi prvo stvara privatnu kopiju aktivne teme područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -248,8 +257,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Briše nekorišteni asset samo iz privatne biblioteke područja.
      * EN: Deletes an unused asset only from the workspace's private library.
+     *
+     * HR: Briše nekorišteni asset samo iz privatne biblioteke područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -273,8 +283,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Gradi podatke za isti editor koji koristi globalna administracija tema.
      * EN: Builds data for the same editor used by global theme administration.
+     *
+     * HR: Gradi podatke za isti editor koji koristi globalna administracija tema.
      *
      * @param array<string, mixed> $workspace
      * @return array<string, mixed>
@@ -350,8 +361,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Renderira zajedničku Theme formu s kontekstom i putanjama privatne teme područja.
      * EN: Renders the shared Theme form with the Workspace private-theme context and routes.
+     *
+     * HR: Renderira zajedničku Theme formu s kontekstom i putanjama privatne teme područja.
      *
      * @param array<string, mixed> $data
      */
@@ -367,8 +379,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Po potrebi stvara privatnu kopiju razriješene teme prije izmjene datoteka.
      * EN: Creates a private copy of the resolved theme when needed before changing files.
+     *
+     * HR: Po potrebi stvara privatnu kopiju razriješene teme prije izmjene datoteka.
      *
      * @param array<string, mixed> $workspace
      * @return array<string, mixed>
@@ -408,8 +421,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Kopira sve sistemske slike koje privatna tema referencira i prepisuje njihove reference.
      * EN: Copies every system image referenced by the private theme and rewrites its references.
+     *
+     * HR: Kopira sve sistemske slike koje privatna tema referencira i prepisuje njihove reference.
      *
      * @param array<string, mixed> $theme
      * @return array<string, mixed>
@@ -466,8 +480,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Određuje pripada li referenca logotipu, hero vizualu ili ostalim datotekama.
      * EN: Determines whether a reference belongs to a logo, hero visual, or another asset.
+     *
+     * HR: Određuje pripada li referenca logotipu, hero vizualu ili ostalim datotekama.
      *
      * @param array<string, mixed> $theme
      */
@@ -488,8 +503,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Čuva korisnički promijenjen naziv ili zadanom nazivu dodaje naziv područja.
      * EN: Keeps a user-changed label or appends the Workspace name to the default label.
+     *
+     * HR: Čuva korisnički promijenjen naziv ili zadanom nazivu dodaje naziv područja.
      *
      * @param array<string, string> $posted
      * @param array<string, string> $source
@@ -520,8 +536,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Čita datoteke odabrane sistemske teme kao read-only biblioteku editora.
      * EN: Reads the selected system theme files as a read-only editor library.
+     *
+     * HR: Čita datoteke odabrane sistemske teme kao read-only biblioteku editora.
      *
      * @return list<array<string,mixed>>
      */
@@ -540,8 +557,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Gradi URL-ove zastava za sve jezike koje podržava Theme modul.
      * EN: Builds flag URLs for every locale supported by the Theme module.
+     *
+     * HR: Gradi URL-ove zastava za sve jezike koje podržava Theme modul.
      *
      * @return array<string,string>
      */
@@ -559,8 +577,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Zahtijeva točan postojeći ID sistemske teme bez tihog fallbacka.
      * EN: Requires an exact existing system-theme ID without a silent fallback.
+     *
+     * HR: Zahtijeva točan postojeći ID sistemske teme bez tihog fallbacka.
      *
      * @return array<string,mixed>
      */
@@ -576,8 +595,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Čita valjani pozitivni ID iz retka područja.
      * EN: Reads a valid positive ID from the Workspace row.
+     *
+     * HR: Čita valjani pozitivni ID iz retka područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -592,8 +612,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Zahtijeva glavni repozitorij opcionalnog Theme modula.
      * EN: Requires the optional Theme module's main repository.
+     *
+     * HR: Zahtijeva glavni repozitorij opcionalnog Theme modula.
      */
     private function requireThemeRepository(): object
     {
@@ -601,8 +622,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Dohvaća opcionalni servis ili vraća jasnu grešku integracije.
      * EN: Resolves an optional service or raises a clear integration error.
+     *
+     * HR: Dohvaća opcionalni servis ili vraća jasnu grešku integracije.
      */
     private function requireService(string $id): object
     {
@@ -615,8 +637,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Sigurno pokušava dohvatiti objekt iz spremnika bez rušenja kada Theme nije instaliran.
      * EN: Safely attempts to resolve a container object without failing when Theme is absent.
+     *
+     * HR: Sigurno pokušava dohvatiti objekt iz spremnika bez rušenja kada Theme nije instaliran.
      */
     private function service(string $id): ?object
     {
@@ -633,8 +656,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Poziva opcionalni Theme servis bez uvođenja čvrste Composer ovisnosti.
      * EN: Calls an optional Theme service without introducing a hard Composer dependency.
+     *
+     * HR: Poziva opcionalni Theme servis bez uvođenja čvrste Composer ovisnosti.
      *
      * @param list<mixed> $arguments
      */
@@ -648,8 +672,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća normaliziranu temu po ID-u kroz dinamički Theme repozitorij.
      * EN: Returns a normalized theme by ID through the dynamic Theme repository.
+     *
+     * HR: Vraća normaliziranu temu po ID-u kroz dinamički Theme repozitorij.
      *
      * @return array<string,mixed>
      */
@@ -659,8 +684,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća trenutačno aktivnu sistemsku temu kroz dinamički Theme repozitorij.
      * EN: Returns the currently active system theme through the dynamic Theme repository.
+     *
+     * HR: Vraća trenutačno aktivnu sistemsku temu kroz dinamički Theme repozitorij.
      *
      * @return array<string,mixed>
      */
@@ -670,8 +696,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća sve sistemske teme vidljive u izboru područja.
      * EN: Returns every system theme visible in the Workspace selector.
+     *
+     * HR: Vraća sve sistemske teme vidljive u izboru područja.
      *
      * @return list<array<string,mixed>>
      */
@@ -681,8 +708,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Čuva semantičke string ključeve konfiguracijske mape Theme repozitorija.
      * EN: Preserves semantic string keys from a Theme repository configuration map.
+     *
+     * HR: Čuva semantičke string ključeve konfiguracijske mape Theme repozitorija.
      *
      * @return array<string,mixed>
      */
@@ -692,8 +720,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Vraća jedinstveni popis valjanih jezika koje Theme repozitorij podržava.
      * EN: Returns the unique list of valid locales supported by the Theme repository.
+     *
+     * HR: Vraća jedinstveni popis valjanih jezika koje Theme repozitorij podržava.
      *
      * @return list<string>
      */
@@ -715,8 +744,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Čita i ograničava sistemsku politiku prikaza na tri podržane vrijednosti.
      * EN: Reads and restricts the system display policy to the three supported values.
+     *
+     * HR: Čita i ograničava sistemsku politiku prikaza na tri podržane vrijednosti.
      */
     private function repositoryModePolicy(object $repository): string
     {
@@ -725,8 +755,9 @@ final readonly class WorkspaceThemeService
     }
 
     /**
-     * HR: Delegira potpunu normalizaciju privatne teme izvornom Theme modulu.
      * EN: Delegates complete private-theme normalization to the source Theme module.
+     *
+     * HR: Delegira potpunu normalizaciju privatne teme izvornom Theme modulu.
      *
      * @param array<string,mixed> $theme
      * @param array<string,mixed> $existing

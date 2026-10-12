@@ -17,10 +17,11 @@ use function trim;
 final class WorkspaceEditorAccess
 {
     /**
-     * HR: Pamti dokument i njegovo područje tijekom jednog zahtjeva jer Editor
-     *     gradi više poveznica i akcija za isti dokument.
      * EN: Caches a document and its workspace for one request because the Editor
      *     builds several links and actions for the same document.
+     *
+     * HR: Pamti dokument i njegovo područje tijekom jednog zahtjeva jer Editor
+     *     gradi više poveznica i akcija za isti dokument.
      *
      * @var array<string, array{
      *     node: array<string, mixed>,
@@ -30,32 +31,36 @@ final class WorkspaceEditorAccess
     private array $documentContextCache = [];
 
     /**
-     * HR: Pamti efektivna prava po dokumentu i korisniku tijekom jednog zahtjeva.
      * EN: Caches effective permissions per document and user for one request.
+     *
+     * HR: Pamti efektivna prava po dokumentu i korisniku tijekom jednog zahtjeva.
      *
      * @var array<string, array<string, bool>>
      */
     private array $documentPermissionCache = [];
 
     /**
-     * HR: Pamti javne putanje po dokumentu i jeziku tijekom jednog zahtjeva.
      * EN: Caches public paths per document and language for one request.
+     *
+     * HR: Pamti javne putanje po dokumentu i jeziku tijekom jednog zahtjeva.
      *
      * @var array<string, string>
      */
     private array $documentPathCache = [];
 
     /**
-     * HR: Pamti broj objavljene verzije po dokumentu i jeziku tijekom jednog zahtjeva.
      * EN: Caches the published version number per document and language for one request.
+     *
+     * HR: Pamti broj objavljene verzije po dokumentu i jeziku tijekom jednog zahtjeva.
      *
      * @var array<string, int>
      */
     private array $publicationVersionCache = [];
 
     /**
-     * HR: Povezuje editorove akcije s područjem koje posjeduje dokument.
      * EN: Connects editor actions to the workspace that owns a document.
+     *
+     * HR: Povezuje editorove akcije s područjem koje posjeduje dokument.
      */
     public function __construct(
         private readonly WorkspaceRepository $repository,
@@ -71,10 +76,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Aktivira temu područja kojem pripada Editor dokument tako da uređivanje
-     *     i ostale radnje nad stranicom zadrže isti vizualni kontekst područja.
      * EN: Activates the theme of the Workspace owning an Editor document so
      *     editing and other page actions retain the Workspace visual context.
+     *
+     * HR: Aktivira temu područja kojem pripada Editor dokument tako da uređivanje
+     *     i ostale radnje nad stranicom zadrže isti vizualni kontekst područja.
      */
     public function activateDocumentTheme(string $documentKey): void
     {
@@ -87,8 +93,39 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava smije li korisnik kreirati dokument unutar zadanog područja.
+     * EN: Exposes explicit storage ownership without applying interactive ACL or active-node filters.
+     *
+     * HR: Izlaže izričito vlasništvo pohrane bez interaktivnog ACL-a ili filtra aktivnih čvorova.
+     */
+    public function storageWorkspaceId(string $documentKey): ?int
+    {
+        return $this->repository->storageWorkspaceIdForDocument($documentKey);
+    }
+
+    /**
+     * EN: Exposes the readable data directory independently of page visibility or permissions.
+     *
+     * HR: Izlaže čitljivi podatkovni direktorij neovisno o vidljivosti stranice ili pravima.
+     */
+    public function storageWorkspaceDirectory(int $workspaceId): string
+    {
+        return $this->config->workspaceDirectoryName($workspaceId);
+    }
+
+    /**
+     * EN: Shared documents must not inherit an obsolete single-owner path.
+     *
+     * HR: Dijeljeni dokument ne smije naslijediti zastarjelu putanju jednog vlasnika.
+     */
+    public function hasMultipleStorageOwners(string $documentKey): bool
+    {
+        return $this->repository->hasMultipleStorageOwners($documentKey);
+    }
+
+    /**
      * EN: Checks whether a user may create a document inside the given workspace.
+     *
+     * HR: Provjerava smije li korisnik kreirati dokument unutar zadanog područja.
      */
     public function canCreateDocument(string $workspaceSlug): bool
     {
@@ -101,8 +138,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava nasljedno pravo čitanja editor dokumenta.
      * EN: Checks inherited read permission for an editor document.
+     *
+     * HR: Provjerava nasljedno pravo čitanja editor dokumenta.
      */
     public function canReadDocument(string $documentKey): bool
     {
@@ -110,8 +148,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava pravo čitanja dokumenta za eksplicitnog API korisnika.
      * EN: Checks document read permission for an explicit API user.
+     *
+     * HR: Provjerava pravo čitanja dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -121,12 +160,13 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
-     *     za trenutačnog korisnika. Rezultat izričito razlikuje samostalni
-     *     dokument od Workspace dokumenta kojem je pristup odbijen.
      * EN: Batch-checks ownership and read access for a list of Editor documents
      *     for the current user. The result explicitly distinguishes a standalone
      *     document from a Workspace document whose access was denied.
+     *
+     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
+     *     za trenutačnog korisnika. Rezultat izričito razlikuje samostalni
+     *     dokument od Workspace dokumenta kojem je pristup odbijen.
      *
      * @param list<string> $documentKeys
      * @return array<string, array{owned: bool, can_read: bool}>
@@ -142,12 +182,13 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
-     *     za eksplicitno zadanog API korisnika. Čvorovi, područja i ACL zapisi
-     *     učitavaju se paketno kako veliki birači ne bi stvarali N+1 upite.
      * EN: Batch-checks ownership and read access for a list of Editor documents
      *     for an explicit API user. Nodes, workspaces, and ACL rows are loaded
      *     in batches so large pickers do not create N+1 queries.
+     *
+     * HR: Grupno provjerava pripadnost i pravo čitanja popisa Editor dokumenata
+     *     za eksplicitno zadanog API korisnika. Čvorovi, područja i ACL zapisi
+     *     učitavaju se paketno kako veliki birači ne bi stvarali N+1 upite.
      *
      * @param list<string> $documentKeys
      * @param array<string,mixed> $user
@@ -158,10 +199,11 @@ final class WorkspaceEditorAccess
         $normalizedKeys = [];
         foreach ($documentKeys as $documentKey) {
             /*
-             * HR: Uvezeni dokument može imati brojčanu oznaku koju PHP kao ključ
-             *     polja pretvara u cijeli broj; ovdje je vraćamo u tekst.
              * EN: An imported document may have a numeric key which PHP casts to
              *     an integer array key; normalize it back to text here.
+             *
+             * HR: Uvezeni dokument može imati brojčanu oznaku koju PHP kao ključ
+             *     polja pretvara u cijeli broj; ovdje je vraćamo u tekst.
              */
             $documentKey = trim((string)$documentKey);
             if ($documentKey !== '') {
@@ -217,10 +259,11 @@ final class WorkspaceEditorAccess
             $workspace = $workspacesById[$workspaceId];
 
             /*
-             * HR: Cijelo stablo potrebno je za naslijeđena ograničenja roditelja.
-             *     Repository ga učitava jednom po području, ne jednom po dokumentu.
              * EN: The complete tree is required for inherited parent restrictions.
              *     The repository loads it once per workspace, not once per document.
+             *
+             * HR: Cijelo stablo potrebno je za naslijeđena ograničenja roditelja.
+             *     Repository ga učitava jednom po području, ne jednom po dokumentu.
              */
             $allNodes = $this->repository->nodesForWorkspace($workspaceId);
             $permissionsByNode = $this->access->nodePermissionsForNodes(
@@ -245,8 +288,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava nasljedno pravo uređivanja editor dokumenta.
      * EN: Checks inherited edit permission for an editor document.
+     *
+     * HR: Provjerava nasljedno pravo uređivanja editor dokumenta.
      */
     public function canEditDocument(string $documentKey): bool
     {
@@ -254,8 +298,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava pravo uređivanja dokumenta za eksplicitnog API korisnika.
      * EN: Checks document edit permission for an explicit API user.
+     *
+     * HR: Provjerava pravo uređivanja dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -265,8 +310,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava zasebno nasljedno pravo objavljivanja editor dokumenta.
      * EN: Checks the separate inherited publishing permission for an editor document.
+     *
+     * HR: Provjerava zasebno nasljedno pravo objavljivanja editor dokumenta.
      */
     public function canPublishDocument(string $documentKey): bool
     {
@@ -274,8 +320,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava pravo objavljivanja dokumenta za eksplicitnog API korisnika.
      * EN: Checks document publishing permission for an explicit API user.
+     *
+     * HR: Provjerava pravo objavljivanja dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -285,8 +332,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava nasljedno pravo brisanja editor dokumenta.
      * EN: Checks inherited delete permission for an editor document.
+     *
+     * HR: Provjerava nasljedno pravo brisanja editor dokumenta.
      */
     public function canDeleteDocument(string $documentKey): bool
     {
@@ -294,8 +342,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava pravo brisanja dokumenta za eksplicitnog API korisnika.
      * EN: Checks document deletion permission for an explicit API user.
+     *
+     * HR: Provjerava pravo brisanja dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -305,8 +354,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava upravljačko pravo nad editor dokumentom.
      * EN: Checks management permission for an editor document.
+     *
+     * HR: Provjerava upravljačko pravo nad editor dokumentom.
      */
     public function canManageDocument(string $documentKey): bool
     {
@@ -314,8 +364,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava upravljačko pravo dokumenta za eksplicitnog API korisnika.
      * EN: Checks document management permission for an explicit API user.
+     *
+     * HR: Provjerava upravljačko pravo dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -325,11 +376,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava smije li API korisnik dodati dokument u korijen ili ispod
-     * dokument-stranice zadanog područja.
-     *
      * EN: Checks whether an API user may add a document at the root or below a
      * document page in the supplied Workspace.
+     *
+     * HR: Provjerava smije li API korisnik dodati dokument u korijen ili ispod
+     * dokument-stranice zadanog područja.
      *
      * @param array<string,mixed> $user
      */
@@ -359,11 +410,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Povezuje upravo kreirani Editor dokument s Workspace čvorom i
-     * inicijalizira njegov jedini neobjavljeni nacrt.
-     *
      * EN: Links a newly created Editor document to a Workspace node and
      * initializes its single unpublished draft.
+     *
+     * HR: Povezuje upravo kreirani Editor dokument s Workspace čvorom i
+     * inicijalizira njegov jedini neobjavljeni nacrt.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -427,8 +478,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Sprema naslov jezične varijante za korisnika trenutačne web-sesije.
      * EN: Saves a localized page title for the user in the current web session.
+     *
+     * HR: Sprema naslov jezične varijante za korisnika trenutačne web-sesije.
      */
     public function saveDocumentTitleTranslation(
         string $documentKey,
@@ -450,13 +502,13 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Sprema naslov Editor dokumenta u jezičnu kartu pripadajuće stavke
-     * stabla. Primarni naslov ostaje obavezan, a ostali jezici koriste njegov
-     * fallback kada prijevod nije upisan.
-     *
      * EN: Stores an Editor document title in the language map of its Workspace
      * tree item. The primary title remains required and other languages fall
      * back to it when no translation is provided.
+     *
+     * HR: Sprema naslov Editor dokumenta u jezičnu kartu pripadajuće stavke
+     * stabla. Primarni naslov ostaje obavezan, a ostali jezici koriste njegov
+     * fallback kada prijevod nije upisan.
      *
      * @param array<string,mixed> $user
      */
@@ -496,11 +548,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Uklanja Workspace čvor dokumenta; neobjavljena nova stranica briše
-     * se fizički, a objavljena stranica koristi soft-delete stabla.
-     *
      * EN: Removes a document's Workspace node; a never-published new page is
      * deleted physically, while a published page uses tree soft deletion.
+     *
+     * HR: Uklanja Workspace čvor dokumenta; neobjavljena nova stranica briše
+     * se fizički, a objavljena stranica koristi soft-delete stabla.
      *
      * @param array<string,mixed> $user
      */
@@ -536,8 +588,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća javnu Workspace putanju dokumenta umjesto samostalne editor slug rute.
      * EN: Returns the public Workspace path instead of the standalone editor slug route.
+     *
+     * HR: Vraća javnu Workspace putanju dokumenta umjesto samostalne editor slug rute.
      */
     public function documentPath(string $documentKey, string $language = ''): string
     {
@@ -575,12 +628,13 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Razrješava prenosivi par slugova područja i stranice u Editorov
-     *     dokument. Metoda ne zaobilazi ACL: pozivatelj i dalje mora provjeriti
-     *     pravo čitanja ili promjene nad vraćenim dokumentom.
      * EN: Resolves a portable workspace/page slug pair to its Editor document.
      *     This method does not bypass ACL; callers must still check read or
      *     change access for the returned document.
+     *
+     * HR: Razrješava prenosivi par slugova područja i stranice u Editorov
+     *     dokument. Metoda ne zaobilazi ACL: pozivatelj i dalje mora provjeriti
+     *     pravo čitanja ili promjene nad vraćenim dokumentom.
      */
     public function documentKeyForPage(string $workspaceSlug, string $nodeSlug): string
     {
@@ -601,8 +655,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća true kada dokument pripada aktivnom Workspace čvoru.
      * EN: Returns true when a document belongs to an active Workspace node.
+     *
+     * HR: Vraća true kada dokument pripada aktivnom Workspace čvoru.
      */
     public function ownsDocument(string $documentKey): bool
     {
@@ -610,12 +665,13 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća ACL-sigurne podatke područja za grupiranje stranica u
-     *     opcionalnim Editor izbornicima. Dokument bez prava čitanja ne otkriva
-     *     ni naziv ni slug svojeg područja.
      * EN: Returns ACL-safe Workspace metadata for grouping pages in optional
      *     Editor selectors. A document without read permission exposes neither
      *     its Workspace name nor slug.
+     *
+     * HR: Vraća ACL-sigurne podatke područja za grupiranje stranica u
+     *     opcionalnim Editor izbornicima. Dokument bez prava čitanja ne otkriva
+     *     ni naziv ni slug svojeg područja.
      *
      * @return array{slug:string,title:string}|null
      */
@@ -638,8 +694,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća lagani ACL-sigurni popis područja za Editorove birače.
      * EN: Returns a lightweight ACL-safe Workspace list for Editor pickers.
+     *
+     * HR: Vraća lagani ACL-sigurni popis područja za Editorove birače.
      *
      * @return list<array{slug:string,title:string,is_personal_workspace:bool}>
      */
@@ -665,8 +722,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća izravnu politiku prikaza sadržaja povezane Workspace stranice.
      * EN: Returns the direct outline-visibility policy of the linked Workspace page.
+     *
+     * HR: Vraća izravnu politiku prikaza sadržaja povezane Workspace stranice.
      */
     public function documentContentsVisibility(string $documentKey): string
     {
@@ -679,8 +737,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Sprema izravnu politiku prikaza sadržaja samo kada korisnik smije uređivati stranicu.
      * EN: Saves the direct outline policy only when the user may edit the page.
+     *
+     * HR: Sprema izravnu politiku prikaza sadržaja samo kada korisnik smije uređivati stranicu.
      */
     public function saveDocumentContentsVisibility(string $documentKey, string $policy): void
     {
@@ -694,10 +753,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Sprema politiku prikaza za eksplicitnog API korisnika, bez oslanjanja
-     *     na HTTP sesiju koja kod autentikacije API ključem namjerno ne postoji.
      * EN: Saves the display policy for an explicit API user without relying on
      *     an HTTP session, which intentionally does not exist for API-key auth.
+     *
+     * HR: Sprema politiku prikaza za eksplicitnog API korisnika, bez oslanjanja
+     *     na HTTP sesiju koja kod autentikacije API ključem namjerno ne postoji.
      *
      * @param array<string,mixed> $user
      */
@@ -720,10 +780,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Vraća objavljenu verziju povezane jezične stranice; null ostavlja
-     *     samostalni Editor prikaz netaknut, a nula skriva neobjavljeni sadržaj.
      * EN: Returns the published version for a linked page locale; null leaves
      *     standalone Editor rendering untouched, while zero hides unpublished content.
+     *
+     * HR: Vraća objavljenu verziju povezane jezične stranice; null ostavlja
+     *     samostalni Editor prikaz netaknut, a nula skriva neobjavljeni sadržaj.
      */
     public function publicationVersion(string $documentKey, string $language): ?int
     {
@@ -744,10 +805,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Skupno vraća objavljene verzije Workspace dokumenata. Dokumenti koji
-     *     ne pripadaju Workspaceu nisu u rezultatu, a neobjavljeni imaju vrijednost nula.
      * EN: Batch-returns published versions for Workspace documents. Standalone
      *     documents are absent while unpublished Workspace documents map to zero.
+     *
+     * HR: Skupno vraća objavljene verzije Workspace dokumenata. Dokumenti koji
+     *     ne pripadaju Workspaceu nisu u rezultatu, a neobjavljeni imaju vrijednost nula.
      *
      * @param list<string> $documentKeys
      * @return array<string,int>
@@ -813,8 +875,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Materijalizira nativne blokove područja u Editorovu prikazu i izvozu.
      * EN: Materializes native Workspace blocks in Editor views and exports.
+     *
+     * HR: Materijalizira nativne blokove područja u Editorovu prikazu i izvozu.
      */
     public function renderDynamicContent(
         string $html,
@@ -826,8 +889,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Gradi deklarativni element koji Editor i API mogu sigurno spremiti.
      * EN: Builds a declarative element that Editor and API can safely persist.
+     *
+     * HR: Gradi deklarativni element koji Editor i API mogu sigurno spremiti.
      *
      * @param array<string,mixed> $configuration
      */
@@ -837,10 +901,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Nakon Editor spremanja označava povezanu stranicu nacrtom i bilježi
-     *     broj upravo nastale nepromjenjive verzije.
      * EN: After an Editor save, marks the linked page as draft and records the
      *     newly created immutable version number.
+     *
+     * HR: Nakon Editor spremanja označava povezanu stranicu nacrtom i bilježi
+     *     broj upravo nastale nepromjenjive verzije.
      */
     public function markDocumentDraft(
         string $documentKey,
@@ -857,8 +922,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Bilježi novu radnu verziju dokumenta za eksplicitnog API korisnika.
      * EN: Records a new working document version for an explicit API user.
+     *
+     * HR: Bilježi novu radnu verziju dokumenta za eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -877,10 +943,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Nakon Editorove objave usklađuje Workspace workflow uz zasebnu
-     *     provjeru prava objavljivanja.
      * EN: Synchronizes the Workspace workflow after an Editor publication while
      *     independently enforcing the publishing permission.
+     *
+     * HR: Nakon Editorove objave usklađuje Workspace workflow uz zasebnu
+     *     provjeru prava objavljivanja.
      */
     public function publishDocumentDraft(
         string $documentKey,
@@ -897,8 +964,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Šalje aktualni Workspace nacrt na pregled za prijavljenog korisnika.
      * EN: Submits the current Workspace draft for review for the authenticated user.
+     *
+     * HR: Šalje aktualni Workspace nacrt na pregled za prijavljenog korisnika.
      */
     public function submitDocumentDraft(
         string $documentKey,
@@ -915,10 +983,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Šalje Workspace nacrt na pregled uz prava eksplicitnog API korisnika
-     *     i obavještava sve efektivne objavljivače.
      * EN: Submits a Workspace draft for review with an explicit API user's
      *     permissions and notifies all effective publishers.
+     *
+     * HR: Šalje Workspace nacrt na pregled uz prava eksplicitnog API korisnika
+     *     i obavještava sve efektivne objavljivače.
      *
      * @param array<string,mixed> $user
      */
@@ -957,8 +1026,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Objavljuje Workspace nacrt uz prava eksplicitnog API korisnika.
      * EN: Publishes a Workspace draft with an explicit API user's permissions.
+     *
+     * HR: Objavljuje Workspace nacrt uz prava eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -1003,10 +1073,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Nakon Editorova odbacivanja nacrta vraća workflow na zadnju objavu
-     *     ili na čisti početni nacrt nove stranice.
      * EN: After Editor draft discard, returns the workflow to the last
      *     publication or to a clean initial draft for a new page.
+     *
+     * HR: Nakon Editorova odbacivanja nacrta vraća workflow na zadnju objavu
+     *     ili na čisti početni nacrt nove stranice.
      */
     public function discardDocumentDraft(
         string $documentKey,
@@ -1023,8 +1094,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Odbacuje Workspace nacrt uz prava eksplicitnog API korisnika.
      * EN: Discards a Workspace draft with an explicit API user's permissions.
+     *
+     * HR: Odbacuje Workspace nacrt uz prava eksplicitnog API korisnika.
      *
      * @param array<string,mixed> $user
      */
@@ -1050,10 +1122,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Učitava dokument i pripadajuće područje samo jednom tijekom zahtjeva.
-     *     Null se također pamti kako nepostojeći dokument ne bi stalno tražili.
      * EN: Loads a document and its workspace only once during a request. Null is
      *     cached as well so a missing document is not looked up repeatedly.
+     *
+     * HR: Učitava dokument i pripadajuće područje samo jednom tijekom zahtjeva.
+     *     Null se također pamti kako nepostojeći dokument ne bi stalno tražili.
      *
      * @return array{
      *     node: array<string, mixed>,
@@ -1085,10 +1158,11 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Računa i pamti cijeli skup prava kako pojedinačne Editor provjere
-     *     čitanja, izmjene, objave i brisanja ne ponavljaju isti ACL izračun.
      * EN: Calculates and caches the complete permission set so individual Editor
      *     read, edit, publish, and delete checks do not repeat the same ACL work.
+     *
+     * HR: Računa i pamti cijeli skup prava kako pojedinačne Editor provjere
+     *     čitanja, izmjene, objave i brisanja ne ponavljaju isti ACL izračun.
      *
      * @return array<string, bool>
      */
@@ -1102,8 +1176,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Računa efektivna prava dokumenta za eksplicitno predanog korisnika.
      * EN: Calculates effective document permissions for an explicitly supplied user.
+     *
+     * HR: Računa efektivna prava dokumenta za eksplicitno predanog korisnika.
      *
      * @param array<string,mixed> $user
      * @return array<string,bool>
@@ -1132,8 +1207,9 @@ final class WorkspaceEditorAccess
     }
 
     /**
-     * HR: Provjerava ima li područje aktivnu početnu dokument-stranicu.
      * EN: Checks whether a Workspace has an active document homepage.
+     *
+     * HR: Provjerava ima li područje aktivnu početnu dokument-stranicu.
      */
     private function workspaceHasHomepage(int $workspaceId): bool
     {

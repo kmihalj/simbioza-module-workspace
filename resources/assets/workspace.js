@@ -2,8 +2,9 @@
     'use strict';
 
     /**
-     * HR: Kodira običan tekst prije umetanja u HTML poruke učitavanja.
      * EN: Encodes plain text before inserting it into HTML loading messages.
+     *
+     * HR: Kodira običan tekst prije umetanja u HTML poruke učitavanja.
      *
      * @param {string} value
      * @returns {string}
@@ -15,11 +16,11 @@
     }
 
     /**
-     * HR: Prikazuje samo kontrole koje pripadaju odabranoj vrsti stavke stabla
-     * i onemogućuje skrivena polja kako se ne bi slala u POST zahtjevu.
-     *
      * EN: Shows only controls belonging to the selected tree item type and
      * disables hidden fields so they are not submitted in the POST request.
+     *
+     * HR: Prikazuje samo kontrole koje pripadaju odabranoj vrsti stavke stabla
+     * i onemogućuje skrivena polja kako se ne bi slala u POST zahtjevu.
      *
      * @param {HTMLElement} container
      * @returns {void}
@@ -45,8 +46,9 @@
     }
 
     /**
-     * HR: Povezuje sve napredne obrasce stabla nakon učitavanja dokumenta.
      * EN: Connects every advanced tree form after the document has loaded.
+     *
+     * HR: Povezuje sve napredne obrasce stabla nakon učitavanja dokumenta.
      *
      * @param {ParentNode} [root=document]
      * @returns {void}
@@ -71,10 +73,11 @@
     }
 
     /**
-     * HR: Omogućuje dodavanje i uklanjanje više svojstava stranice prije nego
-     *     što se cijeli popis zajedno pošalje glavnim obrascem stavke.
      * EN: Allows multiple page properties to be added and removed before the
      *     complete list is submitted together by the main item form.
+     *
+     * HR: Omogućuje dodavanje i uklanjanje više svojstava stranice prije nego
+     *     što se cijeli popis zajedno pošalje glavnim obrascem stavke.
      *
      * @param {ParentNode} [root=document]
      * @returns {void}
@@ -121,13 +124,14 @@
     }
 
     /**
-     * HR: Jezični izbornik prikazuje samo polje odabranog jezika, dok sva
-     * ostala polja ostaju u obrascu kako bi se sve inačice spremile zajedno.
      * EN: The language selector shows only the selected locale field while
      * every other field remains in the form so all variants are saved together.
      *
      * Delegiranje događaja podržava i naknadno učitane modale stabla.
      * Event delegation also supports tree modals loaded after page startup.
+     *
+     * HR: Jezični izbornik prikazuje samo polje odabranog jezika, dok sva
+     * ostala polja ostaju u obrascu kako bi se sve inačice spremile zajedno.
      *
      * @returns {void}
      */
@@ -185,8 +189,9 @@
     }
 
     /**
-     * HR: Vraća retke jednog vizualnog organizatora redom kojim su prikazani.
      * EN: Returns rows of one visual organizer in their displayed order.
+     *
+     * HR: Vraća retke jednog vizualnog organizatora redom kojim su prikazani.
      *
      * @param {HTMLElement} list
      * @returns {HTMLElement[]}
@@ -196,8 +201,9 @@
     }
 
     /**
-     * HR: Čita tehnički ID stranice iz jednog retka organizatora.
      * EN: Reads the technical page ID from one organizer row.
+     *
+     * HR: Čita tehnički ID stranice iz jednog retka organizatora.
      *
      * @param {HTMLElement} row
      * @returns {string}
@@ -208,8 +214,9 @@
     }
 
     /**
-     * HR: Vraća skriveno polje roditelja jednog retka.
      * EN: Returns the hidden parent field of one row.
+     *
+     * HR: Vraća skriveno polje roditelja jednog retka.
      *
      * @param {HTMLElement} row
      * @returns {HTMLInputElement|null}
@@ -220,8 +227,9 @@
     }
 
     /**
-     * HR: Čita ID roditelja, pri čemu prazan tekst označava korijen.
      * EN: Reads the parent ID, where an empty string denotes the tree root.
+     *
+     * HR: Čita ID roditelja, pri čemu prazan tekst označava korijen.
      *
      * @param {HTMLElement} row
      * @returns {string}
@@ -232,8 +240,9 @@
     }
 
     /**
-     * HR: Čita izravnu oznaku skrivanja iz retka organizatora.
      * EN: Reads the organizer row's direct hidden-navigation flag.
+     *
+     * HR: Čita izravnu oznaku skrivanja iz retka organizatora.
      *
      * @param {HTMLElement} row
      * @returns {boolean}
@@ -244,8 +253,9 @@
     }
 
     /**
-     * HR: Pronalazi red prema ID-u unutar istog organizatora.
      * EN: Finds a row by ID inside the same organizer.
+     *
+     * HR: Pronalazi red prema ID-u unutar istog organizatora.
      *
      * @param {HTMLElement} list
      * @param {string} nodeId
@@ -260,8 +270,9 @@
     }
 
     /**
-     * HR: Izračunava dubinu retka hodanjem prema korijenu i prekida mogući ciklus.
      * EN: Calculates row depth by walking toward the root and stops a possible cycle.
+     *
+     * HR: Izračunava dubinu retka hodanjem prema korijenu i prekida mogući ciklus.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement} row
@@ -287,8 +298,9 @@
     }
 
     /**
-     * HR: Provjerava pripada li red podgrani zadanog pretka.
      * EN: Checks whether a row belongs to the specified ancestor subtree.
+     *
+     * HR: Provjerava pripada li red podgrani zadanog pretka.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement} row
@@ -319,8 +331,9 @@
     }
 
     /**
-     * HR: Vraća odabrani red i sve njegove uzastopno prikazane potomke.
      * EN: Returns the selected row and all of its consecutively displayed descendants.
+     *
+     * HR: Vraća odabrani red i sve njegove uzastopno prikazane potomke.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement} rootRow
@@ -346,8 +359,9 @@
     }
 
     /**
-     * HR: Pronalazi najbližu prethodnu stavku istog roditelja.
      * EN: Finds the nearest preceding item with the same parent.
+     *
+     * HR: Pronalazi najbližu prethodnu stavku istog roditelja.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement} row
@@ -363,8 +377,9 @@
     }
 
     /**
-     * HR: Pronalazi najbližu sljedeću stavku istog roditelja iza cijele podgrane.
      * EN: Finds the nearest following item with the same parent after the complete subtree.
+     *
+     * HR: Pronalazi najbližu sljedeću stavku istog roditelja iza cijele podgrane.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement} row
@@ -379,8 +394,9 @@
     }
 
     /**
-     * HR: Provjerava smije li stavka postati roditelj druge stavke.
      * EN: Checks whether an item may become another item's parent.
+     *
+     * HR: Provjerava smije li stavka postati roditelj druge stavke.
      *
      * @param {HTMLElement|null} row
      * @returns {boolean}
@@ -390,8 +406,9 @@
     }
 
     /**
-     * HR: Premješta cijeli blok prije zadane točke ili na kraj popisa.
      * EN: Moves a complete block before the specified anchor or to the list end.
+     *
+     * HR: Premješta cijeli blok prije zadane točke ili na kraj popisa.
      *
      * @param {HTMLElement} list
      * @param {HTMLElement[]} block
@@ -405,8 +422,9 @@
     }
 
     /**
-     * HR: Sinkronizira uvlake, redoslijed među braćom i dostupnost strelica.
      * EN: Synchronizes indentation, sibling order, and arrow availability.
+     *
+     * HR: Sinkronizira uvlake, redoslijed među braćom i dostupnost strelica.
      *
      * @param {HTMLElement} list
      * @returns {void}
@@ -490,8 +508,9 @@
     }
 
     /**
-     * HR: Povezuje strelice i završnu sinkronizaciju jednoga organizatora.
      * EN: Connects arrows and final synchronization for one organizer.
+     *
+     * HR: Povezuje strelice i završnu sinkronizaciju jednoga organizatora.
      *
      * @param {HTMLFormElement} form
      * @returns {void}
@@ -568,8 +587,9 @@
     }
 
     /**
-     * HR: Povezuje sve vizualne organizatore stabla na stranici.
      * EN: Connects every visual tree organizer on the page.
+     *
+     * HR: Povezuje sve vizualne organizatore stabla na stranici.
      *
      * @returns {void}
      */
@@ -582,11 +602,11 @@
     }
 
     /**
-     * HR: Prebacuje lijevu karticu između običnog stabla i organizatora bez
-     * napuštanja prikazane stranice.
-     *
      * EN: Switches the left card between the regular tree and organizer without
      * leaving the displayed page.
+     *
+     * HR: Prebacuje lijevu karticu između običnog stabla i organizatora bez
+     * napuštanja prikazane stranice.
      *
      * @returns {void}
      */
@@ -655,10 +675,11 @@
     }
 
     /**
-     * HR: Povezuje strelice za sažimanje grana samo u read-only stablu.
-     *     Organizator poretka koristi zaseban prikaz i uvijek zadržava sve razine.
      * EN: Connects branch-collapse arrows only in the read-only tree. The order
      *     organizer uses a separate view and always keeps every level visible.
+     *
+     * HR: Povezuje strelice za sažimanje grana samo u read-only stablu.
+     *     Organizator poretka koristi zaseban prikaz i uvijek zadržava sve razine.
      *
      * @returns {void}
      */
@@ -708,10 +729,11 @@
             }
 
             /**
-             * HR: Sprema samo otvorene grane ovog područja u trenutačnu karticu
-             *     preglednika. Nedostupan sessionStorage ne prekida navigaciju.
              * EN: Stores only this Workspace's expanded branches in the current
              *     browser tab. Unavailable sessionStorage never blocks navigation.
+             *
+             * HR: Sprema samo otvorene grane ovog područja u trenutačnu karticu
+             *     preglednika. Nedostupan sessionStorage ne prekida navigaciju.
              *
              * @returns {void}
              */
@@ -727,16 +749,18 @@
                 try {
                     window.sessionStorage.setItem(storageKey, JSON.stringify(expandedNodeIds));
                 } catch (_error) {
-                    // HR: Privatni način rada može zabraniti pohranu; stablo i dalje radi.
                     // EN: Private browsing may deny storage; the tree still works.
+                    //
+                    // HR: Privatni način rada može zabraniti pohranu; stablo i dalje radi.
                 }
             };
 
             /**
-             * HR: Sprema vertikalni položaj stabla prije navigacije kako klik
-             *     na stranicu ne bi vratio dugačko stablo na njegov početak.
              * EN: Stores the tree's vertical position before navigation so a
              *     page click never returns a long tree to its beginning.
+             *
+             * HR: Sprema vertikalni položaj stabla prije navigacije kako klik
+             *     na stranicu ne bi vratio dugačko stablo na njegov početak.
              *
              * @returns {void}
              */
@@ -751,16 +775,18 @@
                         String(Math.max(0, tree.scrollTop)),
                     );
                 } catch (_error) {
-                    // HR: Nedostupna pohrana ne smije zaustaviti navigaciju.
                     // EN: Unavailable storage must never block navigation.
+                    //
+                    // HR: Nedostupna pohrana ne smije zaustaviti navigaciju.
                 }
             };
 
             /**
-             * HR: Usklađuje vidljivost grane, stanje gumba i njegov pristupačni
-             *     opis. Ista se rutina koristi prije i nakon naknadnog učitavanja.
              * EN: Synchronizes branch visibility, button state, and its accessible
              *     label. The same routine is used before and after lazy loading.
+             *
+             * HR: Usklađuje vidljivost grane, stanje gumba i njegov pristupačni
+             *     opis. Ista se rutina koristi prije i nakon naknadnog učitavanja.
              *
              * @param {HTMLButtonElement} toggle
              * @param {HTMLElement} branch
@@ -784,10 +810,11 @@
             const branchRequests = new WeakMap();
 
             /**
-             * HR: Učitava samo zatraženu, već ACL-filtriranu granu. Istodobni
-             *     klikovi dijele isti zahtjev kako se grana ne bi duplicirala.
              * EN: Loads only the requested, already ACL-filtered branch. Concurrent
              *     clicks share one request so the branch is never duplicated.
+             *
+             * HR: Učitava samo zatraženu, već ACL-filtriranu granu. Istodobni
+             *     klikovi dijele isti zahtjev kako se grana ne bi duplicirala.
              *
              * @param {HTMLButtonElement} toggle
              * @param {HTMLElement} branch
@@ -849,10 +876,11 @@
             };
 
             /**
-             * HR: Primjenjuje spremljeno stanje na već isporučene čvorove i po
-             *     potrebi slijedno vraća dublje grane iz trenutačne kartice.
              * EN: Applies saved state to delivered nodes and, when needed,
              *     sequentially restores deeper branches for the current tab.
+             *
+             * HR: Primjenjuje spremljeno stanje na već isporučene čvorove i po
+             *     potrebi slijedno vraća dublje grane iz trenutačne kartice.
              *
              * @param {HTMLElement} container
              * @returns {Promise<void>}
@@ -897,20 +925,22 @@
             };
 
             /**
-             * HR: Bez spremljenog stanja pokazuje prvu razinu i put do aktivne
-             *     stranice. Inače vraća otvorene grane, ali uvijek prisilno
-             *     otvara pretke aktivne stranice. Stanje se priprema i kada je
-             *     cijeli mobilni panel skriven.
              * EN: Without stored state, shows the first level and active-page
              *     path. Otherwise restores expanded branches but always forces
              *     active-page ancestors open. State is prepared even while the
              *     entire mobile panel is hidden.
+             *
+             * HR: Bez spremljenog stanja pokazuje prvu razinu i put do aktivne
+             *     stranice. Inače vraća otvorene grane, ali uvijek prisilno
+             *     otvara pretke aktivne stranice. Stanje se priprema i kada je
+             *     cijeli mobilni panel skriven.
              */
             /**
-             * HR: Najprije vraća otvorene i naknadno učitane grane, a zatim
-             *     u dva okvira iscrtavanja vraća spremljeni položaj stabla.
              * EN: Restores expanded and lazy-loaded branches first, then uses
              *     two animation frames to restore the saved tree position.
+             *
+             * HR: Najprije vraća otvorene i naknadno učitane grane, a zatim
+             *     u dva okvira iscrtavanja vraća spremljeni položaj stabla.
              *
              * @returns {Promise<void>}
              */
@@ -996,12 +1026,13 @@
     }
 
     /**
-     * HR: Pretvara CSS duljinu stabla (npr. rem) u piksele bez pretpostavke o
-     *     korisnikovoj veličini fonta. Privremeni mjerač nije vidljiv niti
-     *     utječe na raspored stranice.
      * EN: Converts a tree CSS length (for example rem) to pixels without
      *     assuming the user's font size. The temporary ruler is invisible and
      *     does not affect page layout.
+     *
+     * HR: Pretvara CSS duljinu stabla (npr. rem) u piksele bez pretpostavke o
+     *     korisnikovoj veličini fonta. Privremeni mjerač nije vidljiv niti
+     *     utječe na raspored stranice.
      *
      * @param {HTMLElement} context
      * @param {string} value
@@ -1027,12 +1058,13 @@
     }
 
     /**
-     * HR: Mjeri naslov u jednom retku s njegovim stvarnim fontom. Tako stablo
-     *     ostaje kompaktno za kratke nazive, ali se može proširiti prije nego
-     *     što dugi nazivi počnu stvarati nepotrebne retke od jedne riječi.
      * EN: Measures a title on one line with its actual font. This keeps the
      *     tree compact for short names while allowing it to grow before long
      *     names create unnecessary one-word lines.
+     *
+     * HR: Mjeri naslov u jednom retku s njegovim stvarnim fontom. Tako stablo
+     *     ostaje kompaktno za kratke nazive, ali se može proširiti prije nego
+     *     što dugi nazivi počnu stvarati nepotrebne retke od jedne riječi.
      *
      * @param {HTMLElement} title
      * @returns {number}
@@ -1060,14 +1092,15 @@
     }
 
     /**
-     * HR: Prilagođava samo desktop stupac stabla stvarnom sadržaju unutar
-     *     zadanog kompaktnog i maksimalnog raspona. Mobilni drawer zadržava
-     *     svoju postojeću širinu, a glavni sadržaj i breadcrumb automatski
-     *     prate istu CSS varijablu.
      * EN: Adapts only the desktop tree column to its real content within the
      *     configured compact and maximum range. The mobile drawer keeps its
      *     existing width, while main content and breadcrumbs automatically
      *     follow the same CSS variable.
+     *
+     * HR: Prilagođava samo desktop stupac stabla stvarnom sadržaju unutar
+     *     zadanog kompaktnog i maksimalnog raspona. Mobilni drawer zadržava
+     *     svoju postojeću širinu, a glavni sadržaj i breadcrumb automatski
+     *     prate istu CSS varijablu.
      *
      * @returns {void}
      */
@@ -1136,8 +1169,9 @@
                         : 0;
                     const titleWidth = workspaceTreeTitleNaturalWidth(title);
 
-                    // HR: Mali dodatak pokriva razmak flexa i eventualni scrollbar.
                     // EN: A small allowance covers the flex gap and a possible scrollbar.
+                    //
+                    // HR: Mali dodatak pokriva razmak flexa i eventualni scrollbar.
                     requiredWidth = Math.max(
                         requiredWidth,
                         bodyPadding + indentation + toggleWidth + linkPadding
@@ -1157,11 +1191,11 @@
     }
 
     /**
-     * HR: Vraća lagani početni sadržaj zajedničkog modala dok se postavke
-     * odabranog čvora učitavaju sa servera.
-     *
      * EN: Returns lightweight initial content for the shared modal while the
      * selected node settings are loaded from the server.
+     *
+     * HR: Vraća lagani početni sadržaj zajedničkog modala dok se postavke
+     * odabranog čvora učitavaju sa servera.
      *
      * @param {string} message
      * @param {string} closeLabel
@@ -1186,13 +1220,13 @@
     }
 
     /**
-     * HR: Premješta sve Workspace modale iz tematskog stacking contexta pod
-     *     `body`, uz Bootstrap backdrop kojem pripadaju. Obuhvaća statičke
-     *     popise, dodavanje stavke i dinamički modal postavki čvora.
-     *
      * EN: Moves every Workspace modal out of the Theme stacking context and
      *     under `body`, beside its Bootstrap backdrop. This covers static
      *     lists, item creation, and the dynamic node-settings dialog.
+     *
+     * HR: Premješta sve Workspace modale iz tematskog stacking contexta pod
+     *     `body`, uz Bootstrap backdrop kojem pripadaju. Obuhvaća statičke
+     *     popise, dodavanje stavke i dinamički modal postavki čvora.
      *
      * @returns {void}
      */
@@ -1206,11 +1240,11 @@
     }
 
     /**
-     * HR: U jedan zajednički Bootstrap modal učitava obrazac, ograničenja i
-     * brisanje tek za čvor čiju je edit ikonu korisnik odabrao.
-     *
      * EN: Loads the form, restrictions, and delete action into one shared
      * Bootstrap modal only for the node whose edit icon the user selected.
+     *
+     * HR: U jedan zajednički Bootstrap modal učitava obrazac, ograničenja i
+     * brisanje tek za čvor čiju je edit ikonu korisnik odabrao.
      *
      * @returns {void}
      */
@@ -1221,13 +1255,13 @@
         }
 
         /*
-         * HR: Modal mora biti izravan potomak bodyja. Hero i tematski layouti
-         * mogu stvarati vlastiti stacking context pa bi lokalni modal završio
-         * ispod Bootstrap backdroppa i postao potpuno neklikabilan.
-         *
          * EN: The modal must be a direct body child. Hero and theme layouts may
          * create their own stacking contexts, leaving a nested modal below the
          * Bootstrap backdrop and therefore completely unclickable.
+         *
+         * HR: Modal mora biti izravan potomak bodyja. Hero i tematski layouti
+         * mogu stvarati vlastiti stacking context pa bi lokalni modal završio
+         * ispod Bootstrap backdroppa i postao potpuno neklikabilan.
          */
         if (modal.parentElement !== document.body) {
             document.body.append(modal);
@@ -1299,8 +1333,9 @@
     }
 
     /**
-     * HR: Osvježava poruku prazne ACL tablice nakon dodavanja ili uklanjanja subjekta.
      * EN: Refreshes the empty ACL-table message after adding or removing a subject.
+     *
+     * HR: Osvježava poruku prazne ACL tablice nakon dodavanja ili uklanjanja subjekta.
      *
      * @param {HTMLElement} section
      * @returns {void}
@@ -1314,8 +1349,9 @@
     }
 
     /**
-     * HR: Stvara malu SVG ikonu uklanjanja bez umetanja korisničkog HTML-a.
      * EN: Creates a small removal SVG icon without inserting user-provided HTML.
+     *
+     * HR: Stvara malu SVG ikonu uklanjanja bez umetanja korisničkog HTML-a.
      *
      * @returns {SVGElement}
      */
@@ -1332,10 +1368,11 @@
     }
 
     /**
-     * HR: Dodaje odabrani imenik-subjekt u odgovarajuću ACL tablicu i zadano
-     *     mu uključuje pregled. Javno dobiva isključivo pravo pregleda.
      * EN: Adds a selected directory subject to its ACL table and enables view
      *     by default. Public receives view permission only.
+     *
+     * HR: Dodaje odabrani imenik-subjekt u odgovarajuću ACL tablicu i zadano
+     *     mu uključuje pregled. Javno dobiva isključivo pravo pregleda.
      *
      * @param {HTMLFormElement} form
      * @param {Object} subject
@@ -1413,8 +1450,9 @@
     }
 
     /**
-     * HR: Sva operativna prava traže pregled, ali međusobno ostaju neovisna.
      * EN: Every operational permission requires view, while operations remain independent.
+     *
+     * HR: Sva operativna prava traže pregled, ali međusobno ostaju neovisna.
      *
      * @param {HTMLTableRowElement} row
      * @param {HTMLInputElement} changed
@@ -1441,8 +1479,9 @@
     }
 
     /**
-     * HR: Dodaje korisnika ili grupu u popis subjekata koji smiju kreirati područja.
      * EN: Adds a user or group to the subjects allowed to create workspaces.
+     *
+     * HR: Dodaje korisnika ili grupu u popis subjekata koji smiju kreirati područja.
      *
      * @param {HTMLFormElement} form
      * @param {Object} subject
@@ -1502,8 +1541,9 @@
     }
 
     /**
-     * HR: Osvježava prazno stanje tablice korisničkih ograničenja.
      * EN: Refreshes the user-restriction table's empty state.
+     *
+     * HR: Osvježava prazno stanje tablice korisničkih ograničenja.
      *
      * @param {HTMLFormElement} form
      * @returns {void}
@@ -1517,10 +1557,11 @@
     }
 
     /**
-     * HR: Dodaje korisnika s njegovim stvarno naslijeđenim pravima u tablicu
-     *     ograničenja. Zelena kvačica može se isključiti u crveno uskraćivanje.
      * EN: Adds a user with their actually inherited rights to the restriction
      *     table. A green check can be switched off into a red denial.
+     *
+     * HR: Dodaje korisnika s njegovim stvarno naslijeđenim pravima u tablicu
+     *     ograničenja. Zelena kvačica može se isključiti u crveno uskraćivanje.
      *
      * @param {HTMLFormElement} form
      * @param {Object} subject
@@ -1605,8 +1646,9 @@
     }
 
     /**
-     * HR: Održava ovisnosti prava u jednom retku ograničenja.
      * EN: Keeps permission dependencies consistent in one restriction row.
+     *
+     * HR: Održava ovisnosti prava u jednom retku ograničenja.
      *
      * @param {HTMLTableRowElement} row
      * @param {HTMLInputElement} changed
@@ -1641,8 +1683,9 @@
     }
 
     /**
-     * HR: Osvježava prazno stanje tablice izravnih korisničkih prava.
      * EN: Refreshes the direct-user-grant table's empty state.
+     *
+     * HR: Osvježava prazno stanje tablice izravnih korisničkih prava.
      *
      * @param {HTMLFormElement} form
      * @returns {void}
@@ -1656,8 +1699,9 @@
     }
 
     /**
-     * HR: Dodaje aktivnog korisnika u tablicu izravnih prava i zadano uključuje čitanje.
      * EN: Adds an active user to the direct-grant table and enables reading by default.
+     *
+     * HR: Dodaje aktivnog korisnika u tablicu izravnih prava i zadano uključuje čitanje.
      *
      * @param {HTMLFormElement} form
      * @param {Object} subject
@@ -1723,8 +1767,9 @@
     }
 
     /**
-     * HR: Zatvara jedan popis rezultata i vraća ispravno ARIA stanje comboboxa.
      * EN: Closes one result list and restores the correct combobox ARIA state.
+     *
+     * HR: Zatvara jedan popis rezultata i vraća ispravno ARIA stanje comboboxa.
      *
      * @param {HTMLInputElement} input
      * @param {HTMLElement} results
@@ -1736,8 +1781,9 @@
     }
 
     /**
-     * HR: Ispisuje dohvaćene rezultate kao tipkovnicom dostupne gumbe odabira.
      * EN: Renders fetched results as keyboard-accessible selection buttons.
+     *
+     * HR: Ispisuje dohvaćene rezultate kao tipkovnicom dostupne gumbe odabira.
      *
      * @param {HTMLElement} picker
      * @param {HTMLInputElement} input
@@ -1830,10 +1876,11 @@
     }
 
     /**
-     * HR: Dohvaća ograničene rezultate imenika uz prekid prethodnog upita i
-     *     zaštitu od odgovora koji stigne nakon novijeg unosa.
      * EN: Fetches bounded directory results while cancelling the previous
      *     request and preventing stale responses from replacing newer input.
+     *
+     * HR: Dohvaća ograničene rezultate imenika uz prekid prethodnog upita i
+     *     zaštitu od odgovora koji stigne nakon novijeg unosa.
      *
      * @param {HTMLElement} picker
      * @param {HTMLInputElement} input
@@ -1902,8 +1949,9 @@
     }
 
     /**
-     * HR: Povezuje imenik picker s odgođenom serverskom pretragom.
      * EN: Connects a directory picker to debounced server-side search.
+     *
+     * HR: Povezuje imenik picker s odgođenom serverskom pretragom.
      *
      * @param {HTMLElement} picker
      * @returns {void}
@@ -1957,8 +2005,9 @@
     }
 
     /**
-     * HR: Povezuje uklanjanje ACL redaka i sve asinkrone pickere na stranici.
      * EN: Connects ACL-row removal and every asynchronous picker on the page.
+     *
+     * HR: Povezuje uklanjanje ACL redaka i sve asinkrone pickere na stranici.
      *
      * @param {ParentNode} [root=document]
      * @returns {void}
@@ -2129,8 +2178,9 @@
     }
 
     /**
-     * HR: Ujednačava tekst za lokalno filtriranje pretraživih odabira.
      * EN: Normalizes text for local filtering in searchable pickers.
+     *
+     * HR: Ujednačava tekst za lokalno filtriranje pretraživih odabira.
      *
      * @param {string} value
      * @returns {string}
@@ -2143,8 +2193,9 @@
     }
 
     /**
-     * HR: Zatvara pretraživi odabir i po potrebi vraća fokus na njegov gumb.
      * EN: Closes a searchable picker and optionally restores focus to its toggle.
+     *
+     * HR: Zatvara pretraživi odabir i po potrebi vraća fokus na njegov gumb.
      *
      * @param {HTMLElement} picker
      * @param {boolean} [restoreFocus=false]
@@ -2165,8 +2216,9 @@
     }
 
     /**
-     * HR: Filtrira trenutno popunjene opcije područja ili stranica.
      * EN: Filters the currently populated Workspace or page choices.
+     *
+     * HR: Filtrira trenutno popunjene opcije područja ili stranica.
      *
      * @param {HTMLElement} picker
      * @param {string} query
@@ -2200,8 +2252,9 @@
     }
 
     /**
-     * HR: Jednom povezuje otvaranje, filtriranje i tipkovničko upravljanje pickerom.
      * EN: Wires picker opening, filtering, and keyboard control once.
+     *
+     * HR: Jednom povezuje otvaranje, filtriranje i tipkovničko upravljanje pickerom.
      *
      * @param {HTMLElement} picker
      * @returns {void}
@@ -2294,8 +2347,9 @@
     }
 
     /**
-     * HR: Popunjava picker samo opcijama dopuštenima u trenutačnom kontekstu.
      * EN: Populates a picker only with choices allowed in the current context.
+     *
+     * HR: Popunjava picker samo opcijama dopuštenima u trenutačnom kontekstu.
      *
      * @param {HTMLElement} picker
      * @param {{value:string,label:string}[]} choices
@@ -2363,8 +2417,9 @@
     }
 
     /**
-     * HR: Povezuje područje i stranicu bez promjene postojećeg spremljenog cilja.
      * EN: Connects Workspace and page pickers without changing the stored target format.
+     *
+     * HR: Povezuje područje i stranicu bez promjene postojećeg spremljenog cilja.
      *
      * @param {HTMLElement} selector
      * @returns {void}
@@ -2527,8 +2582,9 @@
     }
 
     /**
-     * HR: Inicijalizira sve administratorske dvostupanjske odabire naslovnice.
      * EN: Initializes every administrator two-step homepage selector.
+     *
+     * HR: Inicijalizira sve administratorske dvostupanjske odabire naslovnice.
      *
      * @returns {void}
      */
@@ -2541,8 +2597,9 @@
     }
 
     /**
-     * HR: Prikazuje postavke stabla i opcija samo kada je cilj naslovnice Shorts.
      * EN: Shows tree and display settings only when the homepage target is Shorts.
+     *
+     * HR: Prikazuje postavke stabla i opcija samo kada je cilj naslovnice Shorts.
      *
      * @returns {void}
      */
@@ -2574,11 +2631,11 @@
     }
 
     /**
-     * HR: Pretvara stablo stranica u pristupačan lijevi panel na mobilnom
-     * prikazu, dok postojeći sklopivi desktop stupac ostaje nepromijenjen.
-     *
      * EN: Turns the page tree into an accessible left drawer on mobile while
      * leaving the existing collapsible desktop column unchanged.
+     *
+     * HR: Pretvara stablo stranica u pristupačan lijevi panel na mobilnom
+     * prikazu, dok postojeći sklopivi desktop stupac ostaje nepromijenjen.
      *
      * @returns {void}
      */
@@ -2597,10 +2654,11 @@
         let returnFocus = null;
 
         /**
-         * HR: Premješta mobilni panel pod body kako transformirana tema ne bi
-         *     promijenila koordinatni sustav fiksnog elementa.
          * EN: Portals the mobile panel under body so a transformed theme cannot
          *     change the fixed element's coordinate system.
+         *
+         * HR: Premješta mobilni panel pod body kako transformirana tema ne bi
+         *     promijenila koordinatni sustav fiksnog elementa.
          *
          * @returns {void}
          */
@@ -2626,8 +2684,9 @@
         };
 
         /**
-         * HR: Sinkronizira fokus, inert stanje, pozadinu i opis svih gumba.
          * EN: Synchronizes focus, inert state, backdrop, and every button label.
+         *
+         * HR: Sinkronizira fokus, inert stanje, pozadinu i opis svih gumba.
          *
          * @param {boolean} open
          * @returns {void}
@@ -2682,8 +2741,9 @@
         });
 
         /*
-         * HR: Presreće postojeće Bootstrap collapse gumbe samo na mobitelu.
          * EN: Intercepts existing Bootstrap collapse buttons on mobile only.
+         *
+         * HR: Presreće postojeće Bootstrap collapse gumbe samo na mobitelu.
          */
         document.addEventListener('click', (event) => {
             const target = event.target instanceof Element
@@ -2714,13 +2774,13 @@
     }
 
     /**
-     * HR: Drži backlinkove u istom Bootstrap stupcu kao glavni Editorov sadržaj.
-     *     Kada se sadržaj stranice sakrije, oba se bloka zajedno šire na punu
-     *     raspoloživu širinu, uključujući rasporede sa stablom ili posebnim menijem.
-     *
      * EN: Keeps backlinks in the same Bootstrap column as the main Editor content.
      *     When the table of contents is hidden, both blocks expand together to the
      *     full available width, including layouts with a tree or a custom menu.
+     *
+     * HR: Drži backlinkove u istom Bootstrap stupcu kao glavni Editorov sadržaj.
+     *     Kada se sadržaj stranice sakrije, oba se bloka zajedno šire na punu
+     *     raspoloživu širinu, uključujući rasporede sa stablom ili posebnim menijem.
      *
      * @returns {void}
      */
@@ -2734,8 +2794,9 @@
         const mobileQuery = window.matchMedia('(max-width: 991.98px)');
 
         /**
-         * HR: Vraća stvarno desktop stanje stupca sadržaja.
          * EN: Returns the actual desktop state of the table-of-contents column.
+         *
+         * HR: Vraća stvarno desktop stanje stupca sadržaja.
          *
          * @returns {boolean}
          */
@@ -2744,8 +2805,9 @@
             && !tocColumn.hidden;
 
         /**
-         * HR: Primjenjuje identičnu širinu koju Editor koristi za dokument.
          * EN: Applies the same width used by the Editor document column.
+         *
+         * HR: Primjenjuje identičnu širinu koju Editor koristi za dokument.
          *
          * @param {boolean} visible Je li desktop sadržaj prikazan. / Whether the desktop outline is visible.
          * @returns {void}
@@ -2773,8 +2835,9 @@
     }
 
     /**
-     * HR: Inicijalizira sve Workspace kontrole nakon što je DOM spreman.
      * EN: Initializes every Workspace control after the DOM is ready.
+     *
+     * HR: Inicijalizira sve Workspace kontrole nakon što je DOM spreman.
      *
      * @returns {void}
      */
@@ -2798,8 +2861,9 @@
     }
 
     /**
-     * HR: Trajno brisanje vodi u kratkim nastavivim zahtjevima umjesto jednog velikog zahtjeva.
      * EN: Runs permanent deletion as short resumable requests instead of one large request.
+     *
+     * HR: Trajno brisanje vodi u kratkim nastavivim zahtjevima umjesto jednog velikog zahtjeva.
      */
     function initializeWorkspacePurge() {
         document.querySelectorAll('[data-workspace-purge-form]').forEach((form) => {
@@ -2855,8 +2919,9 @@
                         }
                     }
                 } catch (error) {
-                    // HR: Prekid ne gubi već dovršene serije; isti obrazac nastavlja ostatak.
                     // EN: An interruption does not lose completed batches; the same form resumes the rest.
+                    //
+                    // HR: Prekid ne gubi već dovršene serije; isti obrazac nastavlja ostatak.
                     if (status) {
                         status.textContent = error instanceof Error ? error.message : String(error);
                         status.classList.add('text-danger');
@@ -2869,8 +2934,9 @@
     }
 
     /**
-     * HR: Inicijalizira udaljene birače koji vraćaju najviše 25 rezultata po zahtjevu.
      * EN: Initializes remote pickers that return at most 25 results per request.
+     *
+     * HR: Inicijalizira udaljene birače koji vraćaju najviše 25 rezultata po zahtjevu.
      */
     function initializeLookupPickers(root = document) {
         root.querySelectorAll('[data-workspace-lookup-picker]').forEach((picker) => {
@@ -3062,8 +3128,9 @@
                 if (window.bootstrap?.Dropdown) {
                     window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
                 }
-                // HR: Odabrani gumb nestaje s popisom; fokus se vraća na pokretač.
                 // EN: The selected button disappears with the popup; focus returns to its trigger.
+                //
+                // HR: Odabrani gumb nestaje s popisom; fokus se vraća na pokretač.
                 toggle.focus();
             });
 

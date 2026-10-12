@@ -10,10 +10,11 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * HR: Odgađa obavijesti izvedenim indeksima tijekom skupnih promjena i šalje
- *     samo jednu objedinjenu obavijest za svako promijenjeno područje.
  * EN: Defers derived-index notifications during bulk mutations and emits only
  *     one consolidated notification for each changed Workspace.
+ *
+ * HR: Odgađa obavijesti izvedenim indeksima tijekom skupnih promjena i šalje
+ *     samo jednu objedinjenu obavijest za svako promijenjeno područje.
  */
 final class WorkspaceContentChangeBatch
 {
@@ -22,7 +23,11 @@ final class WorkspaceContentChangeBatch
     /** @var array<int, array{workspace_id:int,actor_user_id:?int}> */
     private array $pending = [];
 
-    /** HR: Prima zajednički dispatcher i tehnički logger. EN: Receives the shared dispatcher and technical logger. */
+    /**
+     * EN: Receives the shared dispatcher and technical logger.
+     *
+     * HR: Prima zajednički dispatcher i tehnički logger.
+     */
     public function __construct(
         private readonly EventDispatcherInterface $events,
         private readonly ?LoggerInterface $logger = null,
@@ -30,10 +35,11 @@ final class WorkspaceContentChangeBatch
     }
 
     /**
-     * HR: Izvodi skupnu operaciju i u finally bloku osvježava izvedene podatke,
-     *     čak i kada je izvorni upis djelomično uspio prije iznimke.
      * EN: Runs a bulk operation and refreshes derived data in a finally block,
      *     even when source writes partially succeeded before an exception.
+     *
+     * HR: Izvodi skupnu operaciju i u finally bloku osvježava izvedene podatke,
+     *     čak i kada je izvorni upis djelomično uspio prije iznimke.
      *
      * @template TResult
      * @param callable():TResult $operation
@@ -54,9 +60,6 @@ final class WorkspaceContentChangeBatch
     }
 
     /**
-     * HR: Izvodi jedan nastavivi dio velike operacije bez osvježavanja
-     *     izvedenih indeksa. U slučaju pogreške ipak ih osvježava kako
-     *     djelomično spremljen sadržaj ne bi ostao neusklađen.
      * EN: Runs one resumable part of a large operation without refreshing
      *     derived indexes. On failure it still refreshes them so partially
      *     persisted content does not remain inconsistent.
@@ -64,6 +67,10 @@ final class WorkspaceContentChangeBatch
      * Pozivatelj mora nakon svih uspješnih dijelova pokrenuti run() s barem
      * jednom promjenom sadržaja. / After all successful parts, the caller must
      * run run() with at least one content change.
+     *
+     * HR: Izvodi jedan nastavivi dio velike operacije bez osvježavanja
+     *     izvedenih indeksa. U slučaju pogreške ipak ih osvježava kako
+     *     djelomično spremljen sadržaj ne bi ostao neusklađen.
      *
      * @template TResult
      * @param callable():TResult $operation
@@ -92,8 +99,9 @@ final class WorkspaceContentChangeBatch
     }
 
     /**
-     * HR: Odmah šalje običnu promjenu ili je pamti dok traje skupna operacija.
      * EN: Dispatches an ordinary change immediately or remembers it during a bulk operation.
+     *
+     * HR: Odmah šalje običnu promjenu ili je pamti dok traje skupna operacija.
      */
     public function publish(WorkspaceContentChanged $event): void
     {
@@ -114,7 +122,11 @@ final class WorkspaceContentChangeBatch
         $this->pending[$event->workspaceId] = $pending;
     }
 
-    /** HR: Šalje po jednu završnu obavijest za sva promijenjena područja. EN: Emits one final notification for every changed Workspace. */
+    /**
+     * EN: Emits one final notification for every changed Workspace.
+     *
+     * HR: Šalje po jednu završnu obavijest za sva promijenjena područja.
+     */
     private function flush(): void
     {
         $pending = $this->pending;
@@ -130,7 +142,11 @@ final class WorkspaceContentChangeBatch
         }
     }
 
-    /** HR: Kvar opcionalnog izvedenog indeksa ne poništava izvorni sadržaj. EN: An optional derived-index failure does not undo source content. */
+    /**
+     * EN: An optional derived-index failure does not undo source content.
+     *
+     * HR: Kvar opcionalnog izvedenog indeksa ne poništava izvorni sadržaj.
+     */
     private function dispatch(WorkspaceContentChanged $event): void
     {
         try {

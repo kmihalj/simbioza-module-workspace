@@ -14,10 +14,11 @@ use function is_string;
 use function method_exists;
 
 /**
- * HR: Izolira opcionalnu integraciju s održavanjem HTML Editora. Workspace ne
- *     poznaje editorove tablice ni datotečne putanje.
  * EN: Isolates optional HTML Editor maintenance integration. Workspace does
  *     not know the editor's tables or filesystem paths.
+ *
+ * HR: Izolira opcionalnu integraciju s održavanjem HTML Editora. Workspace ne
+ *     poznaje editorove tablice ni datotečne putanje.
  */
 final readonly class WorkspaceMaintenanceBridge
 {
@@ -29,14 +30,19 @@ final readonly class WorkspaceMaintenanceBridge
     private const IMAGE_OPTIMIZATION_SERVICE
     = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorImageOptimizationService';
 
-    /** HR: Prima spremnik za opcionalno razrješavanje Editor servisa. EN: Receives the container for optional Editor-service resolution. */
+    /**
+     * EN: Receives the container for optional Editor-service resolution.
+     *
+     * HR: Prima spremnik za opcionalno razrješavanje Editor servisa.
+     */
     public function __construct(private ContainerInterface $container)
     {
     }
 
     /**
-     * HR: Dohvaća skupne statistike uz dodatnu zaštitu verzija koje koristi Workspace workflow.
      * EN: Retrieves bulk statistics while protecting versions used by the Workspace workflow.
+     *
+     * HR: Dohvaća skupne statistike uz dodatnu zaštitu verzija koje koristi Workspace workflow.
      *
      * @param array<string, list<string>|null> $scopes
      * @param array<string, array<string, array<string, list<int>>>> $protectedVersionsByScope
@@ -58,8 +64,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Delegira nepovratno čišćenje vlasniku editorovih podataka i datoteka.
      * EN: Delegates irreversible cleanup to the owner of editor data and files.
+     *
+     * HR: Delegira nepovratno čišćenje vlasniku editorovih podataka i datoteka.
      *
      * @param list<string>|null $documentKeys
      * @param array<string, array<string, list<int>>> $protectedVersions
@@ -88,8 +95,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Nepovratno uklanja točno zadane dokumente preko javne Editor metode.
      * EN: Irreversibly removes exactly the supplied documents through the public Editor method.
+     *
+     * HR: Nepovratno uklanja točno zadane dokumente preko javne Editor metode.
      *
      * @param list<string> $documentKeys
      * @return array<string, mixed>
@@ -116,8 +124,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Opcionalnom Editoru delegira samo jednu ograničenu seriju trajnog brisanja.
      * EN: Delegates only one bounded permanent-deletion batch to the optional Editor.
+     *
+     * HR: Opcionalnom Editoru delegira samo jednu ograničenu seriju trajnog brisanja.
      *
      * @param list<string> $documentKeys
      * @return array<string, mixed>
@@ -138,8 +147,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Dohvaća mali sažetak ukupnog rada za napredak trajnog brisanja.
      * EN: Retrieves a compact total-work estimate for permanent deletion progress.
+     *
+     * HR: Dohvaća mali sažetak ukupnog rada za napredak trajnog brisanja.
      *
      * @param list<string> $documentKeys
      * @return array<string, mixed>
@@ -160,10 +170,11 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Izrađuje nedostajuće web-varijante svih postojećih slika bez
-     *     mijenjanja ili uklanjanja izvornih datoteka.
      * EN: Creates missing web variants for all existing images without
      *     changing or removing the source files.
+     *
+     * HR: Izrađuje nedostajuće web-varijante svih postojećih slika bez
+     *     mijenjanja ili uklanjanja izvornih datoteka.
      *
      * @return array{documents: int, generated: int, skipped: int}|array{}
      */
@@ -191,7 +202,10 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Pokreće nastavivi posao optimizacije. EN: Starts the resumable optimization job.
+     * EN: Starts the resumable optimization job.
+     *
+     * HR: Pokreće nastavivi posao optimizacije.
+     *
      * @return array<string, mixed>
      */
     public function startImageOptimization(): array
@@ -200,7 +214,10 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Vraća napredak posla optimizacije. EN: Returns optimization job progress.
+     * EN: Returns optimization job progress.
+     *
+     * HR: Vraća napredak posla optimizacije.
+     *
      * @return array<string, mixed>
      */
     public function imageOptimizationStatus(): array
@@ -209,7 +226,10 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Obrađuje jednu ograničenu seriju slika. EN: Processes one bounded image batch.
+     * EN: Processes one bounded image batch.
+     *
+     * HR: Obrađuje jednu ograničenu seriju slika.
+     *
      * @return array<string, mixed>
      */
     public function stepImageOptimization(int $limit): array
@@ -218,7 +238,10 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Sigurno poziva opcionalni servis posla optimizacije. EN: Safely calls the optional optimization-job service.
+     * EN: Safely calls the optional optimization-job service.
+     *
+     * HR: Sigurno poziva opcionalni servis posla optimizacije.
+     *
      * @return array<string, mixed>
      */
     private function imageOptimizationCall(string $method, ?int $limit = null): array
@@ -238,8 +261,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Normalizira dinamički rezultat opcionalnog servisa u strogi statistički oblik.
      * EN: Normalizes an optional service's dynamic result into a strict statistics shape.
+     *
+     * HR: Normalizira dinamički rezultat opcionalnog servisa u strogi statistički oblik.
      *
      * @param array<mixed> $statistics
      * @return array<string, array<string, int>>
@@ -270,8 +294,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Zadržava samo tekstualne ključeve dinamičkog rezultata čišćenja.
      * EN: Keeps only string keys from the dynamic cleanup result.
+     *
+     * HR: Zadržava samo tekstualne ključeve dinamičkog rezultata čišćenja.
      *
      * @param array<mixed> $values
      * @return array<string, mixed>
@@ -289,8 +314,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Opcionalno dohvaća Editorov servis bez stvaranja čvrste ovisnosti modula.
      * EN: Optionally resolves the Editor service without creating a hard module dependency.
+     *
+     * HR: Opcionalno dohvaća Editorov servis bez stvaranja čvrste ovisnosti modula.
      */
     private function service(): ?object
     {
@@ -298,8 +324,9 @@ final readonly class WorkspaceMaintenanceBridge
     }
 
     /**
-     * HR: Sigurno razrješava opcionalni servis po nazivu klase.
      * EN: Safely resolves an optional service by its class name.
+     *
+     * HR: Sigurno razrješava opcionalni servis po nazivu klase.
      */
     private function optionalService(string $serviceClass): ?object
     {

@@ -1,5 +1,9 @@
 
 parameters:
+	scanFiles:
+		- tests/Fixtures/MenuOwnerContract.php
+		- tests/Fixtures/MenuWorkspaceOwnerContract.php
+		- tests/Fixtures/OptionalMenuRepository.php
 	level: 10
 	paths:
 		- src

@@ -13,12 +13,17 @@ use function rtrim;
 use function trim;
 
 /**
- * HR: Gradi ACL-sigurnu navigacijsku putanju iz već filtriranog stabla.
  * EN: Builds an ACL-safe breadcrumb trail from the already filtered tree.
+ *
+ * HR: Gradi ACL-sigurnu navigacijsku putanju iz već filtriranog stabla.
  */
 final readonly class WorkspaceBreadcrumbService
 {
-    /** HR: Prima repozitorij, konfiguraciju i generator URL-ova. EN: Receives the repository, config, and URL generator. */
+    /**
+     * EN: Receives the repository, config, and URL generator.
+     *
+     * HR: Prima repozitorij, konfiguraciju i generator URL-ova.
+     */
     public function __construct(
         private WorkspaceRepository $repository,
         private WorkspaceConfig $config,
@@ -27,13 +32,17 @@ final readonly class WorkspaceBreadcrumbService
     }
 
     /**
-     * HR: Vraća Početnu, popis područja, područje i vidljive pretke do trenutačne stranice.
      * EN: Returns Home, the Workspace list, the Workspace, and visible ancestors through the current page.
+     *
+     * Keeps the Workspace as a link.
+     *
+     * HR: Vraća Početnu, popis područja, područje i vidljive pretke do trenutačne stranice.
+     *
+     * Zadržava područje kao poveznicu.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $activeNode
      * @param list<array<string,mixed>> $visibleTree
-     * @param bool $linkWorkspace HR: Zadržava područje kao poveznicu. EN: Keeps the Workspace as a link.
      * @return list<array{label:string,href:string,current:bool,icon?:string}>
      */
     public function build(
@@ -111,8 +120,9 @@ final readonly class WorkspaceBreadcrumbService
     }
 
     /**
-     * HR: Rekurzivno indeksira samo čvorove koje je ACL servis već dopustio.
      * EN: Recursively indexes only nodes already allowed by the ACL service.
+     *
+     * HR: Rekurzivno indeksira samo čvorove koje je ACL servis već dopustio.
      *
      * @param list<array<string,mixed>> $tree
      * @param array<int,array<string,mixed>> $indexed
@@ -132,7 +142,11 @@ final readonly class WorkspaceBreadcrumbService
         }
     }
 
-    /** HR: Vraća početnu putanju aplikacije. EN: Returns the application home path. */
+    /**
+     * EN: Returns the application home path.
+     *
+     * HR: Vraća početnu putanju aplikacije.
+     */
     private function homePath(): string
     {
         if ($this->urlGenerator->namedRouteExists('home')) {
@@ -142,7 +156,11 @@ final readonly class WorkspaceBreadcrumbService
         return rtrim($this->urlGenerator->getBasePath(), '/') . '/';
     }
 
-    /** HR: Vraća lokaliziranu putanju popisa područja. EN: Returns the localized Workspace-list path. */
+    /**
+     * EN: Returns the localized Workspace-list path.
+     *
+     * HR: Vraća lokaliziranu putanju popisa područja.
+     */
     private function workspacesPath(string $language): string
     {
         if ($this->urlGenerator->namedRouteExists('workspace.index')) {
@@ -154,7 +172,11 @@ final readonly class WorkspaceBreadcrumbService
         . 's?lang=' . rawurlencode($language);
     }
 
-    /** HR: Vraća lokaliziranu putanju područja. EN: Returns the localized Workspace path. */
+    /**
+     * EN: Returns the localized Workspace path.
+     *
+     * HR: Vraća lokaliziranu putanju područja.
+     */
     private function workspacePath(string $workspaceSlug, string $language): string
     {
         if ($this->urlGenerator->namedRouteExists('workspace.show')) {
@@ -171,7 +193,11 @@ final readonly class WorkspaceBreadcrumbService
         . '?lang=' . rawurlencode($language);
     }
 
-    /** HR: Vraća lokaliziranu putanju stranice. EN: Returns the localized page path. */
+    /**
+     * EN: Returns the localized page path.
+     *
+     * HR: Vraća lokaliziranu putanju stranice.
+     */
     private function nodePath(string $workspaceSlug, string $nodeSlug, string $language): string
     {
         if ($this->urlGenerator->namedRouteExists('workspace.node.show')) {

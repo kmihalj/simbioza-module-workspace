@@ -52,8 +52,9 @@ use function trim;
 final readonly class WorkspaceController
 {
     /**
-     * HR: Inicijalizira korisničke stranice, stablo, ACL akcije i editor most.
      * EN: Initializes user pages, tree operations, ACL actions, and the editor bridge.
+     *
+     * HR: Inicijalizira korisničke stranice, stablo, ACL akcije i editor most.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -79,8 +80,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Prikazuje javna i korisniku dodijeljena područja.
      * EN: Displays public workspaces and workspaces assigned to the current user.
+     *
+     * HR: Prikazuje javna i korisniku dodijeljena područja.
      */
     public function index(ServerRequestInterface $request): ResponseInterface
     {
@@ -118,8 +120,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Prikazuje početnu stranicu područja ili pregled kada stablo nema početnu stranicu.
      * EN: Displays the workspace homepage or an overview when the tree has no homepage.
+     *
+     * HR: Prikazuje početnu stranicu područja ili pregled kada stablo nema početnu stranicu.
      */
     public function show(ServerRequestInterface $request, string $workspaceSlug): ResponseInterface
     {
@@ -159,8 +162,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Prikazuje odabranu stranicu ili slijedi link čvor nakon ACL provjere.
      * EN: Displays a selected page or follows a link node after an ACL check.
+     *
+     * HR: Prikazuje odabranu stranicu ili slijedi link čvor nakon ACL provjere.
      */
     public function showNode(
         ServerRequestInterface $request,
@@ -213,10 +217,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Prikazuje podatke područja, članstva i ACL prema efektivnim pravima.
-     *     Stablo se uređuje izravno u lijevom panelu otvorenog područja.
      * EN: Displays Workspace data, membership, and ACL according to effective
      *     permissions. The tree is edited directly in the open Workspace sidebar.
+     *
+     * HR: Prikazuje podatke područja, članstva i ACL prema efektivnim pravima.
+     *     Stablo se uređuje izravno u lijevom panelu otvorenog područja.
      */
     public function manage(ServerRequestInterface $request): ResponseInterface
     {
@@ -321,8 +326,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Kreira ili mijenja područje nakon provjere prava upravljanja.
      * EN: Creates or updates a workspace after checking manage permission.
+     *
+     * HR: Kreira ili mijenja područje nakon provjere prava upravljanja.
      */
     public function saveWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -365,8 +371,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Soft-briše područje kada korisnik ima manage pravo.
      * EN: Soft-deletes a workspace when the user has manage permission.
+     *
+     * HR: Soft-briše područje kada korisnik ima manage pravo.
      */
     public function deleteWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -385,8 +392,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Administrator vraća soft-obrisano područje uz automatsko rješavanje slug konflikta.
      * EN: An administrator restores a soft-deleted workspace with automatic slug conflict resolution.
+     *
+     * HR: Administrator vraća soft-obrisano područje uz automatsko rješavanje slug konflikta.
      */
     public function restoreWorkspace(ServerRequestInterface $request): ResponseInterface
     {
@@ -422,8 +430,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema korisnička i grupna prava područja.
      * EN: Saves user and group workspace permissions.
+     *
+     * HR: Sprema korisnička i grupna prava područja.
      */
     public function saveWorkspaceAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -444,10 +453,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća najviše mali broj korisnika ili grupa koji odgovaraju upitu
-     *     ACL ili administracijskog pickera. Rezultat nikada ne izlaže cijeli Auth imenik.
      * EN: Returns a small bounded set of users or groups matching an ACL or administration
      *     picker query. The endpoint never exposes the complete Auth directory.
+     *
+     * HR: Vraća najviše mali broj korisnika ili grupa koji odgovaraju upitu
+     *     ACL ili administracijskog pickera. Rezultat nikada ne izlaže cijeli Auth imenik.
      */
     public function searchAclSubjects(ServerRequestInterface $request): ResponseInterface
     {
@@ -557,13 +567,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Iz otvorenog područja kreira običnu stranicu, povezuje novi HTML
-     * dokument i odmah vodi korisnika u editor. Prva stranica automatski postaje
-     * početna kako prazno područje ne bi zahtijevalo dodatno administriranje.
-     *
      * EN: Creates a regular page from an open Workspace, links a new HTML
      * document, and immediately opens the editor. The first page automatically
      * becomes the homepage so an empty Workspace needs no extra administration.
+     *
+     * HR: Iz otvorenog područja kreira običnu stranicu, povezuje novi HTML
+     * dokument i odmah vodi korisnika u editor. Prva stranica automatski postaje
+     * početna kako prazno područje ne bi zahtijevalo dodatno administriranje.
      */
     public function createPage(ServerRequestInterface $request): ResponseInterface
     {
@@ -615,6 +625,7 @@ final readonly class WorkspaceController
                 ],
                 $this->currentUserId(),
             );
+            $this->editor->organizeDocumentPayloads($documentKey);
             $latestVersion = $this->editor->latestVersionNumber($documentKey, $language);
             if ($latestVersion > 0) {
                 $this->editor->markVersionDraft($documentKey, $language, $latestVersion);
@@ -653,13 +664,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Učitava sadržaj zajedničkog modala za uređivanje jednog čvora tek
-     * nakon klika u stablu. Time veliko stablo ne renderira desetke skrivenih
-     * obrazaca, a svaka akcija i dalje prolazi isti serverski ACL.
-     *
      * EN: Loads the shared edit-modal content for one node only after a tree
      * click. This keeps large trees from rendering dozens of hidden forms while
      * every action still passes through the same server-side ACL.
+     *
+     * HR: Učitava sadržaj zajedničkog modala za uređivanje jednog čvora tek
+     * nakon klika u stablu. Time veliko stablo ne renderira desetke skrivenih
+     * obrazaca, a svaka akcija i dalje prolazi isti serverski ACL.
      */
     public function nodeDialog(ServerRequestInterface $request): ResponseInterface
     {
@@ -807,13 +818,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Učitava organizator cijelog stabla tek kada ga upravitelj otvori.
-     *     Velika područja tako ne šalju stotine skrivenih redaka i ikona pri
-     *     svakom običnom pregledu stranice.
-     *
      * EN: Loads the full tree organizer only when a manager opens it. Large
      *     workspaces therefore do not send hundreds of hidden rows and icons
      *     with every regular page view.
+     *
+     * HR: Učitava organizator cijelog stabla tek kada ga upravitelj otvori.
+     *     Velika područja tako ne šalju stotine skrivenih redaka i ikona pri
+     *     svakom običnom pregledu stranice.
      */
     public function treeOrganizer(ServerRequestInterface $request): ResponseInterface
     {
@@ -890,10 +901,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Obrazac za novu stavku učitava tek nakon klika. Popis Editor
-     *     dokumenata zato više ne usporava samo otvaranje velikog organizatora.
      * EN: Loads the new-item form only after a click. The Editor document list
      *     therefore no longer slows down opening a large organizer by itself.
+     *
+     * HR: Obrazac za novu stavku učitava tek nakon klika. Popis Editor
+     *     dokumenata zato više ne usporava samo otvaranje velikog organizatora.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $query
@@ -969,14 +981,14 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Učitava jednu ACL-filtriranu granu čitljivog stabla na zahtjev.
-     *     Velika područja zato pri svakom pregledu ne šalju cijelo skriveno
-     *     stablo, dok aktivna grana i spremljene otvorene grane ostaju dostupne.
-     *
      * EN: Loads one ACL-filtered readable-tree branch on demand. Large
      *     Workspaces therefore do not send the complete hidden tree with every
      *     page view while the active and remembered expanded branches remain
      *     available.
+     *
+     * HR: Učitava jednu ACL-filtriranu granu čitljivog stabla na zahtjev.
+     *     Velika područja zato pri svakom pregledu ne šalju cijelo skriveno
+     *     stablo, dok aktivna grana i spremljene otvorene grane ostaju dostupne.
      */
     public function treeBranch(ServerRequestInterface $request): ResponseInterface
     {
@@ -1023,10 +1035,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Kreira novu stavku uz pravo dodavanja, a postojeće strukturne podatke
-     *     mijenja samo upravitelj koji smije vidjeti ciljnu stranicu.
      * EN: Creates a new item with add permission, while existing structural data
      *     may be changed only by a manager who can view the target page.
+     *
+     * HR: Kreira novu stavku uz pravo dodavanja, a postojeće strukturne podatke
+     *     mijenja samo upravitelj koji smije vidjeti ciljnu stranicu.
      */
     public function saveNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -1102,10 +1115,11 @@ final readonly class WorkspaceController
             $createdDocument = false;
 
             /*
-             * HR: Obični urednik smije kreirati novi dokument ili zadržati dokument svojeg čvora.
-             *     Povezivanje drugog postojećeg dokumenta ostaje administratorska operacija.
              * EN: A regular editor may create a new document or keep their node's current document.
              *     Attaching a different existing document remains an administrator operation.
+             *
+             * HR: Obični urednik smije kreirati novi dokument ili zadržati dokument svojeg čvora.
+             *     Povezivanje drugog postojećeg dokumenta ostaje administratorska operacija.
              */
             if (
                 !$this->access->isAdministrator()
@@ -1150,6 +1164,7 @@ final readonly class WorkspaceController
             }
 
             $savedDocumentKey = $this->stringValue($savedNode['document_key'] ?? '');
+            $this->editor->organizeDocumentPayloads($savedDocumentKey);
             if ($createdDocument && $savedDocumentKey !== '') {
                 $latestVersion = $this->editor->latestVersionNumber($savedDocumentKey, $language);
                 if ($latestVersion > 0) {
@@ -1185,8 +1200,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pretvara retke korisničke forme u strukturirana svojstva stranice.
      * EN: Converts user-form rows into structured page properties.
+     *
+     * HR: Pretvara retke korisničke forme u strukturirana svojstva stranice.
      *
      * @return list<array<string,mixed>>
      */
@@ -1221,12 +1237,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema kompletan vizualno uređeni raspored stabla korisniku koji
-     *     ima pravo upravljanja područjem. Ograničenja pojedinih stranica
-     *     i dalje mogu zaštititi njihov sadržaj, ali upravitelju ne dijele stablo.
      * EN: Saves the complete visually edited tree arrangement for a user with
      *     Workspace management permission. Per-page restrictions may still
      *     protect page content, but do not split the tree for a manager.
+     *
+     * HR: Sprema kompletan vizualno uređeni raspored stabla korisniku koji
+     *     ima pravo upravljanja područjem. Ograničenja pojedinih stranica
+     *     i dalje mogu zaštititi njihov sadržaj, ali upravitelju ne dijele stablo.
      */
     public function saveTreeOrder(ServerRequestInterface $request): ResponseInterface
     {
@@ -1243,8 +1260,9 @@ final readonly class WorkspaceController
         try {
             $placements = WorkspaceValue::rows($body['items'] ?? null);
             foreach ($placements as &$placement) {
-                // HR: Neoznačen HTML checkbox nije prisutan u POST tijelu.
                 // EN: An unchecked HTML checkbox is absent from the POST body.
+                //
+                // HR: Neoznačen HTML checkbox nije prisutan u POST tijelu.
                 $placement['is_tree_hidden'] = (bool)($placement['is_tree_hidden'] ?? false);
             }
 
@@ -1272,8 +1290,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Briše cijelu podgranu tek kada korisnik ima delete pravo na svaki čvor.
      * EN: Deletes a complete subtree only when the user has delete permission on every node.
+     *
+     * HR: Briše cijelu podgranu tek kada korisnik ima delete pravo na svaki čvor.
      */
     public function deleteNode(ServerRequestInterface $request): ResponseInterface
     {
@@ -1336,8 +1355,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema nasljedna ograničenja čvora samo za postojeće članove područja.
      * EN: Saves inherited node restrictions only for existing workspace members.
+     *
+     * HR: Sprema nasljedna ograničenja čvora samo za postojeće članove područja.
      */
     public function saveNodeAcl(ServerRequestInterface $request): ResponseInterface
     {
@@ -1371,8 +1391,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema izravna prava korisnika samo za odabranu stranicu.
      * EN: Saves direct user grants for the selected page only.
+     *
+     * HR: Sprema izravna prava korisnika samo za odabranu stranicu.
      */
     public function saveNodeDirectPermissions(ServerRequestInterface $request): ResponseInterface
     {
@@ -1405,10 +1426,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Mijenja status otvorene jezične stranice nakon provjere nasljednih
-     *     edit/manage prava i točnog broja aktualne Editor verzije.
      * EN: Changes the open page-locale status after checking inherited
      *     edit/manage rights and the exact current Editor version number.
+     *
+     * HR: Mijenja status otvorene jezične stranice nakon provjere nasljednih
+     *     edit/manage prava i točnog broja aktualne Editor verzije.
      */
     public function transitionWorkflow(ServerRequestInterface $request): ResponseInterface
     {
@@ -1476,6 +1498,13 @@ final readonly class WorkspaceController
                     }
 
                     $redirectPath = $workspacePath;
+                    // EN: A discarded never-published page must not leave owned menu references behind.
+                    //
+                    // HR: Odbačena neobjavljena stranica ne smije ostaviti vlasničke reference menija.
+                    $this->menus->deleteForPages([[
+                        'workspace_id' => $this->intValue($workspace['id'] ?? 0),
+                        'node_id' => $this->intValue($node['id'] ?? 0),
+                    ]]);
                     $this->editor->deleteUnpublishedDocumentPermanently($documentKey);
                     $this->repository->deleteUnpublishedNodePermanently(
                         $this->intValue($workspace['id'] ?? 0),
@@ -1566,8 +1595,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Poslužuje mali CSS sloj za stablo i Workspace raspored.
      * EN: Serves the small CSS layer for the tree and Workspace layout.
+     *
+     * HR: Poslužuje mali CSS sloj za stablo i Workspace raspored.
      */
     public function styles(): ResponseInterface
     {
@@ -1578,11 +1608,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Poslužuje JavaScript za organizator stabla, modalne obrasce čvorova
-     * i prikaz samo onih polja koja pripadaju odabranoj vrsti čvora.
-     *
      * EN: Serves JavaScript for the tree organizer, node dialogs, and showing
      * only the fields that belong to the selected node type.
+     *
+     * HR: Poslužuje JavaScript za organizator stabla, modalne obrasce čvorova
+     * i prikaz samo onih polja koja pripadaju odabranoj vrsti čvora.
      */
     public function scripts(): ResponseInterface
     {
@@ -1593,8 +1623,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Renderira područje s lijevim stablom i odabranim HTML sadržajem.
      * EN: Renders a workspace with its left tree and selected HTML content.
+     *
+     * HR: Renderira područje s lijevim stablom i odabranim HTML sadržajem.
      *
      * @param array<string, mixed> $workspace
      * @param list<array<string, mixed>> $tree
@@ -1665,13 +1696,14 @@ final readonly class WorkspaceController
                 );
                 if (is_array($editorView)) {
                     /*
+                     * EN: Editor may return the default document language when the UI
+                     *     locale has no translation. Workflow must follow that displayed
+                     *     variant, or a published fallback page looks like a new draft.
+                     *
                      * HR: Editor može vratiti zadani jezik dokumenta kada prijevod
                      *     za jezik sučelja ne postoji. Workflow mora pratiti upravo
                      *     prikazanu inačicu, inače objavljena fallback stranica izgleda
                      *     kao novi neobjavljeni prijevod.
-                     * EN: Editor may return the default document language when the UI
-                     *     locale has no translation. Workflow must follow that displayed
-                     *     variant, or a published fallback page looks like a new draft.
                      */
                     $contentLanguage = $this->stringValue(
                         $editorView['documentLanguage'] ?? $language,
@@ -1799,8 +1831,9 @@ final readonly class WorkspaceController
                     $contentLanguage,
                 );
             } catch (Throwable $throwable) {
-                // HR: Izvedeni indeks ne smije onemogućiti čitanje izvorne stranice.
                 // EN: A derived index must never prevent reading the source page.
+                //
+                // HR: Izvedeni indeks ne smije onemogućiti čitanje izvorne stranice.
                 $this->logger->error('Workspace backlinks could not be loaded.', [
                     'module' => 'workspace',
                     'workspace_id' => $workspaceId,
@@ -1896,8 +1929,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Priprema opcionalni Simbioza gumb bez hard ovisnosti Workspace modula.
      * EN: Prepares the optional Simbioza button without a hard Workspace dependency.
+     *
+     * HR: Priprema opcionalni Simbioza gumb bez hard ovisnosti Workspace modula.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $node
@@ -1909,10 +1943,11 @@ final readonly class WorkspaceController
         ?array $node,
     ): ?array {
         /*
-         * HR: Javni prikaz ne smije koristiti strogi audit helper koji baca
-         *     iznimku za gosta; gumb praćenja jednostavno pripada samo prijavljenima.
          * EN: Public rendering must not use the strict audit helper that throws
          *     for guests; the follow button simply belongs to authenticated users.
+         *
+         * HR: Javni prikaz ne smije koristiti strogi audit helper koji baca
+         *     iznimku za gosta; gumb praćenja jednostavno pripada samo prijavljenima.
          */
         $user = $this->access->currentUser();
         $userId = is_array($user) && is_numeric($user['id'] ?? null) ? (int)$user['id'] : 0;
@@ -1947,10 +1982,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Obavještava opcionalne module o uspješnom pregledu bez utjecaja na
-     *     prikaz stranice ako neki izvedeni listener zakaže.
      * EN: Notifies optional modules about a successful view without affecting
      *     page rendering when a derived listener fails.
+     *
+     * HR: Obavještava opcionalne module o uspješnom pregledu bez utjecaja na
+     *     prikaz stranice ako neki izvedeni listener zakaže.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $node
@@ -1976,11 +2012,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Provjerava smije li se nova stranica dodati u korijen ili ispod
-     * odabrane dokument-stranice. Linkovi namjerno ne mogu biti roditelji.
-     *
      * EN: Checks whether a new page may be added at the root or below the
      * selected document page. Link items intentionally cannot be parents.
+     *
+     * HR: Provjerava smije li se nova stranica dodati u korijen ili ispod
+     * odabrane dokument-stranice. Linkovi namjerno ne mogu biti roditelji.
      *
      * @param array<string, mixed> $workspace
      */
@@ -2002,8 +2038,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Provjerava ima li područje već aktivnu početnu dokument-stranicu.
      * EN: Checks whether the Workspace already has an active document homepage.
+     *
+     * HR: Provjerava ima li područje već aktivnu početnu dokument-stranicu.
      *
      * @param array<string, mixed> $workspace
      */
@@ -2022,11 +2059,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pretvara vidljivo stablo u ravan popis dopuštenih roditeljskih
-     * stranica, uz uvlačenje naslova koje zadržava hijerarhiju u selectu.
-     *
      * EN: Flattens the visible tree into allowed parent pages while indenting
      * labels so the select preserves the hierarchy.
+     *
+     * HR: Pretvara vidljivo stablo u ravan popis dopuštenih roditeljskih
+     * stranica, uz uvlačenje naslova koje zadržava hijerarhiju u selectu.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array{id:int,label:string}>
@@ -2057,8 +2094,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi URL-ove zastavica za zajednički višejezični editor metapodataka.
      * EN: Builds flag URLs for the shared multilingual metadata editor.
+     *
+     * HR: Gradi URL-ove zastavica za zajednički višejezični editor metapodataka.
      *
      * @param list<string> $locales
      * @return array<string, string>
@@ -2087,10 +2125,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pretvara vidljive ravne čvorove u redoslijed prikladan za vizualni
-     *     organizator i svakom retku dodaje dubinu u stablu.
      * EN: Converts visible flat nodes into an order suitable for the visual
      *     organizer and adds tree depth to every row.
+     *
+     * HR: Pretvara vidljive ravne čvorove u redoslijed prikladan za vizualni
+     *     organizator i svakom retku dodaje dubinu u stablu.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -2128,10 +2167,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Rekurzivno dodaje jednu podgranu organizatoru i štiti prikaz od
-     *     eventualnog ciklusa u postojećim podacima.
      * EN: Recursively appends one branch to the organizer and protects the
      *     view from a possible cycle in existing data.
+     *
+     * HR: Rekurzivno dodaje jednu podgranu organizatoru i štiti prikaz od
+     *     eventualnog ciklusa u postojećim podacima.
      *
      * @param array<int, list<array<string, mixed>>> $byParent
      * @param array<int, true> $visited
@@ -2167,8 +2207,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Provjerava add pravo područja ili odabranog roditeljskog čvora.
      * EN: Checks add permission on the workspace or selected parent node.
+     *
+     * HR: Provjerava add pravo područja ili odabranog roditeljskog čvora.
      *
      * @param array<string, mixed> $workspace
      */
@@ -2186,10 +2227,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Upravitelj područja ili efektivni objavljivač smije mijenjati
-     *     dopuštenja i ograničenja samo stranice koju smije vidjeti.
      * EN: A Workspace manager or effective publisher may change grants and
      *     restrictions only for a page they are allowed to view.
+     *
+     * HR: Upravitelj područja ili efektivni objavljivač smije mijenjati
+     *     dopuštenja i ograničenja samo stranice koju smije vidjeti.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $node
@@ -2208,8 +2250,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Odbija nepostojeću named rutu kada interni link nema sigurnu rezervnu putanju.
      * EN: Rejects a missing named route when an internal link has no safe fallback path.
+     *
+     * HR: Odbija nepostojeću named rutu kada interni link nema sigurnu rezervnu putanju.
      *
      * @param array<string, mixed> $input
      */
@@ -2231,8 +2274,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Slijedi vanjski URL ili sigurnu internu named rutu.
      * EN: Follows an external URL or a safe internal named route.
+     *
+     * HR: Slijedi vanjski URL ili sigurnu internu named rutu.
      *
      * @param array<string, mixed> $node
      */
@@ -2256,8 +2300,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Dodaje javne URL-ove područjima za popis.
      * EN: Adds public URLs to workspaces for the index.
+     *
+     * HR: Dodaje javne URL-ove područjima za popis.
      *
      * @param list<array<string, mixed>> $workspaces
      * @return list<array<string, mixed>>
@@ -2275,8 +2320,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Rekurzivno dodaje URL svakome vidljivom čvoru stabla.
      * EN: Recursively adds a URL to each visible tree node.
+     *
+     * HR: Rekurzivno dodaje URL svakome vidljivom čvoru stabla.
      *
      * @param list<array<string, mixed>> $tree
      * @param array<string, mixed> $workspace
@@ -2345,8 +2391,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pronalazi čvor po ID-u u već ACL-filtriranom stablu.
      * EN: Finds a node by ID in an already ACL-filtered tree.
+     *
+     * HR: Pronalazi čvor po ID-u u već ACL-filtriranom stablu.
      *
      * @param list<array<string, mixed>> $tree
      * @return array<string, mixed>|null
@@ -2372,8 +2419,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća ID-eve puta od korijena do odabranog čvora.
      * EN: Returns the IDs on the path from a root to the selected node.
+     *
+     * HR: Vraća ID-eve puta od korijena do odabranog čvora.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<int>
@@ -2403,13 +2451,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Zadržava korijenske stavke, prvu vidljivu razinu i cijeli aktivni
-     *     put, a ostale potomke označava za naknadno učitavanje. Time mali
-     *     početni HTML ostaje semantički jednak punom stablu.
-     *
      * EN: Keeps root items, the first visible level, and the complete active
      *     path while marking other descendants for on-demand loading. This
      *     keeps the small initial HTML semantically equivalent to the full tree.
+     *
+     * HR: Zadržava korijenske stavke, prvu vidljivu razinu i cijeli aktivni
+     *     put, a ostale potomke označava za naknadno učitavanje. Time mali
+     *     početni HTML ostaje semantički jednak punom stablu.
      *
      * @param list<array<string, mixed>> $tree
      * @param list<int> $activePath
@@ -2421,14 +2469,15 @@ final readonly class WorkspaceController
             $children = WorkspaceValue::rows($node['children'] ?? null);
             $nodeId = $this->intValue($node['id'] ?? 0);
             /*
-             * HR: Ciljani repozitorijski prozor već zna ima li čvor još
-             *     neučitanih potomaka. Ne smijemo tu oznaku svesti samo na
-             *     trenutno prisutne retke jer bi udaljene grane izgubile gumb
-             *     za naknadno otvaranje.
              * EN: The targeted repository window already knows whether a node
              *     has unloaded descendants. Do not reduce that marker to only
              *     the rows currently present, otherwise remote branches lose
              *     their on-demand expansion control.
+             *
+             * HR: Ciljani repozitorijski prozor već zna ima li čvor još
+             *     neučitanih potomaka. Ne smijemo tu oznaku svesti samo na
+             *     trenutno prisutne retke jer bi udaljene grane izgubile gumb
+             *     za naknadno otvaranje.
              */
             $node['has_children'] = (bool)($node['has_children'] ?? ($children !== []));
             $loadChildren = $rootLevel || in_array($nodeId, $activePath, true);
@@ -2444,13 +2493,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pretvara već ACL-filtrirano stablo u ravni popis bez ponovnog upita
-     *     prema repozitoriju. Pregled stranice tako isti skup podataka koristi
-     *     za red čekanja, nacrte i provjeru organizatora stabla.
-     *
      * EN: Flattens an already ACL-filtered tree without querying the repository
      *     again. The page view can then reuse the same data set for the review
      *     queue, drafts, and the tree-organizer permission check.
+     *
+     * HR: Pretvara već ACL-filtrirano stablo u ravni popis bez ponovnog upita
+     *     prema repozitoriju. Pregled stranice tako isti skup podataka koristi
+     *     za red čekanja, nacrte i provjeru organizatora stabla.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array<string, mixed>>
@@ -2472,8 +2521,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Rekurzivno prikuplja ID-eve vidljivog stabla za jedan grupni workflow upit.
      * EN: Recursively collects visible-tree IDs for one batched workflow query.
+     *
+     * HR: Rekurzivno prikuplja ID-eve vidljivog stabla za jedan grupni workflow upit.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<int>
@@ -2496,14 +2546,15 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi diskretne akcije dokumenta za stablo, nacrt, pregled, objavu i
-     *     ostale dopuštene workflow prijelaze. Akcije koje mijenjaju nacrt
-     *     prikazuje samo na njegovu eksplicitnom pregledu ili novoj stranici
-     *     koja još nema objavljenu verziju.
      * EN: Builds discreet document actions for the tree, draft, preview,
      *     publication, and other allowed workflow transitions. Draft-mutating
      *     actions are shown only on its explicit preview or on a new page that
      *     does not yet have a published version.
+     *
+     * HR: Gradi diskretne akcije dokumenta za stablo, nacrt, pregled, objavu i
+     *     ostale dopuštene workflow prijelaze. Akcije koje mijenjaju nacrt
+     *     prikazuje samo na njegovu eksplicitnom pregledu ili novoj stranici
+     *     koja još nema objavljenu verziju.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $node
@@ -2703,8 +2754,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Pretvara jedan workflow prijelaz u podatke sigurnog POST gumba.
      * EN: Converts one workflow transition into safe POST-button data.
+     *
+     * HR: Pretvara jedan workflow prijelaz u podatke sigurnog POST gumba.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $node
@@ -2738,8 +2790,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Razrješava URL link čvora bez izvođenja redirecta.
      * EN: Resolves a link-node URL without issuing a redirect.
+     *
+     * HR: Razrješava URL link čvora bez izvođenja redirecta.
      *
      * @param array<string, mixed> $node
      */
@@ -2758,10 +2811,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Dodaje aplikacijski base path internoj apsolutnoj putanji samo kada
-     * ga putanja već ne sadrži. Tako `/calendars` radi i pod `/example-app`.
      * EN: Adds the application base path to an internal absolute path only when
      * the path does not already contain it. This keeps `/calendars` working under `/example-app`.
+     *
+     * HR: Dodaje aplikacijski base path internoj apsolutnoj putanji samo kada
+     * ga putanja već ne sadrži. Tako `/calendars` radi i pod `/example-app`.
      */
     private function internalTargetPath(string $target): string
     {
@@ -2778,8 +2832,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Učitava područje iz ID-a ili sluga forme.
      * EN: Loads a workspace from form ID or slug.
+     *
+     * HR: Učitava područje iz ID-a ili sluga forme.
      *
      * @param array<string, mixed> $input
      * @return array<string, mixed>|null
@@ -2797,8 +2852,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi administratorsku putanju za postojeće ili novo područje.
      * EN: Builds the administration path for an existing or new workspace.
+     *
+     * HR: Gradi administratorsku putanju za postojeće ili novo područje.
      */
     private function managePath(string $workspaceSlug): string
     {
@@ -2808,8 +2864,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Odabire lokalizirani naziv razriješene teme uz hrvatski i engleski fallback.
      * EN: Selects the resolved theme label with Croatian and English fallbacks.
+     *
+     * HR: Odabire lokalizirani naziv razriješene teme uz hrvatski i engleski fallback.
      *
      * @param array<string, mixed> $state
      */
@@ -2826,8 +2883,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi javnu putanju područja iz aktivne konfiguracije.
      * EN: Builds a public workspace path from active configuration.
+     *
+     * HR: Gradi javnu putanju područja iz aktivne konfiguracije.
      */
     private function workspacePath(string $workspaceSlug): string
     {
@@ -2845,8 +2903,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi javnu putanju stranice koju kontrolira područje.
      * EN: Builds a public page path controlled by its workspace.
+     *
+     * HR: Gradi javnu putanju stranice koju kontrolira područje.
      */
     private function nodePath(string $workspaceSlug, string $nodeSlug): string
     {
@@ -2861,8 +2920,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Gradi poveznicu na ACL-filtrirane Sažetke područja.
      * EN: Builds the link to the Workspace's ACL-filtered Shorts page.
+     *
+     * HR: Gradi poveznicu na ACL-filtrirane Sažetke područja.
      */
     private function shortsPath(string $workspaceSlug, string $language): string
     {
@@ -2880,13 +2940,13 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Nakon modalne akcije sigurno vraća korisnika na područje ili aktivnu
-     * dokument-stranicu. Klijent šalje samo ID, a URL se ponovno gradi iz
-     * provjerenih podataka kako POST parametar ne bi postao otvoreni redirect.
-     *
      * EN: Safely returns the user to the Workspace or active document page
      * after a modal action. The client sends only an ID and the URL is rebuilt
      * from verified data so a POST parameter cannot become an open redirect.
+     *
+     * HR: Nakon modalne akcije sigurno vraća korisnika na područje ili aktivnu
+     * dokument-stranicu. Klijent šalje samo ID, a URL se ponovno gradi iz
+     * provjerenih podataka kako POST parametar ne bi postao otvoreni redirect.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed> $input
@@ -2919,8 +2979,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća čitljiv 403 prikaz umjesto prazne ili tehničke poruke.
      * EN: Returns a readable 403 view instead of an empty or technical message.
+     *
+     * HR: Vraća čitljiv 403 prikaz umjesto prazne ili tehničke poruke.
      */
     private function accessDenied(): ResponseInterface
     {
@@ -2932,8 +2993,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća čitljiv 404 prikaz.
      * EN: Returns a readable 404 view.
+     *
+     * HR: Vraća čitljiv 404 prikaz.
      */
     private function notFound(): ResponseInterface
     {
@@ -2945,8 +3007,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Objašnjava administratoru da početna migracija nedostaje.
      * EN: Explains to an administrator that the initial migration is missing.
+     *
+     * HR: Objašnjava administratoru da početna migracija nedostaje.
      */
     private function migrationMissing(): ResponseInterface
     {
@@ -2958,8 +3021,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Čita odabrani jezik dokumenta, zatim aktivni jezik sučelja i na kraju zadani jezik sitea.
      * EN: Reads the selected document locale, then the active UI locale, and finally the site default locale.
+     *
+     * HR: Čita odabrani jezik dokumenta, zatim aktivni jezik sučelja i na kraju zadani jezik sitea.
      */
     private function language(ServerRequestInterface $request): string
     {
@@ -2974,8 +3038,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Čita parsed body kao string-key polje.
      * EN: Reads the parsed body as a string-key array.
+     *
+     * HR: Čita parsed body kao string-key polje.
      *
      * @return array<string, mixed>
      */
@@ -2997,8 +3062,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća ID prijavljenog korisnika potreban za audit.
      * EN: Returns the authenticated user ID required for auditing.
+     *
+     * HR: Vraća ID prijavljenog korisnika potreban za audit.
      */
     private function currentUserId(): int
     {
@@ -3012,8 +3078,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća named route ili stabilni fallback dok se kasne rute još registriraju.
      * EN: Returns a named route or stable fallback while late routes are still registering.
+     *
+     * HR: Vraća named route ili stabilni fallback dok se kasne rute još registriraju.
      */
     private function pathFor(string $routeName, string $fallback): string
     {
@@ -3023,8 +3090,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema uspješnu poruku u zajednički toast sustav.
      * EN: Stores a success message in the shared toast system.
+     *
+     * HR: Sprema uspješnu poruku u zajednički toast sustav.
      */
     private function success(string $message): void
     {
@@ -3032,8 +3100,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Sprema poruku pogreške u zajednički toast sustav.
      * EN: Stores an error message in the shared toast system.
+     *
+     * HR: Sprema poruku pogreške u zajednički toast sustav.
      */
     private function failure(string $message): void
     {
@@ -3044,8 +3113,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Normalizira skalarnu tekstualnu vrijednost.
      * EN: Normalizes a scalar text value.
+     *
+     * HR: Normalizira skalarnu tekstualnu vrijednost.
      */
     private function stringValue(mixed $value): string
     {
@@ -3053,8 +3123,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Čita cijeli broj iz zahtjeva.
      * EN: Reads an integer from request input.
+     *
+     * HR: Čita cijeli broj iz zahtjeva.
      */
     private function intValue(mixed $value): int
     {
@@ -3062,10 +3133,11 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Normalizira unaprijed izračunata prava čvora na zatvoreni skup
-     *     logičkih vrijednosti koji ostatak kontrolera sigurno koristi.
      * EN: Normalizes precomputed node permissions to the closed boolean set
      *     that the rest of the controller can safely consume.
+     *
+     * HR: Normalizira unaprijed izračunata prava čvora na zatvoreni skup
+     *     logičkih vrijednosti koji ostatak kontrolera sigurno koristi.
      *
      * @param array<mixed> $permissions
      * @return array<string, bool>
@@ -3083,8 +3155,9 @@ final readonly class WorkspaceController
     }
 
     /**
-     * HR: Vraća prazna prava za formu novog područja.
      * EN: Returns empty permissions for the new-workspace form.
+     *
+     * HR: Vraća prazna prava za formu novog područja.
      *
      * @return array<string, bool>
      */

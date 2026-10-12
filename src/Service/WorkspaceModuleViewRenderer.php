@@ -13,8 +13,9 @@ use Psr\Http\Message\ResponseInterface;
 final readonly class WorkspaceModuleViewRenderer
 {
     /**
-     * HR: Prima framework renderere i omogućuje host aplikaciji override Workspace viewa.
      * EN: Receives framework renderers and allows host applications to override Workspace views.
+     *
+     * HR: Prima framework renderere i omogućuje host aplikaciji override Workspace viewa.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -24,8 +25,9 @@ final readonly class WorkspaceModuleViewRenderer
     }
 
     /**
-     * HR: Renderira punu stranicu iz aplikacijskog overridea ili modula.
      * EN: Renders a full page from an application override or the module.
+     *
+     * HR: Renderira punu stranicu iz aplikacijskog overridea ili modula.
      *
      * @param array<string, mixed> $data
      */
@@ -50,8 +52,9 @@ final readonly class WorkspaceModuleViewRenderer
     }
 
     /**
-     * HR: Renderira parcijalni template za rekurzivno stablo.
      * EN: Renders a partial template for the recursive tree.
+     *
+     * HR: Renderira parcijalni template za rekurzivno stablo.
      *
      * @param array<string, mixed> $data
      */
@@ -66,8 +69,9 @@ final readonly class WorkspaceModuleViewRenderer
     }
 
     /**
-     * HR: Traži kratku i punu aplikacijsku override putanju.
      * EN: Searches short and fully qualified application override paths.
+     *
+     * HR: Traži kratku i punu aplikacijsku override putanju.
      */
     private function findOverrideView(string $view): ?string
     {

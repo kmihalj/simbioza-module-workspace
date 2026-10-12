@@ -14,46 +14,19 @@ final readonly class HpWorkspaceCommand
 
     private const TEMPLATE_FILE = 'resources/migrations/initial_workspace_schema.php';
 
-    private const HOMEPAGE_TEMPLATE_FILE = 'resources/migrations/add_workspace_homepage_preferences.php';
-
-    private const HOMEPAGE_VIEW_OPTIONS_TEMPLATE_FILE =
-    'resources/migrations/add_workspace_homepage_view_options.php';
-
-    private const THEMES_TEMPLATE_FILE = 'resources/migrations/add_workspace_themes.php';
-
-    private const BACKLINKS_TEMPLATE_FILE = 'resources/migrations/add_workspace_backlinks.php';
-
-    private const NODE_LABELS_TEMPLATE_FILE = 'resources/migrations/20260821183000_add_workspace_node_labels.php';
-
-    private const NODE_PROPERTIES_TEMPLATE_FILE =
-    'resources/migrations/20260821220000_add_workspace_node_properties.php';
-
-    private const NODE_DIRECT_PERMISSIONS_TEMPLATE_FILE =
-    'resources/migrations/20260826130000_add_workspace_node_direct_permissions.php';
-
-    private const REMOVE_OWNER_TEMPLATE_FILE =
-    'resources/migrations/20260826183000_remove_workspace_owner.php';
-
-    private const METADATA_TRANSLATIONS_TEMPLATE_FILE =
-    'resources/migrations/20260828100000_add_workspace_metadata_translations.php';
-
-    private const TREE_HIDING_TEMPLATE_FILE =
-    'resources/migrations/20260905223000_add_workspace_tree_hiding.php';
-
-    private const PURGE_MARKER_TEMPLATE_FILE =
-    'resources/migrations/20260928090000_add_workspace_purge_marker.php';
-
     /**
-     * HR: Prima konfiguraciju host aplikacije za određivanje cilja migracije.
      * EN: Receives host-application configuration for resolving the migration target.
+     *
+     * HR: Prima konfiguraciju host aplikacije za određivanje cilja migracije.
      */
     public function __construct(private ConfigInterface $config)
     {
     }
 
     /**
-     * HR: Obrađuje `workspace install` i pomoćne CLI podnaredbe.
      * EN: Handles `workspace install` and helper CLI subcommands.
+     *
+     * HR: Obrađuje `workspace install` i pomoćne CLI podnaredbe.
      *
      * @param array<int, string> $arguments
      * @param array<string, mixed> $options
@@ -66,40 +39,15 @@ final readonly class HpWorkspaceCommand
         return match ($subcommand) {
             'install', 'migration:install', 'install-migration', 'scaffold' =>
             $this->installMigration($subArguments, $options),
-            'homepage', 'homepage:install', 'install-homepage-migration' =>
-            $this->installHomepageMigration($subArguments, $options),
-            'homepage-options', 'homepage-options:install', 'install-homepage-view-options-migration' =>
-            $this->installHomepageViewOptionsMigration($subArguments, $options),
-            'themes', 'themes:install', 'install-themes-migration' =>
-            $this->installThemesMigration($subArguments, $options),
-            'backlinks', 'backlinks:install', 'install-backlinks-migration' =>
-            $this->installBacklinksMigration($subArguments, $options),
-            'node-labels', 'node-labels:install', 'install-node-labels-migration' =>
-            $this->installNodeLabelsMigration($subArguments, $options),
-            'node-properties', 'node-properties:install', 'install-node-properties-migration' =>
-            $this->installNodePropertiesMigration($subArguments, $options),
-            'node-direct-permissions',
-            'node-direct-permissions:install',
-            'install-node-direct-permissions-migration' =>
-            $this->installNodeDirectPermissionsMigration($subArguments, $options),
-            'remove-owner', 'remove-owner:install', 'install-remove-owner-migration' =>
-            $this->installRemoveOwnerMigration($subArguments, $options),
-            'metadata-translations',
-            'metadata-translations:install',
-            'install-metadata-translations-migration' =>
-            $this->installMetadataTranslationsMigration($subArguments, $options),
-            'tree-hiding', 'tree-hiding:install', 'install-tree-hiding-migration' =>
-            $this->installTreeHidingMigration($subArguments, $options),
-            'purge-marker', 'purge-marker:install', 'install-purge-marker-migration' =>
-            $this->installPurgeMarkerMigration($subArguments, $options),
             'help', '--help', '-h' => $this->help(),
             default => $this->unknownSubcommand($subcommand),
         };
     }
 
     /**
-     * HR: Kopira jedinu početnu Workspace migraciju u host aplikaciju.
      * EN: Copies the single initial Workspace migration into the host application.
+     *
+     * HR: Kopira jedinu početnu Workspace migraciju u host aplikaciju.
      *
      * @param array<int, string> $arguments
      * @param array<string, mixed> $options
@@ -135,477 +83,22 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
-     * HR: Kopira nadogradnju naslovnice u postojeću host aplikaciju.
-     * EN: Copies the homepage upgrade into an existing host application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installHomepageMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::HOMEPAGE_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije naslovnice nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_homepage_preferences';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je Workspace migracija naslovnice: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju strukturiranih Shorts naslovnica u postojeću aplikaciju.
-     * EN: Copies the structured Shorts-homepage upgrade into an existing application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installHomepageViewOptionsMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::HOMEPAGE_VIEW_OPTIONS_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije opcija naslovnice nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_homepage_view_options';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija opcija Workspace naslovnice: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju privatnih tema područja u postojeću host aplikaciju.
-     * EN: Copies the private Workspace-theme upgrade into an existing host application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installThemesMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::THEMES_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije tema područja nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_themes';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija tema područja: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju izvedenog backlink indeksa u postojeću host aplikaciju.
-     * EN: Copies the derived-backlink-index upgrade into an existing host application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installBacklinksMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::BACKLINKS_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije backlinkova nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_backlinks';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija Workspace backlinkova: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju oznaka stranica u postojeću host aplikaciju.
-     * EN: Copies the page-label upgrade into an existing host application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installNodeLabelsMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::NODE_LABELS_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije oznaka stranica nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_node_labels';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija oznaka Workspace stranica: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju strukturiranih svojstava stranica u postojeću aplikaciju.
-     * EN: Copies the structured-page-properties upgrade into an existing application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installNodePropertiesMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::NODE_PROPERTIES_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije svojstava stranica nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_node_properties';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija svojstava Workspace stranica: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju izravnih prava stranica u postojeću aplikaciju.
-     * EN: Copies the direct-page-permission upgrade into an existing application.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installNodeDirectPermissionsMigration(
-        array $arguments = [],
-        array $options = [],
-    ): int {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::NODE_DIRECT_PERMISSIONS_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije izravnih prava stranica nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_node_direct_permissions';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija izravnih prava Workspace stranica: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju koja uklanja zastarjeli stupac vlasnika područja.
-     * EN: Copies the upgrade that removes the obsolete Workspace-owner column.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installRemoveOwnerMigration(
-        array $arguments = [],
-        array $options = [],
-    ): int {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::REMOVE_OWNER_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije uklanjanja vlasnika područja nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'remove_workspace_owner';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija uklanjanja vlasnika područja: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju za višejezične nazive područja, opise i naslove stranica.
-     * EN: Copies the upgrade for multilingual workspace names, descriptions, and page titles.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installMetadataTranslationsMigration(
-        array $arguments = [],
-        array $options = [],
-    ): int {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::METADATA_TRANSLATIONS_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije višejezičnih podataka područja nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_metadata_translations';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija višejezičnih podataka područja: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju za skrivanje stavki i grana u stablu stranica.
-     * EN: Copies the upgrade for hiding items and branches in the page tree.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installTreeHidingMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::TREE_HIDING_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije skrivanja stabla nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_tree_hiding';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija skrivanja Workspace stabla: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Kopira nadogradnju za nastavivo trajno brisanje područja.
-     * EN: Copies the upgrade for resumable permanent Workspace deletion.
-     *
-     * @param array<int, string> $arguments
-     * @param array<string, mixed> $options
-     */
-    public function installPurgeMarkerMigration(array $arguments = [], array $options = []): int
-    {
-        $targetDirectory = $this->targetDirectory($options);
-        $template = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . self::PURGE_MARKER_TEMPLATE_FILE;
-        if (!is_file($template)) {
-            throw new RuntimeException(__('Predložak migracije trajnog brisanja nije pronađen.'));
-        }
-
-        $options['name'] = $this->option($options, ['name'])
-        ?? trim((string)($arguments[0] ?? ''))
-        ?: 'add_workspace_purge_marker';
-        $suffix = $this->migrationSuffix([], $options);
-        $target = rtrim($targetDirectory, DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . date('YmdHis')
-        . '_'
-        . $suffix
-        . '.php';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij migracija.'));
-        }
-
-        $content = file_get_contents($template);
-        if (!is_string($content) || $content === '' || file_put_contents($target, $content) === false) {
-            throw new RuntimeException(__('Nije moguće kopirati Workspace migraciju.'));
-        }
-
-        $this->write(__('Kreirana je migracija trajnog brisanja područja: ') . $target);
-        $this->write(__('Sljedeći korak: pokreni `vendor/bin/hph orm-migrate:up`.'));
-
-        return 0;
-    }
-
-    /**
-     * HR: Ispisuje kratke upute za CLI helper.
      * EN: Prints brief CLI helper usage.
+     *
+     * HR: Ispisuje kratke upute za CLI helper.
      */
     public function help(): int
     {
         $this->write('hph workspace <install|help>');
         $this->write('  vendor/bin/hph workspace:install-migration');
-        $this->write('  vendor/bin/hph workspace:install-homepage-migration');
-        $this->write('  vendor/bin/hph workspace:install-homepage-view-options-migration');
-        $this->write('  vendor/bin/hph workspace:install-themes-migration');
-        $this->write('  vendor/bin/hph workspace:install-backlinks-migration');
-        $this->write('  vendor/bin/hph workspace:install-node-labels-migration');
-        $this->write('  vendor/bin/hph workspace:install-node-properties-migration');
-        $this->write('  vendor/bin/hph workspace:install-node-direct-permissions-migration');
-        $this->write('  vendor/bin/hph workspace:install-remove-owner-migration');
-        $this->write('  vendor/bin/hph workspace:install-metadata-translations-migration');
-        $this->write('  vendor/bin/hph workspace:install-tree-hiding-migration');
-        $this->write('  vendor/bin/hph workspace:install-purge-marker-migration');
 
         return 0;
     }
 
     /**
-     * HR: Vraća grešku za nepoznatu podnaredbu.
      * EN: Returns an error for an unknown subcommand.
+     *
+     * HR: Vraća grešku za nepoznatu podnaredbu.
      */
     private function unknownSubcommand(string $subcommand): int
     {
@@ -615,8 +108,9 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
-     * HR: Razrješava ciljni direktorij iz opcije ili app roota.
      * EN: Resolves the target directory from an option or the application root.
+     *
+     * HR: Razrješava ciljni direktorij iz opcije ili app roota.
      *
      * @param array<string, mixed> $options
      */
@@ -639,8 +133,9 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
-     * HR: Normalizira naziv generirane migracije.
      * EN: Normalizes the generated migration name.
+     *
+     * HR: Normalizira naziv generirane migracije.
      *
      * @param array<int, string> $arguments
      * @param array<string, mixed> $options
@@ -658,8 +153,9 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
-     * HR: Čita prvu nepraznu skalarnu CLI opciju.
      * EN: Reads the first non-empty scalar CLI option.
+     *
+     * HR: Čita prvu nepraznu skalarnu CLI opciju.
      *
      * @param array<string, mixed> $options
      * @param list<string> $keys
@@ -677,8 +173,9 @@ final readonly class HpWorkspaceCommand
     }
 
     /**
-     * HR: Ispisuje jednu CLI poruku.
      * EN: Prints one CLI message.
+     *
+     * HR: Ispisuje jednu CLI poruku.
      */
     private function write(string $message): void
     {

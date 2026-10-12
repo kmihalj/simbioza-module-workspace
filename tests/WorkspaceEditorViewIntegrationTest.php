@@ -11,8 +11,9 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceEditorViewIntegrationTest extends TestCase
 {
     /**
-     * HR: Polja čvora imaju jedinstvene veze oznaka; udaljena pretraga ima naziv i poruke stanja.
      * EN: Node fields have unique label associations; remote search has a name and status messages.
+     *
+     * HR: Polja čvora imaju jedinstvene veze oznaka; udaljena pretraga ima naziv i poruke stanja.
      */
     public function testNodeFieldsAndLookupExposeAccessibleNames(): void
     {
@@ -29,10 +30,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Svojstva stranice moraju biti jedan dinamički popis koji dopušta
-     *     dodavanje i uklanjanje više redaka prije atomarnog spremanja.
      * EN: Page properties must be one dynamic list that allows multiple rows
      *     to be added and removed before the atomic save.
+     *
+     * HR: Svojstva stranice moraju biti jedan dinamički popis koji dopušta
+     *     dodavanje i uklanjanje više redaka prije atomarnog spremanja.
      */
     public function testPagePropertiesAreManagedAsOneDynamicList(): void
     {
@@ -66,10 +68,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Ograničenja stranice koriste jedan korisnički picker i jedno
-     *     trostanje po pravu, bez grupnih redaka i dvostrukih kvačica.
      * EN: Page restrictions use one user picker and one three-state control per
      *     permission, without group rows or duplicate checkboxes.
+     *
+     * HR: Ograničenja stranice koriste jedan korisnički picker i jedno
+     *     trostanje po pravu, bez grupnih redaka i dvostrukih kvačica.
      */
     public function testNodeRestrictionsUseUserPickerAndSingleStateCells(): void
     {
@@ -92,8 +95,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Workspace mora ugraditi službeni Editorov pregled umjesto vlastitog ispisa sirovog HTML-a.
      * EN: Workspace must embed Editor's official view instead of rendering raw HTML itself.
+     *
+     * HR: Workspace mora ugraditi službeni Editorov pregled umjesto vlastitog ispisa sirovog HTML-a.
      */
     public function testWorkspaceEmbedsOfficialEditorDocumentView(): void
     {
@@ -107,8 +111,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Opcionalni most mora tražiti zajednički builder bez tvrde Composer ovisnosti.
      * EN: The optional bridge must resolve the shared builder without a hard Composer dependency.
+     *
+     * HR: Opcionalni most mora tražiti zajednički builder bez tvrde Composer ovisnosti.
      */
     public function testBridgeUsesSharedEditorViewBuilder(): void
     {
@@ -120,10 +125,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Editorova ruta mora moći aktivirati temu područja iz konteksta
-     *     dokumenta prije nego zajednički layout iscrta stranicu za uređivanje.
      * EN: The Editor route must be able to activate the Workspace theme from
      *     document context before the shared layout renders the editing page.
+     *
+     * HR: Editorova ruta mora moći aktivirati temu područja iz konteksta
+     *     dokumenta prije nego zajednički layout iscrta stranicu za uređivanje.
      */
     public function testEditorAccessActivatesOwningWorkspaceTheme(): void
     {
@@ -138,10 +144,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Sinkronizacija naslova mora podržati i web-sesiju i eksplicitnog API
-     *     korisnika kako naslov stabla ne bi ostao na jeziku izvornika.
      * EN: Title synchronization must support both the web session and an
      *     explicit API user so the tree title does not remain in the source locale.
+     *
+     * HR: Sinkronizacija naslova mora podržati i web-sesiju i eksplicitnog API
+     *     korisnika kako naslov stabla ne bi ostao na jeziku izvornika.
      */
     public function testEditorAccessSynchronizesLocalizedTitlesForWebAndApiUsers(): void
     {
@@ -163,8 +170,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Izvoz Područja mora prerenderirati nativne grafikone jednako kao izvoz stranice.
      * EN: Workspace export must pre-render native charts just like page export.
+     *
+     * HR: Izvoz Područja mora prerenderirati nativne grafikone jednako kao izvoz stranice.
      */
     public function testWorkspaceExportPreRendersNativeEditorCharts(): void
     {
@@ -176,8 +184,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Backlink indeks mora koristiti Editorov interni put bez sesijskog ACL-a.
      * EN: The backlink index must use the Editor internal path without session ACL.
+     *
+     * HR: Backlink indeks mora koristiti Editorov interni put bez sesijskog ACL-a.
      */
     public function testBacklinkIndexUsesDedicatedInternalEditorReadPath(): void
     {
@@ -194,10 +203,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Akcije područja moraju ostati u karticama kojima pripadaju kako ne bi
-     *     stvarale zaseban prazan red iznad stabla i HTML sadržaja.
      * EN: Workspace actions must remain inside their owning cards so they do
      *     not create a separate empty row above the tree and HTML content.
+     *
+     * HR: Akcije područja moraju ostati u karticama kojima pripadaju kako ne bi
+     *     stvarale zaseban prazan red iznad stabla i HTML sadržaja.
      */
     public function testWorkspaceActionsStayInsideTreeAndEditorCards(): void
     {
@@ -213,10 +223,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Backup, prijenos i brisanje stranice pripadaju javnom pregledu,
-     *     dok modal za uređivanje postavki stranice ne smije sadržavati brisanje.
      * EN: Page backup, transfer, and deletion belong to the public view while
      *     the page-settings modal must not contain deletion.
+     *
+     * HR: Backup, prijenos i brisanje stranice pripadaju javnom pregledu,
+     *     dok modal za uređivanje postavki stranice ne smije sadržavati brisanje.
      */
     public function testPageManagementActionsStayOutsideTheEditorAndNodeDialog(): void
     {
@@ -233,10 +244,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Obrazac prijenosa mora lokalizirati izvorne nazive i svaku pomoćnu
-     *     poruku imati u oba ugrađena jezična paketa.
      * EN: The transfer form must localize source names and include every help
      *     message in both bundled language packs.
+     *
+     * HR: Obrazac prijenosa mora lokalizirati izvorne nazive i svaku pomoćnu
+     *     poruku imati u oba ugrađena jezična paketa.
      */
     public function testPageTransferLocalizesSourceNamesAndHelpMessages(): void
     {
@@ -263,10 +275,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Akcije stabla moraju biti u zasebnom retku iznad punog naslova kako
-     *     usko zaglavlje ne bi skraćivalo naziv područja.
      * EN: Tree actions must occupy a separate row above the complete title so
      *     a narrow header does not truncate the workspace name.
+     *
+     * HR: Akcije stabla moraju biti u zasebnom retku iznad punog naslova kako
+     *     usko zaglavlje ne bi skraćivalo naziv područja.
      */
     public function testTreeHeaderKeepsCompactActionsAboveCompleteTitle(): void
     {
@@ -285,10 +298,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Mobilno stablo mora koristiti plutajuću tematsku karticu s naslovom
-     *     unutar kartice, jednako kao desni panel sadržaja.
      * EN: The mobile tree must use a floating themed card with its heading
      *     inside the card, matching the right-hand contents drawer.
+     *
+     * HR: Mobilno stablo mora koristiti plutajuću tematsku karticu s naslovom
+     *     unutar kartice, jednako kao desni panel sadržaja.
      */
     public function testMobileTreeUsesFloatingThemedCard(): void
     {
@@ -310,8 +324,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Backlinkovi moraju pratiti isti responzivni stupac kao Editorov dokument.
      * EN: Backlinks must follow the same responsive column as the Editor document.
+     *
+     * HR: Backlinkovi moraju pratiti isti responzivni stupac kao Editorov dokument.
      */
     public function testBacklinksFollowEditorDocumentColumnWidth(): void
     {
@@ -330,8 +345,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Kućica u breadcrumbu mora biti poravnata s osnovnom linijom teksta.
      * EN: The breadcrumb home icon must align with the text baseline.
+     *
+     * HR: Kućica u breadcrumbu mora biti poravnata s osnovnom linijom teksta.
      */
     public function testBreadcrumbHomeIconUsesTextBaselineAlignment(): void
     {
@@ -343,10 +359,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Sažetci prikazuju putanju u zajedničkom retku alata, dok stablo i sadržaj
-     *     zauzimaju isti sljedeći red responzivnog grida.
      * EN: Shorts render breadcrumbs in the shared toolbar row while the tree and
      *     content occupy the same following responsive-grid row.
+     *
+     * HR: Sažetci prikazuju putanju u zajedničkom retku alata, dok stablo i sadržaj
+     *     zauzimaju isti sljedeći red responzivnog grida.
      */
     public function testShortsBreadcrumbAndCardsUseAlignedGridRows(): void
     {
@@ -390,8 +407,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Blok za soft-brisanje mora koristiti tematsku Bootstrap karticu kao i ostale postavke.
      * EN: The soft-delete block must use a theme-aware Bootstrap card like the other settings.
+     *
+     * HR: Blok za soft-brisanje mora koristiti tematsku Bootstrap karticu kao i ostale postavke.
      */
     public function testWorkspaceDeleteBlockUsesThemeAwareCard(): void
     {
@@ -404,8 +422,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Obrazac nove stranice mora koristiti istu tematsku karticu kao glavni sadržaj.
      * EN: The new-page form must use the same theme-aware card as the main content.
+     *
+     * HR: Obrazac nove stranice mora koristiti istu tematsku karticu kao glavni sadržaj.
      */
     public function testNewPageFormUsesThemeAwareContentCard(): void
     {
@@ -425,8 +444,9 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Poruka o zabrani pristupa mora biti neprozirna tematska kartica, a ne prozirni okvir na hero pozadini.
      * EN: The access-denied message must be an opaque themed card, not a transparent border over the hero.
+     *
+     * HR: Poruka o zabrani pristupa mora biti neprozirna tematska kartica, a ne prozirni okvir na hero pozadini.
      */
     public function testAccessDeniedViewUsesThemeAwareContentCard(): void
     {
@@ -459,10 +479,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Uvod u posebne menije mora biti na neprozirnoj tematskoj površini
-     *     kako tekst ne bi nestao na hero pozadini prilagođene teme.
      * EN: The special-menu introduction must use an opaque themed surface so
      *     its text cannot disappear over a custom theme's hero background.
+     *
+     * HR: Uvod u posebne menije mora biti na neprozirnoj tematskoj površini
+     *     kako tekst ne bi nestao na hero pozadini prilagođene teme.
      */
     public function testSpecialMenuIntroductionUsesThemeAwareContentCard(): void
     {
@@ -484,10 +505,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Organizator i modalne postavke čvorova pripadaju prikazu Područja,
-     *     dok ekran upravljanja zadržava samo podatke, članove i Workspace ACL.
      * EN: The organizer and modal node settings belong to the Workspace view,
      *     while the management screen retains data, members, and Workspace ACL.
+     *
+     * HR: Organizator i modalne postavke čvorova pripadaju prikazu Područja,
+     *     dok ekran upravljanja zadržava samo podatke, članove i Workspace ACL.
      */
     public function testTreeManagementLivesInWorkspaceSidebar(): void
     {
@@ -562,7 +584,13 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
         $this->assertStringNotContainsString("'workspace/node-fields'", $manageView);
     }
 
-    /** HR: Prva razina i djeca aktivne stranice su otvoreni, druge dublje grane su sklopive, a organizator je potpuno otvoren. EN: The first level and active-page children are open, other deeper branches are collapsible, and the organizer remains fully visible. */
+    /**
+     * EN: The first level and active-page children are open; other deeper branches are collapsible.
+     * The organizer remains fully visible.
+     *
+     * HR: Prva razina i djeca aktivne stranice su otvoreni; druge dublje grane su sklopive.
+     * Organizator je potpuno otvoren.
+     */
     public function testReadOnlyTreeHasBranchControlsWithoutAffectingOrganizer(): void
     {
         $tree = file_get_contents(dirname(__DIR__) . '/views/workspace/tree.php');
@@ -612,10 +640,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Stablo mora jasno označiti nove neobjavljene stranice, dok izdavači
-     *     dobivaju zaseban popis sadržaja poslanog na pregled.
      * EN: The tree must clearly mark new unpublished pages, while publishers
      *     receive a separate queue of content submitted for review.
+     *
+     * HR: Stablo mora jasno označiti nove neobjavljene stranice, dok izdavači
+     *     dobivaju zaseban popis sadržaja poslanog na pregled.
      */
     public function testWorkspaceExposesUnpublishedAndReviewQueues(): void
     {
@@ -634,10 +663,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Obični pregled objave smije nuditi samo ulaz u nacrt, dok se akcije
-     *     koje mijenjaju nacrt prikazuju na njegovu pregledu ili novoj stranici.
      * EN: A regular published view may only offer entry into the draft, while
      *     draft-mutating actions appear on its preview or on a new page.
+     *
+     * HR: Obični pregled objave smije nuditi samo ulaz u nacrt, dok se akcije
+     *     koje mijenjaju nacrt prikazuju na njegovu pregledu ili novoj stranici.
      */
     public function testDraftMutationsRequireDraftPreviewOrNewUnpublishedPage(): void
     {
@@ -665,10 +695,11 @@ final class WorkspaceEditorViewIntegrationTest extends TestCase
     }
 
     /**
-     * HR: Odbacivanje nikad objavljene stranice mora trajno ukloniti Editor
-     *     dokument i Workspace čvor umjesto da ih stavi među soft-obrisane.
      * EN: Discarding a never-published page must permanently remove the Editor
      *     document and Workspace node instead of soft-deleting them.
+     *
+     * HR: Odbacivanje nikad objavljene stranice mora trajno ukloniti Editor
+     *     dokument i Workspace čvor umjesto da ih stavi među soft-obrisane.
      */
     public function testDiscardingNewPagePermanentlyDeletesDocumentAndNode(): void
     {

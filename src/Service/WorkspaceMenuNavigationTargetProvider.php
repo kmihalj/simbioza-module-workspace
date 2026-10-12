@@ -11,16 +11,18 @@ use function rawurlencode;
 use function trim;
 
 /**
- * HR: Izlaže područja i njihove stvarne stranice kao jasna odredišta editoru
- *     menija, bez stvaranja obavezne ovisnosti Workspace modula o Menu modulu.
  * EN: Exposes workspaces and their actual pages as clear menu-editor targets
  *     without creating a required Workspace-to-Menu dependency.
+ *
+ * HR: Izlaže područja i njihove stvarne stranice kao jasna odredišta editoru
+ *     menija, bez stvaranja obavezne ovisnosti Workspace modula o Menu modulu.
  */
 final readonly class WorkspaceMenuNavigationTargetProvider
 {
     /**
-     * HR: Prima repozitorij područja te generatore prenosivih URL odredišta.
      * EN: Receives the Workspace repository and generators of portable URL destinations.
+     *
+     * HR: Prima repozitorij područja te generatore prenosivih URL odredišta.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -30,10 +32,11 @@ final readonly class WorkspaceMenuNavigationTargetProvider
     }
 
     /**
-     * HR: Vraća konkretne URL-ove područja i dokumentnih stranica. Područje
-     *     dodatno nosi path patterne za automatsko vezanje posebnog menija.
      * EN: Returns concrete workspace and document-page URLs. A workspace also
      *     carries path patterns for automatic special-menu scoping.
+     *
+     * HR: Vraća konkretne URL-ove područja i dokumentnih stranica. Područje
+     *     dodatno nosi path patterne za automatsko vezanje posebnog menija.
      *
      * @return list<array<string,mixed>>
      */
@@ -153,8 +156,9 @@ final readonly class WorkspaceMenuNavigationTargetProvider
     }
 
     /**
-     * HR: Gradi URL područja kroz registriranu rutu uz siguran fallback.
      * EN: Builds a workspace URL through the registered route with a safe fallback.
+     *
+     * HR: Gradi URL područja kroz registriranu rutu uz siguran fallback.
      */
     private function workspacePath(string $workspaceSlug): string
     {
@@ -169,8 +173,9 @@ final readonly class WorkspaceMenuNavigationTargetProvider
     }
 
     /**
-     * HR: Gradi URL jedne stranice područja kroz registriranu rutu.
      * EN: Builds one workspace-page URL through the registered route.
+     *
+     * HR: Gradi URL jedne stranice područja kroz registriranu rutu.
      */
     private function nodePath(string $workspaceSlug, string $nodeSlug): string
     {
@@ -187,10 +192,11 @@ final readonly class WorkspaceMenuNavigationTargetProvider
     }
 
     /**
-     * HR: Uklanja aplikacijski base path iz providerskog URL-a. Menu sprema
-     *     prenosivu putanju i stvarni instalacijski prefiks dodaje pri renderiranju.
      * EN: Removes the application base path from a provider URL. Menu stores a
      *     portable path and adds the actual installation prefix while rendering.
+     *
+     * HR: Uklanja aplikacijski base path iz providerskog URL-a. Menu sprema
+     *     prenosivu putanju i stvarni instalacijski prefiks dodaje pri renderiranju.
      */
     private function contextPath(string $url): string
     {

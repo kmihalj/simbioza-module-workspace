@@ -8,16 +8,18 @@ use AaiEduHr\HeartPhrameModuleApi\Contract\ApiExtensionInterface;
 use AaiEduHr\HeartPhrameModuleApi\Contract\ApiRouteRegistry;
 
 /**
+ * EN: Advertises Workspace API routes to the generic API core.
+ *
  * HR: Oglašava Workspace API rute generičkoj API jezgri.
  *
- * EN: Advertises Workspace API routes to the generic API core.
  * @see \AaiEduHr\SimbiozaModuleWorkspace\Tests\Api\WorkspaceApiExtensionTest
  */
 final readonly class WorkspaceApiExtension implements ApiExtensionInterface
 {
     /**
-     * HR: Vraća stabilni identifikator Workspace proširenja.
      * EN: Returns the stable Workspace extension identifier.
+     *
+     * HR: Vraća stabilni identifikator Workspace proširenja.
      */
     public function id(): string
     {
@@ -25,8 +27,9 @@ final readonly class WorkspaceApiExtension implements ApiExtensionInterface
     }
 
     /**
-     * HR: Dodaje Workspace endpointove kroz zajednički sigurni registar.
      * EN: Adds Workspace endpoints through the shared secure registry.
+     *
+     * HR: Dodaje Workspace endpointove kroz zajednički sigurni registar.
      */
     public function register(ApiRouteRegistry $routes): void
     {
@@ -42,8 +45,9 @@ final readonly class WorkspaceApiExtension implements ApiExtensionInterface
     }
 
     /**
-     * HR: Vraća stabilan popis ruta; posebne `deleted` rute dolaze prije dinamičkog sluga.
      * EN: Returns the stable route list; specific `deleted` routes precede the dynamic slug.
+     *
+     * HR: Vraća stabilan popis ruta; posebne `deleted` rute dolaze prije dinamičkog sluga.
      *
      * @return list<array{string,string,string,string}>
      */

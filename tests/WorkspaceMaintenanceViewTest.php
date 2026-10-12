@@ -11,8 +11,9 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceMaintenanceViewTest extends TestCase
 {
     /**
-     * HR: Štiti progress bar i ograničeni web worker od slučajnog uklanjanja iz administratorskog prikaza.
      * EN: Protects the progress bar and bounded web worker from accidental removal from the admin view.
+     *
+     * HR: Štiti progress bar i ograničeni web worker od slučajnog uklanjanja iz administratorskog prikaza.
      */
     public function testImageOptimizationUsesVisibleResumableProgress(): void
     {

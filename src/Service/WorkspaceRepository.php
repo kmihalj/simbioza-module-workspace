@@ -61,8 +61,9 @@ final readonly class WorkspaceRepository
     private const AUTH_ATTRIBUTE_VALUES_TABLE = 'auth_user_attribute_values';
 
     /**
-     * HR: Prima ORM bazu i postaje jedino mjesto koje izravno čita Workspace tablice.
      * EN: Receives the ORM database and becomes the only direct reader of Workspace tables.
+     *
+     * HR: Prima ORM bazu i postaje jedino mjesto koje izravno čita Workspace tablice.
      */
     public function __construct(
         private Database $database,
@@ -74,8 +75,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava je li inicijalna Workspace migracija primijenjena.
      * EN: Checks whether the initial Workspace migration has been applied.
+     *
+     * HR: Provjerava je li inicijalna Workspace migracija primijenjena.
      */
     public function tablesReady(): bool
     {
@@ -92,8 +94,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća sva aktivna područja za kasnije filtriranje kroz ACL servis.
      * EN: Returns every active workspace for later filtering by the ACL service.
+     *
+     * HR: Vraća sva aktivna područja za kasnije filtriranje kroz ACL servis.
      *
      * @return list<array<string, mixed>>
      */
@@ -110,8 +113,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća sva područja administratoru, uključujući arhivirana.
      * EN: Returns all non-deleted workspaces to administrators, including archived ones.
+     *
+     * HR: Vraća sva područja administratoru, uključujući arhivirana.
      *
      * @return list<array<string, mixed>>
      */
@@ -121,8 +125,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća soft-obrisana područja za administratorsko vraćanje.
      * EN: Returns soft-deleted workspaces for administrator restoration.
+     *
+     * HR: Vraća soft-obrisana područja za administratorsko vraćanje.
      *
      * @return list<array<string, mixed>>
      */
@@ -139,8 +144,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava aktivno područje po javnom slugu.
      * EN: Loads an active workspace by its public slug.
+     *
+     * HR: Učitava aktivno područje po javnom slugu.
      *
      * @return array<string, mixed>|null
      */
@@ -157,8 +163,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava područje po internom ID-u, po potrebi i kada je obrisano.
      * EN: Loads a workspace by internal ID, optionally including deleted rows.
+     *
+     * HR: Učitava područje po internom ID-u, po potrebi i kada je obrisano.
      *
      * @return array<string, mixed>|null
      */
@@ -177,12 +184,62 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Kreira ili ažurira područje nakon što je poslovni sloj provjerio
-     *     ovlasti. Opcionalni početni upravitelj omogućuje sustavskom izvršitelju
-     *     da zadrži audit, a sva prava dodijeli drugom korisniku.
+     * EN: Loads only the requested active Workspaces without filling a long-lived result cache.
+     *
+     * HR: Učitava samo tražena aktivna područja bez punjenja dugotrajnog cachea rezultata.
+     *
+     * @param list<int> $ids
+     * @return list<array<string,mixed>>
+     */
+    public function workspacesByIds(array $ids): array
+    {
+        $this->assertTablesReady();
+        return $ids === [] ? [] : $this->rows($this->database->table(ModuleWorkspace::TABLE_WORKSPACES)
+            ->whereIn('id', $ids)->where('is_deleted', '=', false)->get());
+    }
+
+    /**
+     * EN: Loads targeted enabled pages and their enabled ancestors across Workspaces in one query.
+     * Recursion is bounded to the same 256 levels as the single-page path. Consumers must
+     * deny cyclic/incomplete paths instead of treating a truncated chain as an ACL grant.
+     *
+     * HR: Jednim upitom učitava tražene aktivne stranice i njihove aktivne pretke kroz područja.
+     * Rekurzija je ograničena na istih 256 razina kao pojedinačni dohvat. Pozivatelj mora
+     * odbiti ciklične/nepotpune putove, ne tumačiti skraćeni lanac kao dopuštenje ACL-a.
+     *
+     * @param list<int> $ids
+     * @return list<array<string,mixed>>
+     */
+    public function nodesWithAncestorsByIds(array $ids): array
+    {
+        $this->assertTablesReady();
+        $ids = array_values(array_unique(array_filter($ids, static fn(int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $table = ModuleWorkspace::TABLE_WORKSPACE_NODES;
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        return $this->rows($this->database->fetchAll(
+            'WITH RECURSIVE target_chain(id, workspace_id, parent_id, depth) AS ('
+            . ' SELECT id, workspace_id, parent_id, 0 FROM ' . $table
+            . ' WHERE id IN (' . $placeholders . ') AND is_enabled = ?'
+            . ' UNION ALL SELECT p.id, p.workspace_id, p.parent_id, c.depth + 1'
+            . ' FROM ' . $table . ' p JOIN target_chain c ON p.id = c.parent_id'
+            . ' AND p.workspace_id = c.workspace_id WHERE p.is_enabled = ? AND c.depth < 255'
+            . ') SELECT n.* FROM ' . $table . ' n WHERE n.id IN (SELECT id FROM target_chain)',
+            [...$ids, true, true],
+        ));
+    }
+
+    /**
      * EN: Creates or updates a Workspace after the business layer has checked
      *     permissions. An optional initial manager lets a system actor retain
      *     the audit record while granting every permission to another user.
+     *
+     * HR: Kreira ili ažurira područje nakon što je poslovni sloj provjerio
+     *     ovlasti. Opcionalni početni upravitelj omogućuje sustavskom izvršitelju
+     *     da zadrži audit, a sva prava dodijeli drugom korisniku.
      *
      * @param array<string, mixed> $data
      * @return array<string, mixed>
@@ -260,6 +317,7 @@ final readonly class WorkspaceRepository
         } else {
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)->insert([
                 'uuid' => $this->uuid(),
+                'storage_slug' => WorkspaceDataDirectory::label($slug, 'workspace'),
                 'is_deleted' => false,
                 'created_by_user_id' => $actorUserId,
                 'created_at' => $now,
@@ -270,12 +328,13 @@ final readonly class WorkspaceRepository
 
         if ($isNew) {
             $this->insertBuiltInVisibilityAcl($workspaceId, $visibility, $now);
-            // HR: Sustavski servis može evidentirati stvarnog izvršitelja, a
-            //     početno upravljanje dodijeliti korisniku za kojega stvara
-            //     područje. Obično korisničko stvaranje i dalje koristi isti ID.
             // EN: A system service may retain the real actor for auditing while
             //     granting initial management to the user for whom it creates
             //     the Workspace. Regular creation still uses the same ID.
+            //
+            // HR: Sustavski servis može evidentirati stvarnog izvršitelja, a
+            //     početno upravljanje dodijeliti korisniku za kojega stvara
+            //     područje. Obično korisničko stvaranje i dalje koristi isti ID.
             $this->grantWorkspaceManagement(
                 $workspaceId,
                 $initialManagerUserId ?? $actorUserId,
@@ -297,8 +356,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Soft-briše područje, dok stablo i povezni dokumenti ostaju dostupni za vraćanje.
      * EN: Soft-deletes a workspace while preserving its tree and linked documents for restoration.
+     *
+     * HR: Soft-briše područje, dok stablo i povezni dokumenti ostaju dostupni za vraćanje.
      */
     public function softDeleteWorkspace(int $workspaceId, int $actorUserId): void
     {
@@ -318,8 +378,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća soft-obrisano područje pod slobodnim slugom.
      * EN: Restores a soft-deleted workspace under an available slug.
+     *
+     * HR: Vraća soft-obrisano područje pod slobodnim slugom.
      *
      * @return array<string, mixed>
      */
@@ -366,12 +427,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Nepovratno uklanja isključivo soft-obrisano područje i sve retke u
-     *     vlasništvu Workspace modula. Podatke drugih modula prethodno uklanja
-     *     orkestracijski servis preko javnog događaja.
      * EN: Irreversibly removes only a soft-deleted Workspace and all rows owned
      *     by the Workspace module. The orchestration service first removes data
      *     owned by other modules through a public event.
+     *
+     * HR: Nepovratno uklanja isključivo soft-obrisano područje i sve retke u
+     *     vlasništvu Workspace modula. Podatke drugih modula prethodno uklanja
+     *     orkestracijski servis preko javnog događaja.
      */
     public function permanentlyDeleteWorkspace(int $workspaceId): void
     {
@@ -417,19 +479,9 @@ final readonly class WorkspaceRepository
             $database->table(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)
                 ->where('workspace_id', '=', $workspaceId)
                 ->delete();
-            foreach (['public_node_id', 'authenticated_node_id'] as $column) {
-                if ($nodeIds !== []) {
-                    $database->table(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)
-                        ->whereIn($column, $nodeIds)
-                        ->update([$column => null]);
-                }
-            }
-
-            foreach (['public_workspace_id', 'authenticated_workspace_id'] as $column) {
-                $database->table(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)
-                    ->where($column, '=', $workspaceId)
-                    ->update([$column => null]);
-            }
+            // EN: Global JSON may be read-only; homepage resolution safely skips a removed target.
+            //
+            // HR: Globalni JSON može biti samo za čitanje; naslovnica sigurno preskače nestali cilj.
 
             $database->table(ModuleWorkspace::TABLE_WORKSPACE_BACKLINKS)
                 ->where('source_workspace_id', '=', $workspaceId)
@@ -456,8 +508,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ACL retke jednog područja.
      * EN: Returns ACL rows for one workspace.
+     *
+     * HR: Vraća ACL retke jednog područja.
      *
      * @return list<array<string, mixed>>
      */
@@ -475,10 +528,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ACL retke više područja jednim upitom kako popisi ne bi
-     *     izvodili zaseban upit za svako područje.
      * EN: Returns ACL rows for multiple Workspaces in one query so listings do
      *     not execute a separate query for every Workspace.
+     *
+     * HR: Vraća ACL retke više područja jednim upitom kako popisi ne bi
+     *     izvodili zaseban upit za svako područje.
      *
      * @param list<int> $workspaceIds
      * @return list<array<string, mixed>>
@@ -502,12 +556,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća samo ACL subjekte koji su dodani području, s prikaznim nazivima
-     *     dohvaćenima grupno. Stara visibility vrijednost se prikazuje kao
-     *     ugrađeni subjekt dok se ACL prvi put ne spremi.
      * EN: Returns only ACL subjects assigned to a Workspace, with display labels
      *     fetched in batches. A legacy visibility value is represented as a
      *     built-in subject until the ACL is saved for the first time.
+     *
+     * HR: Vraća samo ACL subjekte koji su dodani području, s prikaznim nazivima
+     *     dohvaćenima grupno. Stara visibility vrijednost se prikazuje kao
+     *     ugrađeni subjekt dok se ACL prvi put ne spremi.
      *
      * @return list<array<string, mixed>>
      */
@@ -594,12 +649,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ACL subjekte s pravima koja su stvarno naslijeđena na
-     *     odabranom čvoru, nakon ograničenja svih njegovih predaka. Izravno
-     *     ograničenje samog odabranog čvora namjerno se ne primjenjuje.
      * EN: Returns ACL subjects with the rights actually inherited at the
      *     selected node after all ancestor restrictions. The selected node's
      *     own direct restriction is intentionally not applied.
+     *
+     * HR: Vraća ACL subjekte s pravima koja su stvarno naslijeđena na
+     *     odabranom čvoru, nakon ograničenja svih njegovih predaka. Izravno
+     *     ograničenje samog odabranog čvora namjerno se ne primjenjuje.
      *
      * @return list<array<string, mixed>>
      */
@@ -659,14 +715,15 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća korisnike koji već imaju pravo na područje izravno ili
-     *     članstvom u grupi, s pravima naslijeđenima do odabranog čvora.
-     *     Administratori nisu ponuđeni jer njihova prava nije moguće ograničiti
-     *     na stranici.
      * EN: Returns users who already hold Workspace rights directly or through
      *     group membership, with permissions inherited up to the selected node.
      *     Administrators are excluded because page restrictions cannot narrow
      *     their rights.
+     *
+     * HR: Vraća korisnike koji već imaju pravo na područje izravno ili
+     *     članstvom u grupi, s pravima naslijeđenima do odabranog čvora.
+     *     Administratori nisu ponuđeni jer njihova prava nije moguće ograničiti
+     *     na stranici.
      *
      * @param list<int> $userIds
      * @return list<array<string, mixed>>
@@ -686,10 +743,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća trenutačno spremljena korisnička ograničenja jednoga čvora
-     *     zajedno s pravima koja su vrijedila neposredno prije toga čvora.
      * EN: Returns the currently stored user restrictions for one node together
      *     with the permissions inherited immediately before that node.
+     *
+     * HR: Vraća trenutačno spremljena korisnička ograničenja jednoga čvora
+     *     zajedno s pravima koja su vrijedila neposredno prije toga čvora.
      *
      * @return list<array<string, mixed>>
      */
@@ -711,10 +769,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretražuje samo korisnike kojima se na odabranoj stranici stvarno
-     *     mogu dodatno ograničiti prava. Kandidati i rezultat su strogo ograničeni.
      * EN: Searches only users whose existing permissions can actually be narrowed
      *     on the selected page. Both candidates and results are strictly bounded.
+     *
+     * HR: Pretražuje samo korisnike kojima se na odabranoj stranici stvarno
+     *     mogu dodatno ograničiti prava. Kandidati i rezultat su strogo ograničeni.
      *
      * @return list<array<string, mixed>>
      */
@@ -733,10 +792,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretražuje aktivne korisnike ili grupe u malom, ograničenom skupu
-     *     rezultata za asinkrone ACL i administracijske pickere.
      * EN: Searches active users or groups in a small, bounded result set for
      *     asynchronous ACL and administration pickers.
+     *
+     * HR: Pretražuje aktivne korisnike ili grupe u malom, ograničenom skupu
+     *     rezultata za asinkrone ACL i administracijske pickere.
      *
      * @return list<array<string, mixed>>
      */
@@ -755,8 +815,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća jednu ograničenu stranicu imenika za udaljene ACL birače.
      * EN: Returns one bounded directory page for remote ACL pickers.
+     *
+     * HR: Vraća jednu ograničenu stranicu imenika za udaljene ACL birače.
      *
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
@@ -864,8 +925,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava samo zadane aktivne korisnike ili grupe za spremljene postavke.
      * EN: Loads only the supplied active users or groups for persisted settings.
+     *
+     * HR: Učitava samo zadane aktivne korisnike ili grupe za spremljene postavke.
      *
      * @param list<int> $ids
      * @return list<array<string, mixed>>
@@ -914,10 +976,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Zamjenjuje ACL područja stvarno odabranim korisnicima, grupama i
-     *     ugrađenim publikama iz administratorske forme.
      * EN: Replaces Workspace ACL entries with the users, groups, and built-in
      *     audiences actually selected in the administration form.
+     *
+     * HR: Zamjenjuje ACL područja stvarno odabranim korisnicima, grupama i
+     *     ugrađenim publikama iz administratorske forme.
      *
      * @param array<string, mixed> $acl
      */
@@ -996,8 +1059,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća sve aktivne čvorove područja u stabilnom hijerarhijskom redoslijedu.
      * EN: Returns every active workspace node in stable hierarchical order.
+     *
+     * HR: Vraća sve aktivne čvorove područja u stabilnom hijerarhijskom redoslijedu.
      *
      * @return list<array<string, mixed>>
      */
@@ -1032,8 +1096,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća početnu stranicu područja bez učitavanja cijelog stabla.
      * EN: Returns the Workspace homepage without loading the complete tree.
+     *
+     * HR: Vraća početnu stranicu područja bez učitavanja cijelog stabla.
      *
      * @return array<string,mixed>|null
      */
@@ -1052,12 +1117,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća lanac aktivnih predaka od korijena do zadanog čvora koristeći
-     *     samo potrebne retke. Time ACL nasljeđivanje ostaje potpuno, a veliko
-     *     stablo se ne učitava za običan pregled stranice.
      * EN: Returns the active ancestor chain from the root to the supplied node
      *     using only required rows. ACL inheritance stays complete without
      *     loading a large tree for a regular page view.
+     *
+     * HR: Vraća lanac aktivnih predaka od korijena do zadanog čvora koristeći
+     *     samo potrebne retke. Time ACL nasljeđivanje ostaje potpuno, a veliko
+     *     stablo se ne učitava za običan pregled stranice.
      *
      * @return list<array<string,mixed>>
      */
@@ -1111,10 +1177,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Dohvaća mali prozor stabla: korijene, aktivni put te neposrednu djecu
-     *     korijena i aktivnog puta. Ostale se grane učitavaju na zahtjev.
      * EN: Loads a compact tree window: roots, the active path, and immediate
      *     children of roots and the active path. Other branches load on demand.
+     *
+     * HR: Dohvaća mali prozor stabla: korijene, aktivni put te neposrednu djecu
+     *     korijena i aktivnog puta. Ostale se grane učitavaju na zahtjev.
      *
      * @return list<array<string,mixed>>
      */
@@ -1153,10 +1220,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Dohvaća roditeljski put i neposrednu djecu jedne grane radi sigurnog
-     *     ACL-filtriranog učitavanja na zahtjev.
      * EN: Loads the parent path and immediate children of one branch for safe,
      *     ACL-filtered on-demand rendering.
+     *
+     * HR: Dohvaća roditeljski put i neposrednu djecu jedne grane radi sigurnog
+     *     ACL-filtriranog učitavanja na zahtjev.
      *
      * @return list<array<string,mixed>>
      */
@@ -1178,8 +1246,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Uklanja duplikate i označava postoje li skrivena djeca te je li grana učitana.
      * EN: Removes duplicates and marks hidden children and loaded branches.
+     *
+     * HR: Uklanja duplikate i označava postoje li skrivena djeca te je li grana učitana.
      *
      * @param list<array<string,mixed>> $nodes
      * @param list<int> $loadedParentIds
@@ -1227,8 +1296,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća aktivne dokument-stranice označene zadanom poslovnom oznakom.
      * EN: Returns active document pages carrying the requested business label.
+     *
+     * HR: Vraća aktivne dokument-stranice označene zadanom poslovnom oznakom.
      *
      * @return list<array<string,mixed>>
      */
@@ -1252,8 +1322,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća sve oznake jednog čvora.
      * EN: Returns all labels assigned to one node.
+     *
+     * HR: Vraća sve oznake jednog čvora.
      *
      * @return list<string>
      */
@@ -1263,8 +1334,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća oznake više čvorova jednim upitom kako stablo ne bi stvaralo N+1 upite.
      * EN: Returns labels for multiple nodes in one query so tree rendering avoids N+1 queries.
+     *
+     * HR: Vraća oznake više čvorova jednim upitom kako stablo ne bi stvaralo N+1 upite.
      *
      * @param list<int> $nodeIds
      * @return array<int,list<string>>
@@ -1306,8 +1378,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Atomarno zamjenjuje oznake stranice normaliziranim skupom bez duplikata.
      * EN: Atomically replaces page labels with a normalized duplicate-free set.
+     *
+     * HR: Atomarno zamjenjuje oznake stranice normaliziranim skupom bez duplikata.
      *
      * @param list<string> $labels
      */
@@ -1339,8 +1412,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća strukturirana svojstva jedne stranice.
      * EN: Returns one page's structured properties.
+     *
+     * HR: Vraća strukturirana svojstva jedne stranice.
      *
      * @return list<array{key:string,label:string,type:string,value:string,sort_order:int}>
      */
@@ -1350,8 +1424,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća strukturirana svojstva više stranica jednim upitom za dinamičke izvještaje.
      * EN: Returns structured properties for multiple pages in one query for dynamic reports.
+     *
+     * HR: Vraća strukturirana svojstva više stranica jednim upitom za dinamičke izvještaje.
      *
      * @param list<int> $nodeIds
      * @return array<int,list<array{key:string,label:string,type:string,value:string,sort_order:int}>>
@@ -1403,8 +1478,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Atomarno zamjenjuje sva strukturirana svojstva stranice.
      * EN: Atomically replaces all structured properties assigned to a page.
+     *
+     * HR: Atomarno zamjenjuje sva strukturirana svojstva stranice.
      *
      * @param list<array<string,mixed>> $properties
      */
@@ -1457,8 +1533,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća javne nazive korisnika indeksirane po internom ID-u.
      * EN: Returns public user display names indexed by internal ID.
+     *
+     * HR: Vraća javne nazive korisnika indeksirane po internom ID-u.
      *
      * @param list<int> $userIds
      * @return array<int,string>
@@ -1475,8 +1552,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava aktivni čvor po internom ID-u.
      * EN: Loads an active node by internal ID.
+     *
+     * HR: Učitava aktivni čvor po internom ID-u.
      *
      * @return array<string, mixed>|null
      */
@@ -1499,8 +1577,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava aktivni čvor po području i URL slugu.
      * EN: Loads an active node by workspace and URL slug.
+     *
+     * HR: Učitava aktivni čvor po području i URL slugu.
      *
      * @return array<string, mixed>|null
      */
@@ -1517,8 +1596,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pronalazi aktivni Workspace čvor povezan s editor dokumentom.
      * EN: Finds the active Workspace node linked to an editor document.
+     *
+     * HR: Pronalazi aktivni Workspace čvor povezan s editor dokumentom.
      *
      * @return array<string, mixed>|null
      */
@@ -1535,10 +1615,32 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno vraća sve aktivne čvorove dokumenata. Izvedeni indeksi time
-     *     izbjegavaju zaseban upit za svako područje tijekom potpune obnove.
+     * EN: Returns a single declared owner, including disabled/trash nodes. Shared documents have no single owner.
+     *
+     * HR: Vraća jednog deklariranog vlasnika, uključujući isključene čvorove/smeće.
+     * Dijeljeni dokument nema jednog vlasnika.
+     */
+    public function storageWorkspaceIdForDocument(string $documentKey): ?int
+    {
+        return (new WorkspacePayloadOwner($this->database))->storageWorkspaceId($documentKey);
+    }
+
+    /**
+     * EN: Exposes ambiguous ownership to the optional storage integration.
+     *
+     * HR: Izlaže višestruko vlasništvo opcionalnoj integraciji pohrane.
+     */
+    public function hasMultipleStorageOwners(string $documentKey): bool
+    {
+        return (new WorkspacePayloadOwner($this->database))->hasMultipleStorageOwners($documentKey);
+    }
+
+    /**
      * EN: Returns every active document node in one batch. Derived indexes use
      *     this to avoid one query per Workspace during a complete rebuild.
+     *
+     * HR: Grupno vraća sve aktivne čvorove dokumenata. Izvedeni indeksi time
+     *     izbjegavaju zaseban upit za svako područje tijekom potpune obnove.
      *
      * @return list<array<string, mixed>>
      */
@@ -1563,12 +1665,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno učitava aktivne čvorove dokumenata i njihova područja. Ova
-     *     metoda služi popisima i biračima koji moraju provjeriti velik broj
-     *     dokumenata bez izvođenja zasebnih upita za svaki dokument.
      * EN: Batch-loads active document nodes and their workspaces. This method
      *     supports lists and pickers that must authorize many documents without
      *     issuing separate queries for every document.
+     *
+     * HR: Grupno učitava aktivne čvorove dokumenata i njihova područja. Ova
+     *     metoda služi popisima i biračima koji moraju provjeriti velik broj
+     *     dokumenata bez izvođenja zasebnih upita za svaki dokument.
      *
      * @param list<string> $documentKeys
      * @return array<string, array{
@@ -1583,10 +1686,11 @@ final readonly class WorkspaceRepository
         $normalizedKeys = [];
         foreach ($documentKeys as $documentKey) {
             /*
-             * HR: PHP brojčane string-ključeve polja pretvara u cijele brojeve.
-             *     Pretvorba u tekst zato mora prethoditi normalizaciji.
              * EN: PHP converts numeric string array keys to integers. Cast to
              *     string before normalization so imported numeric keys work too.
+             *
+             * HR: PHP brojčane string-ključeve polja pretvara u cijele brojeve.
+             *     Pretvorba u tekst zato mora prethoditi normalizaciji.
              */
             $documentKey = trim((string)$documentKey);
             if ($documentKey !== '') {
@@ -1656,10 +1760,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava workflow stanje jednog jezika stranice ili vraća null dok
-     *     stranica još nije ušla u kontrolirani proces objave.
      * EN: Loads one page-language workflow state or returns null until the page
      *     has entered the managed publishing process.
+     *
+     * HR: Učitava workflow stanje jednog jezika stranice ili vraća null dok
+     *     stranica još nije ušla u kontrolirani proces objave.
      *
      * @return array<string, mixed>|null
      */
@@ -1675,10 +1780,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Jednim prenosivim upitom učitava aktivni dokument-čvor, njegovo
-     *     područje i workflow odabranog jezika za izvedene indekse.
      * EN: Loads an active document node, its Workspace, and the selected
      *     language workflow in one portable query for derived indexes.
+     *
+     * HR: Jednim prenosivim upitom učitava aktivni dokument-čvor, njegovo
+     *     područje i workflow odabranog jezika za izvedene indekse.
      *
      * @return array<string, mixed>|null
      */
@@ -1711,10 +1817,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno učitava workflow stanja zadanih stranica za jedan jezik kako
-     *     velika stabla ne bi izvodila zaseban upit za svaki čvor.
      * EN: Loads workflow states for the requested pages and one locale in a
      *     single batch so large trees do not issue one query per node.
+     *
+     * HR: Grupno učitava workflow stanja zadanih stranica za jedan jezik kako
+     *     velika stabla ne bi izvodila zaseban upit za svaki čvor.
      *
      * @param list<int> $nodeIds
      * @return array<int, array<string, mixed>>
@@ -1749,11 +1856,12 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno učitava workflow stanja svih jezika za zadane stranice. To
-     * omogućuje naslovnici aplikacije siguran jezični fallback bez N+1 upita.
      * EN: Loads workflow states for every language of the requested pages in
      * one batch. This lets the application homepage use a safe locale fallback
      * without N+1 queries.
+     *
+     * HR: Grupno učitava workflow stanja svih jezika za zadane stranice. To
+     * omogućuje naslovnici aplikacije siguran jezični fallback bez N+1 upita.
      *
      * @param list<int> $nodeIds
      * @return array<int, list<array<string, mixed>>>
@@ -1788,10 +1896,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Sprema aktualnu workflow snimku uz jedinstven zapis po stranici i
-     *     jeziku. Poslovni servis prije poziva provjerava dopušteni prijelaz.
      * EN: Stores the current workflow snapshot in one unique row per page and
      *     language. The business service validates the transition first.
+     *
+     * HR: Sprema aktualnu workflow snimku uz jedinstven zapis po stranici i
+     *     jeziku. Poslovni servis prije poziva provjerava dopušteni prijelaz.
      *
      * @param array<string, mixed> $values
      * @return array<string, mixed>
@@ -1849,10 +1958,11 @@ final readonly class WorkspaceRepository
         }
 
         /*
-         * HR: Nacrt koji još pokazuje zadnju objavljenu verziju ne mijenja indeks.
-         *     Objavu, arhivu i povratak u neobjavljeni nacrt šaljemo slušateljima.
          * EN: A draft that still points to the last published version does not
          *     change the index. Publish, archive, and unpublished restore do.
+         *
+         * HR: Nacrt koji još pokazuje zadnju objavljenu verziju ne mijenja indeks.
+         *     Objavu, arhivu i povratak u neobjavljeni nacrt šaljemo slušateljima.
          */
         $publishedChanged = $this->nullablePositiveInt($existing['published_version_number'] ?? null)
         !== $this->nullablePositiveInt($saved['published_version_number'] ?? null);
@@ -1875,8 +1985,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Kreira ili mijenja čvor stabla nakon centralne provjere ovlasti.
      * EN: Creates or updates a tree node after centralized permission checks.
+     *
+     * HR: Kreira ili mijenja čvor stabla nakon centralne provjere ovlasti.
      *
      * @param array<string, mixed> $data
      * @return array<string, mixed>
@@ -2056,16 +2167,17 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Atomski zamjenjuje roditelja i redoslijed svih aktivnih čvorova jednog
-     *     područja nakon potpune provjere roditelja i ciklusa.
      * EN: Atomically replaces parent and order values for every active node in
      *     one Workspace after complete parent and cycle validation.
      *
      * Početnici / Beginners:
-     * HR: Cijelo se stablo provjerava prije prvog UPDATE-a, pa pogrešan raspored
-     *     ne može ostaviti samo djelomično spremljenu hijerarhiju.
-     * EN: The complete tree is validated before the first UPDATE, so an invalid
+     * The complete tree is validated before the first UPDATE, so an invalid
      *     arrangement cannot leave a partially saved hierarchy.
+     *
+     * HR: Atomski zamjenjuje roditelja i redoslijed svih aktivnih čvorova jednog
+     *     područja nakon potpune provjere roditelja i ciklusa.
+     * Cijelo se stablo provjerava prije prvog UPDATE-a, pa pogrešan raspored
+     *     ne može ostaviti samo djelomično spremljenu hijerarhiju.
      *
      * @param list<array<string, mixed>> $placements
      */
@@ -2092,8 +2204,9 @@ final readonly class WorkspaceRepository
             $normalized[$nodeId] = [
                 'parent_id' => $this->nullablePositiveInt($placement['parent_id'] ?? null),
                 'sort_order' => $this->intValue($placement['sort_order'] ?? 0),
-                // HR: API klijenti koji još ne šalju novu oznaku zadržavaju postojeće stanje.
                 // EN: API clients that do not yet send the new flag preserve its current state.
+                //
+                // HR: API klijenti koji još ne šalju novu oznaku zadržavaju postojeće stanje.
                 'is_tree_hidden' => array_key_exists('is_tree_hidden', $placement)
                     ? $this->boolValue($placement['is_tree_hidden'])
                     : (bool)($nodesById[$nodeId]['is_tree_hidden'] ?? false),
@@ -2165,8 +2278,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Onemogućuje čvor i cijelu njegovu podgranu bez fizičkog brisanja zapisa.
      * EN: Disables a node and its complete subtree without physically deleting records.
+     *
+     * HR: Onemogućuje čvor i cijelu njegovu podgranu bez fizičkog brisanja zapisa.
      */
     public function disableNodeTree(int $workspaceId, int $nodeId, int $actorUserId): void
     {
@@ -2189,13 +2303,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Trajno briše jedan nikad objavljeni čvor, njegove ACL i workflow
-     *     retke, a izravnu djecu premješta njegovu roditelju. Metoda ne služi
-     *     za obične objavljene stranice koje koriste soft-delete.
-     *
      * EN: Permanently deletes one never-published node and its ACL/workflow
      *     rows while reparenting direct children to its parent. This method is
      *     not used for ordinary published pages, which use soft deletion.
+     *
+     * HR: Trajno briše jedan nikad objavljeni čvor, njegove ACL i workflow
+     *     retke, a izravnu djecu premješta njegovu roditelju. Metoda ne služi
+     *     za obične objavljene stranice koje koriste soft-delete.
      */
     public function deleteUnpublishedNodePermanently(
         int $workspaceId,
@@ -2268,8 +2382,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća aktivne čvorove odabrane podgrane prije brisanja ili druge skupne radnje.
      * EN: Returns active nodes in a selected subtree before deletion or another bulk action.
+     *
+     * HR: Vraća aktivne čvorove odabrane podgrane prije brisanja ili druge skupne radnje.
      *
      * @return list<array<string, mixed>>
      */
@@ -2287,8 +2402,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ograničenja postavljena izravno na jednom čvoru.
      * EN: Returns restrictions assigned directly to one node.
+     *
+     * HR: Vraća ograničenja postavljena izravno na jednom čvoru.
      *
      * @return list<array<string, mixed>>
      */
@@ -2306,8 +2422,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća sva ograničenja za zadani skup predaka u jednome prolazu.
      * EN: Returns all restrictions for a set of ancestors in one pass.
+     *
+     * HR: Vraća sva ograničenja za zadani skup predaka u jednome prolazu.
      *
      * @param list<int> $nodeIds
      * @return list<array<string, mixed>>
@@ -2326,8 +2443,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća izravna korisnička prava za skup stranica u jednom upitu.
      * EN: Returns direct user grants for a set of pages in one query.
+     *
+     * HR: Vraća izravna korisnička prava za skup stranica u jednom upitu.
      *
      * @param list<int> $nodeIds
      * @return list<array<string, mixed>>
@@ -2352,8 +2470,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća izravna prava jednog čvora s javnim oznakama aktivnih korisnika.
      * EN: Returns one node's direct grants with public labels of active users.
+     *
+     * HR: Vraća izravna prava jednog čvora s javnim oznakama aktivnih korisnika.
      *
      * @return list<array<string, mixed>>
      */
@@ -2389,8 +2508,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća područja u kojima korisnik ima barem jednu izravno dopuštenu stranicu.
      * EN: Returns Workspaces in which the user has at least one directly granted page.
+     *
+     * HR: Vraća područja u kojima korisnik ima barem jednu izravno dopuštenu stranicu.
      *
      * @param list<int> $workspaceIds
      * @return list<int>
@@ -2422,8 +2542,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava samo izravno dopuštene aktivne stranice jednog korisnika u području.
      * EN: Loads only a user's directly granted active pages in one Workspace.
+     *
+     * HR: Učitava samo izravno dopuštene aktivne stranice jednog korisnika u području.
      *
      * @return list<array<string, mixed>>
      */
@@ -2445,8 +2566,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Zamjenjuje izravna prava stranice aktivnim korisnicima i samo dopuštenim operacijama.
      * EN: Replaces a page's direct grants with active users and the allowed operations only.
+     *
+     * HR: Zamjenjuje izravna prava stranice aktivnim korisnicima i samo dopuštenim operacijama.
      *
      * @param array<int|string, mixed> $permissions
      */
@@ -2511,12 +2633,13 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Zamjenjuje ograničenja čvora. Uobičajeno korisničko sučelje sprema
-     *     samo korisnike, dok kontrolirani uvoz smije dodati `public` zadani
-     *     red i izričite korisničke ili grupne iznimke za zatvoreni allowlist.
      * EN: Replaces node restrictions. The regular UI stores users only, while
      *     a controlled import may add a `public` default row plus explicit user
      *     or group exceptions for a fail-closed allowlist.
+     *
+     * HR: Zamjenjuje ograničenja čvora. Uobičajeno korisničko sučelje sprema
+     *     samo korisnike, dok kontrolirani uvoz smije dodati `public` zadani
+     *     red i izričite korisničke ili grupne iznimke za zatvoreni allowlist.
      *
      * @param array<string, mixed> $acl
      */
@@ -2593,12 +2716,13 @@ final readonly class WorkspaceRepository
                     }
                 }
 
-                // HR: Običan korisnički red jednak naslijeđenim pravima nije
-                //     ograničenje. U importnom allowlistu isti je red iznimka
-                //     od zadanog deny retka i zato ga moramo spremiti.
                 // EN: A regular user row equal to inherited rights is not a
                 //     restriction. In an imported allowlist it is an exception
                 //     to the default deny row and therefore must be stored.
+                //
+                // HR: Običan korisnički red jednak naslijeđenim pravima nije
+                //     ograničenje. U importnom allowlistu isti je red iznimka
+                //     od zadanog deny retka i zato ga moramo spremiti.
                 if (!$hasImportedDefault && is_array($inherited) && $normalized === $inherited) {
                     continue;
                 }
@@ -2616,10 +2740,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Paketno spaja javna, autentificirana, izravna korisnička i grupna
-     *     prava područja te primjenjuje korisnička i importna allowlist ograničenja predaka.
      * EN: Batch-merges public, authenticated, direct-user, and group Workspace
      *     rights, then applies user restrictions and imported ancestor allowlists.
+     *
+     * HR: Paketno spaja javna, autentificirana, izravna korisnička i grupna
+     *     prava područja te primjenjuje korisnička i importna allowlist ograničenja predaka.
      *
      * @param list<array<string, mixed>> $users
      * @return list<array<string, mixed>>
@@ -2789,8 +2914,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretražuje korisnički login i display name bez učitavanja cijelog imenika.
      * EN: Searches user login and display name without loading the full directory.
+     *
+     * HR: Pretražuje korisnički login i display name bez učitavanja cijelog imenika.
      *
      * @return list<array<string, mixed>>
      */
@@ -2854,8 +2980,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Sortira picker korisnike po prezimenu i imenu te uklanja interna polja sortiranja.
      * EN: Sorts picker users by last and first name and removes internal sort fields.
+     *
+     * HR: Sortira picker korisnike po prezimenu i imenu te uklanja interna polja sortiranja.
      *
      * @param list<array<string, mixed>> $users
      * @return list<array<string, mixed>>
@@ -2889,8 +3016,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretražuje stvarne grupe te u isti rezultat umeće ugrađene publike.
      * EN: Searches real groups and inserts built-in audiences into the same result.
+     *
+     * HR: Pretražuje stvarne grupe te u isti rezultat umeće ugrađene publike.
      *
      * @return list<array<string, mixed>>
      */
@@ -2945,8 +3073,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava aktivne korisnike prema ID-u i vraća ih indeksirane radi brzog spajanja s ACL-om.
      * EN: Loads active users by ID and indexes them for fast ACL merging.
+     *
+     * HR: Učitava aktivne korisnike prema ID-u i vraća ih indeksirane radi brzog spajanja s ACL-om.
      *
      * @param list<int> $userIds
      * @return array<int, array<string, mixed>>
@@ -2967,8 +3096,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Učitava aktivne grupe prema ID-u i indeksira ih radi brzog spajanja s ACL-om.
      * EN: Loads active groups by ID and indexes them for fast ACL merging.
+     *
+     * HR: Učitava aktivne grupe prema ID-u i indeksira ih radi brzog spajanja s ACL-om.
      *
      * @param list<int> $groupIds
      * @return array<int, array<string, mixed>>
@@ -2996,10 +3126,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Grupno dodaje javne atribute imena korisnicima i indeksira rezultat po
-     *     ID-u. Sortirna polja dodaje samo privremeno za korisnički picker.
      * EN: Adds public name attributes to users in one batch and indexes the
      *     result by ID. Sort fields are added only temporarily for user pickers.
+     *
+     * HR: Grupno dodaje javne atribute imena korisnicima i indeksira rezultat po
+     *     ID-u. Sortirna polja dodaje samo privremeno za korisnički picker.
      *
      * @param list<array<string, mixed>> $users
      * @return array<int, array<string, mixed>>
@@ -3040,8 +3171,9 @@ final readonly class WorkspaceRepository
                 continue;
             }
 
-            // HR: Imenik vraća samo javna picker polja jer Auth red može sadržavati tajne.
             // EN: The directory returns only public picker fields because an Auth row may contain secrets.
+            //
+            // HR: Imenik vraća samo javna picker polja jer Auth red može sadržavati tajne.
             $label = $this->stringValue($nameAttributes[$userId]['display_name'] ?? '')
             ?: $this->stringValue($user['login_identifier'] ?? __('Korisnik'));
             $decorated[$userId] = [
@@ -3066,8 +3198,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ID-eve grupa kojima korisnik trenutačno pripada.
      * EN: Returns IDs of groups to which the user currently belongs.
+     *
+     * HR: Vraća ID-eve grupa kojima korisnik trenutačno pripada.
      *
      * @return list<int>
      */
@@ -3092,10 +3225,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća minimalni skup aktivnih Auth korisnika potreban za grupni ACL
-     *     izračun primatelja obavijesti.
      * EN: Returns the minimal active Auth user set required for batch ACL
      *     notification-recipient calculation.
+     *
+     * HR: Vraća minimalni skup aktivnih Auth korisnika potreban za grupni ACL
+     *     izračun primatelja obavijesti.
      *
      * @return list<array<string, mixed>>
      */
@@ -3115,10 +3249,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: U jednom upitu grupira sva Auth članstva zadanih korisnika po
-     *     korisničkom ID-u.
      * EN: Loads all Auth memberships for the supplied users in one query and
      *     groups them by user ID.
+     *
+     * HR: U jednom upitu grupira sva Auth članstva zadanih korisnika po
+     *     korisničkom ID-u.
      *
      * @param list<int> $userIds
      * @return array<int, list<int>>
@@ -3166,8 +3301,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Gradi lanac predaka od korijena do odabranog čvora.
      * EN: Builds the ancestor chain from the root to the selected node.
+     *
+     * HR: Gradi lanac predaka od korijena do odabranog čvora.
      *
      * @return list<int>
      */
@@ -3180,8 +3316,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretvara proizvoljne retke ORM-a u sigurnu listu polja.
      * EN: Converts arbitrary ORM rows into a safe list of arrays.
+     *
+     * HR: Pretvara proizvoljne retke ORM-a u sigurnu listu polja.
      *
      * @param mixed[] $rows
      * @return list<array<string, mixed>>
@@ -3192,8 +3329,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira jedan proizvoljni ORM red ili vraća null.
      * EN: Normalizes one arbitrary ORM row or returns null.
+     *
+     * HR: Normalizira jedan proizvoljni ORM red ili vraća null.
      *
      * @return array<string, mixed>|null
      */
@@ -3205,8 +3343,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Odbija operaciju kada inicijalna migracija nedostaje.
      * EN: Rejects an operation when the initial migration is missing.
+     *
+     * HR: Odbija operaciju kada inicijalna migracija nedostaje.
      */
     private function assertTablesReady(): void
     {
@@ -3216,8 +3355,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira vidljivost na podržani skup vrijednosti.
      * EN: Normalizes visibility to the supported value set.
+     *
+     * HR: Normalizira vidljivost na podržani skup vrijednosti.
      */
     private function visibility(mixed $value): string
     {
@@ -3229,8 +3369,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira politiku prikaza na nasljeđivanje, prikaz ili skrivanje.
      * EN: Normalizes a display policy to inherit, show, or hide.
+     *
+     * HR: Normalizira politiku prikaza na nasljeđivanje, prikaz ili skrivanje.
      */
     private function displayPolicy(mixed $value): string
     {
@@ -3242,8 +3383,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Sprema zadani prikaz sadržaja stranice bez promjene ostalih podataka čvora.
      * EN: Saves a page's default outline visibility without changing other node data.
+     *
+     * HR: Sprema zadani prikaz sadržaja stranice bez promjene ostalih podataka čvora.
      */
     public function updateNodeContentsVisibility(
         int $nodeId,
@@ -3268,8 +3410,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Poništava request cache stabla odmah nakon promjene njegovih čvorova.
      * EN: Invalidates the request tree cache immediately after node mutations.
+     *
+     * HR: Poništava request cache stabla odmah nakon promjene njegovih čvorova.
      */
     private function clearWorkspaceNodeCache(int $workspaceId): void
     {
@@ -3287,8 +3430,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pamti aktivni čvor po ID-u samo tijekom aktualnog zahtjeva.
      * EN: Remembers an active node by ID only for the current request.
+     *
+     * HR: Pamti aktivni čvor po ID-u samo tijekom aktualnog zahtjeva.
      *
      * @param array<string, mixed>|null $node
      * @return array<string, mixed>|null
@@ -3308,8 +3452,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira tip čvora na dokument ili podržani link.
      * EN: Normalizes node type to a document or supported link.
+     *
+     * HR: Normalizira tip čvora na dokument ili podržani link.
      */
     private function nodeType(mixed $value): string
     {
@@ -3321,8 +3466,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Gradi jedinstveni slug područja uz predvidljiv numerički nastavak.
      * EN: Builds a unique workspace slug with a predictable numeric suffix.
+     *
+     * HR: Gradi jedinstveni slug područja uz predvidljiv numerički nastavak.
      */
     private function uniqueWorkspaceSlug(string $base, int $ignoreId): string
     {
@@ -3342,8 +3488,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Gradi jedinstveni slug čvora unutar jednog područja.
      * EN: Builds a node slug unique within one workspace.
+     *
+     * HR: Gradi jedinstveni slug čvora unutar jednog područja.
      */
     private function uniqueNodeSlug(int $workspaceId, string $base, int $ignoreId): string
     {
@@ -3364,8 +3511,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava bi li novi roditelj stvorio ciklus stabla.
      * EN: Checks whether a new parent would create a tree cycle.
+     *
+     * HR: Provjerava bi li novi roditelj stvorio ciklus stabla.
      */
     private function wouldCreateCycle(int $nodeId, int $parentId): bool
     {
@@ -3389,8 +3537,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća ID-eve čvora i svih aktivnih potomaka.
      * EN: Returns IDs of a node and all active descendants.
+     *
+     * HR: Vraća ID-eve čvora i svih aktivnih potomaka.
      *
      * @return list<int>
      */
@@ -3429,8 +3578,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava postoji li auth subjekt odabran u ACL formi.
      * EN: Checks whether an auth subject selected in the ACL form exists.
+     *
+     * HR: Provjerava postoji li auth subjekt odabran u ACL formi.
      */
     private function subjectExists(string $type, int $id): bool
     {
@@ -3447,8 +3597,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava postoji li aktivni korisnik.
      * EN: Checks whether an active user exists.
+     *
+     * HR: Provjerava postoji li aktivni korisnik.
      */
     private function userExists(int $id): bool
     {
@@ -3465,8 +3616,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava postoji li aktivna grupa.
      * EN: Checks whether an active group exists.
+     *
+     * HR: Provjerava postoji li aktivna grupa.
      */
     private function groupExists(int $id): bool
     {
@@ -3483,10 +3635,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pri kreiranju područja pretvara zadanu vidljivost u isti ugrađeni ACL
-     *     model koji kasnije uređuje administrator.
      * EN: Converts default visibility into the same built-in ACL model edited
      *     by administrators when a Workspace is created.
+     *
+     * HR: Pri kreiranju područja pretvara zadanu vidljivost u isti ugrađeni ACL
+     *     model koji kasnije uređuje administrator.
      */
     private function insertBuiltInVisibilityAcl(int $workspaceId, string $visibility, string $now): void
     {
@@ -3510,10 +3663,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Korisniku idempotentno dodjeljuje upravljanje i svih pet zasebnih
-     *     operativnih prava kroz isti ACL model koji uređuju postavke područja.
      * EN: Idempotently grants a user Manage and all five separate operational
      *     permissions through the same ACL model edited in Workspace settings.
+     *
+     * HR: Korisniku idempotentno dodjeljuje upravljanje i svih pet zasebnih
+     *     operativnih prava kroz isti ACL model koji uređuju postavke područja.
      */
     public function grantWorkspaceManagement(int $workspaceId, int $userId): void
     {
@@ -3550,10 +3704,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira polja ovlasti. Upravljanje uključuje sve radnje, a svaka
-     *     uža radnja uključuje pregled jer se ne može izvoditi nad nevidljivim sadržajem.
      * EN: Normalizes permission fields. Management includes every action, while
      *     each narrower action implies viewing because hidden content cannot be operated on.
+     *
+     * HR: Normalizira polja ovlasti. Upravljanje uključuje sve radnje, a svaka
+     *     uža radnja uključuje pregled jer se ne može izvoditi nad nevidljivim sadržajem.
      *
      * @param array<string, mixed> $permissions
      * @return array<string, bool>
@@ -3583,8 +3738,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava sadrži li normalizirani red barem jedno pravo.
      * EN: Checks whether a normalized row contains at least one permission.
+     *
+     * HR: Provjerava sadrži li normalizirani red barem jedno pravo.
      *
      * @param array<string, bool> $permissions
      */
@@ -3594,8 +3750,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira naslov i druge kratke tekstualne vrijednosti.
      * EN: Normalizes titles and other short text values.
+     *
+     * HR: Normalizira naslov i druge kratke tekstualne vrijednosti.
      */
     private function stringValue(mixed $value): string
     {
@@ -3603,8 +3760,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Dekodira jezične vrijednosti spremljene kao JSON i normalizira oznake jezika.
      * EN: Decodes language values stored as JSON and normalizes locale codes.
+     *
+     * HR: Dekodira jezične vrijednosti spremljene kao JSON i normalizira oznake jezika.
      *
      * @return array<string, string>
      */
@@ -3635,10 +3793,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća prijevod za aktivni jezik, njegov osnovni oblik, primarni jezik
-     *     sitea, engleski te naposljetku prvi stvarno dostupan prijevod.
      * EN: Returns the active locale, its base form, the site's primary locale,
      *     English, and finally the first translation that actually exists.
+     *
+     * HR: Vraća prijevod za aktivni jezik, njegov osnovni oblik, primarni jezik
+     *     sitea, engleski te naposljetku prvi stvarno dostupan prijevod.
      */
     public function localizedValue(mixed $translations, string $language, string $primaryLanguage): string
     {
@@ -3663,10 +3822,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Lokalizira naziv i opis područja bez dodatnog SQL upita te zadržava
-     *     dekodirane mape kako bi ih obrazac mogao uređivati.
      * EN: Localizes a Workspace name and description without another SQL query
      *     and retains decoded maps for editing forms.
+     *
+     * HR: Lokalizira naziv i opis područja bez dodatnog SQL upita te zadržava
+     *     dekodirane mape kako bi ih obrazac mogao uređivati.
      *
      * @param array<string, mixed> $workspace
      * @return array<string, mixed>
@@ -3678,10 +3838,11 @@ final readonly class WorkspaceRepository
             $workspace['description_translations'] ?? null,
         );
 
-        // HR: Stari skalarni stupci ostaju siguran izvor za primarni jezik ako
-        //     migracija ili prijenos još nisu zapisali JSON mapu.
         // EN: Legacy scalar columns remain a safe primary-locale source when a
         //     migration or transfer has not written the JSON map yet.
+        //
+        // HR: Stari skalarni stupci ostaju siguran izvor za primarni jezik ako
+        //     migracija ili prijenos još nisu zapisali JSON mapu.
         $primaryLanguage = $this->languageCode($primaryLanguage);
         $legacyName = $this->stringValue($workspace['name'] ?? '');
         if (($workspace['name_translations_map'][$primaryLanguage] ?? '') === '' && $legacyName !== '') {
@@ -3711,7 +3872,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Lokalizira popis područja u memoriji. EN: Localizes a Workspace list in memory.
+     * EN: Localizes a Workspace list in memory.
+     *
+     * HR: Lokalizira popis područja u memoriji.
      *
      * @param list<array<string, mixed>> $workspaces
      * @return list<array<string, mixed>>
@@ -3728,8 +3891,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Lokalizira naslov jednoga čvora i zadržava mapu za obrazac.
      * EN: Localizes a single node title and retains its map for the form.
+     *
+     * HR: Lokalizira naslov jednoga čvora i zadržava mapu za obrazac.
      *
      * @param array<string, mixed> $node
      * @return array<string, mixed>
@@ -3753,7 +3917,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Lokalizira ravan popis čvorova. EN: Localizes a flat node list.
+     * EN: Localizes a flat node list.
+     *
+     * HR: Lokalizira ravan popis čvorova.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -3770,8 +3936,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Rekurzivno lokalizira cijelo stablo bez novih upita prema bazi.
      * EN: Recursively localizes the whole tree without additional database queries.
+     *
+     * HR: Rekurzivno lokalizira cijelo stablo bez novih upita prema bazi.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -3791,8 +3958,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira proizvoljan niz djece u popis čvorova sa znakovnim ključevima.
      * EN: Normalizes an arbitrary children array into a list of string-keyed nodes.
+     *
+     * HR: Normalizira proizvoljan niz djece u popis čvorova sa znakovnim ključevima.
      *
      * @param array<mixed> $nodes
      * @return list<array<string,mixed>>
@@ -3818,15 +3986,20 @@ final readonly class WorkspaceRepository
         return $normalizedNodes;
     }
 
-    /** HR: Normalizira proizvoljnu oznaku jezika. EN: Normalizes an arbitrary locale code. */
+    /**
+     * EN: Normalizes an arbitrary locale code.
+     *
+     * HR: Normalizira proizvoljnu oznaku jezika.
+     */
     private function languageCode(mixed $language): string
     {
         return $this->language(is_scalar($language) ? (string)$language : '');
     }
 
     /**
-     * HR: Normalizira jedinstveni popis podržanih jezika.
      * EN: Normalizes a unique list of supported locales.
+     *
+     * HR: Normalizira jedinstveni popis podržanih jezika.
      *
      * @return list<string>
      */
@@ -3845,10 +4018,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Prihvaća samo podržane prijevode; sirovu vrijednost koristi za primarni
-     *     jezik samo kada pozivatelj nije poslao mapu prijevoda.
      * EN: Accepts supported translations only; the raw value seeds the primary
      *     locale only when the caller did not submit a translation map.
+     *
+     * HR: Prihvaća samo podržane prijevode; sirovu vrijednost koristi za primarni
+     *     jezik samo kada pozivatelj nije poslao mapu prijevoda.
      *
      * @param list<string> $supportedLanguages
      * @return array<string, string>
@@ -3881,8 +4055,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Kodira prijevode u stabilan Unicode JSON zapis.
      * EN: Encodes translations as stable Unicode JSON.
+     *
+     * HR: Kodira prijevode u stabilan Unicode JSON zapis.
      *
      * @param array<string, string> $translations
      */
@@ -3897,8 +4072,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Čita cijeli broj iz forme ili baze.
      * EN: Reads an integer from form or database input.
+     *
+     * HR: Čita cijeli broj iz forme ili baze.
      */
     private function intValue(mixed $value): int
     {
@@ -3906,8 +4082,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Vraća pozitivan ID ili null za korijenski čvor.
      * EN: Returns a positive ID or null for a root node.
+     *
+     * HR: Vraća pozitivan ID ili null za korijenski čvor.
      */
     private function nullablePositiveInt(mixed $value): ?int
     {
@@ -3917,10 +4094,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Razlikuje izričitu null vrijednost od polja koje prijelaz nije
-     *     mijenjao, što omogućuje sigurno čišćenje starih workflow oznaka.
      * EN: Distinguishes an explicit null from a field omitted by a transition,
      *     allowing stale workflow markers to be cleared safely.
+     *
+     * HR: Razlikuje izričitu null vrijednost od polja koje prijelaz nije
+     *     mijenjao, što omogućuje sigurno čišćenje starih workflow oznaka.
      *
      * @param array<string, mixed> $values
      * @param array<string, mixed>|null $existing
@@ -3937,8 +4115,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Normalizira kratku oznaku jezika za jedinstveni workflow ključ.
      * EN: Normalizes a short locale code for the unique workflow key.
+     *
+     * HR: Normalizira kratku oznaku jezika za jedinstveni workflow ključ.
      */
     private function language(string $language): string
     {
@@ -3949,8 +4128,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Pretvara skalarne checkbox vrijednosti u boolean.
      * EN: Converts scalar checkbox values into a boolean.
+     *
+     * HR: Pretvara skalarne checkbox vrijednosti u boolean.
      */
     private function boolValue(mixed $value): bool
     {
@@ -3966,8 +4146,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Gradi siguran ASCII slug.
      * EN: Builds a safe ASCII slug.
+     *
+     * HR: Gradi siguran ASCII slug.
      */
     private function slug(mixed $value, string $fallback): string
     {
@@ -3989,7 +4170,11 @@ final readonly class WorkspaceRepository
         return $slug !== '' ? $slug : $fallback;
     }
 
-    /** HR: Normalizira poslovnu oznaku stranice u stabilan prenosivi ključ. EN: Normalizes a page label into a stable portable key. */
+    /**
+     * EN: Normalizes a page label into a stable portable key.
+     *
+     * HR: Normalizira poslovnu oznaku stranice u stabilan prenosivi ključ.
+     */
     private function nodeLabel(mixed $value): string
     {
         $label = strtolower($this->stringValue($value));
@@ -3998,7 +4183,11 @@ final readonly class WorkspaceRepository
         return trim($label, '-.');
     }
 
-    /** HR: Normalizira ključ svojstva stranice. EN: Normalizes a page-property key. */
+    /**
+     * EN: Normalizes a page-property key.
+     *
+     * HR: Normalizira ključ svojstva stranice.
+     */
     private function nodePropertyKey(mixed $value): string
     {
         $key = mb_strtolower($this->stringValue($value));
@@ -4007,7 +4196,11 @@ final readonly class WorkspaceRepository
         return mb_substr(trim($key, '-.'), 0, 128);
     }
 
-    /** HR: Ograničava svojstvo na podržanu semantičku vrstu. EN: Limits a property to a supported semantic type. */
+    /**
+     * EN: Limits a property to a supported semantic type.
+     *
+     * HR: Ograničava svojstvo na podržanu semantičku vrstu.
+     */
     private function nodePropertyType(mixed $value): string
     {
         $type = strtolower($this->stringValue($value));
@@ -4018,8 +4211,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Provjerava apsolutni HTTP(S) URL vanjskog linka.
      * EN: Validates an absolute HTTP(S) URL for an external link.
+     *
+     * HR: Provjerava apsolutni HTTP(S) URL vanjskog linka.
      */
     private function validExternalUrl(string $url): bool
     {
@@ -4033,8 +4227,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Dopušta samo lokalnu apsolutnu putanju bez protokola, drugog hosta ili obrnutih kosa crta.
      * EN: Allows only a local absolute path without a scheme, another host, or backslashes.
+     *
+     * HR: Dopušta samo lokalnu apsolutnu putanju bez protokola, drugog hosta ili obrnutih kosa crta.
      */
     private function validInternalPath(string $path): bool
     {
@@ -4045,10 +4240,11 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Sigurno šalje obavijest izvedenim modulima. Neuspjeh opcionalnog
-     *     indeksa ne smije poništiti uspješno spremanje izvornog sadržaja.
      * EN: Safely notifies derived modules. Failure of an optional index must
      *     not undo a successful write of the source content.
+     *
+     * HR: Sigurno šalje obavijest izvedenim modulima. Neuspjeh opcionalnog
+     *     indeksa ne smije poništiti uspješno spremanje izvornog sadržaja.
      */
     private function contentChanged(
         int $workspaceId,
@@ -4078,10 +4274,11 @@ final readonly class WorkspaceRepository
             $this->events->dispatch($event);
         } catch (\Throwable $throwable) {
             /*
-             * HR: Ručni reindeks i periodična provjera popravljaju eventualni
-             *     kvar izvedenog indeksa bez gubitka izvornog sadržaja.
              * EN: Manual reindexing and periodic refresh repair a derived-index
              *     failure without losing source content.
+             *
+             * HR: Ručni reindeks i periodična provjera popravljaju eventualni
+             *     kvar izvedenog indeksa bez gubitka izvornog sadržaja.
              */
             $this->logger?->error('Workspace content-change listeners failed for workspace {workspace_id}.', [
                 'module' => 'workspace',
@@ -4094,8 +4291,9 @@ final readonly class WorkspaceRepository
     }
 
     /**
-     * HR: Generira prenosivi UUID v4 bez dodatne biblioteke.
      * EN: Generates a portable UUID v4 without an additional library.
+     *
+     * HR: Generira prenosivi UUID v4 bez dodatne biblioteke.
      */
     private function uuid(): string
     {

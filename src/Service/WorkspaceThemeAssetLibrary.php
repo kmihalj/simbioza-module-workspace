@@ -18,8 +18,9 @@ use RuntimeException;
 use SplFileInfo;
 
 /**
- * HR: Upravlja sigurnim slikovnim datotekama privatne teme jednog područja.
  * EN: Manages safe image files belonging to one workspace's private theme.
+ *
+ * HR: Upravlja sigurnim slikovnim datotekama privatne teme jednog područja.
  */
 final readonly class WorkspaceThemeAssetLibrary
 {
@@ -38,16 +39,18 @@ final readonly class WorkspaceThemeAssetLibrary
     private const ROLES = ['hero', 'icon', 'logo', 'other'];
 
     /**
-     * HR: Prima konfiguraciju sigurnog podatkovnog direktorija privatnih tema područja.
      * EN: Receives configuration for the private Workspace theme data directory.
+     *
+     * HR: Prima konfiguraciju sigurnog podatkovnog direktorija privatnih tema područja.
      */
     public function __construct(private WorkspaceConfig $config)
     {
     }
 
     /**
-     * HR: Vraća samo postojeće i validno opisane datoteke privatne teme.
      * EN: Returns only existing and validly described private-theme files.
+     *
+     * HR: Vraća samo postojeće i validno opisane datoteke privatne teme.
      *
      * @param array<string, mixed> $theme
      * @return list<array<string, mixed>>
@@ -89,8 +92,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Sprema upload nakon provjere stvarnog MIME-a i sigurnosti SVG sadržaja.
      * EN: Stores an upload after validating its real MIME type and SVG safety.
+     *
+     * HR: Sprema upload nakon provjere stvarnog MIME-a i sigurnosti SVG sadržaja.
      *
      * @return array<string, mixed>
      */
@@ -161,8 +165,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Kopira već provjeren sistemski asset u privatnu biblioteku i vraća novu referencu.
      * EN: Copies an already validated system asset into the private library and returns its new reference.
+     *
+     * HR: Kopira već provjeren sistemski asset u privatnu biblioteku i vraća novu referencu.
      */
     public function copyFile(int $workspaceId, string $sourcePath, string $role, string $label): string
     {
@@ -196,8 +201,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Briše samo nekorišteni asset privatne teme.
      * EN: Deletes only an unused private-theme asset.
+     *
+     * HR: Briše samo nekorišteni asset privatne teme.
      *
      * @param array<string, mixed> $theme
      */
@@ -227,8 +233,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Nepovratno uklanja isključivo privatni theme direktorij zadanog područja.
      * EN: Irreversibly removes only the supplied Workspace's private-theme directory.
+     *
+     * HR: Nepovratno uklanja isključivo privatni theme direktorij zadanog područja.
      */
     public function purgeWorkspace(int $workspaceId): void
     {
@@ -263,8 +270,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Razrješava samo postojeću datoteku sigurnog imena unutar pripadajućeg područja.
      * EN: Resolves only an existing safely named file within its owning Workspace.
+     *
+     * HR: Razrješava samo postojeću datoteku sigurnog imena unutar pripadajućeg područja.
      */
     public function assetPath(int $workspaceId, string $file): ?string
     {
@@ -279,8 +287,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Čita manifest privatnih datoteka ili vraća prazan manifest prve verzije.
      * EN: Reads the private asset manifest or returns an empty version-one manifest.
+     *
+     * HR: Čita manifest privatnih datoteka ili vraća prazan manifest prve verzije.
      *
      * @return array{version:int,assets:list<mixed>}
      */
@@ -303,8 +312,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Atomski zapisuje normalizirani manifest privatnih datoteka područja.
      * EN: Atomically writes the Workspace's normalized private asset manifest.
+     *
+     * HR: Atomski zapisuje normalizirani manifest privatnih datoteka područja.
      *
      * @param array{version:int,assets:list<mixed>} $manifest
      */
@@ -328,8 +338,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Tokom kopira upload u privremenu datoteku uz strogo ograničenje veličine.
      * EN: Streams an upload into a temporary file under a strict size limit.
+     *
+     * HR: Tokom kopira upload u privremenu datoteku uz strogo ograničenje veličine.
      */
     private function storeUpload(UploadedFileInterface $file, string $path): void
     {
@@ -366,8 +377,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Provjerava stvarni slikovni sadržaj i vraća sigurni MIME i nastavak.
      * EN: Validates actual image content and returns its safe MIME type and extension.
+     *
+     * HR: Provjerava stvarni slikovni sadržaj i vraća sigurni MIME i nastavak.
      *
      * @return array{string,string}
      */
@@ -391,8 +403,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Odbacuje SVG s aktivnim elementima, vanjskim poveznicama ili nesigurnim atributima.
      * EN: Rejects SVG files with active elements, external links, or unsafe attributes.
+     *
+     * HR: Odbacuje SVG s aktivnim elementima, vanjskim poveznicama ili nesigurnim atributima.
      */
     private function validateSvg(string $path): void
     {
@@ -439,8 +452,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Izrađuje jedinstveno sigurno ime datoteke bez prepisivanja postojećeg asseta.
      * EN: Builds a unique safe filename without overwriting an existing asset.
+     *
+     * HR: Izrađuje jedinstveno sigurno ime datoteke bez prepisivanja postojećeg asseta.
      */
     private function availableFileName(int $workspaceId, ?string $clientName, string $extension): string
     {
@@ -457,8 +471,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Čita dimenzije rastera ili SVG viewBoxa za prikaz u biblioteci teme.
      * EN: Reads raster dimensions or the SVG viewBox for display in the theme library.
+     *
+     * HR: Čita dimenzije rastera ili SVG viewBoxa za prikaz u biblioteci teme.
      *
      * @return array{int,int}
      */
@@ -486,8 +501,9 @@ final readonly class WorkspaceThemeAssetLibrary
     }
 
     /**
-     * HR: Rekurzivno provjerava koristi li konfiguracija zadanu privatnu referencu.
      * EN: Recursively checks whether configuration uses the supplied private reference.
+     *
+     * HR: Rekurzivno provjerava koristi li konfiguracija zadanu privatnu referencu.
      */
     private function containsReference(mixed $value, string $reference): bool
     {

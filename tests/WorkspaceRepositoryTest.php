@@ -24,13 +24,15 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 #[UsesClass(WorkspaceContentChanged::class)]
 #[UsesClass(WorkspacePagesPermanentlyDeleting::class)]
 #[UsesClass(WorkspaceValue::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 final class WorkspaceRepositoryTest extends TestCase
 {
     /**
-     * HR: Potpuni izvedeni indeksi učitavaju dokumente svih područja jednim
-     *     upitom i pritom pune request cache za naknadno čitanje po ID-u.
      * EN: Complete derived indexes load document nodes from all Workspaces in
      *     one query and prime the request cache for subsequent reads by ID.
+     *
+     * HR: Potpuni izvedeni indeksi učitavaju dokumente svih područja jednim
+     *     upitom i pritom pune request cache za naknadno čitanje po ID-u.
      */
     public function testActiveDocumentNodesAreLoadedAcrossWorkspacesInOneQuery(): void
     {
@@ -94,8 +96,9 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Pronalaženje po slugu puni request cache po ID-u, a promjena ga odmah poništava.
      * EN: A slug lookup primes the request cache by ID, and a mutation invalidates it immediately.
+     *
+     * HR: Pronalaženje po slugu puni request cache po ID-u, a promjena ga odmah poništava.
      */
     public function testNodeRequestCacheAvoidsRepeatedReadsAndInvalidatesAfterMutation(): void
     {
@@ -165,10 +168,11 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da se trajno može ukloniti samo soft-obrisano područje te
-     *     da svi Workspace odnosi nestaju bez diranja drugih područja.
      * EN: Proves that only a soft-deleted Workspace can be permanently removed
      *     and that all Workspace-owned relations disappear without touching another Workspace.
+     *
+     * HR: Dokazuje da se trajno može ukloniti samo soft-obrisano područje te
+     *     da svi Workspace odnosi nestaju bez diranja drugih područja.
      */
     public function testPermanentlyDeletingWorkspaceRemovesOwnedRelations(): void
     {
@@ -265,7 +269,11 @@ final class WorkspaceRepositoryTest extends TestCase
             ->where('workspace_id', '=', 2)->get());
     }
 
-    /** HR: Započeto trajno brisanje ne dopušta vraćanje nepotpunog područja. EN: A started purge prevents restoring an incomplete Workspace. */
+    /**
+     * EN: A started purge prevents restoring an incomplete Workspace.
+     *
+     * HR: Započeto trajno brisanje ne dopušta vraćanje nepotpunog područja.
+     */
     public function testStartedPermanentDeletionCannotBeRestored(): void
     {
         $database = $this->database();
@@ -288,7 +296,11 @@ final class WorkspaceRepositoryTest extends TestCase
         (new WorkspaceRepository($database))->restoreWorkspace(1, 'partial', 1);
     }
 
-    /** HR: Oznake se normaliziraju, dohvaćaju skupno i filtriraju stranice područja. EN: Labels are normalized, batch-loaded, and filter Workspace pages. */
+    /**
+     * EN: Labels are normalized, batch-loaded, and filter Workspace pages.
+     *
+     * HR: Oznake se normaliziraju, dohvaćaju skupno i filtriraju stranice područja.
+     */
     public function testStoresAndQueriesPageLabels(): void
     {
         $database = $this->database();
@@ -331,10 +343,11 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Trajno brisanje neobjavljene stranice uklanja sve njezine pomoćne
-     *     retke, dok izravnu djecu čuva premještanjem na istog roditelja.
      * EN: Permanent deletion of an unpublished page removes all of its
      *     supporting rows while preserving direct children under its parent.
+     *
+     * HR: Trajno brisanje neobjavljene stranice uklanja sve njezine pomoćne
+     *     retke, dok izravnu djecu čuva premještanjem na istog roditelja.
      */
     public function testPermanentlyDeletingUnpublishedNodeRemovesRelationsAndReparentsChildren(): void
     {
@@ -430,10 +443,11 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Sistemski separator ima fiksne lokalizirane naslove, postoji samo
-     *     jednom i ostaje pravi roditelj linkovima pri pomicanju stabla.
      * EN: The system separator has fixed localized titles, exists only once,
      *     and remains a real parent for links while the tree is reordered.
+     *
+     * HR: Sistemski separator ima fiksne lokalizirane naslove, postoji samo
+     *     jednom i ostaje pravi roditelj linkovima pri pomicanju stabla.
      */
     public function testLinksSeparatorIsUniqueLocalizedAndMovable(): void
     {
@@ -497,10 +511,11 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Lokalizirani metapodaci slijede traženi, zadani, engleski i bilo koji
-     *     stvarno dostupan jezik, bez pretpostavke da je fallback hrvatski.
      * EN: Localized metadata follows the requested, default, English, and any
      *     actually available locale without assuming Croatian as the fallback.
+     *
+     * HR: Lokalizirani metapodaci slijede traženi, zadani, engleski i bilo koji
+     *     stvarno dostupan jezik, bez pretpostavke da je fallback hrvatski.
      */
     public function testLocalizedValueUsesCompleteLanguageFallbackOrder(): void
     {
@@ -525,8 +540,9 @@ final class WorkspaceRepositoryTest extends TestCase
     }
 
     /**
-     * HR: Priprema prijenosnu SQLite bazu s aktualnom inicijalnom Workspace shemom.
      * EN: Prepares a portable SQLite database with the current initial Workspace schema.
+     *
+     * HR: Priprema prijenosnu SQLite bazu s aktualnom inicijalnom Workspace shemom.
      */
     private function database(): Database
     {
@@ -545,10 +561,6 @@ final class WorkspaceRepositoryTest extends TestCase
         $migration = require dirname(__DIR__) . '/resources/migrations/initial_workspace_schema.php';
         $this->assertInstanceOf(ReversibleMigrationInterface::class, $migration);
         $migration->up($database);
-        $purgeMigration = require dirname(__DIR__)
-        . '/resources/migrations/20260928090000_add_workspace_purge_marker.php';
-        $this->assertInstanceOf(ReversibleMigrationInterface::class, $purgeMigration);
-        $purgeMigration->up($database);
 
         return $database;
     }

@@ -30,8 +30,9 @@ use function str_contains;
 final readonly class WorkspaceSettingsController
 {
     /**
-     * HR: Prima servise za administratorske postavke, popise i zajedničke toast poruke.
      * EN: Receives services for administration settings, listings, and shared toast messages.
+     *
+     * HR: Prima servise za administratorske postavke, popise i zajedničke toast poruke.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -50,8 +51,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Prikazuje opće postavke putanje, vidljivosti, stabla i kreiranja područja.
      * EN: Displays general settings for routing, visibility, the tree, and workspace creation.
+     *
+     * HR: Prikazuje opće postavke putanje, vidljivosti, stabla i kreiranja područja.
      */
     public function index(): ResponseInterface
     {
@@ -85,8 +87,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Sprema opće postavke nakon provjere administratorskog statusa.
      * EN: Saves general settings after checking administrator status.
+     *
+     * HR: Sprema opće postavke nakon provjere administratorskog statusa.
      */
     public function save(ServerRequestInterface $request): ResponseInterface
     {
@@ -114,8 +117,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Prikazuje sva aktivna područja administratoru.
      * EN: Displays all active workspaces to an administrator.
+     *
+     * HR: Prikazuje sva aktivna područja administratoru.
      */
     public function all(): ResponseInterface
     {
@@ -131,8 +135,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Prikazuje soft-obrisana područja i obrasce za vraćanje.
      * EN: Displays soft-deleted workspaces and restore forms.
+     *
+     * HR: Prikazuje soft-obrisana područja i obrasce za vraćanje.
      */
     public function deleted(): ResponseInterface
     {
@@ -148,8 +153,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Prikazuje zauzeće povijesti i obrisanih stavki te siguran obrazac održavanja.
      * EN: Displays history/deleted-item storage and the safe maintenance form.
+     *
+     * HR: Prikazuje zauzeće povijesti i obrisanih stavki te siguran obrazac održavanja.
      */
     public function maintenance(): ResponseInterface
     {
@@ -206,8 +212,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Izvršava izričito potvrđeno čišćenje i vraća mjerljiv rezultat administratoru.
      * EN: Runs explicitly confirmed cleanup and reports measurable results to the administrator.
+     *
+     * HR: Izvršava izričito potvrđeno čišćenje i vraća mjerljiv rezultat administratoru.
      */
     public function runMaintenance(ServerRequestInterface $request): ResponseInterface
     {
@@ -251,8 +258,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Izrađuje nedostajuće web-kopije slika i administratoru vraća mjerljiv rezultat.
      * EN: Creates missing image web copies and reports measurable results to the administrator.
+     *
+     * HR: Izrađuje nedostajuće web-kopije slika i administratoru vraća mjerljiv rezultat.
      */
     public function optimizeImages(): ResponseInterface
     {
@@ -275,7 +283,11 @@ final readonly class WorkspaceSettingsController
         }
     }
 
-    /** HR: Vraća aktualni napredak optimizacije. EN: Returns current optimization progress. */
+    /**
+     * EN: Returns current optimization progress.
+     *
+     * HR: Vraća aktualni napredak optimizacije.
+     */
     public function imageOptimizationStatus(): ResponseInterface
     {
         if (!$this->access->isAdministrator()) {
@@ -288,7 +300,11 @@ final readonly class WorkspaceSettingsController
         ]);
     }
 
-    /** HR: Obrađuje mali batch kao web worker. EN: Processes a small batch as a web worker. */
+    /**
+     * EN: Processes a small batch as a web worker.
+     *
+     * HR: Obrađuje mali batch kao web worker.
+     */
     public function stepImageOptimization(): ResponseInterface
     {
         if (!$this->access->isAdministrator()) {
@@ -315,8 +331,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Nakon dvostruke potvrde nepovratno uklanja soft-obrisano područje i sav njegov sadržaj.
      * EN: After double confirmation, irreversibly removes a soft-deleted Workspace and all its content.
+     *
+     * HR: Nakon dvostruke potvrde nepovratno uklanja soft-obrisano područje i sav njegov sadržaj.
      */
     public function permanentlyDelete(ServerRequestInterface $request): ResponseInterface
     {
@@ -387,8 +404,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Renderira zajednički administratorski popis aktivnih ili obrisanih područja.
      * EN: Renders the shared administration list for active or deleted workspaces.
+     *
+     * HR: Renderira zajednički administratorski popis aktivnih ili obrisanih područja.
      *
      * @param list<array<string, mixed>> $workspaces
      */
@@ -443,7 +461,11 @@ final readonly class WorkspaceSettingsController
         ]);
     }
 
-    /** HR: Vraća ID prijavljenog administratora za audit. EN: Returns the signed-in administrator ID for audit. */
+    /**
+     * EN: Returns the signed-in administrator ID for audit.
+     *
+     * HR: Vraća ID prijavljenog administratora za audit.
+     */
     private function currentUserId(): int
     {
         $user = $this->access->currentUser();
@@ -456,8 +478,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Vraća čitljiv 403 prikaz za korisnika bez administratorskih prava.
      * EN: Returns a readable 403 view for a user without administrator rights.
+     *
+     * HR: Vraća čitljiv 403 prikaz za korisnika bez administratorskih prava.
      */
     private function accessDenied(): ResponseInterface
     {
@@ -469,7 +492,10 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Vraća svježi CSRF token nakon AJAX POST-a. EN: Returns a fresh CSRF token after an AJAX POST.
+     * EN: Returns a fresh CSRF token after an AJAX POST.
+     *
+     * HR: Vraća svježi CSRF token nakon AJAX POST-a.
+     *
      * @return array{name: string, token: string}
      */
     private function csrfPayload(): array
@@ -481,8 +507,9 @@ final readonly class WorkspaceSettingsController
     }
 
     /**
-     * HR: Generira named rutu ili stabilni fallback za samostalni rad modula.
      * EN: Generates a named route or stable fallback for standalone module operation.
+     *
+     * HR: Generira named rutu ili stabilni fallback za samostalni rad modula.
      */
     private function pathFor(string $routeName, string $fallback): string
     {

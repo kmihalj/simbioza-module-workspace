@@ -10,16 +10,18 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceHomepageService;
 use HeartPhrame\Routing\UrlGenerator;
 
 /**
- * HR: Dodaje Workspaceov osobni odabir naslovnice u proširivi Auth profil.
- * Auth pritom ne poznaje Workspace ni njegove tablice.
  * EN: Adds Workspace personal homepage selection to the extensible Auth
  * profile. Auth remains unaware of Workspace and its tables.
+ *
+ * HR: Dodaje Workspaceov osobni odabir naslovnice u proširivi Auth profil.
+ * Auth pritom ne poznaje Workspace ni njegove tablice.
  */
 final readonly class WorkspaceHomepageAccountSectionProvider implements AuthAccountSectionProviderInterface
 {
     /**
-     * HR: Prima Workspace poslovni servis i generator rute obrasca.
      * EN: Receives the Workspace business service and form route generator.
+     *
+     * HR: Prima Workspace poslovni servis i generator rute obrasca.
      */
     public function __construct(
         private WorkspaceHomepageService $homepages,
@@ -28,8 +30,9 @@ final readonly class WorkspaceHomepageAccountSectionProvider implements AuthAcco
     }
 
     /**
-     * HR: Vraća modularni partial samo kada je osobni odabir omogućen.
      * EN: Returns the module partial only when personal selection is enabled.
+     *
+     * HR: Vraća modularni partial samo kada je osobni odabir omogućen.
      *
      * @return array{key:string,package:string,partial:string,data:array<string,mixed>,group:string,order:int}|null
      */

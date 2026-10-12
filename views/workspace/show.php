@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-// HR: Glavni orijentir daje aplikacijski raspored; ovaj je prikaz samo njegov sadržaj.
 // EN: The host layout owns the main landmark; this view only supplies its content.
+//
+// HR: Glavni orijentir daje aplikacijski raspored; ovaj je prikaz samo njegov sadržaj.
 
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 

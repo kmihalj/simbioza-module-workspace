@@ -1,6 +1,6 @@
 # Vodič za Workspace modul
 
-English version: [index_en.md](index_en.md)
+Engleska verzija: [index_en.md](index_en.md)
 
 ## Proširenja prikaza
 
@@ -25,7 +25,7 @@ modula.
 
 ## 2. Model podataka
 
-Jedina inicijalna migracija kroz ORM kreira osam tablica:
+Inicijalna migracija kroz ORM kreira aktualne domenske tablice:
 
 | Tablica | Odgovornost |
 | --- | --- |
@@ -34,7 +34,6 @@ Jedina inicijalna migracija kroz ORM kreira osam tablica:
 | `workspace_nodes` | Uređena hijerarhija dokumenata i linkova |
 | `workspace_node_acl` | Dodatna ograničenja naslijeđena kroz stablo |
 | `workspace_node_workflows` | Stanje objave i pokazivači na nepromjenjive Editor verzije po stranici i jeziku |
-| `workspace_homepage_settings` | Javna i prijavljena politika naslovnice aplikacije |
 | `workspace_user_homepages` | Opcionalni osobni izbori naslovnice |
 | `workspace_themes` | Sistemski izbor ili izolirani privatni JSON teme po Području |
 
@@ -243,7 +242,7 @@ veličinu stranice prikazuje se paginacija kojom su dostupni svi dopušteni
 Opcija `all` uključena je samo ispod 100 dopuštenih članaka. Controller na 100
 ili više odbija i ručno sastavljen `limit=all` te koristi konfiguriranu
 brojčanu zadanu vrijednost. Zadane postavke žive pod ključem `shorts` u
-`config/workspace.php`, a uređuju se pod **Postavke → Područja**. Isporučene
+`HPH_CONFIG_PATH/workspace/workspace.json`, a uređuju se pod **Postavke → Područja**. Isporučene
 zadane vrijednosti su razine 1–2, 10 članaka i najnoviji prvo.
 
 Stablo stranica početno je prikazano, a opcije prikaza početno su skrivene.
@@ -272,7 +271,7 @@ naposljetku drugi jezik s objavljenom verzijom. Nacrt nikada nije jezični
 fallback.
 
 Sažetci ne dodaju tablicu baze. Zadane vrijednosti pripadaju konfiguraciji
-sitea, pa potpuni backup uključuje `config/workspace.php`; izvoz paketa teme
+sitea, pa potpuni backup uključuje `HPH_CONFIG_PATH/workspace/workspace.json`; izvoz paketa teme
 nije njihov vlasnik.
 
 ## 6. Integracija s HTML editorom
@@ -435,7 +434,8 @@ Nove nikad objavljene stranice označene su uz naslov u stablu i dostupne kroz
 brojač `Nove neobjavljene stranice`. Korisnici s pravom `can_publish` imaju i
 zaseban brojač `Poslano na pregled` s popisom stranica spremnih za objavu.
 Odbacivanje nove stranice bez ijedne objave na bilo kojem jeziku trajno briše
-njezin Workspace čvor, workflow, ograničenja i Editor dokument s privitcima.
+njezin Workspace čvor, workflow, ograničenja, Editor dokument s privitcima
+i izričito vlasničke posebne menije stranice.
 Stranica zato ne završava među soft-obrisanim dokumentima. Ako čvor ima djecu,
 ona se premještaju njegovu roditelju. Ova destruktivna inačica odbacivanja traži
 efektivno `can_delete` pravo. Ako postoji objava na drugom jeziku, odbacuje se
@@ -463,30 +463,10 @@ verziju dokumenta kao i prije.
 
 ## 8. Konfiguracija
 
-`config/workspace.php` podržava:
-
-```php
-return [
-    'enabled' => true,
-    'routing' => [
-        'root_path' => 'workspace',
-    ],
-    'defaults' => [
-        'visibility' => 'restricted',
-        'tree_visible' => true,
-        'contents_visible' => false,
-    ],
-    'creation' => [
-        'users' => [],
-        'groups' => [],
-    ],
-    'menu' => [
-        'auto_register_top' => true,
-        'auto_register_settings' => true,
-    ],
-];
-```
-
+Aktivna konfiguracija koristi JSON `HPH_CONFIG_PATH/workspace/workspace.json` i
+slojeve `HPH_CONFIG_OVERRIDE_PATHS`. Predložak je paketni
+`config/workspace.json.dist`, a sve opcije, prava, GUI prekidač, naslovnice i
+nadogradnja opisani su u [vodiču konfiguracije](configuration_hr.md).
 Administratori uvijek smiju kreirati Područja. Ostali se kreatori odabiru u
 Postavkama područja kao pojedinačni Auth korisnici ili postojeće Auth grupe.
 
@@ -532,7 +512,7 @@ nikada ne zapisuje sistemski Theme JSON.
 
 Redak `workspace_themes` sadrži vrstu izbora, ID izvora, mode policy i privatni
 JSON teme. Privatni binarni/SVG asseti nalaze se u
-`data/workspaces/themes/<workspace-id>/assets`, a reference imaju oblik
+`data/workspaces/<oznaka-pohrane>--<ID-područja>/theme/assets`, a reference imaju oblik
 `@runtime-theme-assets/<datoteka>`. Posluživanje asseta ponovno provjerava pravo
 pregleda, dok Theme repozitorij prima razriješeni override samo tijekom
 trenutačnog zahtjeva. Time globalna aktivna tema ostaje nepromijenjena na svim
@@ -542,7 +522,7 @@ Upravitelji mogu uvesti potpuni Theme v3 paket. Izvoz je namjerno dostupan samo
 administratoru aplikacije i samo za privatnu temu Područja. Paket je kompatibilan
 i s uvozom u drugo Područje i s uvozom u globalnu Theme biblioteku. Potpuni
 backup mora obuhvatiti tablicu `workspace_themes` i direktorij
-`data/workspaces/themes`.
+`data/workspaces/<oznaka-pohrane>--<ID-područja>/theme`.
 
 ### Posebni meniji po Području
 
@@ -558,6 +538,13 @@ zahtjev zato ne može promijeniti meni izvan Područja. Definicija samo lijevog
 menija nije vidljiva u editoru gornjeg menija i obratno; uklanjanje jedne strane
 čuva drugu. Runtime ipak smije spojiti podudarne odvojene zapise kako bi se oba
 menija prikazala na istoj stranici.
+
+Izričite vrijednosti `owner_target` smještaju menije područja u
+`data/workspaces/<oznaka-pohrane>--<ID>/menus/`, a menije stranica u
+`data/workspaces/<oznaka-pohrane>--<ID>/pages/<oznaka-stranice>--<UUID-dokumenta>/menus/`. Zajednički Menu indeks
+samo referencira te datoteke. Trajno čišćenje stranice/područja uklanja vlasničke
+datoteke i zapise indeksa bez Menu GUI servisa. Meko brisanje ih čuva;
+zajednički konteksti čije rute odgovaraju području ne smatraju se vlasničkim podatcima.
 
 ### Navigacijska putanja i povratne poveznice
 
@@ -660,14 +647,14 @@ trenutačno smije pristupiti. Resolver početne rute primjenjuje osobna →
 prijavljena → javna → host naslovnica i preusmjerava samo na generiranu internu
 named rutu, čime sprječava otvoreni redirect i pristup kroz zastarjeli ACL.
 
-Postojeća instalacija dodaje dvije prijenosne tablice naredbama:
+Postojeća instalacija dodaje tablicu osobnih izbora naredbama:
 
 ```bash
 vendor/bin/hph workspace:install-homepage-migration
 vendor/bin/hph orm-migrate:up
 ```
 
-Instalacija koja već ima te dvije tablice dodaje strukturirane ciljeve Sažetaka
+Instalacija koja već ima tablicu osobnih izbora dodaje strukturirane ciljeve Sažetaka
 bez zamjene postojećih izbora stranica:
 
 ```bash
@@ -675,7 +662,7 @@ vendor/bin/hph workspace:install-homepage-view-options-migration
 vendor/bin/hph orm-migrate:up
 ```
 
-Potpuni backup sitea obuhvaća `workspace_homepage_settings` i
+Potpuni backup sitea obuhvaća globalnu JSON politiku i
 `workspace_user_homepages`, uključujući vrstu cilja, ID Područja i oba
 prekidača vidljivosti. Uvoz pojedinačnog Područja ne smije neprimjetno
 zamijeniti politiku naslovnice odredišnog sitea, a izvoz teme ne posjeduje ove
@@ -904,3 +891,16 @@ povrat čuvaju cijele mape prijevoda područja i stranica. Prenosivi HTML izvoz
 renderira odabrani jezik, a Confluence import sprema naziv područja, opis i
 naslove stranica pod jezikom odabranim u preflightu. Ponovni import i dalje
 povezuje sadržaj stabilnim slugom, a ne prevedenim naslovom.
+
+## Skupna vidljivost obavijesti
+
+Za ciljane provjere inboxa `WorkspaceRepository::workspacesByIds()` čita tražena
+neobrisana područja, a `nodesWithAncestorsByIds()` tražene aktivne čvorove i
+njihove aktivne pretke ograničenim rekurzivnim SQL-om.
+`WorkspaceAccessService::viewPermissionsForTargets()` koristi uobičajeni
+Workspace ACL: efektivne grupe, naslijeđena/importna ograničenja, izravna prava
+stranice i administratorski pristup. Cikličan/nepotpun lanac uskraćuje pristup,
+umjesto da izostavi nepoznati ACL pretka. Grupe i ACL čitaju se svježe pri svakom
+pozivu. Metoda vraća samo odluke pregleda; ne zamjenjuje provjere uređivanja,
+objave/upravljanja. Simbioza User koristi je za Notification grupe; Workspace
+ne ovisi o Notificationu.

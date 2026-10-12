@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-// HR: Izvorni hrvatski ključevi i prijevodi jezika en.
 // EN: Canonical Croatian source keys and en translations.
+//
+// HR: Izvorni hrvatski ključevi i prijevodi jezika en.
 return array (
   'Tablica stranica i svojstava' => 'Pages and properties table',
   'Dinamički sadržaj područja' => 'Dynamic Workspace content',

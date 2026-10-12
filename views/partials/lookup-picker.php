@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 /**
- * HR: Zajednički udaljeni birač područja ili stranice.
  * EN: Shared remote Workspace or page picker.
+ *
+ * HR: Zajednički udaljeni birač područja ili stranice.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $workspaceLookupKind

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use HeartPhrame\Config\ConfigInterface;
 
-use function array_replace_recursive;
 use function array_values;
 use function in_array;
 use function is_array;
-use function is_file;
 use function is_scalar;
 use function preg_match;
 use function preg_replace;
@@ -18,27 +17,34 @@ use function rtrim;
 use function strtolower;
 use function trim;
 
-final readonly class WorkspaceConfig
+final class WorkspaceConfig
 {
     /**
      * @var array<string, mixed>
      */
     private array $workspaceConfig;
 
+    private readonly WorkspaceConfigurationStore $configurationStore;
+
     /**
-     * HR: Spaja zadane postavke modula i aplikacijski `config/workspace.php`.
-     * EN: Merges module defaults and the application `config/workspace.php`.
+     * EN: Merges module defaults and framework-resolved JSON layers.
+     *
+     * HR: Spaja zadane postavke i JSON slojeve koje razrješava framework.
      */
     public function __construct(
-        private ConfigInterface $config,
-        private string $moduleRoot,
+        private readonly ConfigInterface $config,
+        private readonly string $moduleRoot,
+        private readonly ?Database $database = null,
     ) {
-        $this->workspaceConfig = $this->loadWorkspaceConfig();
+        $defaults = WorkspaceValue::stringKeyArray(require $moduleRoot . '/config/workspace.php');
+        $this->configurationStore = new WorkspaceConfigurationStore($config->getAppRootDir(), $defaults);
+        $this->refresh();
     }
 
     /**
-     * HR: Vraća korijenski URL segment unutar kojeg područja određuju vlastite slugove.
      * EN: Returns the root URL segment under which workspaces define their own slugs.
+     *
+     * HR: Vraća korijenski URL segment unutar kojeg područja određuju vlastite slugove.
      */
     public function rootPath(): string
     {
@@ -50,8 +56,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća zadanu vidljivost novog područja.
      * EN: Returns the default visibility for a new workspace.
+     *
+     * HR: Vraća zadanu vidljivost novog područja.
      */
     public function defaultVisibility(): string
     {
@@ -66,8 +73,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Određuje je li stablo stranica početno otvoreno.
      * EN: Determines whether the page tree is initially expanded.
+     *
+     * HR: Određuje je li stablo stranica početno otvoreno.
      */
     public function treeVisibleByDefault(): bool
     {
@@ -77,10 +85,11 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Određuje je li sadržaj stranice početno prikazan kada područje i
-     *     stranica ne zadaju vlastitu vrijednost.
      * EN: Determines whether the page outline is initially visible when neither
      *     the Workspace nor the page supplies an override.
+     *
+     * HR: Određuje je li sadržaj stranice početno prikazan kada područje i
+     *     stranica ne zadaju vlastitu vrijednost.
      */
     public function contentsVisibleByDefault(): bool
     {
@@ -90,8 +99,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Razrješava početni prikaz stabla iz postavke područja i sistemskog fallbacka.
      * EN: Resolves initial page-tree visibility from the Workspace setting and system fallback.
+     *
+     * HR: Razrješava početni prikaz stabla iz postavke područja i sistemskog fallbacka.
      *
      * @param array<string, mixed> $workspace
      */
@@ -104,8 +114,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Razrješava sadržaj redom stranica, područje pa sistemska postavka.
      * EN: Resolves outline visibility in page, Workspace, then system order.
+     *
+     * HR: Razrješava sadržaj redom stranica, područje pa sistemska postavka.
      *
      * @param array<string, mixed> $workspace
      * @param array<string, mixed>|null $node
@@ -124,8 +135,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Pretvara nasljednu, prikazanu ili skrivenu vrijednost u efektivni boolean.
      * EN: Converts an inherited, shown, or hidden policy into an effective boolean.
+     *
+     * HR: Pretvara nasljednu, prikazanu ili skrivenu vrijednost u efektivni boolean.
      */
     private function resolveDisplayPolicy(mixed $value, bool $fallback): bool
     {
@@ -139,8 +151,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća aktivne Auth korisnike koji smiju kreirati područja.
      * EN: Returns active Auth users allowed to create Workspaces.
+     *
+     * HR: Vraća aktivne Auth korisnike koji smiju kreirati područja.
      *
      * @return list<int>
      */
@@ -150,8 +163,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća Auth grupe čiji članovi smiju kreirati područja.
      * EN: Returns Auth groups whose members may create Workspaces.
+     *
+     * HR: Vraća Auth grupe čiji članovi smiju kreirati područja.
      *
      * @return list<int>
      */
@@ -161,8 +175,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Normalizira trajno spremljene Auth identifikatore ovlaštenih kreatora.
      * EN: Normalizes persisted Auth identifiers for authorized creators.
+     *
+     * HR: Normalizira trajno spremljene Auth identifikatore ovlaštenih kreatora.
      *
      * @return list<int>
      */
@@ -182,8 +197,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća zadanu najveću dubinu stabla na stranici Sažetaka.
      * EN: Returns the default maximum tree depth on the Shorts page.
+     *
+     * HR: Vraća zadanu najveću dubinu stabla na stranici Sažetaka.
      */
     public function shortsDefaultDepth(): int|string
     {
@@ -201,8 +217,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća zadani broj članaka na stranici Sažetaka.
      * EN: Returns the default article count on the Shorts page.
+     *
+     * HR: Vraća zadani broj članaka na stranici Sažetaka.
      */
     public function shortsDefaultLimit(): int
     {
@@ -213,8 +230,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća zadani redoslijed članaka na stranici Sažetaka.
      * EN: Returns the default article order on the Shorts page.
+     *
+     * HR: Vraća zadani redoslijed članaka na stranici Sažetaka.
      */
     public function shortsDefaultOrder(): string
     {
@@ -229,8 +247,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Određuje jesu li opcije prikaza Sažetaka početno otvorene.
      * EN: Determines whether the Shorts display options are initially expanded.
+     *
+     * HR: Određuje jesu li opcije prikaza Sažetaka početno otvorene.
      */
     public function shortsDisplayOptionsVisibleByDefault(): bool
     {
@@ -240,8 +259,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća zadani jezik sadržaja sitea za siguran fallback objavljenih stranica.
      * EN: Returns the site's default content locale for safe published-page fallback.
+     *
+     * HR: Vraća zadani jezik sadržaja sitea za siguran fallback objavljenih stranica.
      */
     public function siteDefaultLanguage(): string
     {
@@ -255,8 +275,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća podržane jezike metapodataka, s primarnim jezikom na početku.
      * EN: Returns supported metadata locales with the primary locale first.
+     *
+     * HR: Vraća podržane jezike metapodataka, s primarnim jezikom na početku.
      *
      * @return list<string>
      */
@@ -283,10 +304,11 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Gradi redoslijed jezika javnog sadržaja: traženi jezik, njegov
-     *     osnovni oblik, zadani jezik aplikacije, engleski i ostali podržani jezici.
      * EN: Builds the public-content locale order: requested locale, its base
      *     form, the application default, English, and the remaining supported locales.
+     *
+     * HR: Gradi redoslijed jezika javnog sadržaja: traženi jezik, njegov
+     *     osnovni oblik, zadani jezik aplikacije, engleski i ostali podržani jezici.
      *
      * @return list<string>
      */
@@ -318,8 +340,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća vremensku zonu aplikacije za lokalizirani prikaz vremena.
      * EN: Returns the application timezone for localized time rendering.
+     *
+     * HR: Vraća vremensku zonu aplikacije za lokalizirani prikaz vremena.
      */
     public function timezone(): string
     {
@@ -329,10 +352,11 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća najdulje razdoblje između sigurnosnih provjera izvedenog
-     *     indeksa povratnih poveznica.
      * EN: Returns the maximum interval between safety checks of the derived
      *     backlink index.
+     *
+     * HR: Vraća najdulje razdoblje između sigurnosnih provjera izvedenog
+     *     indeksa povratnih poveznica.
      */
     public function backlinkRefreshSeconds(): int
     {
@@ -343,8 +367,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća treba li modul automatski dodati glavnu menu stavku.
      * EN: Returns whether the module should automatically add its main menu item.
+     *
+     * HR: Vraća treba li modul automatski dodati glavnu menu stavku.
      */
     public function shouldAutoRegisterTopMenu(): bool
     {
@@ -354,8 +379,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća treba li modul automatski dodati administratorske postavke.
      * EN: Returns whether the module should automatically add administration settings.
+     *
+     * HR: Vraća treba li modul automatski dodati administratorske postavke.
      */
     public function shouldAutoRegisterSettingsMenu(): bool
     {
@@ -365,8 +391,50 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Provjerava je li drugi modul uključen u host aplikaciji.
+     * EN: Returns the sole global homepage policy from configuration.
+     *
+     * HR: Vraća jedinu globalnu politiku naslovnice iz konfiguracije.
+     *
+     * @return array<string,mixed>
+     */
+    public function homepageSettings(): array
+    {
+        $homepage = $this->section('homepage');
+        $public = WorkspaceValue::stringKeyArray($homepage['public_target'] ?? []);
+        $authenticated = WorkspaceValue::stringKeyArray($homepage['authenticated_target'] ?? []);
+        return [
+            'public_node_id' => $public['node_id'] ?? 0,
+            'authenticated_node_id' => $authenticated['node_id'] ?? 0,
+            'public_target' => $public,
+            'authenticated_target' => $authenticated,
+            'allow_user_selection' => $homepage['allow_user_selection'] ?? true,
+        ];
+    }
+
+    /**
+     * EN: Exposes the same safe store for the GUI, API, and optional backup.
+     *
+     * HR: Izlaže isti sigurni spremnik za GUI, API i opcionalni backup.
+     */
+    public function configurationStore(): WorkspaceConfigurationStore
+    {
+        return $this->configurationStore;
+    }
+
+    /**
+     * EN: Reloads settings after mutation without writing to the Editor.
+     *
+     * HR: Ponovno učitava postavke nakon mutacije; bez pisanja u Editor.
+     */
+    public function refresh(): void
+    {
+        $this->workspaceConfig = $this->configurationStore->read();
+    }
+
+    /**
      * EN: Checks whether another module is enabled in the host application.
+     *
+     * HR: Provjerava je li drugi modul uključen u host aplikaciji.
      */
     public function isAppModuleEnabled(string $packageName): bool
     {
@@ -376,21 +444,19 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća apsolutnu putanju aplikacijske datoteke postavki.
      * EN: Returns the absolute path of the application settings file.
+     *
+     * HR: Vraća apsolutnu putanju aplikacijske datoteke postavki.
      */
     public function settingsFilePath(): string
     {
-        return rtrim($this->config->getAppRootDir(), DIRECTORY_SEPARATOR)
-        . DIRECTORY_SEPARATOR
-        . 'config'
-        . DIRECTORY_SEPARATOR
-        . 'workspace.php';
+        return $this->configurationStore->path();
     }
 
     /**
-     * HR: Vraća root direktorij modula.
      * EN: Returns the module root directory.
+     *
+     * HR: Vraća root direktorij modula.
      */
     public function moduleRoot(): string
     {
@@ -398,25 +464,21 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Vraća trajni direktorij privatnih tema područja unutar aplikacijskog `data` stabla.
      * EN: Returns the persistent private-workspace-theme directory inside the application's `data` tree.
+     *
+     * HR: Vraća trajni direktorij privatnih tema područja unutar aplikacijskog `data` stabla.
      */
     public function workspaceThemesPath(): string
     {
-        $path = rtrim($this->config->getAppRootDir(), DIRECTORY_SEPARATOR)
+        return rtrim($this->config->getAppRootDir(), DIRECTORY_SEPARATOR)
         . DIRECTORY_SEPARATOR . 'data'
-        . DIRECTORY_SEPARATOR . 'workspaces'
-        . DIRECTORY_SEPARATOR . 'themes';
-        if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
-            throw new \RuntimeException('Workspace theme directory cannot be created.');
-        }
-
-        return $path;
+        . DIRECTORY_SEPARATOR . 'workspaces';
     }
 
     /**
-     * HR: Vraća siguran direktorij teme jednog područja.
      * EN: Returns the safe theme directory for one workspace.
+     *
+     * HR: Vraća siguran direktorij teme jednog područja.
      */
     public function workspaceThemePath(int $workspaceId): string
     {
@@ -424,12 +486,26 @@ final readonly class WorkspaceConfig
             throw new \InvalidArgumentException('Workspace ID is invalid.');
         }
 
-        return $this->workspaceThemesPath() . DIRECTORY_SEPARATOR . $workspaceId;
+        return $this->workspaceThemesPath() . DIRECTORY_SEPARATOR . $this->workspaceDirectoryName($workspaceId)
+        . DIRECTORY_SEPARATOR . 'theme';
     }
 
     /**
-     * HR: Vraća i po potrebi kreira direktorij slikovnih asseta privatne teme.
+     * EN: Shares the readable owner directory with HTML, attachments and menus.
+     *
+     * HR: Dijeli čitljivi vlasnički direktorij s HTML-om, privitcima i menijima.
+     */
+    public function workspaceDirectoryName(int $workspaceId): string
+    {
+        return $this->database instanceof \AaiEduHr\HeartPhrameModuleOrm\Database\Database
+        ? (new WorkspaceDataDirectory($this->database))->workspace($workspaceId)
+        : (string)$workspaceId;
+    }
+
+    /**
      * EN: Returns and creates, when necessary, the private theme image-asset directory.
+     *
+     * HR: Vraća i po potrebi kreira direktorij slikovnih asseta privatne teme.
      */
     public function workspaceThemeAssetsPath(int $workspaceId): string
     {
@@ -442,8 +518,9 @@ final readonly class WorkspaceConfig
     }
 
     /**
-     * HR: Čita jednu konfiguracijsku sekciju kao string-key polje.
      * EN: Reads one configuration section as a string-key array.
+     *
+     * HR: Čita jednu konfiguracijsku sekciju kao string-key polje.
      *
      * @return array<string, mixed>
      */
@@ -452,27 +529,5 @@ final readonly class WorkspaceConfig
         $section = $this->workspaceConfig[$key] ?? [];
 
         return WorkspaceValue::stringKeyArray($section);
-    }
-
-    /**
-     * HR: Učitava zadane postavke i opcionalni override host aplikacije.
-     * EN: Loads defaults and the optional host-application override.
-     *
-     * @return array<string, mixed>
-     */
-    private function loadWorkspaceConfig(): array
-    {
-        $defaults = WorkspaceValue::stringKeyArray(
-            require $this->moduleRoot . '/config/workspace.php',
-        );
-
-        $appConfigPath = $this->settingsFilePath();
-        if (!is_file($appConfigPath)) {
-            return $defaults;
-        }
-
-        $override = WorkspaceValue::stringKeyArray(require $appConfigPath);
-
-        return WorkspaceValue::stringKeyArray(array_replace_recursive($defaults, $override));
     }
 }

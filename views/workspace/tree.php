@@ -19,12 +19,13 @@ $workspaceId = WorkspaceValue::int($workspaceId ?? 0);
 $language = WorkspaceValue::string($language ?? 'hr');
 
 /**
- * HR: Provjerava sadrži li podstablo aktivnu stranicu. Time se pri izravnom
- *     otvaranju URL-a šire preci aktivne stranice, a sama aktivna stranica
- *     zasebno otvara svoju prvu razinu podstranica.
  * EN: Checks whether a subtree contains the active page. This expands the
  *     active page ancestors on a direct URL visit, while the active page itself
  *     separately opens its first child level.
+ *
+ * HR: Provjerava sadrži li podstablo aktivnu stranicu. Time se pri izravnom
+ *     otvaranju URL-a šire preci aktivne stranice, a sama aktivna stranica
+ *     zasebno otvara svoju prvu razinu podstranica.
  *
  * @param list<array<string, mixed>> $candidateNodes
  */

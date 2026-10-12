@@ -30,10 +30,11 @@ use const PATHINFO_EXTENSION;
 use const PATHINFO_FILENAME;
 
 /**
- * HR: Priprema objavljene Editor dokumente za Workspace ZIP, uključujući statičke
- *     kalendare, zadatke, sadržaj dokumenta i dopuštene privitke.
  * EN: Prepares published Editor documents for a Workspace ZIP, including static
  *     calendars, tasks, charts, the document outline, and permitted attachments.
+ *
+ * HR: Priprema objavljene Editor dokumente za Workspace ZIP, uključujući statičke
+ *     kalendare, zadatke, sadržaj dokumenta i dopuštene privitke.
  */
 final readonly class WorkspaceExportEditorBridge
 {
@@ -42,8 +43,9 @@ final readonly class WorkspaceExportEditorBridge
     private const SERVICE_PREFIX = 'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\';
 
     /**
-     * HR: Prima container za kasno razrješavanje svih opcionalnih Editor integracija.
      * EN: Receives the container for late resolution of every optional Editor integration.
+     *
+     * HR: Prima container za kasno razrješavanje svih opcionalnih Editor integracija.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -52,8 +54,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Vraća podržane jezike i njihove prikazne nazive.
      * EN: Returns supported locales and their display labels.
+     *
+     * HR: Vraća podržane jezike i njihove prikazne nazive.
      *
      * @return array<string, string>
      */
@@ -81,8 +84,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Vraća Bootstrap, Editor, Calendar i Task CSS snapshotove bez web ruta.
      * EN: Returns Bootstrap, Editor, Calendar, and Task CSS snapshots without web routes.
+     *
+     * HR: Vraća Bootstrap, Editor, Calendar i Task CSS snapshotove bez web ruta.
      *
      * @return array<string, string>
      */
@@ -110,10 +114,11 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Čita zadanu vidljivost sadržaja dokumenta iz iste Editor konfiguracije
-     *     koju koristi web prikaz. Bez Editor modula sadržaj ostaje zatvoren.
      * EN: Reads the default document-outline visibility from the same Editor
      *     configuration used by the web view. Without Editor, it remains closed.
+     *
+     * HR: Čita zadanu vidljivost sadržaja dokumenta iz iste Editor konfiguracije
+     *     koju koristi web prikaz. Bez Editor modula sadržaj ostaje zatvoren.
      */
     public function tableOfContentsVisibleByDefault(): bool
     {
@@ -130,8 +135,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Učitava točnu objavljenu verziju i pretvara svaki dinamički dio u offline snimku.
      * EN: Loads the exact published version and converts every dynamic part into an offline snapshot.
+     *
+     * HR: Učitava točnu objavljenu verziju i pretvara svaki dinamički dio u offline snimku.
      *
      * @param array<string, mixed>|null $actor
      * @return array{
@@ -182,8 +188,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Čita Editor podatke unutar već postavljenog web ili API identiteta.
      * EN: Reads Editor data inside an already established web or API identity.
+     *
+     * HR: Čita Editor podatke unutar već postavljenog web ili API identiteta.
      *
      * @return array{
      *     title:string,
@@ -374,10 +381,11 @@ final readonly class WorkspaceExportEditorBridge
                 }
             }
 
-            // HR: Grafikon se u izvozu pretvara u samostalan inline SVG, dok
-            //     kanonska uređiva konfiguracija ostaje samo u backupu.
             // EN: In export, a chart becomes self-contained inline SVG while
             //     the canonical editable configuration remains in backup only.
+            //
+            // HR: Grafikon se u izvozu pretvara u samostalan inline SVG, dok
+            //     kanonska uređiva konfiguracija ostaje samo u backupu.
             $charts = $this->service('EditorHtmlChartService');
             if ($charts !== null && method_exists($charts, 'render')) {
                 $renderedCharts = $charts->render($html);
@@ -425,11 +433,12 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Gradi čistu samostalnu HTML datoteku istim formatterom kao izvoz jedne
-     *     stranice. Datoteka zato radi izravno preko `file://`, bez offline ljuske.
      * EN: Builds a clean standalone HTML file with the same formatter as the
      *     single-page export. The file therefore works directly over `file://`
      *     without the offline application shell.
+     *
+     * HR: Gradi čistu samostalnu HTML datoteku istim formatterom kao izvoz jedne
+     *     stranice. Datoteka zato radi izravno preko `file://`, bez offline ljuske.
      *
      * @param array<string, mixed> $snapshot
      * @param list<string> $stylesheetHrefs
@@ -459,8 +468,9 @@ final readonly class WorkspaceExportEditorBridge
                     return $document;
                 }
             } catch (Throwable) {
-                // HR: Čitljivi fallback ispod čuva izvoz i bez formattera.
                 // EN: The readable fallback below preserves export without the formatter.
+                //
+                // HR: Čitljivi fallback ispod čuva izvoz i bez formattera.
             }
         }
 
@@ -472,8 +482,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Pretvara dopuštene privitke u neutralan popis za samostalni dokument.
      * EN: Converts permitted attachments into a neutral standalone-document list.
+     *
+     * HR: Pretvara dopuštene privitke u neutralan popis za samostalni dokument.
      *
      * @param list<mixed> $attachments
      */
@@ -504,8 +515,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Lokalizira malu samostalnu kontrolu bez mijenjanja web prevoditelja.
      * EN: Localizes the small standalone control without mutating the web translator.
+     *
+     * HR: Lokalizira malu samostalnu kontrolu bez mijenjanja web prevoditelja.
      */
     private function attachmentLabel(string $croatian, string $english, string $language): string
     {
@@ -513,8 +525,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Čisti naziv privitka i osigurava jedinstveno ime u direktoriju dokumenta.
      * EN: Cleans an attachment filename and keeps it unique inside the document directory.
+     *
+     * HR: Čisti naziv privitka i osigurava jedinstveno ime u direktoriju dokumenta.
      *
      * @param list<string> $usedNames
      */
@@ -540,8 +553,9 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * HR: Kasno dohvaća Editor servis i ostavlja Workspace funkcionalnim bez Editor paketa.
      * EN: Resolves an Editor service late and keeps Workspace functional without the Editor package.
+     *
+     * HR: Kasno dohvaća Editor servis i ostavlja Workspace funkcionalnim bez Editor paketa.
      */
     private function service(string $shortName): ?object
     {

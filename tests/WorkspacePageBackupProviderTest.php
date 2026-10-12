@@ -29,6 +29,7 @@ use ReflectionClass;
 
 #[CoversClass(WorkspacePageBackupProvider::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceBackupLinks::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 final class WorkspacePageBackupProviderTest extends TestCase
 {
@@ -42,10 +43,11 @@ final class WorkspacePageBackupProviderTest extends TestCase
     }
 
     /**
-     * HR: Pregazivanje stranice čuva URL, mjesto u stablu i postojeća prava
-     *     kada administrator nije odabrao uvoz prava.
      * EN: Replacing a page retains its URL, tree position, and existing ACL
      *     when the administrator did not select ACL import.
+     *
+     * HR: Pregazivanje stranice čuva URL, mjesto u stablu i postojeća prava
+     *     kada administrator nije odabrao uvoz prava.
      */
     public function testReplaceKeepsTargetIdentityAndOptionalPermissions(): void
     {

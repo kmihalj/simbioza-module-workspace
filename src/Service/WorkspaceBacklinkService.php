@@ -17,12 +17,17 @@ use function trim;
 use function usort;
 
 /**
- * HR: Čita backlinkove uz ponovnu ACL i workflow provjeru u trenutku prikaza.
  * EN: Reads backlinks while rechecking ACL and workflow state at display time.
+ *
+ * HR: Čita backlinkove uz ponovnu ACL i workflow provjeru u trenutku prikaza.
  */
 final readonly class WorkspaceBacklinkService
 {
-    /** HR: Prima izvedeni indeks i autoritativne ACL izvore. EN: Receives the derived index and authoritative ACL sources. */
+    /**
+     * EN: Receives the derived index and authoritative ACL sources.
+     *
+     * HR: Prima izvedeni indeks i autoritativne ACL izvore.
+     */
     public function __construct(
         private Database $database,
         private WorkspaceRepository $repository,
@@ -36,8 +41,9 @@ final readonly class WorkspaceBacklinkService
     }
 
     /**
-     * HR: Vraća samo poveznice sa stranica koje trenutačni korisnik smije vidjeti.
      * EN: Returns only links from pages the current user may currently view.
+     *
+     * HR: Vraća samo poveznice sa stranica koje trenutačni korisnik smije vidjeti.
      *
      * @return list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}>
      */
@@ -175,10 +181,11 @@ final readonly class WorkspaceBacklinkService
     }
 
     /**
-     * HR: Vraća stranice koje dinamički uključuju cilj, uz istu završnu ACL i
-     *     workflow provjeru kao za obične backlinkove.
      * EN: Returns pages that dynamically include the target, with the same
      *     final ACL and workflow check used for ordinary backlinks.
+     *
+     * HR: Vraća stranice koje dinamički uključuju cilj, uz istu završnu ACL i
+     *     workflow provjeru kao za obične backlinkove.
      *
      * @return list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}>
      */
@@ -246,7 +253,11 @@ final readonly class WorkspaceBacklinkService
         return $result;
     }
 
-    /** HR: Gradi instalacijski neovisnu putanju stranice. EN: Builds an installation-independent page path. */
+    /**
+     * EN: Builds an installation-independent page path.
+     *
+     * HR: Gradi instalacijski neovisnu putanju stranice.
+     */
     private function nodePath(string $workspaceSlug, string $nodeSlug, string $language): string
     {
         if ($this->urlGenerator->namedRouteExists('workspace.node.show')) {

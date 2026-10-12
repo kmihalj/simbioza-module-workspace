@@ -7,3 +7,6 @@
 .DS_Store
 auth.json
 gitlab-token.txt
+/composer.ci.json
+/composer.ci.lock
+/config/auth/

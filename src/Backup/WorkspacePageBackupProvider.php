@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AaiEduHr\SimbiozaModuleWorkspace\Backup;
 
 use AaiEduHr\HeartPhrameModuleAuth\Backup\AuthBackupIdentityResolver;
+use AaiEduHr\HeartPhrameModuleBackup\Contract\BackupLinkAwareProviderInterface as LinkAwareProvider;
 use AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderInterface;
 use AaiEduHr\HeartPhrameModuleBackup\Exception\BackupException;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupArchiveReader;
@@ -21,24 +22,49 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Prenosi jedan čvor stranice i njegove Workspace metapodatke. Sadržaj,
- *     verzije i privitke prenosi ovisni Editor provider.
  * EN: Transfers one page node and its Workspace metadata. The dependent Editor
  *     provider transfers content, versions, and attachments.
+ *
+ * HR: Prenosi jedan čvor stranice i njegove Workspace metapodatke. Sadržaj,
+ *     verzije i privitke prenosi ovisni Editor provider.
  */
-final readonly class WorkspacePageBackupProvider implements BackupProviderInterface
+final readonly class WorkspacePageBackupProvider implements BackupProviderInterface, LinkAwareProvider
 {
+    /**
+     * EN: Registers local targets after every import and publication of routing policy.
+     *
+     * HR: Registrira lokalne ciljeve nakon svih uvoza i objave politike ruta.
+     */
+    public function registerImportLinks(BackupImportContext $context, BackupArchiveReader $reader): void
+    {
+        $this->config?->refresh();
+        (new WorkspaceBackupLinks($this->database, $this->config?->rootPath() ?? 'workspace'))->register(
+            $context,
+            $reader,
+            self::ID,
+        );
+    }
+
     private const ID = 'page-transfer';
 
-    /** HR: Prima bazu i javne servise. EN: Receives the database and public services. */
+    /**
+     * EN: Receives the database and public services.
+     *
+     * HR: Prima bazu i javne servise.
+     */
     public function __construct(
         private Database $database,
         private AuthBackupIdentityResolver $identities,
         private WorkspaceRepository $repository,
+        private ?\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig $config = null,
     ) {
     }
 
-    /** HR: Opisuje podržani PAGE scope. EN: Describes the supported PAGE scope. */
+    /**
+     * EN: Describes the supported PAGE scope.
+     *
+     * HR: Opisuje podržani PAGE scope.
+     */
     public function metadata(): BackupProviderMetadata
     {
         return new BackupProviderMetadata(
@@ -54,9 +80,14 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         );
     }
 
-    /** HR: Izvozi metapodatke stranice. EN: Exports page metadata. */
+    /**
+     * EN: Exports page metadata.
+     *
+     * HR: Izvozi metapodatke stranice.
+     */
     public function export(BackupExportContext $context, BackupArchiveWriter $writer): void
     {
+        $writer->setLinkRouteRoot('workspace', $this->config?->rootPath() ?? 'workspace');
         $node = $this->sourceNode($context->scope->identifier);
         $nodeId = BackupValue::integer($node['id'], 'page.id');
         $nodeUuid = BackupValue::string($node['uuid'], 'page.uuid');
@@ -102,10 +133,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
 
         foreach ($this->rows(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS, $nodeId, 'language_code') as $row) {
             $includeHistory = $this->includeHistory($context);
-            // HR: Najnovija objavljena verzija ostaje objavljena i bez povijesti;
-            //     noviji nacrt nikada ne objavljujemo samo zbog kopiranja.
             // EN: Keep a latest published version published without history;
             //     never publish a newer draft merely because it was copied.
+            //
+            // HR: Najnovija objavljena verzija ostaje objavljena i bez povijesti;
+            //     noviji nacrt nikada ne objavljujemo samo zbog kopiranja.
             $latestIsPublished = ($row['status'] ?? '') === 'published'
             && ($row['published_version_number'] ?? null) !== null
             && ($row['current_version_number'] ?? null) === $row['published_version_number'];
@@ -141,7 +173,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Provjerava cilj i opcionalna prava. EN: Checks the target and optional permissions. */
+    /**
+     * EN: Checks the target and optional permissions.
+     *
+     * HR: Provjerava cilj i opcionalna prava.
+     */
     public function preflight(BackupImportContext $context, BackupArchiveReader $reader): BackupPreflightResult
     {
         $page = $this->pageRecord($reader);
@@ -216,12 +252,20 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         ]);
     }
 
-    /** HR: Nema dodatne pripreme. EN: No additional preparation is required. */
+    /**
+     * EN: No additional preparation is required.
+     *
+     * HR: Nema dodatne pripreme.
+     */
     public function prepareImport(BackupImportContext $context, BackupArchiveReader $reader): void
     {
     }
 
-    /** HR: Kopira ili zamjenjuje stranicu. EN: Copies or replaces the page. */
+    /**
+     * EN: Copies or replaces the page.
+     *
+     * HR: Kopira ili zamjenjuje stranicu.
+     */
     public function import(BackupImportContext $context, BackupArchiveReader $reader): void
     {
         $page = $this->pageRecord($reader);
@@ -318,19 +362,38 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         if ($this->importPermissions($context)) {
             $this->importPermissionsForNode($nodeId, $reader);
         }
+
+        (new WorkspaceBackupLinks($this->database, $this->config?->rootPath() ?? 'workspace'))->register(
+            $context,
+            $reader,
+            self::ID,
+        );
     }
 
-    /** HR: Završetak vodi Backup manager. EN: The Backup manager handles finalization. */
+    /**
+     * EN: The Backup manager handles finalization.
+     *
+     * HR: Završetak vodi Backup manager.
+     */
     public function finalizeImport(BackupImportContext $context, BackupArchiveReader $reader): void
     {
+        (new WorkspaceBackupLinks($this->database))->rewriteTargets($context);
     }
 
-    /** HR: Povrat vodi transakcija managera. EN: The manager transaction handles rollback. */
+    /**
+     * EN: The manager transaction handles rollback.
+     *
+     * HR: Povrat vodi transakcija managera.
+     */
     public function abortImport(BackupImportContext $context): void
     {
     }
 
-    /** HR: Izvozi prava uz prenosive identitete. EN: Exports permissions with portable identities. */
+    /**
+     * EN: Exports permissions with portable identities.
+     *
+     * HR: Izvozi prava uz prenosive identitete.
+     */
     private function exportPermissions(int $nodeId, BackupArchiveWriter $writer): void
     {
         foreach ($this->rows(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL, $nodeId, 'id') as $row) {
@@ -365,7 +428,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Uvozi oznake stranice. EN: Imports page labels. */
+    /**
+     * EN: Imports page labels.
+     *
+     * HR: Uvozi oznake stranice.
+     */
     private function importLabels(int $nodeId, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'labels') as $row) {
@@ -378,7 +445,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Uvozi svojstva stranice. EN: Imports page properties. */
+    /**
+     * EN: Imports page properties.
+     *
+     * HR: Uvozi svojstva stranice.
+     */
     private function importProperties(int $nodeId, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'properties') as $row) {
@@ -395,7 +466,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Vraća status svakog jezika. EN: Restores each language's workflow status. */
+    /**
+     * EN: Restores each language's workflow status.
+     *
+     * HR: Vraća status svakog jezika.
+     */
     private function importWorkflows(int $nodeId, BackupImportContext $context, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'workflows') as $row) {
@@ -418,7 +493,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Primjenjuje prava samo postojećim identitetima. EN: Applies permissions only to existing identities. */
+    /**
+     * EN: Applies permissions only to existing identities.
+     *
+     * HR: Primjenjuje prava samo postojećim identitetima.
+     */
     private function importPermissionsForNode(int $nodeId, BackupArchiveReader $reader): void
     {
         foreach ($reader->records(self::ID, 'node-acl') as $row) {
@@ -457,8 +536,13 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
     }
 
-    /** HR: Pronalazi izvornu stranicu. EN: Finds the source page.
-     * @return array<string,mixed> */
+    /**
+     * EN: Finds the source page.
+     *
+     * HR: Pronalazi izvornu stranicu.
+     *
+     * @return array<string,mixed>
+     */
     private function sourceNode(?string $identifier): array
     {
         $identifier = trim((string)$identifier);
@@ -473,8 +557,13 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return $node;
     }
 
-    /** HR: Čita zapis stranice iz arhive. EN: Reads the page record from the archive.
-     * @return array<string,mixed>|null */
+    /**
+     * EN: Reads the page record from the archive.
+     *
+     * HR: Čita zapis stranice iz arhive.
+     *
+     * @return array<string,mixed>|null
+     */
     private function pageRecord(BackupArchiveReader $reader): ?array
     {
         foreach ($reader->records(self::ID, 'page') as $row) {
@@ -484,8 +573,13 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return null;
     }
 
-    /** HR: Pronalazi ciljno područje. EN: Finds the target Workspace.
-     * @return array<string,mixed>|null */
+    /**
+     * EN: Finds the target Workspace.
+     *
+     * HR: Pronalazi ciljno područje.
+     *
+     * @return array<string,mixed>|null
+     */
     private function targetWorkspace(BackupImportContext $context): ?array
     {
         $configured = $context->optionsFor(self::ID)['target_workspace'] ?? $context->scope->identifier;
@@ -501,8 +595,13 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return $workspace !== [] ? $workspace : null;
     }
 
-    /** HR: Pronalazi stranicu za zamjenu. EN: Finds the page to replace.
-     * @return array<string,mixed>|null */
+    /**
+     * EN: Finds the page to replace.
+     *
+     * HR: Pronalazi stranicu za zamjenu.
+     *
+     * @return array<string,mixed>|null
+     */
     private function targetPage(BackupImportContext $context): ?array
     {
         $configured = $context->optionsFor(self::ID)['target_page_id'] ?? null;
@@ -520,32 +619,52 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return $page !== [] ? $page : null;
     }
 
-    /** HR: Čita odabrani nadređeni čvor. EN: Reads the selected parent node. */
+    /**
+     * EN: Reads the selected parent node.
+     *
+     * HR: Čita odabrani nadređeni čvor.
+     */
     private function targetParentId(BackupImportContext $context): ?int
     {
         $value = $context->optionsFor(self::ID)['target_parent_id'] ?? null;
         return is_numeric($value) && (int)$value > 0 ? (int)$value : null;
     }
 
-    /** HR: Čita izbor izvoza prava. EN: Reads the ACL export choice. */
+    /**
+     * EN: Reads the ACL export choice.
+     *
+     * HR: Čita izbor izvoza prava.
+     */
     private function includePermissions(BackupExportContext $context): bool
     {
         return (bool)($context->optionsFor(self::ID)['include_permissions'] ?? false);
     }
 
-    /** HR: Čita izbor izvoza povijesti. EN: Reads the history export choice. */
+    /**
+     * EN: Reads the history export choice.
+     *
+     * HR: Čita izbor izvoza povijesti.
+     */
     private function includeHistory(BackupExportContext $context): bool
     {
         return (bool)($context->optionsFor(self::ID)['include_history'] ?? true);
     }
 
-    /** HR: Čita izbor uvoza prava. EN: Reads the ACL import choice. */
+    /**
+     * EN: Reads the ACL import choice.
+     *
+     * HR: Čita izbor uvoza prava.
+     */
     private function importPermissions(BackupImportContext $context): bool
     {
         return (bool)($context->optionsFor(self::ID)['import_permissions'] ?? false);
     }
 
-    /** HR: Uklanja zamijenjene metapodatke. EN: Removes metadata being replaced. */
+    /**
+     * EN: Removes metadata being replaced.
+     *
+     * HR: Uklanja zamijenjene metapodatke.
+     */
     private function clearPageMetadata(int $nodeId, bool $permissions): void
     {
         foreach (
@@ -570,8 +689,13 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
             ->delete();
     }
 
-    /** HR: Čita uređene retke čvora. EN: Reads ordered node rows.
-     * @return list<array<string,mixed>> */
+    /**
+     * EN: Reads ordered node rows.
+     *
+     * HR: Čita uređene retke čvora.
+     *
+     * @return list<array<string,mixed>>
+     */
     private function rows(string $table, int $nodeId, string $order): array
     {
         return array_values(array_filter(
@@ -580,13 +704,21 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         ));
     }
 
-    /** HR: Mapira prenosivi identitet korisnika. EN: Maps a portable user identity. */
+    /**
+     * EN: Maps a portable user identity.
+     *
+     * HR: Mapira prenosivi identitet korisnika.
+     */
     private function user(mixed $key, BackupImportContext $context): ?int
     {
         return $this->identities->userIdForKey(is_scalar($key) ? (string)$key : null, $context->actorUserId, true);
     }
 
-    /** HR: Odabire slobodan URL slug kopije. EN: Chooses an unused URL slug for the copy. */
+    /**
+     * EN: Chooses an unused URL slug for the copy.
+     *
+     * HR: Odabire slobodan URL slug kopije.
+     */
     private function uniqueSlug(int $workspaceId, string $source): string
     {
         $base = trim($source) !== '' ? substr(trim($source), 0, 180) : 'uvezena-stranica';
@@ -602,7 +734,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return $candidate;
     }
 
-    /** HR: Dodaje kopiju na kraj grane. EN: Appends the copy to its branch. */
+    /**
+     * EN: Appends the copy to its branch.
+     *
+     * HR: Dodaje kopiju na kraj grane.
+     */
     private function nextSortOrder(int $workspaceId, ?int $parentId): int
     {
         $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
@@ -613,7 +749,11 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         return (is_numeric($first['sort_order'] ?? null) ? (int)$first['sort_order'] : 0) + 10;
     }
 
-    /** HR: Stvara identitet nove kopije. EN: Creates the new copy identity. */
+    /**
+     * EN: Creates the new copy identity.
+     *
+     * HR: Stvara identitet nove kopije.
+     */
     private function uuid(): string
     {
         $hex = bin2hex(random_bytes(16));

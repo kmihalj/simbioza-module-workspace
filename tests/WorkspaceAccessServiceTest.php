@@ -23,7 +23,9 @@ use RuntimeException;
 
 #[CoversClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceValue::class)]
 #[UsesClass(WorkspaceWorkflowService::class)]
 final class WorkspaceAccessServiceTest extends TestCase
@@ -37,8 +39,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     private WorkspaceAccessService $access;
 
     /**
-     * HR: Priprema prijenosnu SQLite shemu, minimalne Auth subjekte i ACL servis za svaki test.
      * EN: Prepares a portable SQLite schema, minimal Auth subjects, and the ACL service for each test.
+     *
+     * HR: Priprema prijenosnu SQLite shemu, minimalne Auth subjekte i ACL servis za svaki test.
      */
     protected function setUp(): void
     {
@@ -68,8 +71,9 @@ final class WorkspaceAccessServiceTest extends TestCase
             private ?array $user = null;
 
             /**
-             * HR: Sprema testnog korisnika bez izvođenja stvarne autentikacije.
              * EN: Stores the test user without performing real authentication.
+             *
+             * HR: Sprema testnog korisnika bez izvođenja stvarne autentikacije.
              *
              * @return mixed[]|null
              */
@@ -80,8 +84,9 @@ final class WorkspaceAccessServiceTest extends TestCase
             }
 
             /**
-             * HR: Uklanja aktivnog testnog korisnika.
              * EN: Removes the active test user.
+             *
+             * HR: Uklanja aktivnog testnog korisnika.
              */
             public function logout(): void
             {
@@ -89,8 +94,9 @@ final class WorkspaceAccessServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća postoji li aktivni testni korisnik.
              * EN: Reports whether an active test user exists.
+             *
+             * HR: Vraća postoji li aktivni testni korisnik.
              */
             public function check(): bool
             {
@@ -98,8 +104,9 @@ final class WorkspaceAccessServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća aktivnog testnog korisnika.
              * EN: Returns the active test user.
+             *
+             * HR: Vraća aktivnog testnog korisnika.
              *
              * @return mixed[]|null
              */
@@ -109,8 +116,9 @@ final class WorkspaceAccessServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća podatke aktivnog testnog korisnika.
              * EN: Returns the active test user's data.
+             *
+             * HR: Vraća podatke aktivnog testnog korisnika.
              *
              * @return mixed[]|null
              */
@@ -128,8 +136,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Kreator novog područja dobiva upravljanje preko običnog korisničkog ACL-a.
      * EN: A new Workspace creator receives management through a regular user ACL entry.
+     *
+     * HR: Kreator novog područja dobiva upravljanje preko običnog korisničkog ACL-a.
      */
     public function testWorkspaceCreatorReceivesManagePermissionThroughAcl(): void
     {
@@ -147,10 +156,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Sistemski izvršitelj ostaje u auditu, dok zasebni početni upravitelj
-     *     dobiva svih šest prava kroz jedan korisnički ACL redak.
      * EN: The system actor remains in the audit trail while a separate initial
      *     manager receives all six permissions through one user ACL row.
+     *
+     * HR: Sistemski izvršitelj ostaje u auditu, dok zasebni početni upravitelj
+     *     dobiva svih šest prava kroz jedan korisnički ACL redak.
      */
     public function testWorkspaceMayGrantInitialManagementToAnotherUser(): void
     {
@@ -177,10 +187,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Upravljanje je nadređena ovlast koja uključuje sve radnje, dok ostala
-     *     operativna prava ostaju međusobno neovisna.
      * EN: Manage is the umbrella permission that includes every action, while
      *     the other operation permissions remain independent.
+     *
+     * HR: Upravljanje je nadređena ovlast koja uključuje sve radnje, dok ostala
+     *     operativna prava ostaju međusobno neovisna.
      */
     public function testWorkspaceManagePermissionIncludesEveryOperation(): void
     {
@@ -214,10 +225,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Pravo dodavanja autoru daje uređivanje samo stranice koju je sam
-     *     stvorio; tuđe stranice i objavljivanje ostaju nedostupni.
      * EN: Add permission grants the author edit access only to the page they
      *     created; other users' pages and publishing remain unavailable.
+     *
+     * HR: Pravo dodavanja autoru daje uređivanje samo stranice koju je sam
+     *     stvorio; tuđe stranice i objavljivanje ostaju nedostupni.
      */
     public function testAddPermissionAllowsEditingOnlyOwnCreatedPage(): void
     {
@@ -258,16 +270,17 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Kreiranje područja dopušta administratoru te konfiguriranim korisnicima i grupama.
      * EN: Workspace creation allows administrators and configured users or groups.
+     *
+     * HR: Kreiranje područja dopušta administratoru te konfiguriranim korisnicima i grupama.
      */
     public function testWorkspaceCreationUsesConfiguredUsersAndGroups(): void
     {
         $appRoot = sys_get_temp_dir() . '/workspace_creators_' . uniqid();
-        mkdir($appRoot . '/config', 0777, true);
+        mkdir($appRoot . '/config/workspace', 0777, true);
         file_put_contents(
-            $appRoot . '/config/workspace.php',
-            "<?php return ['creation' => ['users' => [3], 'groups' => [10]]];",
+            $appRoot . '/config/workspace/workspace.json',
+            '{"creation":{"users":[3],"groups":[10]}}',
         );
         $config = new class (new Helper(), [], $appRoot) extends Config {
             public function __construct(Helper $helper, array $data, private readonly string $appRoot)
@@ -292,14 +305,16 @@ final class WorkspaceAccessServiceTest extends TestCase
         $this->assertFalse($access->canCreateWorkspace(['id' => 4, 'is_admin' => false]));
         $this->assertTrue($access->canCreateWorkspace(['id' => 4, 'is_admin' => true]));
 
-        unlink($appRoot . '/config/workspace.php');
+        unlink($appRoot . '/config/workspace/workspace.json');
+        rmdir($appRoot . '/config/workspace');
         rmdir($appRoot . '/config');
         rmdir($appRoot);
     }
 
     /**
-     * HR: Dokazuje da se prava korisnika i grupa zbrajaju, a ograničenje roditelja sužava prava potomka.
      * EN: Proves that user and group grants are combined while a parent restriction narrows descendants.
+     *
+     * HR: Dokazuje da se prava korisnika i grupa zbrajaju, a ograničenje roditelja sužava prava potomka.
      */
     public function testUserAndGroupRightsAreCombinedAndNodeRestrictionsAreInherited(): void
     {
@@ -376,10 +391,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Trenutačni auth payload može iz efektivnog konteksta isključiti stvarnu
-     *     grupu iz baze, što Simbioza koristi dok admin ovlasti nisu potvrđene.
      * EN: The current auth payload may exclude a real database group from the
      *     effective context, which Simbioza uses until admin rights are confirmed.
+     *
+     * HR: Trenutačni auth payload može iz efektivnog konteksta isključiti stvarnu
+     *     grupu iz baze, što Simbioza koristi dok admin ovlasti nisu potvrđene.
      */
     public function testEffectiveGroupIdsOverrideStoredMembershipForCurrentUser(): void
     {
@@ -413,10 +429,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da paketni ACL izračun zadržava nasljeđivanje roditeljskih
-     *     ograničenja za više čvorova bez zasebnog izračuna svakoga čvora.
      * EN: Proves that batched ACL calculation preserves inherited parent
      *     restrictions for multiple nodes without calculating each node separately.
+     *
+     * HR: Dokazuje da paketni ACL izračun zadržava nasljeđivanje roditeljskih
+     *     ograničenja za više čvorova bez zasebnog izračuna svakoga čvora.
      */
     public function testBatchedNodePermissionsPreserveInheritedRestrictions(): void
     {
@@ -462,8 +479,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Stari grupni red ograničenja više ne može oduzeti prava članovima grupe.
      * EN: A legacy group-restriction row can no longer remove rights from group members.
+     *
+     * HR: Stari grupni red ograničenja više ne može oduzeti prava članovima grupe.
      */
     public function testLegacyGroupRestrictionsAreIgnored(): void
     {
@@ -503,10 +521,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Picker ograničenja vraća korisnika s ujedinjenim izravnim i grupnim
-     *     pravima te s već primijenjenim ograničenjima predaka.
      * EN: The restriction picker returns a user with merged direct and group
      *     permissions and with ancestor restrictions already applied.
+     *
+     * HR: Picker ograničenja vraća korisnika s ujedinjenim izravnim i grupnim
+     *     pravima te s već primijenjenim ograničenjima predaka.
      */
     public function testNodeEditorSubjectsSeparateInheritedAndDirectRestrictions(): void
     {
@@ -574,10 +593,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Izravno pravo otvara samo ciljnu stranicu i njezino područje, bez
-     *     otkrivanja roditelja ili nasljeđivanja prava na potomke.
      * EN: A direct grant opens only its target page and Workspace without
      *     revealing parents or inheriting the grant to descendants.
+     *
+     * HR: Izravno pravo otvara samo ciljnu stranicu i njezino područje, bez
+     *     otkrivanja roditelja ili nasljeđivanja prava na potomke.
      */
     public function testDirectPermissionExposesOnlyTheGrantedPageAndWorkspace(): void
     {
@@ -631,10 +651,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Ograničenja sužavaju naslijeđena prava, ali ne mijenjaju zasebno
-     *     izravno pravo na ciljnoj stranici.
      * EN: Restrictions narrow inherited permissions but do not alter a separate
      *     direct grant on the target page.
+     *
+     * HR: Ograničenja sužavaju naslijeđena prava, ali ne mijenjaju zasebno
+     *     izravno pravo na ciljnoj stranici.
      */
     public function testInheritedRestrictionDoesNotConsumeDirectPermission(): void
     {
@@ -678,10 +699,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da se kratkotrajni ACL cache može isprazniti nakon izmjene
-     *     prava te sljedeći izračun čita novo stanje.
      * EN: Proves that the short-lived ACL cache can be cleared after a
      *     permission change so the next calculation reads the new state.
+     *
+     * HR: Dokazuje da se kratkotrajni ACL cache može isprazniti nakon izmjene
+     *     prava te sljedeći izračun čita novo stanje.
      */
     public function testRequestCacheIsClearedAfterPermissionChanges(): void
     {
@@ -707,10 +729,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da običan korisnik učitava ACL cijelog popisa jednim upitom,
-     *     dok administrator koristi brzi put bez nepotrebnog ACL čitanja.
      * EN: Proves that a regular user loads listing ACL in one query while an
      *     administrator uses the fast path without an unnecessary ACL read.
+     *
+     * HR: Dokazuje da običan korisnik učitava ACL cijelog popisa jednim upitom,
+     *     dok administrator koristi brzi put bez nepotrebnog ACL čitanja.
      */
     public function testVisibleWorkspaceListingBatchesAclRowsAndSkipsThemForAdministrator(): void
     {
@@ -767,8 +790,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Paketni izračun stabla čita izravna prava svih stranica jednim upitom.
      * EN: Batched tree permission calculation reads all direct page grants in one query.
+     *
+     * HR: Paketni izračun stabla čita izravna prava svih stranica jednim upitom.
      */
     public function testBatchedNodePermissionsReadDirectGrantsOnce(): void
     {
@@ -807,8 +831,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da arhiva ostavlja pregled i upravljanje postavkama, ali zaključava sadržaj manageru i adminu.
      * EN: Proves that archive keeps viewing and settings management while locking content for a manager and admin.
+     *
+     * HR: Dokazuje da arhiva ostavlja pregled i upravljanje postavkama, ali zaključava sadržaj manageru i adminu.
      */
     public function testArchivedWorkspaceIsReadOnlyForManagerAndAdministrator(): void
     {
@@ -842,10 +867,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da ugrađena publika Javno ima samo pregled, Svi prijavljeni
-     *     može dobiti šira prava te picker pretražuje ograničen Auth imenik.
      * EN: Proves that the built-in Public audience is view-only, All signed-in
      *     users may receive broader rights, and the picker searches a bounded Auth directory.
+     *
+     * HR: Dokazuje da ugrađena publika Javno ima samo pregled, Svi prijavljeni
+     *     može dobiti šira prava te picker pretražuje ograničen Auth imenik.
      */
     public function testBuiltInAudiencesAndDirectorySearch(): void
     {
@@ -918,10 +944,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Uvezeni page ACL koristi zadani deny red te dopušta samo izričite
-     *     korisnike i grupe, uključujući potomke i javno područje.
      * EN: An imported page ACL uses a default-deny row and allows only explicit
      *     users and groups, including descendants inside a public workspace.
+     *
+     * HR: Uvezeni page ACL koristi zadani deny red te dopušta samo izričite
+     *     korisnike i grupe, uključujući potomke i javno područje.
      */
     public function testImportedNodeAllowlistFailsClosedForGuestsAndUnlistedUsers(): void
     {
@@ -995,8 +1022,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Provjerava da interni link prihvaća samo lokalnu putanju, a vanjski URL mora koristiti vanjski tip čvora.
      * EN: Verifies that an internal link accepts only a local path while an external URL requires an external node.
+     *
+     * HR: Provjerava da interni link prihvaća samo lokalnu putanju, a vanjski URL mora koristiti vanjski tip čvora.
      */
     public function testInternalLinkRejectsAnExternalTarget(): void
     {
@@ -1014,8 +1042,9 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Provjerava valjanu lokalnu putanju, jedinstveno vlasništvo dokumenta i zabranu ciklusa u hijerarhiji.
      * EN: Verifies a valid local path, unique document ownership, and cycle prevention in the hierarchy.
+     *
+     * HR: Provjerava valjanu lokalnu putanju, jedinstveno vlasništvo dokumenta i zabranu ciklusa u hijerarhiji.
      */
     public function testNodeOwnershipAndHierarchyAreValidated(): void
     {
@@ -1071,10 +1100,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Aktivna stranica ostaje na spremljenoj poziciji iako je prozor stabla
-     *     dohvaća ranije kako bi otvorio njezinu granu.
      * EN: The active page keeps its persisted position even when the tree window
      *     fetches it earlier so that its branch can be expanded.
+     *
+     * HR: Aktivna stranica ostaje na spremljenoj poziciji iako je prozor stabla
+     *     dohvaća ranije kako bi otvorio njezinu granu.
      */
     public function testActiveTreeNodeDoesNotChangePersistedSiblingOrder(): void
     {
@@ -1129,10 +1159,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Skrivena navigacijska grana nestaje iz uobičajenog stabla, ali se
-     *     njezin put prigušeno vraća kada se stranica otvori izravnim URL-om.
      * EN: A hidden navigation branch disappears from the regular tree, while
      *     its path returns dimmed when a page is opened through a direct URL.
+     *
+     * HR: Skrivena navigacijska grana nestaje iz uobičajenog stabla, ali se
+     *     njezin put prigušeno vraća kada se stranica otvori izravnim URL-om.
      */
     public function testHiddenTreeBranchOnlyAppearsForItsDirectlyOpenedPage(): void
     {
@@ -1215,10 +1246,11 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da se cijeli raspored stabla sprema u jednoj transakciji te
-     *     da ciklički raspored ne mijenja prethodno valjano stanje.
      * EN: Proves that the complete tree arrangement is saved in one transaction
      *     and that a cyclic arrangement does not change the previous valid state.
+     *
+     * HR: Dokazuje da se cijeli raspored stabla sprema u jednoj transakciji te
+     *     da ciklički raspored ne mijenja prethodno valjano stanje.
      */
     public function testTreeArrangementIsValidatedAndSavedAtomically(): void
     {
@@ -1287,8 +1319,91 @@ final class WorkspaceAccessServiceTest extends TestCase
     }
 
     /**
-     * HR: Kreira samo Auth stupce koje Workspace repository koristi za provjeru korisnika, grupa i članstva.
+     * EN: Fresh cross-Workspace visibility matches scalar ACL, including effective
+     *     groups and direct grants; incomplete and cyclic ancestry fails closed.
+     *
+     * HR: Svježa skupna vidljivost odgovara pojedinačnom ACL-u, uključujući efektivne
+     *     grupe i izravna prava; nepotpuni i ciklični preci uskraćuju pristup.
+     */
+    public function testTargetedBatchVisibilityMatchesScalarAcrossWorkspacesAndRevocations(): void
+    {
+        $workspaces = [];
+        $leaves = [];
+        foreach (['public', 'authenticated', 'restricted'] as $visibility) {
+            $workspace = $this->repository->saveWorkspace(['name' => $visibility,
+                'slug' => 'batch-' . $visibility, 'visibility' => $visibility], 1);
+            $wid = (int)$workspace['id'];
+            $workspaces[$wid] = $workspace;
+            if ($visibility === 'restricted') {
+                $this->repository->replaceWorkspaceAcl($wid, ['group' => [10 => ['can_view' => true]]]);
+            }
+
+            $parent = $this->repository->saveNode($wid, ['title' => 'Parent', 'node_type' => 'separator'], 1);
+            $child = $this->repository->saveNode($wid, ['title' => 'Child', 'node_type' => 'external_link',
+                'target_url' => 'https://example.invalid/', 'parent_id' => $parent['id']], 1);
+            $this->repository->replaceNodeAcl($wid, (int)$parent['id'], ['user' => [2 => ['can_view' => false]]]);
+            $this->repository->replaceNodeDirectPermissions($wid, (int)$child['id'], [3 => ['can_view' => true]]);
+            $leaves[] = $child;
+        }
+
+        $ids = array_map(static fn(array $row): int => (int)$row['id'], $leaves);
+        $nodes = $this->repository->nodesWithAncestorsByIds($ids);
+        $this->assertCount(6, $nodes);
+        foreach (
+            [null, ['id' => 2, 'is_admin' => false], ['id' => 3, 'is_admin' => false],
+            ['id' => 2, 'is_admin' => false, 'group_ids' => []], ['id' => 4, 'is_admin' => true]] as $user
+        ) {
+            $this->authn->login($user);
+            $this->access->clearRequestCache();
+            $batch = $this->access->viewPermissionsForTargets(array_values($workspaces), $nodes, $user);
+            foreach ($workspaces as $wid => $workspace) {
+                $this->assertSame(
+                    $this->access->workspacePermissions($workspace, $user)['can_view'],
+                    $batch['workspaces'][$wid],
+                );
+            }
+
+            foreach ($leaves as $leaf) {
+                $this->assertSame(
+                    $this->access->nodePermissions($workspaces[(int)$leaf['workspace_id']], $leaf, $user)['can_view'],
+                    $batch['nodes'][(int)$leaf['id']],
+                );
+            }
+        }
+
+        $user = ['id' => 3, 'is_admin' => false];
+        $restricted = $workspaces[array_key_last($workspaces)];
+        $leaf = $leaves[2];
+        $member = ['id' => 2, 'is_admin' => false];
+        $groupBefore = $this->access->viewPermissionsForTargets([$restricted], $nodes, $member);
+        $this->assertTrue($groupBefore['workspaces'][(int)$restricted['id']]);
+        $this->database->table('auth_user_groups')->where('user_id', '=', 2)->delete();
+        $groupAfter = $this->access->viewPermissionsForTargets([$restricted], $nodes, $member);
+        $this->assertFalse($groupAfter['workspaces'][(int)$restricted['id']]);
+        $before = $this->access->viewPermissionsForTargets([$restricted], $nodes, $user);
+        $this->assertFalse($before['workspaces'][(int)$restricted['id']]);
+        $this->assertTrue($before['nodes'][(int)$leaf['id']]);
+        $this->repository->replaceNodeDirectPermissions((int)$restricted['id'], (int)$leaf['id'], []);
+        $after = $this->access->viewPermissionsForTargets([$restricted], $nodes, $user);
+        $this->assertFalse($after['nodes'][(int)$leaf['id']]);
+        $this->database->table('workspace_nodes')->where('id', '=', $leaf['id'])->update(['parent_id' => $leaf['id']]);
+        $cyclic = $this->repository->nodesWithAncestorsByIds([(int)$leaf['id']]);
+        $admin = ['id' => 4, 'is_admin' => true];
+        $cycleResult = $this->access->viewPermissionsForTargets([$restricted], $cyclic, $admin);
+        $this->assertFalse($cycleResult['nodes'][(int)$leaf['id']]);
+        $this->database->table('workspace_nodes')->where('id', '=', $leaf['parent_id'])
+            ->update(['is_enabled' => false]);
+        $this->database->table('workspace_nodes')->where('id', '=', $leaf['id'])
+            ->update(['parent_id' => $leaf['parent_id']]);
+        $incomplete = $this->repository->nodesWithAncestorsByIds([(int)$leaf['id']]);
+        $incompleteResult = $this->access->viewPermissionsForTargets([$restricted], $incomplete, $admin);
+        $this->assertFalse($incompleteResult['nodes'][(int)$leaf['id']]);
+    }
+
+    /**
      * EN: Creates only the Auth columns used by the Workspace repository for users, groups, and membership.
+     *
+     * HR: Kreira samo Auth stupce koje Workspace repository koristi za provjeru korisnika, grupa i članstva.
      */
     private function createAuthSchema(): void
     {

@@ -18,7 +18,11 @@ final class WorkspaceIndexServiceTest extends TestCase
         $this->service = new WorkspaceIndexService();
     }
 
-    /** HR: Glavni popis ima fiksnu stranicu i ograničen prozor navigacije. EN: The primary list has a fixed page and compact navigation window. */
+    /**
+     * EN: The primary list has a fixed page and compact navigation window.
+     *
+     * HR: Glavni popis ima fiksnu stranicu i ograničen prozor navigacije.
+     */
     public function testOrdinaryWorkspaceListIsPaginated(): void
     {
         $rows = [];
@@ -37,7 +41,11 @@ final class WorkspaceIndexServiceTest extends TestCase
         $this->assertSame([1, 2, 3], $result['page_numbers']);
     }
 
-    /** HR: Administrator dobiva osobna područja samo u izričitom odvojenom prikazu. EN: An administrator receives personal Workspaces only in the explicit separate view. */
+    /**
+     * EN: An administrator receives personal Workspaces only in the explicit separate view.
+     *
+     * HR: Administrator dobiva osobna područja samo u izričitom odvojenom prikazu.
+     */
     public function testAdministratorPersonalViewIsSeparated(): void
     {
         $rows = [
@@ -57,7 +65,12 @@ final class WorkspaceIndexServiceTest extends TestCase
         $this->assertSame([], $personal['other_personal_workspaces']);
     }
 
-    /** HR: Korisnikovo osobno područje ostaje među običnima, a samo već vidljiva tuđa ulaze u padajući izbornik. EN: The actor's personal Workspace remains among ordinary rows and only already-visible foreign spaces enter the dropdown. */
+    /**
+     * EN: The actor's personal Workspace remains among ordinary rows.
+     * Only already-visible foreign spaces enter the dropdown.
+     *
+     * HR: Korisnikovo osobno područje ostaje među običnima, a samo već vidljiva tuđa ulaze u padajući izbornik.
+     */
     public function testUserKeepsOwnPersonalWorkspaceAndGetsAccessibleForeignDropdown(): void
     {
         $rows = [

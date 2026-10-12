@@ -25,7 +25,7 @@ private database tables.
 
 ## 2. Data model
 
-The single initial migration creates eight tables through the ORM:
+The initial migration creates current domain tables through the ORM:
 
 | Table | Responsibility |
 | --- | --- |
@@ -34,7 +34,6 @@ The single initial migration creates eight tables through the ORM:
 | `workspace_nodes` | Ordered hierarchy of documents and links |
 | `workspace_node_acl` | Additional restrictions inherited through the tree |
 | `workspace_node_workflows` | Per-page and per-language publication state and immutable Editor version pointers |
-| `workspace_homepage_settings` | Public and signed-in application-homepage policy |
 | `workspace_user_homepages` | Optional personal homepage selections |
 | `workspace_themes` | Per-Workspace system selection or isolated private theme JSON |
 
@@ -249,7 +248,7 @@ results.
 The `all` option is enabled only below 100 eligible articles. The controller
 rejects a crafted `limit=all` at 100 or more and falls back to the configured
 numeric default. Defaults live under the `shorts` key in
-`config/workspace.php` and are editable in **Settings → Workspaces**. The
+`HPH_CONFIG_PATH/workspace/workspace.json` and are editable in **Settings → Workspaces**. The
 shipped defaults are levels 1–2, 10 articles, and newest first.
 
 The page tree is initially visible and the display options are initially
@@ -278,7 +277,7 @@ exactly published version in the site default locale from
 published version. Draft content is never a language fallback.
 
 Shorts adds no database table. Its defaults are host-site configuration, so a
-complete backup includes `config/workspace.php`; Theme package export does not
+complete backup includes `HPH_CONFIG_PATH/workspace/workspace.json`; Theme package export does not
 own them.
 
 ## 6. HTML editor integration
@@ -449,7 +448,8 @@ title and listed behind the `New unpublished pages` counter. Users with
 `can_publish` also receive a `Submitted for review` counter and review queue.
 Discarding a new page with no publication in any locale permanently deletes
 its Workspace node, workflow, restrictions, and Editor document with its
-attachments. It therefore does not enter the soft-deleted document list. If
+attachments and explicitly page-owned special menus. It therefore does not
+enter the soft-deleted document list. If
 the node has children, they are reparented to its parent. This destructive
 discard variant requires effective `can_delete` permission. If another locale
 has a publication, only the current locale draft is discarded.
@@ -477,30 +477,10 @@ version exactly as before.
 
 ## 8. Configuration
 
-`config/workspace.php` supports:
-
-```php
-return [
-    'enabled' => true,
-    'routing' => [
-        'root_path' => 'workspace',
-    ],
-    'defaults' => [
-        'visibility' => 'restricted',
-        'tree_visible' => true,
-        'contents_visible' => false,
-    ],
-    'creation' => [
-        'users' => [],
-        'groups' => [],
-    ],
-    'menu' => [
-        'auto_register_top' => true,
-        'auto_register_settings' => true,
-    ],
-];
-```
-
+Active configuration uses JSON `HPH_CONFIG_PATH/workspace/workspace.json` and
+`HPH_CONFIG_OVERRIDE_PATHS` layers. The package template is
+`config/workspace.json.dist`; all options, permissions, GUI disablement,
+homepages and upgrades are described in the [configuration guide](configuration_en.md).
 Administrators may always create Workspaces. Other creators are selected in
 Workspace settings as individual Auth users or existing Auth groups.
 
@@ -544,7 +524,7 @@ JSON is never written from a Workspace request.
 
 The `workspace_themes` row contains selection type, source ID, mode policy, and
 private theme JSON. Private binary/SVG assets live under
-`data/workspaces/themes/<workspace-id>/assets`; references use
+`data/workspaces/<storage-slug>--<workspace-ID>/theme/assets`; references use
 `@runtime-theme-assets/<file>`. Asset delivery rechecks view ACL, while the Theme
 repository receives the resolved override only for the current request. This
 keeps the global active theme unchanged on all non-Workspace pages and in other
@@ -554,7 +534,7 @@ Managers can import a complete Theme v3 archive. Export is deliberately limited
 to application administrators and only exists for a private Workspace theme.
 That archive is compatible with both another Workspace import and the global
 Theme library import. A complete backup must include the `workspace_themes`
-table and `data/workspaces/themes` directory.
+table and `data/workspaces/<storage-slug>--<workspace-ID>/theme` directory.
 
 ### Per-Workspace special menus
 
@@ -570,6 +550,13 @@ This prevents a forged request from changing menus outside the Workspace. A
 left-only definition is absent from the top-menu editor and vice versa;
 removing one side preserves the other. At runtime, matching separated records
 may still supply both menus on the same page.
+
+Explicit `owner_target` values locate workspace menus in
+`data/workspaces/<storage-slug>--<ID>/menus/` and page menus in
+`data/workspaces/<storage-slug>--<ID>/pages/<page-label>--<document-UUID>/menus/`. The Menu shared index only
+references these files. Permanent page/workspace cleanup removes owned files
+and index entries without requiring Menu GUI services. Soft deletion preserves
+them; shared route-matching contexts are not treated as owned data.
 
 ### Breadcrumbs and backlinks
 
@@ -672,14 +659,14 @@ published pages and Summaries views currently visible to that user. The root res
 personal → signed-in → public → host fallback and redirects only to a generated
 internal named route, preventing open redirects and stale ACL access.
 
-Existing installations add the two portable tables with:
+Existing installations add the personal-selection table with:
 
 ```bash
 vendor/bin/hph workspace:install-homepage-migration
 vendor/bin/hph orm-migrate:up
 ```
 
-An installation that already has those two tables adds structured Summaries
+An installation that already has the personal-selection table adds structured Summaries
 targets without replacing existing page choices:
 
 ```bash
@@ -687,7 +674,7 @@ vendor/bin/hph workspace:install-homepage-view-options-migration
 vendor/bin/hph orm-migrate:up
 ```
 
-A full site backup includes `workspace_homepage_settings` and
+A full site backup includes the global JSON policy and
 `workspace_user_homepages`, including target type, Workspace ID, and the two
 visibility switches. An individual Workspace import must not silently
 replace the destination site's homepage policy, and Theme export does not own
@@ -920,3 +907,16 @@ maps. Portable HTML export renders the selected language, while Confluence
 import stores the Workspace name, description, and page titles under the
 language selected during preflight. Re-import still matches content by stable
 slug rather than by a translated title.
+
+## Batched notification visibility
+
+For targeted inbox checks, `WorkspaceRepository::workspacesByIds()` reads
+requested non-deleted Workspaces and `nodesWithAncestorsByIds()` reads requested
+enabled nodes plus their enabled ancestors, using bounded recursive SQL.
+`WorkspaceAccessService::viewPermissionsForTargets()` reuses the ordinary
+Workspace ACL policy for these rows, including effective groups, inherited and
+imported restrictions, direct page grants and administrator access. Cyclic or
+incomplete chains deny access, rather than dropping an unknown ancestor's ACL.
+Group membership and ACL are read afresh for each call. This method returns only
+view decisions and does not replace edit/publish/management checks. Simbioza
+User uses it for Notification batches; Workspace does not depend on Notification.

@@ -12,8 +12,9 @@ use Throwable;
 use ZipArchive;
 
 /**
- * HR: Uvozi i izvozi privatnu temu područja u formatu kompatibilnom sa sistemskom bibliotekom tema.
  * EN: Imports and exports a private workspace theme in the system theme-library compatible format.
+ *
+ * HR: Uvozi i izvozi privatnu temu područja u formatu kompatibilnom sa sistemskom bibliotekom tema.
  */
 final readonly class WorkspaceThemeArchiveService
 {
@@ -28,8 +29,9 @@ final readonly class WorkspaceThemeArchiveService
     private const THEME_REPOSITORY = 'AaiEduHr\\HeartPhrameModuleTheme\\Service\\ThemeConfigRepository';
 
     /**
-     * HR: Prima opcionalni Theme repozitorij, privatnu pohranu i direktorije potrebne za prijenos teme.
      * EN: Receives the optional Theme repository, private storage, and directories needed for theme transfer.
+     *
+     * HR: Prima opcionalni Theme repozitorij, privatnu pohranu i direktorije potrebne za prijenos teme.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -40,8 +42,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Izvozi samo privatnu temu i cijelu njezinu biblioteku; pozivatelj provjerava administratorsko pravo.
      * EN: Exports only a private theme and its complete library; the caller checks administrator permission.
+     *
+     * HR: Izvozi samo privatnu temu i cijelu njezinu biblioteku; pozivatelj provjerava administratorsko pravo.
      *
      * @param array<string,mixed> $workspace
      */
@@ -120,8 +123,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Validira sistemski ili privatni theme ZIP, atomarno zamjenjuje privatne datoteke i sprema temu u bazu.
      * EN: Validates a system or private theme ZIP, atomically replaces private files, and stores the theme in DB.
+     *
+     * HR: Validira sistemski ili privatni theme ZIP, atomarno zamjenjuje privatne datoteke i sprema temu u bazu.
      *
      * @param array<string,mixed> $workspace
      */
@@ -217,8 +221,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Sigurno izdvaja samo manifestom navedene datoteke i potvrđuje njihove kontrolne zbrojeve.
      * EN: Safely extracts only manifest-listed files and verifies their checksums.
+     *
+     * HR: Sigurno izdvaja samo manifestom navedene datoteke i potvrđuje njihove kontrolne zbrojeve.
      *
      * @param array<string, mixed> $manifest
      */
@@ -259,8 +264,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Odbacuje arhive s previše zapisa ili putanjama koje mogu izaći iz ciljnog direktorija.
      * EN: Rejects archives with too many entries or paths that could escape the target directory.
+     *
+     * HR: Odbacuje arhive s previše zapisa ili putanjama koje mogu izaći iz ciljnog direktorija.
      */
     private function validateEntries(ZipArchive $zip): void
     {
@@ -277,8 +283,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Čita obavezni JSON zapis iz arhive i zahtijeva objekt kao korijensku vrijednost.
      * EN: Reads a required JSON archive entry and requires an object as its root value.
+     *
+     * HR: Čita obavezni JSON zapis iz arhive i zahtijeva objekt kao korijensku vrijednost.
      *
      * @return array<string,mixed>
      */
@@ -303,8 +310,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Tokom sprema ZIP u privremenu datoteku uz ograničenje ukupne veličine.
      * EN: Streams the ZIP into a temporary file under a total-size limit.
+     *
+     * HR: Tokom sprema ZIP u privremenu datoteku uz ograničenje ukupne veličine.
      */
     private function storeUpload(UploadedFileInterface $file, string $path): void
     {
@@ -337,8 +345,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Rekurzivno pretvara privatne runtime reference u prijenosni format sistemske teme.
      * EN: Recursively converts private runtime references into the portable system-theme format.
+     *
+     * HR: Rekurzivno pretvara privatne runtime reference u prijenosni format sistemske teme.
      */
     private function replaceRuntimeReferences(mixed $value, string $themeId): mixed
     {
@@ -358,8 +367,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Rekurzivno pretvara reference uvezenog paketa u privatne runtime reference područja.
      * EN: Recursively converts imported package references into private Workspace runtime references.
+     *
+     * HR: Rekurzivno pretvara reference uvezenog paketa u privatne runtime reference područja.
      */
     private function replaceImportedReferences(mixed $value, string $themeId): mixed
     {
@@ -382,8 +392,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Iz lokaliziranog naziva izrađuje prijenosni ID teme s rezervnim ID-em područja.
      * EN: Builds a portable theme ID from its localized label with a Workspace-ID fallback.
+     *
+     * HR: Iz lokaliziranog naziva izrađuje prijenosni ID teme s rezervnim ID-em područja.
      *
      * @param array<string, mixed> $theme
      */
@@ -397,8 +408,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Dopušta samo relativnu, vidljivu putanju bez povratka u nadređene direktorije.
      * EN: Allows only a relative visible path without parent-directory traversal.
+     *
+     * HR: Dopušta samo relativnu, vidljivu putanju bez povratka u nadređene direktorije.
      */
     private function safeRelativePath(string $path): bool
     {
@@ -410,8 +422,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Čita valjani pozitivni ID područja ili prekida prijenos teme.
      * EN: Reads a valid positive Workspace ID or stops the theme transfer.
+     *
+     * HR: Čita valjani pozitivni ID područja ili prekida prijenos teme.
      *
      * @param array<string, mixed> $workspace
      */
@@ -426,8 +439,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Dohvaća kompatibilni Theme repozitorij tek kada je modul stvarno dostupan.
      * EN: Resolves a compatible Theme repository only when the module is actually available.
+     *
+     * HR: Dohvaća kompatibilni Theme repozitorij tek kada je modul stvarno dostupan.
      */
     private function themeRepository(): object
     {
@@ -444,8 +458,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Poziva opcionalni Theme servis bez čvrste Composer ovisnosti modula područja.
      * EN: Calls an optional Theme service without a hard Workspace-module Composer dependency.
+     *
+     * HR: Poziva opcionalni Theme servis bez čvrste Composer ovisnosti modula područja.
      *
      * @param list<mixed> $arguments
      */
@@ -459,8 +474,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Serijalizira objekt u čitljiv UTF-8 JSON sadržaj arhive.
      * EN: Serializes an object into readable UTF-8 JSON archive content.
+     *
+     * HR: Serijalizira objekt u čitljiv UTF-8 JSON sadržaj arhive.
      *
      * @param array<string, mixed> $value
      */
@@ -473,8 +489,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Izrađuje jedinstvenu privremenu putanju ili prekida operaciju prije zapisivanja.
      * EN: Creates a unique temporary path or stops the operation before writing.
+     *
+     * HR: Izrađuje jedinstvenu privremenu putanju ili prekida operaciju prije zapisivanja.
      */
     private function temporaryPath(string $prefix): string
     {
@@ -487,8 +504,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Zaustavlja uvoz ili izvoz kada PHP ZIP podrška nije instalirana.
      * EN: Stops import or export when PHP ZIP support is not installed.
+     *
+     * HR: Zaustavlja uvoz ili izvoz kada PHP ZIP podrška nije instalirana.
      */
     private function requireZip(): void
     {
@@ -498,8 +516,9 @@ final readonly class WorkspaceThemeArchiveService
     }
 
     /**
-     * HR: Rekurzivno uklanja isključivo poznati privremeni ili zamjenski direktorij teme.
      * EN: Recursively removes only the known temporary or replacement theme directory.
+     *
+     * HR: Rekurzivno uklanja isključivo poznati privremeni ili zamjenski direktorij teme.
      */
     private function deleteDirectory(string $directory): void
     {

@@ -16,16 +16,21 @@ use function time;
 use function trim;
 
 /**
- * HR: Održava izvedeni indeks internih poveznica iz objavljenih verzija.
- *     Indeks ne sadrži ACL odluke i može se u svakom trenutku ponovno izgraditi.
  * EN: Maintains a derived internal-link index from published versions. The
  *     index contains no ACL decisions and can be rebuilt at any time.
+ *
+ * HR: Održava izvedeni indeks internih poveznica iz objavljenih verzija.
+ *     Indeks ne sadrži ACL odluke i može se u svakom trenutku ponovno izgraditi.
  */
 final class WorkspaceBacklinkIndexer
 {
     private int $lastRefreshTimestamp = 0;
 
-    /** HR: Prima izvore stranica, objava i HTML-a. EN: Receives page, publication, and HTML sources. */
+    /**
+     * EN: Receives page, publication, and HTML sources.
+     *
+     * HR: Prima izvore stranica, objava i HTML-a.
+     */
     public function __construct(
         private readonly Database $database,
         private readonly WorkspaceRepository $repository,
@@ -36,12 +41,13 @@ final class WorkspaceBacklinkIndexer
     }
 
     /**
-     * HR: Jednokratno inicijalizira indeks ako još nije izgrađen. Redovni GET
-     *     zahtjev nikada ne pokreće skupu periodičnu obnovu cijelog indeksa;
-     *     kasnije promjene održavaju event listeneri.
      * EN: Initializes the index once when it has not been built yet. A regular
      *     GET request never starts an expensive periodic full-index rebuild;
      *     event listeners maintain subsequent changes.
+     *
+     * HR: Jednokratno inicijalizira indeks ako još nije izgrađen. Redovni GET
+     *     zahtjev nikada ne pokreće skupu periodičnu obnovu cijelog indeksa;
+     *     kasnije promjene održavaju event listeneri.
      */
     public function refreshIfDue(): void
     {
@@ -66,8 +72,9 @@ final class WorkspaceBacklinkIndexer
     }
 
     /**
-     * HR: Atomski ponovno gradi sve backlinkove iz stvarno objavljenog sadržaja.
      * EN: Atomically rebuilds all backlinks from actually published content.
+     *
+     * HR: Atomski ponovno gradi sve backlinkove iz stvarno objavljenog sadržaja.
      *
      * @return array{indexed:int}
      */
@@ -102,8 +109,9 @@ final class WorkspaceBacklinkIndexer
     }
 
     /**
-     * HR: Nakon objave ciljano osvježava jednu izvornu stranicu i jezik.
      * EN: Refreshes one source page and locale after publication.
+     *
+     * HR: Nakon objave ciljano osvježava jednu izvornu stranicu i jezik.
      */
     public function synchronizeNode(int $workspaceId, int $nodeId, string $language): void
     {
@@ -151,8 +159,9 @@ final class WorkspaceBacklinkIndexer
     }
 
     /**
-     * HR: Strukturne promjene mogu promijeniti slug odredišta pa traže punu obnovu.
      * EN: Structural changes can alter target slugs and therefore require a full rebuild.
+     *
+     * HR: Strukturne promjene mogu promijeniti slug odredišta pa traže punu obnovu.
      */
     public function synchronizeWorkspace(int $workspaceId, ?string $language = null): void
     {
@@ -161,8 +170,9 @@ final class WorkspaceBacklinkIndexer
     }
 
     /**
-     * HR: Priprema retke izvan transakcije kako čitanje Editora ne drži DB lock.
      * EN: Prepares rows outside the transaction so Editor reads do not hold a DB lock.
+     *
+     * HR: Priprema retke izvan transakcije kako čitanje Editora ne drži DB lock.
      *
      * @return list<array<string,mixed>>
      */
@@ -275,7 +285,11 @@ final class WorkspaceBacklinkIndexer
         return array_values($rows);
     }
 
-    /** HR: Provjerava obje tablice izvedenog indeksa. EN: Checks both derived-index tables. */
+    /**
+     * EN: Checks both derived-index tables.
+     *
+     * HR: Provjerava obje tablice izvedenog indeksa.
+     */
     private function tablesReady(): bool
     {
         $schema = $this->database->schema();

@@ -39,8 +39,9 @@ $hasDirectRestrictions = array_filter(
 ) !== [];
 
 /**
- * HR: Provjerava jedno spremljeno pravo u ACL recima čvora.
  * EN: Checks one stored permission in the node ACL rows.
+ *
+ * HR: Provjerava jedno spremljeno pravo u ACL recima čvora.
  *
  * @param list<array<string, mixed>> $rows
  */

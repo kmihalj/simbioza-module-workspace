@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Administratorski pregled zauzeća i nepovratno održavanje sadržaja.
  * EN: Administrator storage dashboard and irreversible content maintenance.
+ *
+ * HR: Administratorski pregled zauzeća i nepovratno održavanje sadržaja.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $title

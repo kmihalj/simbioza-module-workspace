@@ -18,15 +18,18 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
- * HR: Izlaže stabilne Workspace operacije bez ovisnosti o HTTP ili API modulu.
- *
  * EN: Exposes stable Workspace operations without depending on HTTP or the API module.
  *
  * Početnici / Beginners:
- * HR: API scope samo dopušta ulazak u operaciju. Ovaj servis nakon toga uvijek
- * ponovno provjerava stvarna prava korisnika kojem API ključ pripada.
- * EN: An API scope only permits entering an operation. This service then always
+ *
+ * An API scope only permits entering an operation. This service then always
  * checks the actual rights of the user who owns the API key.
+ *
+ * HR: Izlaže stabilne Workspace operacije bez ovisnosti o HTTP ili API modulu.
+ *
+ *
+ * API scope samo dopušta ulazak u operaciju. Ovaj servis nakon toga uvijek
+ * ponovno provjerava stvarna prava korisnika kojem API ključ pripada.
  */
 final readonly class WorkspaceApiService
 {
@@ -40,9 +43,9 @@ final readonly class WorkspaceApiService
     ];
 
     /**
-     * HR: Prima repozitorij, ACL servis i zadane postavke područja.
-     *
      * EN: Receives the repository, ACL service, and Workspace defaults.
+     *
+     * HR: Prima repozitorij, ACL servis i zadane postavke područja.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -57,9 +60,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća sva područja koja autentificirani korisnik smije vidjeti.
-     *
      * EN: Returns all workspaces visible to the authenticated user.
+     *
+     * HR: Vraća sva područja koja autentificirani korisnik smije vidjeti.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -75,9 +78,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća jedno vidljivo područje ili skriveni 404 kada korisnik nema pravo pregleda.
-     *
      * EN: Returns one visible workspace or a concealed 404 when the user lacks view permission.
+     *
+     * HR: Vraća jedno vidljivo područje ili skriveni 404 kada korisnik nema pravo pregleda.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -88,9 +91,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća ACL-filtrirano stablo područja za odabrani jezik.
-     *
      * EN: Returns the ACL-filtered Workspace tree for the selected language.
+     *
+     * HR: Vraća ACL-filtrirano stablo područja za odabrani jezik.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -112,9 +115,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća ACL-filtrirane sažetke objavljenih stranica bez oslanjanja na web sesiju.
-     *
      * EN: Returns ACL-filtered published-page summaries without relying on the web session.
+     *
+     * HR: Vraća ACL-filtrirane sažetke objavljenih stranica bez oslanjanja na web sesiju.
      *
      * @param array<string,mixed> $query
      * @param array<string,mixed> $user
@@ -141,10 +144,11 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Stvara ACL-filtrirani offline HTML paket područja za administratora
-     *     ili korisnika s efektivnim pravom upravljanja.
      * EN: Creates an ACL-filtered offline HTML Workspace package for an
      *     administrator or a user with effective manage permission.
+     *
+     * HR: Stvara ACL-filtrirani offline HTML paket područja za administratora
+     *     ili korisnika s efektivnim pravom upravljanja.
      *
      * @param list<int> $selectedNodeIds
      * @param array<string,mixed> $user
@@ -167,18 +171,20 @@ final readonly class WorkspaceApiService
             return $this->exporter->export($workspace, $selectedNodeIds, $user);
         } catch (WorkspaceExportSelectionException $workspaceExportSelectionException) {
             /*
-             * HR: Prazan ili samo-linkovni izbor je korisnička validacijska
-             *     pogreška, a ne kvar servera.
              * EN: An empty or link-only selection is a client validation
              *     failure, not a server fault.
+             *
+             * HR: Prazan ili samo-linkovni izbor je korisnička validacijska
+             *     pogreška, a ne kvar servera.
              */
             throw $this->invalid($workspaceExportSelectionException->getMessage());
         }
     }
 
     /**
-     * HR: Vraća API-siguran model postavki teme područja korisniku koji njime upravlja.
      * EN: Returns an API-safe Workspace theme settings model to a user who manages it.
+     *
+     * HR: Vraća API-siguran model postavki teme područja korisniku koji njime upravlja.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -211,8 +217,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Sprema nasljeđivanje ili izbor sistemske teme samo za zadano područje.
      * EN: Stores inheritance or a system-theme selection only for the supplied Workspace.
+     *
+     * HR: Sprema nasljeđivanje ili izbor sistemske teme samo za zadano područje.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -232,8 +239,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Sprema privatnu kopiju konfiguracije teme bez promjene sistemske teme.
      * EN: Stores a private copy of the theme configuration without changing the system theme.
+     *
+     * HR: Sprema privatnu kopiju konfiguracije teme bez promjene sistemske teme.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -258,8 +266,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Uvozi privatni ZIP paket teme u područje kojim korisnik upravlja.
      * EN: Imports a private theme ZIP package into a Workspace managed by the user.
+     *
+     * HR: Uvozi privatni ZIP paket teme u područje kojim korisnik upravlja.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -286,8 +295,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Administratoru izvozi privatnu temu područja kao prijenosni ZIP.
      * EN: Exports a Workspace private theme as a portable ZIP for an administrator.
+     *
+     * HR: Administratoru izvozi privatnu temu područja kao prijenosni ZIP.
      *
      * @param array<string,mixed> $user
      */
@@ -306,8 +316,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Dodaje sigurnu slikovnu datoteku u privatnu biblioteku teme područja.
      * EN: Adds a safe image file to the Workspace private theme library.
+     *
+     * HR: Dodaje sigurnu slikovnu datoteku u privatnu biblioteku teme područja.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -330,8 +341,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Briše nekorištenu datoteku samo iz privatne teme područja.
      * EN: Deletes an unused file only from the Workspace private theme.
+     *
+     * HR: Briše nekorištenu datoteku samo iz privatne teme područja.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -349,8 +361,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Administratoru vraća globalnu politiku naslovnice i dostupne ciljeve.
      * EN: Returns the global homepage policy and available targets to an administrator.
+     *
+     * HR: Administratoru vraća globalnu politiku naslovnice i dostupne ciljeve.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -365,8 +378,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Administratoru sprema globalnu javnu i prijavljenu naslovnicu.
      * EN: Stores global public and authenticated homepages for an administrator.
+     *
+     * HR: Administratoru sprema globalnu javnu i prijavljenu naslovnicu.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -386,8 +400,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća osobni odabir naslovnice vlasnika API ključa.
      * EN: Returns the API-key owner's personal homepage selection.
+     *
+     * HR: Vraća osobni odabir naslovnice vlasnika API ključa.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>|null
@@ -404,8 +419,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Sprema osobni odabir naslovnice samo za vlasnika API ključa.
      * EN: Stores a personal homepage selection only for the API-key owner.
+     *
+     * HR: Sprema osobni odabir naslovnice samo za vlasnika API ključa.
      *
      * @param array<string,mixed>|int $selection
      * @param array<string,mixed> $user
@@ -430,9 +446,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Kreira područje samo ako korisnik smije stvarati područja u aplikaciji.
-     *
      * EN: Creates a Workspace only when the user may create workspaces in the application.
+     *
+     * HR: Kreira područje samo ako korisnik smije stvarati područja u aplikaciji.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -456,9 +472,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Djelomično mijenja područje uz efektivno can_manage pravo.
-     *
      * EN: Partially updates a Workspace with the effective can_manage permission.
+     *
+     * HR: Djelomično mijenja područje uz efektivno can_manage pravo.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -477,9 +493,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Soft-briše područje uz efektivno can_manage pravo.
-     *
      * EN: Soft-deletes a Workspace with the effective can_manage permission.
+     *
+     * HR: Soft-briše područje uz efektivno can_manage pravo.
      *
      * @param array<string,mixed> $user
      */
@@ -494,9 +510,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Administratoru vraća soft-obrisana područja.
-     *
      * EN: Returns soft-deleted workspaces to an administrator.
+     *
+     * HR: Administratoru vraća soft-obrisana područja.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -514,9 +530,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Administratoru vraća soft-obrisano područje pod dostupnim slugom.
-     *
      * EN: Restores a soft-deleted Workspace under an available slug for an administrator.
+     *
+     * HR: Administratoru vraća soft-obrisano područje pod dostupnim slugom.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -538,9 +554,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća izravni ACL područja korisniku s can_manage pravom.
-     *
      * EN: Returns the direct Workspace ACL to a user with can_manage permission.
+     *
+     * HR: Vraća izravni ACL područja korisniku s can_manage pravom.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -562,9 +578,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Zamjenjuje cjelokupni ACL područja validiranim popisom subjekata.
-     *
      * EN: Replaces the complete Workspace ACL with a validated subject list.
+     *
+     * HR: Zamjenjuje cjelokupni ACL područja validiranim popisom subjekata.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -581,9 +597,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Pretražuje ograničeni imenik korisnika ili grupa za ACL picker.
-     *
      * EN: Searches the bounded user or group directory for an ACL picker.
+     *
+     * HR: Pretražuje ograničeni imenik korisnika ili grupa za ACL picker.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -600,9 +616,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Kreira samo interni ili vanjski link-čvor; dokumente kreira Editor API.
-     *
      * EN: Creates only an internal or external link node; documents are created by the Editor API.
+     *
+     * HR: Kreira samo interni ili vanjski link-čvor; dokumente kreira Editor API.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -629,9 +645,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Mijenja strukturne podatke čvora bez promjene dokumenta kojem pripada.
-     *
      * EN: Updates structural node data without changing the linked document.
+     *
+     * HR: Mijenja strukturne podatke čvora bez promjene dokumenta kojem pripada.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -672,11 +688,11 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Briše link i podgranu uz efektivno pravo brisanja; dokument-stranice
-     *     namjerno prepušta Editor API-ju.
-     *
      * EN: Deletes a link and its subtree with effective delete permission;
      *     document pages are intentionally left to the Editor API.
+     *
+     * HR: Briše link i podgranu uz efektivno pravo brisanja; dokument-stranice
+     *     namjerno prepušta Editor API-ju.
      *
      * @param array<string,mixed> $user
      */
@@ -703,9 +719,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Atomski sprema potpuni redoslijed i hijerarhiju stabla.
-     *
      * EN: Atomically stores the complete tree order and hierarchy.
+     *
+     * HR: Atomski sprema potpuni redoslijed i hijerarhiju stabla.
      *
      * @param list<array<string,mixed>> $placements
      * @param array<string,mixed> $user
@@ -722,11 +738,11 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća izravna ograničenja vidljivog čvora upravitelju područja ili
-     *     korisniku s efektivnim pravom objavljivanja na toj stranici.
-     *
      * EN: Returns direct restrictions for a visible node to a Workspace manager
      *     or a user with effective publish permission on that page.
+     *
+     * HR: Vraća izravna ograničenja vidljivog čvora upravitelju područja ili
+     *     korisniku s efektivnim pravom objavljivanja na toj stranici.
      *
      * @param array<string,mixed> $user
      * @return list<array<string,mixed>>
@@ -769,9 +785,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Zamjenjuje izravna ograničenja čvora subjektima koji već pripadaju području.
-     *
      * EN: Replaces direct node restrictions with subjects already assigned to the Workspace.
+     *
+     * HR: Zamjenjuje izravna ograničenja čvora subjektima koji već pripadaju području.
      *
      * @param array<string,mixed> $payload
      * @param array<string,mixed> $user
@@ -797,10 +813,11 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Učitava područje i stranicu te dopušta upravljanje ovlastima samo
-     *     upravitelju područja ili objavljivaču koji stranicu smije vidjeti.
      * EN: Loads a Workspace and page, allowing permission management only to a
      *     Workspace manager or publisher who may view the page.
+     *
+     * HR: Učitava područje i stranicu te dopušta upravljanje ovlastima samo
+     *     upravitelju područja ili objavljivaču koji stranicu smije vidjeti.
      *
      * @param array<string,mixed> $user
      * @return array{0:array<string,mixed>,1:array<string,mixed>}
@@ -827,9 +844,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Učitava područje i skriva njegovo postojanje ako korisnik nema traženo pravo.
-     *
      * EN: Loads a Workspace and conceals its existence when the user lacks the required permission.
+     *
+     * HR: Učitava područje i skriva njegovo postojanje ako korisnik nema traženo pravo.
      *
      * @param array<string,mixed> $user
      * @return array<string,mixed>
@@ -856,9 +873,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Učitava čvor i potvrđuje da pripada zadanom području.
-     *
      * EN: Loads a node and confirms that it belongs to the supplied Workspace.
+     *
+     * HR: Učitava čvor i potvrđuje da pripada zadanom području.
      *
      * @param array<string,mixed> $workspace
      * @return array<string,mixed>
@@ -878,9 +895,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Zaštitne zapise obrisanih područja ograničava na administratora.
-     *
      * EN: Restricts deleted-Workspace records to administrators.
+     *
+     * HR: Zaštitne zapise obrisanih područja ograničava na administratora.
      *
      * @param array<string,mixed> $user
      */
@@ -892,8 +909,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća dostupnu integraciju tema ili jasnu domensku grešku.
      * EN: Returns the available theme integration or a clear domain failure.
+     *
+     * HR: Vraća dostupnu integraciju tema ili jasnu domensku grešku.
      */
     private function requireThemes(): WorkspaceThemeService
     {
@@ -905,8 +923,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća dostupni servis naslovnica ili jasnu domensku grešku.
      * EN: Returns the available homepage service or a clear domain failure.
+     *
+     * HR: Vraća dostupni servis naslovnica ili jasnu domensku grešku.
      */
     private function requireHomepages(): WorkspaceHomepageService
     {
@@ -918,9 +937,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća sigurni javni DTO područja bez internih delete i audit detalja.
-     *
      * EN: Returns a safe public Workspace DTO without internal delete and audit details.
+     *
+     * HR: Vraća sigurni javni DTO područja bez internih delete i audit detalja.
      *
      * @param array<string,mixed> $workspace
      * @return array<string,mixed>
@@ -956,8 +975,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Dodaje efektivna prava području prije izgradnje javnog DTO odgovora.
      * EN: Adds effective permissions to a Workspace before building its public DTO response.
+     *
+     * HR: Dodaje efektivna prava području prije izgradnje javnog DTO odgovora.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $user
@@ -971,9 +991,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Rekurzivno normalizira vidljivo stablo u stabilne javne DTO zapise.
-     *
      * EN: Recursively normalizes the visible tree into stable public DTO records.
+     *
+     * HR: Rekurzivno normalizira vidljivo stablo u stabilne javne DTO zapise.
      *
      * @param list<array<string,mixed>> $nodes
      * @param array<int,list<string>> $labels
@@ -1004,9 +1024,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Normalizira jedan čvor bez izlaganja internih audit polja.
-     *
      * EN: Normalizes one node without exposing internal audit fields.
+     *
+     * HR: Normalizira jedan čvor bez izlaganja internih audit polja.
      *
      * @param array<string,mixed> $node
      * @param list<string>|null $labels
@@ -1043,8 +1063,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Skuplja ID-e iz ugniježđenog stabla za jedan batch dohvat oznaka.
      * EN: Collects IDs from a nested tree for one batched label lookup.
+     *
+     * HR: Skuplja ID-e iz ugniježđenog stabla za jedan batch dohvat oznaka.
      *
      * @param list<array<string,mixed>> $nodes
      * @return list<int>
@@ -1066,8 +1087,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Normalizira javni API popis oznaka i odbija neispravan oblik.
      * EN: Normalizes a public API label list and rejects an invalid shape.
+     *
+     * HR: Normalizira javni API popis oznaka i odbija neispravan oblik.
      *
      * @return list<string>
      */
@@ -1093,8 +1115,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Normalizira javni API popis strukturiranih svojstava stranice.
      * EN: Normalizes the public API list of structured page properties.
+     *
+     * HR: Normalizira javni API popis strukturiranih svojstava stranice.
      *
      * @return list<array<string,mixed>>
      */
@@ -1123,9 +1146,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Normalizira ACL subjekt i njegov skup prava.
-     *
      * EN: Normalizes an ACL subject and its permission set.
+     *
+     * HR: Normalizira ACL subjekt i njegov skup prava.
      *
      * @param array<string,mixed> $subject
      * @return array<string,mixed>
@@ -1148,9 +1171,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Pretvara javnu listu ACL subjekata u format repozitorija.
-     *
      * EN: Converts the public ACL subject list into the repository format.
+     *
+     * HR: Pretvara javnu listu ACL subjekata u format repozitorija.
      *
      * @param array<string,mixed> $payload
      * @return array<string,mixed>
@@ -1203,9 +1226,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Spaja izmjenjiva polja s postojećim područjem radi PATCH semantike.
-     *
      * EN: Merges mutable fields with the existing Workspace for PATCH semantics.
+     *
+     * HR: Spaja izmjenjiva polja s postojećim područjem radi PATCH semantike.
      *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $payload
@@ -1252,9 +1275,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Spaja strukturna polja čvora i sprječava promjenu vrste ili dokumenta.
-     *
      * EN: Merges structural node fields and prevents changing its type or document.
+     *
+     * HR: Spaja strukturna polja čvora i sprječava promjenu vrste ili dokumenta.
      *
      * @param array<string,mixed> $node
      * @param array<string,mixed> $payload
@@ -1296,8 +1319,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: API spremanju dodaje jedinstveni popis jezika i primarni jezik stranice.
      * EN: Adds the site's primary language and supported language list to API writes.
+     *
+     * HR: API spremanju dodaje jedinstveni popis jezika i primarni jezik stranice.
      *
      * @param array<string,mixed> $payload
      * @return array<string,mixed>
@@ -1311,9 +1335,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Vraća pozitivan ID autentificiranog korisnika ili zaustavlja operaciju.
-     *
      * EN: Returns the authenticated user's positive ID or stops the operation.
+     *
+     * HR: Vraća pozitivan ID autentificiranog korisnika ili zaustavlja operaciju.
      *
      * @param array<string,mixed> $user
      */
@@ -1328,9 +1352,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Gradi stabilnu 403 domensku grešku.
-     *
      * EN: Builds a stable 403 domain failure.
+     *
+     * HR: Gradi stabilnu 403 domensku grešku.
      */
     private function forbidden(string $message): WorkspaceApiException
     {
@@ -1338,9 +1362,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Gradi stabilnu 404 domensku grešku.
-     *
      * EN: Builds a stable 404 domain failure.
+     *
+     * HR: Gradi stabilnu 404 domensku grešku.
      */
     private function notFound(string $message): WorkspaceApiException
     {
@@ -1348,9 +1372,9 @@ final readonly class WorkspaceApiService
     }
 
     /**
-     * HR: Gradi stabilnu 422 domensku grešku za nevaljane podatke.
-     *
      * EN: Builds a stable 422 domain failure for invalid input.
+     *
+     * HR: Gradi stabilnu 422 domensku grešku za nevaljane podatke.
      */
     private function invalid(string $message): WorkspaceApiException
     {

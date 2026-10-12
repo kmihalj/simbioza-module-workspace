@@ -17,10 +17,11 @@ use ReflectionMethod;
 final class WorkspaceThemeServiceTest extends TestCase
 {
     /**
-     * HR: Konfiguracijske mape Theme modula moraju zadržati ključeve grupa i
-     *     skalarne vrijednosti jer ih zajednički editor koristi za izgradnju polja.
      * EN: Theme configuration maps must retain group keys and scalar values
      *     because the shared editor uses them to build its controls.
+     *
+     * HR: Konfiguracijske mape Theme modula moraju zadržati ključeve grupa i
+     *     skalarne vrijednosti jer ih zajednički editor koristi za izgradnju polja.
      */
     public function testThemeRepositoryConfigurationMapKeepsSemanticKeys(): void
     {

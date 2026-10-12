@@ -17,8 +17,9 @@ use function trim;
 final readonly class WorkspaceRouteRegistrar
 {
     /**
-     * HR: Prima router i konfiguraciju za kasnu registraciju javnih Workspace URL-ova.
      * EN: Receives the router and configuration for late public Workspace URL registration.
+     *
+     * HR: Prima router i konfiguraciju za kasnu registraciju javnih Workspace URL-ova.
      */
     public function __construct(
         private WorkspaceConfig $config,
@@ -27,8 +28,9 @@ final readonly class WorkspaceRouteRegistrar
     }
 
     /**
-     * HR: Registrira područje i stranicu tek nakon svih fiksnih ruta drugih modula.
      * EN: Registers workspace and page routes only after all fixed routes from other modules.
+     *
+     * HR: Registrira područje i stranicu tek nakon svih fiksnih ruta drugih modula.
      */
     public function register(): void
     {
@@ -61,8 +63,9 @@ final readonly class WorkspaceRouteRegistrar
     }
 
     /**
-     * HR: Provjerava zauzima li drugi GET endpoint isti prvi segment.
      * EN: Checks whether another GET endpoint occupies the same first segment.
+     *
+     * HR: Provjerava zauzima li drugi GET endpoint isti prvi segment.
      */
     private function pathConflicts(string $rootPath): bool
     {
@@ -84,8 +87,9 @@ final readonly class WorkspaceRouteRegistrar
     }
 
     /**
-     * HR: Izdvaja prvi statički segment iz route predloška.
      * EN: Extracts the first static segment from a route template.
+     *
+     * HR: Izdvaja prvi statički segment iz route predloška.
      */
     private function firstRouteSegment(string $path): string
     {

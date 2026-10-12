@@ -1,0 +1,62 @@
+{
+    "_documentation": {
+        "en": {
+            "purpose": "Copy manually to HPH_CONFIG_PATH/workspace/workspace.json only when provisioning a new configuration. Do not overwrite existing private settings. This metadata is not a runtime option and may be removed.",
+            "layers": "The unchanged framework reads HPH_CONFIG_PATH (default: application config/) then HPH_CONFIG_OVERRIDE_PATHS in declared order. Objects merge; lists, including empty lists, replace. GUI writes only the highest declared layer under workspace.json.lock, preserving other settings and permissions.",
+            "gui": "The existing Simbioza Workspace settings GUI remains available and reads/writes this JSON. There is no gui.enabled option.",
+            "routing": "root_path is one lower-case URL segment containing letters/digits separated by hyphens; default workspace. Coordinate changes with existing routes.",
+            "defaults": "Defaults for new Workspaces: visibility restricted (also authenticated/public), tree_visible true, contents_visible false. Existing per-Workspace/page data are not overwritten.",
+            "creation": "users/groups are lists of positive Auth database IDs allowed to create Workspaces. Empty lists grant no extra subjects; administrators remain allowed. Do not use usernames or group names.",
+            "shorts": "depth: 1, 2, 3, or all; limit: 5, 10, 25, 50; order: hierarchy, newest, oldest, title_asc, title_desc. display_options_visible is boolean. Defaults: 2/10/newest/false.",
+            "backlinks": "refresh_seconds is an integer from 60 to 86400; default 3600. Derived indexes and content remain data, not configuration.",
+            "menu": "auto_register_top/settings control automatic Menu integration registration; both default true. They do not disable Workspace GUI routes.",
+            "homepage": "Public/authenticated targets contain type, node_id, workspace_id, show_tree, show_display_options. default uses both IDs zero; page uses a positive node ID and workspace_id zero; shorts uses a positive workspace ID and node_id zero. ACL/publication still apply. allow_user_selection defaults true; personal selections stay in the database.",
+            "security": "Use real JSON booleans/integers. Provision private readable configuration roots and write access only for the GUI/updater account. Never commit private files or secrets. The sample is never auto-copied; no credentials or provider secrets belong in this Workspace sample. HPH_CONFIG_PATH does not relocate data or themes."
+        },
+        "hr": {
+            "purpose": "Ručno kopirati u HPH_CONFIG_PATH/workspace/workspace.json samo pri pripremi nove konfiguracije. Ne prepisivati postojeće privatne postavke. Ovi metapodatci nisu radne opcije i mogu se ukloniti.",
+            "layers": "Nepromijenjeni framework čita HPH_CONFIG_PATH (zadano: aplikacijski config/), zatim HPH_CONFIG_OVERRIDE_PATHS deklariranim redoslijedom. Objekti se spajaju; liste, uključujući prazne, zamjenjuju staru listu. GUI piše samo u najviši deklarirani sloj pod workspace.json.lock, čuvajući ostale postavke i prava.",
+            "gui": "Postojeći Simbioza Workspace GUI postavki ostaje dostupan i čita/piše ovaj JSON. Opcija gui.enabled ne postoji.",
+            "routing": "root_path je jedan mali URL segment s alfanumeričkim dijelovima odvojenima crticom; zadano workspace. Promjene uskladiti s postojećim rutama.",
+            "defaults": "Zadane vrijednosti novih Područja: visibility restricted (može i authenticated/public), tree_visible true, contents_visible false. Postojeći podatci pojedinih Područja/stranica ne prepisuju se.",
+            "creation": "users/groups su liste pozitivnih Auth ID-ova baze kojima je dopušteno kreiranje Područja. Prazne liste ne dodaju korisnike; administratori i dalje smiju kreirati. Ne upisivati korisnička imena ili nazive grupa.",
+            "shorts": "depth: 1, 2, 3 ili all; limit: 5, 10, 25, 50; order: hierarchy, newest, oldest, title_asc, title_desc. display_options_visible je boolean. Zadano: 2/10/newest/false.",
+            "backlinks": "refresh_seconds je cijeli broj od 60 do 86400; zadano 3600. Izvedeni indeksi i sadržaj ostaju podatci, ne konfiguracija.",
+            "menu": "auto_register_top/settings upravljaju automatskom registracijom Menu integracije; oba su zadano true. Ne isključuju Workspace GUI rute.",
+            "homepage": "Javni/prijavljeni cilj sadrži type, node_id, workspace_id, show_tree, show_display_options. default koristi oba ID-a nula; page pozitivan ID čvora i workspace_id nula; shorts pozitivan ID Područja i node_id nula. ACL/objava se i dalje provjeravaju. allow_user_selection je zadano true; osobni izbor ostaje u bazi.",
+            "security": "Koristiti stvarne JSON boolean/integer vrijednosti. Pripremiti privatne čitljive korijene konfiguracije i pisanje samo računu GUI-ja/updatera. Privatne datoteke i tajne nikada ne slati u git. Primjer se ne kopira automatski; vjerodajnice i tajne providera ne pripadaju ovom Workspace primjeru. HPH_CONFIG_PATH ne seli podatke ni teme."
+        }
+    },
+    "routing": { "root_path": "workspace" },
+    "defaults": {
+        "visibility": "restricted",
+        "tree_visible": true,
+        "contents_visible": false
+    },
+    "creation": { "users": [], "groups": [] },
+    "shorts": {
+        "depth": 2,
+        "limit": 10,
+        "order": "newest",
+        "display_options_visible": false
+    },
+    "backlinks": { "refresh_seconds": 3600 },
+    "menu": { "auto_register_top": true, "auto_register_settings": true },
+    "homepage": {
+        "public_target": {
+            "type": "default",
+            "node_id": 0,
+            "workspace_id": 0,
+            "show_tree": true,
+            "show_display_options": true
+        },
+        "authenticated_target": {
+            "type": "default",
+            "node_id": 0,
+            "workspace_id": 0,
+            "show_tree": true,
+            "show_display_options": true
+        },
+        "allow_user_selection": true
+    }
+}

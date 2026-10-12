@@ -10,8 +10,9 @@ use JsonException;
 use RuntimeException;
 
 /**
- * HR: Čuva odabir i privatnu konfiguraciju teme uz područje, neovisno o sistemskim JSON temama.
  * EN: Stores theme selection and private configuration with a workspace, independently of system JSON themes.
+ *
+ * HR: Čuva odabir i privatnu konfiguraciju teme uz područje, neovisno o sistemskim JSON temama.
  */
 final readonly class WorkspaceThemeRepository
 {
@@ -21,23 +22,33 @@ final readonly class WorkspaceThemeRepository
 
     public const SELECTION_CUSTOM = 'custom';
 
-    /** HR: Dosadašnja visina zaglavlja prije uvođenja postavke. EN: Legacy header height. */
+    /**
+     * EN: Legacy header height.
+     *
+     * HR: Dosadašnja visina zaglavlja prije uvođenja postavke.
+     */
     public const DEFAULT_HEADER_HEIGHT_PX = 72;
 
-    /** HR: Dosadašnja visina glavnog menija prije uvođenja postavke. EN: Legacy navigation height. */
+    /**
+     * EN: Legacy navigation height.
+     *
+     * HR: Dosadašnja visina glavnog menija prije uvođenja postavke.
+     */
     public const DEFAULT_NAVIGATION_HEIGHT_PX = 56;
 
     /**
-     * HR: Prima prijenosni ORM Database servis.
      * EN: Receives the portable ORM Database service.
+     *
+     * HR: Prima prijenosni ORM Database servis.
      */
     public function __construct(private Database $database)
     {
     }
 
     /**
-     * HR: Provjerava je li migracija privatnih tema primijenjena.
      * EN: Checks whether the private-theme migration has been applied.
+     *
+     * HR: Provjerava je li migracija privatnih tema primijenjena.
      */
     public function tablesReady(): bool
     {
@@ -45,8 +56,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Vraća spremljenu postavku ili zadano nasljeđivanje sistemske teme.
      * EN: Returns stored settings or default system-theme inheritance.
+     *
+     * HR: Vraća spremljenu postavku ili zadano nasljeđivanje sistemske teme.
      *
      * @return array{workspace_id:int,selection_type:string,source_theme_id:string,mode_policy:string,theme:?array<string,mixed>,updated_at:string}
      */
@@ -95,8 +107,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Sprema odabir ili privatnu temu atomskim ažuriranjem jedinog retka područja.
      * EN: Saves a selection or private theme by atomically updating the workspace's single row.
+     *
+     * HR: Sprema odabir ili privatnu temu atomskim ažuriranjem jedinog retka područja.
      *
      * @param array<string, mixed>|null $theme
      */
@@ -167,61 +180,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Trajno dopunjuje samo nedostajuće visine privatnih tema područja.
-     * EN: Permanently adds only missing heights to private Workspace themes.
-     */
-    public function persistMissingComponentHeights(?int $workspaceId = null): int
-    {
-        if (!$this->tablesReady() || ($workspaceId !== null && $workspaceId <= 0)) {
-            return 0;
-        }
-
-        $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
-            ->select(['id', 'theme_json']);
-        if ($workspaceId !== null) {
-            $query->where('workspace_id', '=', $workspaceId);
-        }
-
-        $changedThemes = 0;
-        foreach (WorkspaceValue::rows($query->get()) as $row) {
-            $id = WorkspaceValue::int($row['id'] ?? null);
-            $json = is_scalar($row['theme_json'] ?? null) ? trim((string)$row['theme_json']) : '';
-            if ($id <= 0 || $json === '') {
-                continue;
-            }
-
-            try {
-                $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-                $theme = WorkspaceValue::stringKeyArray($decoded);
-                if ($theme === []) {
-                    continue;
-                }
-
-                $upgraded = self::withMissingComponentHeights($theme);
-                if ($upgraded === $theme) {
-                    continue;
-                }
-
-                $encoded = json_encode(
-                    $upgraded,
-                    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
-                );
-            } catch (JsonException) {
-                continue;
-            }
-
-            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_THEMES)
-                ->where('id', '=', $id)
-                ->update(['theme_json' => $encoded]);
-            ++$changedThemes;
-        }
-
-        return $changedThemes;
-    }
-
-    /**
-     * HR: Vraća temu s dosadašnjim vrijednostima samo ondje gdje novi ključevi ne postoje.
-     * EN: Returns a theme with legacy values only where the new keys are absent.
+     * EN: Returns a theme with default component heights when they are not specified.
+     *
+     * HR: Vraća temu sa zadanim visinama komponenti kada nisu navedene.
      *
      * @param array<string, mixed> $theme
      * @return array<string, mixed>
@@ -248,8 +209,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Briše postavku tako da područje ponovno potpuno prati sustav.
      * EN: Deletes settings so the workspace fully follows the system again.
+     *
+     * HR: Briše postavku tako da područje ponovno potpuno prati sustav.
      */
     public function delete(int $workspaceId): void
     {
@@ -263,8 +225,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Gradi zadano stanje koje potpuno nasljeđuje trenutačnu sistemsku temu.
      * EN: Builds the default state that fully inherits the current system theme.
+     *
+     * HR: Gradi zadano stanje koje potpuno nasljeđuje trenutačnu sistemsku temu.
      *
      * @return array{workspace_id:int,selection_type:string,source_theme_id:string,mode_policy:string,theme:null,updated_at:string}
      */
@@ -281,8 +244,9 @@ final readonly class WorkspaceThemeRepository
     }
 
     /**
-     * HR: Normalizira politiku prikaza na automatsku, svijetlu ili tamnu vrijednost.
      * EN: Normalizes the display policy to the automatic, light, or dark value.
+     *
+     * HR: Normalizira politiku prikaza na automatsku, svijetlu ili tamnu vrijednost.
      */
     private function mode(mixed $mode): string
     {

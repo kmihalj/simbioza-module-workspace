@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Osobna Workspace naslovnica prikazana kroz modularni Auth profil.
  * EN: Personal Workspace homepage displayed through the modular Auth profile.
+ *
+ * HR: Osobna Workspace naslovnica prikazana kroz modularni Auth profil.
  *
  * @var \HeartPhrame\View\View $this
  * @var int $selectedNodeId

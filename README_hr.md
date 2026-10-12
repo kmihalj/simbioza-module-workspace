@@ -1,5 +1,7 @@
 # Simbioza Workspace modul
 
+> Priprema izdanja 0.3.0: navedene naredbe za označena izdanja vrijede nakon koordinirane objave aplikacije i modula. Razvojna provjera koristi lokalne pakete; starija izdanja nisu zamjena za ovu konfiguraciju i shemu.
+
 Javni popis područja prikazuje 25 redaka po stranici. Opcionalni presentation
 provideri mogu označiti osobna područja i dati stabilni ID njihova vlasnika.
 Administrator tada dobiva odvojen pregled **Osobna područja**, dok vlastito
@@ -7,7 +9,7 @@ osobno područje običnog korisnika ostaje u glavnom popisu. Tuđa osobna podru�
 pojavljuju se u kompaktnom padajućem izborniku samo ako ih je Workspace ACL već
 dopustio tom korisniku.
 
-[English version](README.md)
+[Engleska verzija](README.md)
 
 Workspace modul organizira povezani sadržaj u **Područja** (`Workspaces` na
 engleskom). Svako Područje ima svoju putanju, vidljivost, članove,
@@ -18,9 +20,9 @@ prava i hijerarhijsko stablo stranica.
 Obavezno, redoslijedom uključivanja:
 
 1. `aaieduhr/heartphrame-framework` (`^0.0.25`)
-2. `aaieduhr/heartphrame-module-orm` (`^0.1.0`)
-3. `aaieduhr/heartphrame-module-auth` (`^0.1.0`)
-4. `aaieduhr/simbioza-module-workspace` (`^0.1.0`)
+2. `aaieduhr/heartphrame-module-orm` (`^0.3.0`)
+3. `aaieduhr/heartphrame-module-auth` (`^0.3.0`)
+4. `aaieduhr/simbioza-module-workspace` (`^0.3.0`)
 
 Opcionalne integracije:
 
@@ -31,7 +33,7 @@ Opcionalne integracije:
 - API dodaje ACL Workspace resurse i rute za upravljanje stablom.
 
 ```bash
-composer require aaieduhr/simbioza-module-workspace:^0.1.11
+composer require aaieduhr/simbioza-module-workspace:^0.3.0
 vendor/bin/hph workspace:install-migration
 vendor/bin/hph orm-migrate:up
 ```
@@ -39,10 +41,7 @@ vendor/bin/hph orm-migrate:up
 Strukturirana svojstva stranica koja koristi tablica stranica i svojstava u postojećoj
 instalaciji zahtijevaju još jednu migraciju:
 
-```bash
-vendor/bin/hph workspace:install-node-properties-migration
-vendor/bin/hph orm-migrate:up
-```
+Potpuna početna shema uključuje svojstva stranica.
 
 English documentation: [README.md](README.md)
 
@@ -174,56 +173,15 @@ Paket treba dodati nakon Auth i ORM modula u `app.modules.enabled`:
 'aaieduhr/simbioza-module-workspace',
 ```
 
-Kopirajte `config/workspace.php` u host aplikaciju ako želite promijeniti
-zadane vrijednosti.
+Za ručno podešavanje kopirajte paketni `config/workspace.json.dist` u
+`HPH_CONFIG_PATH/workspace/workspace.json`. Postojeći GUI čita i piše tu datoteku; detalji su u
+[odvojenom vodiču konfiguracije](docs/configuration_hr.md).
 
 Migracija ne kreira probno Područje, korisnike, grupe ni stranice.
 
-U aplikaciji koja je već pokrenula stariju Workspace migraciju jednom instalirajte
-dodatnu migraciju naslovnice:
-
-```bash
-vendor/bin/hph workspace:install-homepage-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Ako je ta migracija naslovnice već bila primijenjena prije uvođenja
-strukturiranih ciljeva Sažetaka, dodajte i kompatibilne stupce prikaza:
-
-```bash
-vendor/bin/hph workspace:install-homepage-view-options-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Za postojeću instalaciju jednom dodajte pohranu privatnih tema Područja:
-
-```bash
-vendor/bin/hph workspace:install-themes-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Postojeća instalacija jednom dodaje i ponovno izgradivi indeks povratnih poveznica:
-
-```bash
-vendor/bin/hph workspace:install-backlinks-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Za čuvanje prenosivih izvornih oznaka iz importa i integracija postojeća
-instalacija jednom dodaje pohranu oznaka:
-
-```bash
-vendor/bin/hph workspace:install-node-labels-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Početna shema sadrži brojače za nastavivo trajno brisanje. Starija instalacija
-dodaje ih prije uporabe trajnog brisanja područja:
-
-```bash
-vendor/bin/hph workspace:install-purge-marker-migration
-vendor/bin/hph orm-migrate:up
-```
+Početna migracija izrađuje potpunu aktualnu shemu: postavke naslovnice, teme,
+povratne poveznice, oznake, svojstva i brojače brisanja. Stare naredbe
+nadogradnje i pretvorbe sheme ne isporučuju se.
 
 Navigacijska putanja gradi se samo iz stabla koje je već filtrirano ACL-om.
 Povratne poveznice izdvajaju se iz točnih objavljenih HTML verzija, a pri
@@ -261,15 +219,17 @@ od 100 članaka prođe provjeru objave i ACL-a. Server isto pravilo provodi i za
 ručno sastavljen query string.
 
 Zadane vrijednosti postavljaju se pod **Postavke → Područja** i spremaju u
-aplikacijski `config/workspace.php`:
+aplikacijski `HPH_CONFIG_PATH/workspace/workspace.json`:
 
-```php
-'shorts' => [
-    'depth' => 2,
-    'limit' => 10,
-    'order' => 'newest',
-    'display_options_visible' => false,
-],
+```json
+{
+    "shorts": {
+        "depth": 2,
+        "limit": 10,
+        "order": "newest",
+        "display_options_visible": false
+    }
+}
 ```
 
 Stablo je početno otvoreno, a ploča **Opcije prikaza** sklopljena. Njihovi
@@ -282,7 +242,7 @@ jezik na kojem postoji objavljena verzija stranice. Nacrt nikada nije jezični
 fallback.
 
 To su postavke sitea, a ne dizajn teme. Potpuni backup sitea treba uključiti
-`config/workspace.php`; izvoz paketa teme ne preuzima i ne treba preuzimati te
+`HPH_CONFIG_PATH/workspace/workspace.json`; izvoz paketa teme ne preuzima i ne treba preuzimati te
 vrijednosti.
 
 ## Naslovnica aplikacije
@@ -305,12 +265,12 @@ Host aplikacija na ruti `/` može koristiti neutralni servis
 bez cacheiranja na kanonsku Workspace stranicu. Auth ne ovisi o Workspaceu:
 profilnu sekciju registrira isključivo Workspace dok je uključen.
 
-Postavke i osobni izbori spremaju se u tablice
-`workspace_homepage_settings` i `workspace_user_homepages`. Potpuni backup
-baze/sitea mora obuhvatiti obje tablice. To su sadržajne postavke sitea i
-namjerno ne pripadaju izvozu paketa teme. Vrsta strukturiranog cilja, ID
-Područja i oba prekidača vidljivosti spremaju se u te tablice pa ih standardni
-backup i povrat baze čuvaju bez gubitka ponašanja naslovnice.
+Globalni ciljevi i dopuštenje osobnog odabira spremaju se samo u JSON
+`HPH_CONFIG_PATH/workspace/workspace.json`. Osobni izbori ostaju u
+`workspace_user_homepages`. Potpuni backup obuhvaća JSON provider i bazu, uz
+razrješavanje ID-ova tijekom povrata. Tema ne posjeduje tu politiku. Nove
+instalacije ne stvaraju staru tablicu globalnih postavki; postojeće aplikacije
+prvo izvode i provjeravaju njezin sadržaj zasebnom nadogradnjom.
 
 ## Teme Područja
 
@@ -322,7 +282,7 @@ temu bez njezina kopiranja. Odabrani sistemski JSON ostaje samo za čitanje.
 Prva izmjena ili upload asseta stvara privatnu kopiju dostupnu samo tom
 Području. Ako upravitelj nije promijenio naziv, nazivu izvorne teme dodaje se
 naziv Područja. Konfiguracija je u retku tablice `workspace_themes`, a privatne
-slike u `data/workspaces/themes/<workspace-id>/assets`. Druga Područja i
+slike u `data/workspaces/<oznaka-pohrane>--<ID-područja>/theme/assets`. Druga Područja i
 globalne Theme postavke ne vide niti mogu promijeniti tu privatnu kopiju.
 
 Upravitelj može uvesti potpuni Theme v3 ZIP u svoje Područje. Samo administrator
@@ -344,7 +304,20 @@ zahvatiti drugo Područje ni drugu stranicu aplikacije. Sistemske Menu postavke
 ostaju dostupne samo administratoru. Bez Menu modula Workspace radi potpuno
 samostalno, a poveznica integracije nije prikazana.
 
+Vlasničke datoteke posebnih menija nalaze se pod `data/workspaces/<oznaka-pohrane>--<ID>/menus/`
+ili `data/workspaces/<oznaka-pohrane>--<ID>/pages/<oznaka-stranice>--<UUID-dokumenta>/menus/`. Trajno brisanje uklanja
+njihove datoteke i reference zajedničkog indeksa; meko brisanje ih čuva za vraćanje.
+Nevlasnički zajednički konteksti ostaju netaknuti. Čišćenje ne zahtijeva Menu GUI servise.
+
 ## Integracija s HTML editorom
+
+Direktorij područja koristi čitljivu početnu oznaku i trajni ID iz baze.
+`workspaces.storage_slug` čuva tu oznaku neovisno o kasnijim promjenama javnog
+sluga. Direktorij stranice spaja čitljivu početnu oznaku ključa dokumenta i potpuni
+UUID; postojeće reference čuvaju je nakon preimenovanja ili brisanja/vraćanja.
+Oznake su ASCII i ograničene na 48 znakova. Nove instalacije imaju taj tehnički
+stupac u shemi modula; stare Simbiozine instalacije dobivaju shemu i provjereno
+premještanje datoteka/referenci isključivo kroz aplikacijski updater.
 
 Workspace modul ne sprema HTML. Čvor stabla povezuje sa stabilnim ključem
 editorova dokumenta kroz opcionalni servisni most.
@@ -472,4 +445,4 @@ tom opcionalnom modulu.
 ## Politika ovisnosti
 
 Framework koristi `^0.0.25`, a interni moduli kompatibilnu liniju izdanja
-`^0.1.0`. Ovaj modul ne sprema `composer.lock`; CI dohvaća najnovija kompatibilna označena izdanja i pokreće cijeli skup provjera `composer on-commit`.
+`^0.3.0`. Ovaj modul ne sprema `composer.lock`; CI dohvaća najnovija kompatibilna označena izdanja i pokreće cijeli skup provjera `composer on-commit`.

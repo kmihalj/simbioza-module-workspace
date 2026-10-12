@@ -17,10 +17,11 @@ use RuntimeException;
 final class WorkspaceContentChangeBatchTest extends TestCase
 {
     /**
-     * HR: Više promjena istog područja pokreće samo jednu završnu obnovu,
-     *     dok se drugo područje zadržava kao zasebna cjelina.
      * EN: Multiple changes in one Workspace trigger only one final refresh,
      *     while another Workspace remains a separate unit.
+     *
+     * HR: Više promjena istog područja pokreće samo jednu završnu obnovu,
+     *     dok se drugo područje zadržava kao zasebna cjelina.
      */
     public function testBulkChangesAreConsolidatedPerWorkspace(): void
     {
@@ -68,10 +69,11 @@ final class WorkspaceContentChangeBatchTest extends TestCase
     }
 
     /**
-     * HR: Djelomično uspjele promjene svejedno osvježavaju izvedene indekse
-     *     prije ponovnog bacanja izvorne iznimke.
      * EN: Partially successful changes still refresh derived indexes before
      *     the original exception is rethrown.
+     *
+     * HR: Djelomično uspjele promjene svejedno osvježavaju izvedene indekse
+     *     prije ponovnog bacanja izvorne iznimke.
      */
     public function testPendingChangesAreFlushedWhenOperationFails(): void
     {
@@ -115,10 +117,11 @@ final class WorkspaceContentChangeBatchTest extends TestCase
     }
 
     /**
-     * HR: Uspješan nastavivi dio ne šalje skupi signal, dok neuspješan dio
-     *     ipak usklađuje izvedene podatke s djelomično spremljenim sadržajem.
      * EN: A successful resumable part emits no expensive signal, while a
      *     failed part still aligns derived data with partially stored content.
+     *
+     * HR: Uspješan nastavivi dio ne šalje skupi signal, dok neuspješan dio
+     *     ipak usklađuje izvedene podatke s djelomično spremljenim sadržajem.
      */
     public function testDeferredPartsDiscardSuccessAndFlushFailure(): void
     {
@@ -136,8 +139,9 @@ final class WorkspaceContentChangeBatchTest extends TestCase
             }
 
             /**
-             * HR: Vraća posljednji zabilježeni događaj bez pretpostavke da lista nije prazna.
              * EN: Returns the last captured event without assuming that the list is non-empty.
+             *
+             * HR: Vraća posljednji zabilježeni događaj bez pretpostavke da lista nije prazna.
              */
             public function lastEvent(): ?WorkspaceContentChanged
             {
@@ -159,7 +163,9 @@ final class WorkspaceContentChangeBatchTest extends TestCase
                 throw new RuntimeException('deferred failure');
             });
         } catch (RuntimeException) {
-            // HR: Iznimka je očekivani dio ovog testa. EN: The exception is expected in this test.
+            // EN: The exception is expected in this test.
+            //
+            // HR: Iznimka je očekivani dio ovog testa.
         }
 
         $this->assertCount(1, $dispatcher->events);

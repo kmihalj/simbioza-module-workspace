@@ -11,8 +11,9 @@ use function is_scalar;
 final class WorkspaceValue
 {
     /**
-     * HR: Normalizira proizvoljnu vrijednost na tekst bez PHP upozorenja.
      * EN: Normalizes an arbitrary value to text without PHP warnings.
+     *
+     * HR: Normalizira proizvoljnu vrijednost na tekst bez PHP upozorenja.
      */
     public static function string(mixed $value): string
     {
@@ -20,8 +21,9 @@ final class WorkspaceValue
     }
 
     /**
-     * HR: Normalizira numeričku vrijednost na cijeli broj.
      * EN: Normalizes a numeric value to an integer.
+     *
+     * HR: Normalizira numeričku vrijednost na cijeli broj.
      */
     public static function int(mixed $value): int
     {
@@ -29,8 +31,9 @@ final class WorkspaceValue
     }
 
     /**
-     * HR: Zadržava samo string ključeve jednog proizvoljnog polja.
      * EN: Retains only string keys from an arbitrary array.
+     *
+     * HR: Zadržava samo string ključeve jednog proizvoljnog polja.
      *
      * @return array<string, mixed>
      */
@@ -51,8 +54,9 @@ final class WorkspaceValue
     }
 
     /**
-     * HR: Normalizira ORM rezultat u listu string-key redaka.
      * EN: Normalizes an ORM result into a list of string-key rows.
+     *
+     * HR: Normalizira ORM rezultat u listu string-key redaka.
      *
      * @return list<array<string, mixed>>
      */
@@ -74,8 +78,9 @@ final class WorkspaceValue
     }
 
     /**
-     * HR: Zadržava string ključeve i pozitivne cjelobrojne vrijednosti mape.
      * EN: Retains string keys and positive integer values from a map.
+     *
+     * HR: Zadržava string ključeve i pozitivne cjelobrojne vrijednosti mape.
      *
      * @return array<string, int>
      */
@@ -101,8 +106,9 @@ final class WorkspaceValue
     }
 
     /**
-     * HR: Zadržava samo string ključeve i skalarne tekstualne vrijednosti mape.
      * EN: Retains only string keys and scalar text values from a map.
+     *
+     * HR: Zadržava samo string ključeve i skalarne tekstualne vrijednosti mape.
      *
      * @return array<string, string>
      */

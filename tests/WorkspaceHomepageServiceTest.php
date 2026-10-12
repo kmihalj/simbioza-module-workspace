@@ -28,9 +28,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(WorkspaceHomepageService::class)]
 #[CoversClass(WorkspaceHomepageRepository::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 #[UsesClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceWorkflowService::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceHomepageServiceTest extends TestCase
 {
@@ -42,12 +44,25 @@ final class WorkspaceHomepageServiceTest extends TestCase
 
     private AuthnHandlerInterface $authn;
 
+    private string $configurationDirectory;
+
+    private string|false $originalConfigPath;
+
+    private string|false $originalOverridePaths;
+
     /**
-     * HR: Priprema objavljene javne stranice i stvarni ACL resolver na SQLiteu.
      * EN: Prepares published public pages and the real ACL resolver on SQLite.
+     *
+     * HR: Priprema objavljene javne stranice i stvarni ACL resolver na SQLiteu.
      */
     protected function setUp(): void
     {
+        $this->configurationDirectory = sys_get_temp_dir() . '/workspace_homepage_' . bin2hex(random_bytes(6));
+        mkdir($this->configurationDirectory . '/workspace', 0770, true);
+        $this->originalConfigPath = getenv('HPH_CONFIG_PATH');
+        $this->originalOverridePaths = getenv('HPH_CONFIG_OVERRIDE_PATHS');
+        putenv('HPH_CONFIG_PATH=' . $this->configurationDirectory);
+        putenv('HPH_CONFIG_OVERRIDE_PATHS');
         $helper = new Helper();
         $config = new Config($helper, [
             'database' => [
@@ -87,9 +102,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
         $migration->up($database);
 
         $this->repository = new WorkspaceRepository($database);
-        $this->homepages = new WorkspaceHomepageRepository($database);
         $this->authn = $this->authnHandler();
         $workspaceConfig = new WorkspaceConfig($config, dirname(__DIR__));
+        $this->homepages = new WorkspaceHomepageRepository($database, $workspaceConfig);
         $workflow = new WorkspaceWorkflowService($this->repository);
         $access = new WorkspaceAccessService(
             $this->repository,
@@ -113,8 +128,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
         );
         $translator = new class implements TranslatorInterface {
             /**
-             * HR: Test ne prevodi tekst, nego samo izlaže aktivni jezik.
              * EN: The test does not translate text and only exposes the active locale.
+             *
+             * HR: Test ne prevodi tekst, nego samo izlaže aktivni jezik.
              *
              * @param array<string, string|int|float> $replace
              */
@@ -124,8 +140,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća engleski kao aktivni testni jezik.
              * EN: Returns English as the active test locale.
+             *
+             * HR: Vraća engleski kao aktivni testni jezik.
              */
             public function getLocale(): string
             {
@@ -133,8 +150,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Testni jezik je nepromjenjiv.
              * EN: The test locale is immutable.
+             *
+             * HR: Testni jezik je nepromjenjiv.
              */
             public function setLocale(string $locale): void
             {
@@ -153,8 +171,31 @@ final class WorkspaceHomepageServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje prioritet osobne, prijavljene i javne naslovnice te siguran fallback.
+     * EN: Removes only fixture JSON/lock and restores the environment.
+     *
+     * HR: Uklanja samo testni JSON/lock i vraća okolinu.
+     */
+    protected function tearDown(): void
+    {
+        foreach (['workspace.json', 'workspace.json.lock'] as $file) {
+            $path = $this->configurationDirectory . '/workspace/' . $file;
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        rmdir($this->configurationDirectory . '/workspace');
+        rmdir($this->configurationDirectory);
+        putenv($this->originalConfigPath === false ? 'HPH_CONFIG_PATH'
+            : 'HPH_CONFIG_PATH=' . $this->originalConfigPath);
+        putenv($this->originalOverridePaths === false ? 'HPH_CONFIG_OVERRIDE_PATHS'
+            : 'HPH_CONFIG_OVERRIDE_PATHS=' . $this->originalOverridePaths);
+    }
+
+    /**
      * EN: Proves personal, authenticated, and public precedence plus safe fallback.
+     *
+     * HR: Dokazuje prioritet osobne, prijavljene i javne naslovnice te siguran fallback.
      */
     public function testHomepagePrecedenceAndUnavailablePersonalFallback(): void
     {
@@ -162,8 +203,8 @@ final class WorkspaceHomepageServiceTest extends TestCase
 
         $this->authn->login(['id' => 1, 'is_admin' => true]);
         $this->service->saveSettings([
-            'public_node_id' => $publicNodeId,
-            'authenticated_node_id' => $authenticatedNodeId,
+            'public_target' => 'page:' . $publicNodeId,
+            'authenticated_target' => 'page:' . $authenticatedNodeId,
             'allow_user_selection' => '1',
         ], 1);
 
@@ -183,16 +224,17 @@ final class WorkspaceHomepageServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da isključivanje osobnog izbora uklanja Workspace sekciju profila.
      * EN: Proves that disabling personal selection removes the Workspace profile section.
+     *
+     * HR: Dokazuje da isključivanje osobnog izbora uklanja Workspace sekciju profila.
      */
     public function testDisabledPersonalSelectionHidesAccountData(): void
     {
         [$publicNodeId, $authenticatedNodeId] = $this->publishedPages();
         $this->authn->login(['id' => 1, 'is_admin' => true]);
         $this->service->saveSettings([
-            'public_node_id' => $publicNodeId,
-            'authenticated_node_id' => $authenticatedNodeId,
+            'public_target' => 'page:' . $publicNodeId,
+            'authenticated_target' => 'page:' . $authenticatedNodeId,
         ], 1);
 
         $this->authn->login(['id' => 2, 'is_admin' => false]);
@@ -201,8 +243,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
     }
 
     /**
-     * HR: Shorts naslovnica sprema vlastite postavke prikaza bez slobodnog URL polja.
      * EN: A Shorts homepage stores its own display settings without a free-form URL field.
+     *
+     * HR: Shorts naslovnica sprema vlastite postavke prikaza bez slobodnog URL polja.
      */
     public function testStructuredShortsHomepagePreservesTreeAndDisplayOptions(): void
     {
@@ -240,8 +283,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
     }
 
     /**
-     * HR: Kreira tri javno čitljive stranice s objavljenim engleskim verzijama.
      * EN: Creates three publicly readable pages with published English versions.
+     *
+     * HR: Kreira tri javno čitljive stranice s objavljenim engleskim verzijama.
      *
      * @return array{int,int,int}
      */
@@ -280,8 +324,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
     }
 
     /**
-     * HR: Vraća promjenjivi testni Auth kontekst.
      * EN: Returns a mutable test Auth context.
+     *
+     * HR: Vraća promjenjivi testni Auth kontekst.
      */
     private function authnHandler(): AuthnHandlerInterface
     {
@@ -290,8 +335,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             private ?array $user = null;
 
             /**
-             * HR: Postavlja testnog korisnika.
              * EN: Sets the test user.
+             *
+             * HR: Postavlja testnog korisnika.
              *
              * @return array<string, mixed>|null
              */
@@ -303,8 +349,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Odjavljuje testnog korisnika.
              * EN: Signs out the test user.
+             *
+             * HR: Odjavljuje testnog korisnika.
              */
             public function logout(): void
             {
@@ -312,8 +359,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća stanje prijave.
              * EN: Returns the sign-in state.
+             *
+             * HR: Vraća stanje prijave.
              */
             public function check(): bool
             {
@@ -321,8 +369,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća testnog korisnika.
              * EN: Returns the test user.
+             *
+             * HR: Vraća testnog korisnika.
              *
              * @return array<string, mixed>|null
              */
@@ -332,8 +381,9 @@ final class WorkspaceHomepageServiceTest extends TestCase
             }
 
             /**
-             * HR: Vraća session podatke testnog korisnika.
              * EN: Returns the test user's session data.
+             *
+             * HR: Vraća session podatke testnog korisnika.
              *
              * @return array<string, mixed>|null
              */

@@ -22,14 +22,16 @@ use RuntimeException;
 use Throwable;
 
 /**
- * HR: Upravlja odabirom, privatnim uređivanjem i prijenosom teme jednog područja.
  * EN: Manages selection, private editing, and transfer of one workspace theme.
+ *
+ * HR: Upravlja odabirom, privatnim uređivanjem i prijenosom teme jednog područja.
  */
 final readonly class WorkspaceThemeController
 {
     /**
-     * HR: Prima HTTP, ACL, theme i arhivske servise potrebne za sigurno upravljanje temom područja.
      * EN: Receives HTTP, ACL, theme, and archive services required for safe Workspace theme management.
+     *
+     * HR: Prima HTTP, ACL, theme i arhivske servise potrebne za sigurno upravljanje temom područja.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -44,8 +46,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Prikazuje zajednički Theme editor samo upravitelju područja.
      * EN: Displays the shared Theme editor only to a workspace manager.
+     *
+     * HR: Prikazuje zajednički Theme editor samo upravitelju područja.
      */
     public function index(ServerRequestInterface $request): ResponseInterface
     {
@@ -73,8 +76,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Sprema samo temu područja; ni jedna akcija ne zapisuje sistemski theme JSON.
      * EN: Saves only the workspace theme; no action writes to system theme JSON.
+     *
+     * HR: Sprema samo temu područja; ni jedna akcija ne zapisuje sistemski theme JSON.
      */
     public function save(ServerRequestInterface $request): ResponseInterface
     {
@@ -150,8 +154,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Samo administrator izvozi privatnu temu područja kao kompatibilni ZIP paket.
      * EN: Only an administrator exports a private workspace theme as a compatible ZIP package.
+     *
+     * HR: Samo administrator izvozi privatnu temu područja kao kompatibilni ZIP paket.
      */
     public function export(ServerRequestInterface $request): ResponseInterface
     {
@@ -181,8 +186,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Poslužuje privatni asset samo korisniku koji smije vidjeti pripadajuće područje.
      * EN: Serves a private asset only to a user allowed to view its workspace.
+     *
+     * HR: Poslužuje privatni asset samo korisniku koji smije vidjeti pripadajuće područje.
      */
     public function asset(string $workspace, string $file): ResponseInterface
     {
@@ -208,8 +214,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Provjerava ima li trenutačni korisnik pravo upravljanja zadanim područjem.
      * EN: Checks whether the current user may manage the supplied Workspace.
+     *
+     * HR: Provjerava ima li trenutačni korisnik pravo upravljanja zadanim područjem.
      *
      * @param array<string, mixed> $workspace
      */
@@ -219,8 +226,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Razrješava područje iz sigurnih parametara trenutačnog HTTP zahtjeva.
      * EN: Resolves a Workspace from the current HTTP request's sanitized parameters.
+     *
+     * HR: Razrješava područje iz sigurnih parametara trenutačnog HTTP zahtjeva.
      *
      * @return array<string, mixed>|null
      */
@@ -230,8 +238,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Razrješava područje po ID-u ili slugu bez prihvaćanja proizvoljnih vrijednosti.
      * EN: Resolves a Workspace by ID or slug without accepting arbitrary values.
+     *
+     * HR: Razrješava područje po ID-u ili slugu bez prihvaćanja proizvoljnih vrijednosti.
      *
      * @param array<string, mixed> $input
      * @return array<string, mixed>|null
@@ -254,8 +263,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Vraća valjanu politiku svijetlog, tamnog ili automatskog prikaza teme područja.
      * EN: Returns a valid light, dark, or automatic mode policy for the Workspace theme.
+     *
+     * HR: Vraća valjanu politiku svijetlog, tamnog ili automatskog prikaza teme područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -267,8 +277,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Gradi povratnu putanju uređivača i po potrebi čuva otvorenu sekciju forme.
      * EN: Builds the editor return path and optionally preserves the open form section.
+     *
+     * HR: Gradi povratnu putanju uređivača i po potrebi čuva otvorenu sekciju forme.
      *
      * @param array<string, mixed> $workspace
      */
@@ -283,8 +294,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Prihvaća samo kratki sigurni identifikator sekcije Theme editora.
      * EN: Accepts only a short safe Theme editor section identifier.
+     *
+     * HR: Prihvaća samo kratki sigurni identifikator sekcije Theme editora.
      */
     private function section(mixed $value): string
     {
@@ -293,8 +305,9 @@ final readonly class WorkspaceThemeController
     }
 
     /**
-     * HR: Vraća ID prijavljenog izvršitelja ili nulu kada korisnik nije dostupan.
      * EN: Returns the signed-in actor ID or zero when no user is available.
+     *
+     * HR: Vraća ID prijavljenog izvršitelja ili nulu kada korisnik nije dostupan.
      */
     private function actorUserId(): int
     {

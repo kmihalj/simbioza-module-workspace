@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 /**
- * HR: Dijeljeni bočni izbornik koristi renderer menu modula kada postoji, a inače prikazuje samostalni fallback.
  * EN: The shared sidebar uses the menu module renderer when available and otherwise displays a standalone fallback.
+ *
+ * HR: Dijeljeni bočni izbornik koristi renderer menu modula kada postoji, a inače prikazuje samostalni fallback.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $settingsPath

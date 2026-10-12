@@ -9,11 +9,11 @@ use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 
 return new class implements ReversibleMigrationInterface {
     /**
-     * HR: Kreira početnu prenosivu shemu za područja, članstva, stablo sadržaja
-     * i ograničenja koja se nasljeđuju kroz roditeljske čvorove.
-     *
      * EN: Creates the initial portable schema for workspaces, memberships, the
      * content tree, and restrictions inherited through parent nodes.
+     *
+     * HR: Kreira početnu prenosivu shemu za područja, članstva, stablo sadržaja
+     * i ograničenja koja se nasljeđuju kroz roditeljske čvorove.
      */
     public function up(Database $db): void
     {
@@ -24,6 +24,7 @@ return new class implements ReversibleMigrationInterface {
                 $table->id();
                 $table->string('uuid', 36)->unique();
                 $table->string('slug', 128)->unique();
+                $table->string('storage_slug', 96)->default('');
                 $table->string('name', 190)->index();
                 $table->text('name_translations')->nullable();
                 $table->text('description')->nullable();
@@ -200,28 +201,6 @@ return new class implements ReversibleMigrationInterface {
             );
         }
 
-        if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS)) {
-            $schema->create(
-                ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,
-                static function (Blueprint $table): void {
-                    $table->id();
-                    $table->bigInteger('public_node_id')->unsigned()->nullable()->index();
-                    $table->string('public_target_type', 16)->default('page')->index();
-                    $table->bigInteger('public_workspace_id')->unsigned()->nullable()->index();
-                    $table->boolean('public_show_tree')->default(true);
-                    $table->boolean('public_show_display_options')->default(true);
-                    $table->bigInteger('authenticated_node_id')->unsigned()->nullable()->index();
-                    $table->string('authenticated_target_type', 16)->default('page')->index();
-                    $table->bigInteger('authenticated_workspace_id')->unsigned()->nullable()->index();
-                    $table->boolean('authenticated_show_tree')->default(true);
-                    $table->boolean('authenticated_show_display_options')->default(true);
-                    $table->boolean('allow_user_selection')->default(true)->index();
-                    $table->bigInteger('updated_by_user_id')->unsigned()->nullable()->index();
-                    $table->timestamps();
-                },
-            );
-        }
-
         if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES)) {
             $schema->create(
                 ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES,
@@ -295,11 +274,11 @@ return new class implements ReversibleMigrationInterface {
     }
 
     /**
-     * HR: Briše Workspace tablice obrnutim redoslijedom bez diranja auth ili
-     * editor podataka koji pripadaju drugim modulima.
-     *
      * EN: Drops Workspace tables in reverse order without touching auth or
      * editor data owned by other modules.
+     *
+     * HR: Briše Workspace tablice obrnutim redoslijedom bez diranja auth ili
+     * editor podataka koji pripadaju drugim modulima.
      */
     public function down(Database $db): void
     {
@@ -311,7 +290,6 @@ return new class implements ReversibleMigrationInterface {
                 ModuleWorkspace::TABLE_WORKSPACE_BACKLINKS,
                 ModuleWorkspace::TABLE_WORKSPACE_THEMES,
                 ModuleWorkspace::TABLE_WORKSPACE_USER_HOMEPAGES,
-                ModuleWorkspace::TABLE_WORKSPACE_HOMEPAGE_SETTINGS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES,

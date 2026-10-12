@@ -12,17 +12,22 @@ use function is_array;
 use function trim;
 
 /**
- * HR: Objedinjuje opcionalne prikazne prilagodbe područja koje registriraju
- *     izvedeni moduli, primjerice lokalizirani naziv osobnog područja.
  * EN: Combines optional Workspace presentation adjustments registered by
  *     derived modules, such as a localized personal-space name.
+ *
+ * HR: Objedinjuje opcionalne prikazne prilagodbe područja koje registriraju
+ *     izvedeni moduli, primjerice lokalizirani naziv osobnog područja.
  */
 final class WorkspacePresentationRegistry
 {
     /** @var list<WorkspacePresentationProviderInterface> */
     private array $providers = [];
 
-    /** HR: Prima prevoditelj radi sigurnog zadanog jezika. EN: Receives the translator for a safe default locale. */
+    /**
+     * EN: Receives the translator for a safe default locale.
+     *
+     * HR: Prima prevoditelj radi sigurnog zadanog jezika.
+     */
     public function __construct(
         private readonly TranslatorInterface $translator,
         private readonly WorkspaceRepository $repository,
@@ -30,7 +35,11 @@ final class WorkspacePresentationRegistry
     ) {
     }
 
-    /** HR: Registrira provider samo jednom. EN: Registers a provider only once. */
+    /**
+     * EN: Registers a provider only once.
+     *
+     * HR: Registrira provider samo jednom.
+     */
     public function register(WorkspacePresentationProviderInterface $provider): void
     {
         foreach ($this->providers as $registered) {
@@ -43,8 +52,9 @@ final class WorkspacePresentationRegistry
     }
 
     /**
-     * HR: Primjenjuje sve providere na jedno područje.
      * EN: Applies every provider to one Workspace.
+     *
+     * HR: Primjenjuje sve providere na jedno područje.
      *
      * @param array<string,mixed> $workspace
      * @return array<string,mixed>
@@ -57,8 +67,9 @@ final class WorkspacePresentationRegistry
     }
 
     /**
-     * HR: Grupno primjenjuje providere kako popisi područja ne bi stvarali N+1 upite.
      * EN: Applies providers in batches so Workspace lists do not create N+1 queries.
+     *
+     * HR: Grupno primjenjuje providere kako popisi područja ne bi stvarali N+1 upite.
      *
      * @param list<array<string,mixed>> $workspaces
      * @return list<array<string,mixed>>

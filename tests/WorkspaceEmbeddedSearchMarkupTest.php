@@ -11,8 +11,9 @@ use PHPUnit\Framework\TestCase;
 final class WorkspaceEmbeddedSearchMarkupTest extends TestCase
 {
     /**
-     * HR: Ugrađena pretraga šalje čvrsti opseg bez preklapajućeg autosuggesta.
      * EN: Embedded search submits a fixed scope without an overlapping autosuggest.
+     *
+     * HR: Ugrađena pretraga šalje čvrsti opseg bez preklapajućeg autosuggesta.
      */
     public function testEmbeddedSearchUsesSubmittedScopeWithoutSuggestionOverlay(): void
     {

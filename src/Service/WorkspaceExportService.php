@@ -46,16 +46,18 @@ use const JSON_UNESCAPED_UNICODE;
 use const PREG_SPLIT_NO_EMPTY;
 
 /**
- * HR: Gradi samostalnu, ACL-filtriranu offline aplikaciju jednog područja.
- *     Svaka HTML datoteka radi preko `file://`, a dinamički sadržaj pretvoren je u snimku.
  * EN: Builds a standalone, ACL-filtered offline application for one Workspace.
  *     Every HTML file works through `file://`, with dynamic content converted to a snapshot.
+ *
+ * HR: Gradi samostalnu, ACL-filtriranu offline aplikaciju jednog područja.
+ *     Svaka HTML datoteka radi preko `file://`, a dinamički sadržaj pretvoren je u snimku.
  */
 final readonly class WorkspaceExportService
 {
     /**
-     * HR: Prima vlasnike stabla, workflowa, Editor snimki i aktivne teme.
      * EN: Receives the owners of the tree, workflow, Editor snapshots, and active theme.
+     *
+     * HR: Prima vlasnike stabla, workflowa, Editor snimki i aktivne teme.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -69,8 +71,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Vraća izvozive objavljene čvorove koje trenutačni korisnik smije vidjeti.
      * EN: Returns exportable published nodes visible to the current user.
+     *
+     * HR: Vraća izvozive objavljene čvorove koje trenutačni korisnik smije vidjeti.
      *
      * @param array<string, mixed> $workspace
      * @param list<string> $languages
@@ -93,8 +96,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Stvara ZIP cijelog vidljivog područja ili samo izabranih stranica.
      * EN: Creates a ZIP of the complete visible Workspace or selected pages only.
+     *
+     * HR: Stvara ZIP cijelog vidljivog područja ili samo izabranih stranica.
      *
      * @param array<string, mixed> $workspace
      * @param list<int> $selectedNodeIds
@@ -201,10 +205,11 @@ final readonly class WorkspaceExportService
         }
 
         /*
-         * HR: Svaki stvarni prijevod dobiva samo vlastitu čistu HTML datoteku.
-         *     Ne stvaramo kopije fallback sadržaja pod drugim jezicima.
          * EN: Every real translation gets only its own clean HTML file. Fallback
          *     content is never duplicated under a different locale directory.
+         *
+         * HR: Svaki stvarni prijevod dobiva samo vlastitu čistu HTML datoteku.
+         *     Ne stvaramo kopije fallback sadržaja pod drugim jezicima.
          */
         $exportedPages = [];
         $standaloneStylesheets = [
@@ -246,12 +251,13 @@ final readonly class WorkspaceExportService
         }
 
         /*
-         * HR: `index.html` je jedina offline aplikacijska ljuska. Ona mijenja
-         *     sadržaj i jezik bez servera, dok se lokalizirane datoteke iznad
-         *     mogu otvoriti izravno kao izvoz jedne stranice.
          * EN: `index.html` is the single offline application shell. It switches
          *     content and locale without a server, while the localized files
          *     above remain directly openable single-page exports.
+         *
+         * HR: `index.html` je jedina offline aplikacijska ljuska. Ona mijenja
+         *     sadržaj i jezik bez servera, dok se lokalizirane datoteke iznad
+         *     mogu otvoriti izravno kao izvoz jedne stranice.
          */
         $entries['index.html'] = $this->shell(
             $workspace,
@@ -271,8 +277,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Priprema zajedničke CSS, JavaScript i theme datoteke paketa.
      * EN: Prepares shared CSS, JavaScript, and theme files for the package.
+     *
+     * HR: Priprema zajedničke CSS, JavaScript i theme datoteke paketa.
      *
      * @param array<string, mixed> $themeBundle
      * @return array<string, string>
@@ -289,10 +296,11 @@ final readonly class WorkspaceExportService
         }
 
         /*
-         * HR: HTML uvijek smije referencirati ista stabilna imena, čak i kada
-         *     opcionalni Calendar ili Task modul nije instaliran.
          * EN: HTML may always reference the same stable names, even when the
          *     optional Calendar or Task module is not installed.
+         *
+         * HR: HTML uvijek smije referencirati ista stabilna imena, čak i kada
+         *     opcionalni Calendar ili Task modul nije instaliran.
          */
         $entries['assets/css/bootstrap.min.css'] ??= '';
         $entries['assets/css/calendar.css'] ??= '';
@@ -316,8 +324,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Sastavlja zajedničko zaglavlje, Home navigaciju, hero, stablo i sadržaj stranice.
      * EN: Assembles the shared header, Home navigation, hero, tree, and page content.
+     *
+     * HR: Sastavlja zajedničko zaglavlje, Home navigaciju, hero, stablo i sadržaj stranice.
      *
      * @param array<string, mixed> $workspace
      * @param list<string> $languages
@@ -363,12 +372,13 @@ final readonly class WorkspaceExportService
         }
 
         /*
-         * HR: Kao i u aplikaciji, jezik i korisnička kontrola pripadaju desnoj
-         *     strani menija kada tema nema zaglavlje. Offline izvoz umjesto
-         *     korisnika prikazuje odabir svijetle/tamne varijante.
          * EN: As in the application, language and account controls belong on the
          *     right side of the menu when the theme has no header. The offline
          *     export replaces the account control with the light/dark selector.
+         *
+         * HR: Kao i u aplikaciji, jezik i korisnička kontrola pripadaju desnoj
+         *     strani menija kada tema nema zaglavlje. Offline izvoz umjesto
+         *     korisnika prikazuje odabir svijetle/tamne varijante.
          */
         $navigationControls = $header === '' ? $languageControl . $themeControl : '';
         $navigation = $this->homeNavigation($homeHref, $locale, $languages, $navigationControls);
@@ -439,8 +449,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira sadržaj kartice bez dodatnog H1 naslova; tema ga već prikazuje u herou.
      * EN: Renders card content without an extra H1 title; the theme already shows it in the hero.
+     *
+     * HR: Renderira sadržaj kartice bez dodatnog H1 naslova; tema ga već prikazuje u herou.
      *
      * @param array<string, mixed> $snapshot
      */
@@ -467,10 +478,11 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Ugrađuje sve lokalizirane prikaze u root dokument kako prebacivanje radi
-     *     i preko `file://` bez Fetch API-ja ili web poslužitelja.
      * EN: Embeds all localized views in the root document so switching works over
      *     `file://` without the Fetch API or a web server.
+     *
+     * HR: Ugrađuje sve lokalizirane prikaze u root dokument kako prebacivanje radi
+     *     i preko `file://` bez Fetch API-ja ili web poslužitelja.
      *
      * @param array<string, array<int, array{snapshot:array<string,mixed>,source_language:string}>> $localized
      * @param list<string> $languages
@@ -509,8 +521,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira lokalno stablo koje sadrži isključivo stvarno izvezene čvorove.
      * EN: Renders a local tree containing only nodes actually included in the export.
+     *
+     * HR: Renderira lokalno stablo koje sadrži isključivo stvarno izvezene čvorove.
      *
      * @param list<array<string, mixed>> $nodes
      * @param array<string, array<int, array{snapshot:array<string,mixed>,source_language:string}>> $localized
@@ -571,8 +584,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira automatski sadržaj trenutačnog dokumenta.
      * EN: Renders the generated outline of the current document.
+     *
+     * HR: Renderira automatski sadržaj trenutačnog dokumenta.
      *
      * @param list<array<string, mixed>> $headings
      */
@@ -597,8 +611,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira popis privitaka koji se lokalno pokazuje ili skriva.
      * EN: Renders the attachment list that is shown or hidden locally.
+     *
+     * HR: Renderira popis privitaka koji se lokalno pokazuje ili skriva.
      *
      * @param list<array<string, mixed>> $attachments
      */
@@ -628,8 +643,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira jednu pristupačnu ikonsku kontrolu offline prikaza.
      * EN: Renders one accessible icon control for the offline view.
+     *
+     * HR: Renderira jednu pristupačnu ikonsku kontrolu offline prikaza.
      */
     private function toggleButton(string $target, string $label, bool $enabled): string
     {
@@ -650,8 +666,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Gradi offline jezični select koji vodi na istu datoteku drugog jezika.
      * EN: Builds an offline language select linking to the same file in another locale.
+     *
+     * HR: Gradi offline jezični select koji vodi na istu datoteku drugog jezika.
      *
      * @param list<string> $languages
      */
@@ -671,8 +688,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Gradi select za automatsku, svijetlu ili tamnu varijantu teme.
      * EN: Builds the select for automatic, light, or dark theme variants.
+     *
+     * HR: Gradi select za automatsku, svijetlu ili tamnu varijantu teme.
      *
      * @param list<string> $languages
      */
@@ -688,10 +706,11 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: U opciju ugrađuje prijevode svih jezika kako bi offline izvoz mogao
-     *     promijeniti tekst bez ponovnog učitavanja ili poslužitelja.
      * EN: Embeds every locale label in an option so the offline export can update
      *     its copy without a reload or a server.
+     *
+     * HR: U opciju ugrađuje prijevode svih jezika kako bi offline izvoz mogao
+     *     promijeniti tekst bez ponovnog učitavanja ili poslužitelja.
      *
      * @param list<string> $languages
      */
@@ -712,8 +731,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira jedinu offline navigacijsku stavku koja vodi na izvezenu naslovnicu.
      * EN: Renders the sole offline navigation item linking to the exported homepage.
+     *
+     * HR: Renderira jedinu offline navigacijsku stavku koja vodi na izvezenu naslovnicu.
      *
      * @param list<string> $languages
      */
@@ -738,8 +758,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira čitljivo offline zaglavlje kada Theme modul nije dostupan.
      * EN: Renders a readable offline header when the Theme module is unavailable.
+     *
+     * HR: Renderira čitljivo offline zaglavlje kada Theme modul nije dostupan.
      */
     private function fallbackHeader(string $languageControl, string $themeControl, string $homeHref): string
     {
@@ -752,9 +773,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira obavezni Simbioza hero kada aktivna tema nema vlastiti hero.
      * EN: Renders the required Simbioza hero when the active theme provides none.
      *
+     * HR: Renderira obavezni Simbioza hero kada aktivna tema nema vlastiti hero.
      */
     private function fallbackHero(string $title, string $exportNote): string
     {
@@ -766,8 +787,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Odabire isti profil duljine hero naslova koji koristi Theme modul.
      * EN: Selects the same hero-title length profile used by the Theme module.
+     *
+     * HR: Odabire isti profil duljine hero naslova koji koristi Theme modul.
      */
     private function heroTitleLengthClass(string $title): string
     {
@@ -783,8 +805,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Gradi uvijek vidljivu napomenu o izvezenom području za svaki podržani jezik.
      * EN: Builds the always-present exported-Workspace note for every supported locale.
+     *
+     * HR: Gradi uvijek vidljivu napomenu o izvezenom području za svaki podržani jezik.
      *
      * @param array<string, mixed> $workspace
      * @param list<string> $languages
@@ -809,8 +832,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Ugrađuje lokalizirani naziv područja za svaki jezik offline ljuske.
      * EN: Embeds the localized Workspace name for every offline-shell locale.
+     *
+     * HR: Ugrađuje lokalizirani naziv područja za svaki jezik offline ljuske.
      *
      * @param array<string, mixed> $workspace
      * @param list<string> $languages
@@ -833,8 +857,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Renderira kratki UI tekst u svim jezicima bez dupliciranja aplikacijske ljuske.
      * EN: Renders short UI copy in all locales without duplicating the application shell.
+     *
+     * HR: Renderira kratki UI tekst u svim jezicima bez dupliciranja aplikacijske ljuske.
      *
      * @param list<string> $languages
      */
@@ -851,9 +876,10 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Odabire točan prijevod, zatim zadani hrvatski, a tek potom prvi stvarni prijevod.
      * EN: Resolves the exact translation, then the Croatian site default, and only then
      *     the first real translation.
+     *
+     * HR: Odabire točan prijevod, zatim zadani hrvatski, a tek potom prvi stvarni prijevod.
      *
      * @param array<string, array<int, array{snapshot:array<string,mixed>,source_language:string}>> $localized
      * @return array{snapshot:array<string,mixed>,source_language:string}|null
@@ -882,8 +908,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Provjerava postoji li barem jedan stvarni objavljeni prijevod stranice.
      * EN: Checks whether at least one real published translation exists for a page.
+     *
+     * HR: Provjerava postoji li barem jedan stvarni objavljeni prijevod stranice.
      *
      * @param array<string, array<int, array{snapshot:array<string,mixed>,source_language:string}>> $localized
      */
@@ -899,8 +926,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Putanje iz samostalne stranice prilagođava root offline ljusci.
      * EN: Re-bases standalone-page paths for the root offline shell.
+     *
+     * HR: Putanje iz samostalne stranice prilagođava root offline ljusci.
      *
      * @param array<string, mixed> $snapshot
      * @return array<string, mixed>
@@ -928,8 +956,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Filtrira stablo na čvorove koji imaju objavljenu inačicu barem jednog traženog jezika.
      * EN: Filters the tree to nodes with a published variant in at least one requested locale.
+     *
+     * HR: Filtrira stablo na čvorove koji imaju objavljenu inačicu barem jednog traženog jezika.
      *
      * @param list<array<string, mixed>> $nodes
      * @param array<int, list<array<string, mixed>>> $workflows
@@ -965,8 +994,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Zadržava samo izabrane čvorove; djecu neizabranog roditelja sigurno promiče jednu razinu.
      * EN: Keeps only selected nodes and safely promotes children of an omitted parent by one level.
+     *
+     * HR: Zadržava samo izabrane čvorove; djecu neizabranog roditelja sigurno promiče jednu razinu.
      *
      * @param list<array<string, mixed>> $nodes
      * @param list<int> $selectedIds
@@ -999,8 +1029,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Pretvara ugniježđeno stablo u stabilan pre-order popis.
      * EN: Converts a nested tree into a stable pre-order list.
+     *
+     * HR: Pretvara ugniježđeno stablo u stabilan pre-order popis.
      *
      * @param list<array<string, mixed>> $nodes
      * @return list<array<string, mixed>>
@@ -1019,8 +1050,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Odabire samo stvarno objavljenu inačicu traženog jezika; izvoz ne umnaža fallback sadržaj.
      * EN: Selects only an actually published requested-locale variant; export never duplicates fallback content.
+     *
+     * HR: Odabire samo stvarno objavljenu inačicu traženog jezika; izvoz ne umnaža fallback sadržaj.
      *
      * @param list<array<string, mixed>> $workflows
      * @return array<string, mixed>|null
@@ -1042,8 +1074,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Dodjeljuje sigurna i jedinstvena HTML imena prema slugovima čvorova.
      * EN: Assigns safe, unique HTML filenames from node slugs.
+     *
+     * HR: Dodjeljuje sigurna i jedinstvena HTML imena prema slugovima čvorova.
      *
      * @param list<array<string, mixed>> $nodes
      * @return array<int, string>
@@ -1072,8 +1105,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Vraća ID označene početne stranice samo ako je ona dio izvoza.
      * EN: Returns the designated homepage ID only when it is part of the export.
+     *
+     * HR: Vraća ID označene početne stranice samo ako je ona dio izvoza.
      *
      * @param list<array<string, mixed>> $nodes
      */
@@ -1089,8 +1123,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Zapisuje transparentni manifest izvora, jezika i izvezenih stranica.
      * EN: Writes a transparent manifest of the source, locales, and exported pages.
+     *
+     * HR: Zapisuje transparentni manifest izvora, jezika i izvezenih stranica.
      *
      * @param array<string, mixed> $workspace
      * @param list<array<string, scalar>> $pages
@@ -1125,8 +1160,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Piše ZIP PHP ekstenzijom i vraća binarni sadržaj bez trajne privremene datoteke.
      * EN: Writes the ZIP with the PHP extension and returns binary content without a persistent temp file.
+     *
+     * HR: Piše ZIP PHP ekstenzijom i vraća binarni sadržaj bez trajne privremene datoteke.
      *
      * @param array<string, string> $entries
      */
@@ -1163,8 +1199,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Vraća stabilan naziv ZIP datoteke bez opasnih znakova.
      * EN: Returns a stable ZIP filename without unsafe characters.
+     *
+     * HR: Vraća stabilan naziv ZIP datoteke bez opasnih znakova.
      *
      * @param array<string, mixed> $workspace
      */
@@ -1177,8 +1214,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Vraća puni naslov offline aplikacije.
      * EN: Returns the complete offline-application title.
+     *
+     * HR: Vraća puni naslov offline aplikacije.
      *
      * @param array<string, mixed> $workspace
      */
@@ -1188,8 +1226,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Prevoditelj prima eksplicitni jezik kako generiranje ne bi mijenjalo web sesiju.
      * EN: The translator receives an explicit locale so generation does not mutate the web session.
+     *
+     * HR: Prevoditelj prima eksplicitni jezik kako generiranje ne bi mijenjalo web sesiju.
      *
      * @param array<string, string|int|float> $replace
      */
@@ -1199,8 +1238,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Formatira veličinu privitka za čitljiv offline popis.
      * EN: Formats an attachment size for the readable offline list.
+     *
+     * HR: Formatira veličinu privitka za čitljiv offline popis.
      */
     private function fileSize(int $bytes): string
     {
@@ -1216,8 +1256,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Sigurno kodira obični tekst prije umetanja u generirani HTML.
      * EN: Safely encodes plain text before inserting it into generated HTML.
+     *
+     * HR: Sigurno kodira obični tekst prije umetanja u generirani HTML.
      */
     private function escape(string $value): string
     {
@@ -1225,8 +1266,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Filtrira nepouzdani bridge payload na strogu mapu tekstualnih putanja.
      * EN: Filters an untrusted bridge payload into a strict map of string paths.
+     *
+     * HR: Filtrira nepouzdani bridge payload na strogu mapu tekstualnih putanja.
      *
      * @return array<string, string>
      */
@@ -1243,8 +1285,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Minimalni fallback čuva čitljiv export kada Theme modul nije instaliran.
      * EN: A minimal fallback keeps the export readable when Theme is not installed.
+     *
+     * HR: Minimalni fallback čuva čitljiv export kada Theme modul nije instaliran.
      */
     private function fallbackThemeCss(): string
     {
@@ -1253,8 +1296,9 @@ final readonly class WorkspaceExportService
     }
 
     /**
-     * HR: Strukturni CSS offline područja nadopunjuje, ali ne mijenja aktivnu temu.
      * EN: Structural offline-Workspace CSS complements but does not replace the active theme.
+     *
+     * HR: Strukturni CSS offline područja nadopunjuje, ali ne mijenja aktivnu temu.
      */
     private function exportCss(): string
     {
@@ -1544,8 +1588,9 @@ CSS;
     }
 
     /**
-     * HR: Sav offline UI radi bez servera: tema, jezik i tri neovisna prikazna panela.
      * EN: The complete offline UI works without a server: theme, language, and three independent panels.
+     *
+     * HR: Sav offline UI radi bez servera: tema, jezik i tri neovisna prikazna panela.
      */
     private function exportJs(): string
     {

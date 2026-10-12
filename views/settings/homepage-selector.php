@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Povezani udaljeni birači područja i naslovne stranice.
  * EN: Linked remote Workspace and homepage pickers.
+ *
+ * HR: Povezani udaljeni birači područja i naslovne stranice.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $selectorKey

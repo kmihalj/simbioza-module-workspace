@@ -4,27 +4,26 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use HeartPhrame\Config\ConfigArrayMerger;
 use HeartPhrame\Routing\Routes;
 use RuntimeException;
 
 use function array_values;
 use function is_array;
-use function is_dir;
 use function is_scalar;
 use function ltrim;
-use function mkdir;
 use function preg_replace;
 use function str_starts_with;
 use function strtok;
 use function strtolower;
 use function trim;
-use function var_export;
 
 final readonly class WorkspaceSettingsService
 {
     /**
-     * HR: Prima efektivne postavke i router potreban za provjeru konflikta root putanje.
      * EN: Receives effective settings and the router used to detect root-path conflicts.
+     *
+     * HR: Prima efektivne postavke i router potreban za provjeru konflikta root putanje.
      */
     public function __construct(
         private WorkspaceConfig $config,
@@ -34,8 +33,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Priprema efektivne postavke za administratorsku formu.
      * EN: Prepares effective settings for the administration form.
+     *
+     * HR: Priprema efektivne postavke za administratorsku formu.
      *
      * @return array<string, mixed>
      */
@@ -63,8 +63,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Validira i zapisuje čistu aplikacijsku konfiguraciju područja.
      * EN: Validates and writes the clean application Workspace configuration.
+     *
+     * HR: Validira i zapisuje čistu aplikacijsku konfiguraciju područja.
      *
      * @param array<string, mixed> $input
      */
@@ -114,29 +115,20 @@ final readonly class WorkspaceSettingsService
                     $input['shorts_display_options_visible'] ?? false,
                 ),
             ],
-            'menu' => [
-                'auto_register_top' => true,
-                'auto_register_settings' => true,
-            ],
         ];
 
-        $path = $this->config->settingsFilePath();
-        $directory = dirname($path);
-        if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
-            throw new RuntimeException(__('Nije moguće kreirati direktorij postavki područja.'));
-        }
-
-        $content = "<?php\n\ndeclare(strict_types=1);\n\nreturn "
-        . var_export($settings, true)
-        . ";\n";
-        if (file_put_contents($path, $content) === false) {
-            throw new RuntimeException(__('Nije moguće zapisati postavke područja.'));
-        }
+        $this->config->configurationStore()->mutate(
+            static fn(array $current): array => WorkspaceValue::stringKeyArray(
+                ConfigArrayMerger::merge($current, $settings),
+            ),
+        );
+        $this->config->refresh();
     }
 
     /**
-     * HR: Zadržava samo postojeće aktivne Auth korisnike ili grupe.
      * EN: Keeps only existing active Auth users or groups.
+     *
+     * HR: Zadržava samo postojeće aktivne Auth korisnike ili grupe.
      *
      * @return list<int>
      */
@@ -162,8 +154,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Odbija root segment koji već koristi druga GET ruta.
      * EN: Rejects a root segment already occupied by another GET route.
+     *
+     * HR: Odbija root segment koji već koristi druga GET ruta.
      */
     private function assertRootPathDoesNotConflict(string $rootPath): void
     {
@@ -183,8 +176,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Normalizira administratorski unos na jedan siguran URL segment.
      * EN: Normalizes administrator input into one safe URL segment.
+     *
+     * HR: Normalizira administratorski unos na jedan siguran URL segment.
      */
     private function rootPath(mixed $value): string
     {
@@ -195,8 +189,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Izdvaja prvi statički segment registrirane rute.
      * EN: Extracts the first static segment of a registered route.
+     *
+     * HR: Izdvaja prvi statički segment registrirane rute.
      */
     private function firstRouteSegment(string $path): string
     {
@@ -209,8 +204,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Pretvara checkbox i druge skalarne vrijednosti u boolean.
      * EN: Converts checkbox and other scalar values into a boolean.
+     *
+     * HR: Pretvara checkbox i druge skalarne vrijednosti u boolean.
      */
     private function boolValue(mixed $value): bool
     {
@@ -226,8 +222,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Prihvaća samo jednu od izričito dopuštenih brojčanih postavki.
      * EN: Accepts only one of the explicitly allowed numeric settings.
+     *
+     * HR: Prihvaća samo jednu od izričito dopuštenih brojčanih postavki.
      *
      * @param list<int> $allowed
      */
@@ -238,7 +235,11 @@ final readonly class WorkspaceSettingsService
         return in_array($number, $allowed, true) ? $number : $fallback;
     }
 
-    /** HR: Prihvaća zadanu dubinu 1–3 ili sve razine. EN: Accepts default depth 1–3 or all levels. */
+    /**
+     * EN: Accepts default depth 1–3 or all levels.
+     *
+     * HR: Prihvaća zadanu dubinu 1–3 ili sve razine.
+     */
     private function allowedDepth(mixed $value): int|string
     {
         $normalized = is_scalar($value) ? strtolower(trim((string)$value)) : '';
@@ -249,8 +250,9 @@ final readonly class WorkspaceSettingsService
     }
 
     /**
-     * HR: Prihvaća samo jednu od izričito dopuštenih tekstualnih postavki.
      * EN: Accepts only one of the explicitly allowed string settings.
+     *
+     * HR: Prihvaća samo jednu od izričito dopuštenih tekstualnih postavki.
      *
      * @param list<string> $allowed
      */

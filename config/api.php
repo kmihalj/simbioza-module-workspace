@@ -1,12 +1,12 @@
 <?php
 
 /**
- * HR: Neutralni opis Workspace API scopeova. Workspace ne ovisi o API modulu;
- * API modul čita ovu datoteku samo kada su oba modula instalirana i uključena.
- *
  * EN: Neutral description of Workspace API scopes. Workspace does not depend
  * on the API module; the API module reads this file only when both modules are
  * installed and enabled.
+ *
+ * HR: Neutralni opis Workspace API scopeova. Workspace ne ovisi o API modulu;
+ * API modul čita ovu datoteku samo kada su oba modula instalirana i uključena.
  */
 
 declare(strict_types=1);

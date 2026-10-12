@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: View za uređivanje dvaju potpuno odvojenih posebnih menija jednog područja.
  * EN: View for editing two fully separated special menus of one Workspace.
+ *
+ * HR: View za uređivanje dvaju potpuno odvojenih posebnih menija jednog područja.
  *
  * @var \HeartPhrame\View\View $this
  * @var array<string, mixed> $workspace

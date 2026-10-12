@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Upraviteljsko sučelje za šifrirani izvoz i nastavivi import područja.
  * EN: Manager UI for encrypted Workspace export and resumable import.
+ *
+ * HR: Upraviteljsko sučelje za šifrirani izvoz i nastavivi import područja.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $title

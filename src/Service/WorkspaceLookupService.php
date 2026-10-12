@@ -8,16 +8,18 @@ use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
 use HeartPhrame\Localization\TranslatorInterface;
 
 /**
- * HR: Gradi ograničene, ACL-sigurne stranice rezultata za udaljene birače.
  * EN: Builds bounded, ACL-safe result pages for remote pickers.
+ *
+ * HR: Gradi ograničene, ACL-sigurne stranice rezultata za udaljene birače.
  */
 final readonly class WorkspaceLookupService
 {
     private const PAGE_SIZE = 25;
 
     /**
-     * HR: Inicijalizira ACL-sigurnu uslugu udaljenih imenika.
      * EN: Initializes the ACL-safe remote directory service.
+     *
+     * HR: Inicijalizira ACL-sigurnu uslugu udaljenih imenika.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -29,8 +31,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Pretražuje korisniku dostupna područja i vraća jednu stranicu rezultata.
      * EN: Searches Workspaces available to the user and returns one result page.
+     *
+     * HR: Pretražuje korisniku dostupna područja i vraća jednu stranicu rezultata.
      *
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
@@ -82,8 +85,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Pretražuje korisniku dostupan sadržaj i vraća jednu stranicu rezultata.
      * EN: Searches content available to the user and returns one result page.
+     *
+     * HR: Pretražuje korisniku dostupan sadržaj i vraća jednu stranicu rezultata.
      *
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
      */
@@ -199,8 +203,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Provjerava ima li stranica barem jedan čitljiv tijek objave.
      * EN: Checks whether a page has at least one readable publication workflow.
+     *
+     * HR: Provjerava ima li stranica barem jedan čitljiv tijek objave.
      *
      * @param list<array<string,mixed>> $workflows
      */
@@ -216,8 +221,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Vraća odabrano područje samo ako je vidljivo zadanoj publici.
      * EN: Returns the selected Workspace only when it is visible to the given audience.
+     *
+     * HR: Vraća odabrano područje samo ako je vidljivo zadanoj publici.
      *
      * @return array<string,mixed>|null
      */
@@ -251,8 +257,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Ograničava broj stranice i veličinu rezultata na podržane vrijednosti.
      * EN: Bounds the page number and result size to supported values.
+     *
+     * HR: Ograničava broj stranice i veličinu rezultata na podržane vrijednosti.
      *
      * @return array{0:int,1:int}
      */
@@ -262,8 +269,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Izdvaja traženu stranicu rezultata i označava postoje li daljnji zapisi.
      * EN: Extracts the requested result page and indicates whether more records exist.
+     *
+     * HR: Izdvaja traženu stranicu rezultata i označava postoje li daljnji zapisi.
      *
      * @param list<array<string,mixed>> $items
      * @return array{items:list<array<string,mixed>>,page:int,perPage:int,hasMore:bool}
@@ -286,8 +294,9 @@ final readonly class WorkspaceLookupService
     }
 
     /**
-     * HR: Određuje korisnički kontekst za javnu, prijavljenu ili trenutačnu publiku.
      * EN: Resolves the user context for public, authenticated, or current audiences.
+     *
+     * HR: Određuje korisnički kontekst za javnu, prijavljenu ili trenutačnu publiku.
      *
      * @return array<string,mixed>|null
      */

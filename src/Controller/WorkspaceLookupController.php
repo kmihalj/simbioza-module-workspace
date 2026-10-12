@@ -12,14 +12,16 @@ use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 /**
- * HR: Izlaže ACL-sigurne udaljene imenike područja i stranica.
  * EN: Exposes ACL-safe remote Workspace and page directories.
+ *
+ * HR: Izlaže ACL-sigurne udaljene imenike područja i stranica.
  */
 final readonly class WorkspaceLookupController
 {
     /**
-     * HR: Inicijalizira kontroler udaljenih imenika područja i stranica.
      * EN: Initializes the remote Workspace and page directory controller.
+     *
+     * HR: Inicijalizira kontroler udaljenih imenika područja i stranica.
      */
     public function __construct(
         private ResponseFactory $responses,
@@ -29,8 +31,9 @@ final readonly class WorkspaceLookupController
     }
 
     /**
-     * HR: Vraća ograničenu stranicu područja dostupnih korisniku.
      * EN: Returns a bounded page of Workspaces available to the user.
+     *
+     * HR: Vraća ograničenu stranicu područja dostupnih korisniku.
      */
     public function workspaces(ServerRequestInterface $request): ResponseInterface
     {
@@ -38,8 +41,9 @@ final readonly class WorkspaceLookupController
     }
 
     /**
-     * HR: Vraća ograničenu stranicu sadržaja dostupnog korisniku.
      * EN: Returns a bounded page of content available to the user.
+     *
+     * HR: Vraća ograničenu stranicu sadržaja dostupnog korisniku.
      */
     public function pages(ServerRequestInterface $request): ResponseInterface
     {
@@ -47,8 +51,9 @@ final readonly class WorkspaceLookupController
     }
 
     /**
-     * HR: Pretvara parametre imenika u ACL-siguran JSON odgovor.
      * EN: Converts directory parameters into an ACL-safe JSON response.
+     *
+     * HR: Pretvara parametre imenika u ACL-siguran JSON odgovor.
      */
     private function response(ServerRequestInterface $request, string $kind): ResponseInterface
     {

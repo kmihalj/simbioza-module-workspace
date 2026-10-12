@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Jedan uređivi red strukturiranog svojstva stranice.
  * EN: One editable structured page-property row.
+ *
+ * HR: Jedan uređivi red strukturiranog svojstva stranice.
  *
  * @var \HeartPhrame\View\View $this
  * @var array<string, mixed> $property

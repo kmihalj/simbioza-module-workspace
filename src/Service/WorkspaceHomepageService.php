@@ -21,18 +21,20 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Određuje naslovnicu aplikacije prema javnoj, prijavljenoj i osobnoj
- * politici te prije svakog redirecta ponovno provjerava ACL i objavljenost.
  * EN: Resolves the application homepage from public, authenticated, and
  * personal policy while rechecking ACL and publication before every redirect.
+ *
+ * HR: Određuje naslovnicu aplikacije prema javnoj, prijavljenoj i osobnoj
+ * politici te prije svakog redirecta ponovno provjerava ACL i objavljenost.
  */
 final readonly class WorkspaceHomepageService
 {
     private const GENERIC_AUTHENTICATED_USER_ID = 2147483647;
 
     /**
-     * HR: Prima Workspace podatke, ACL, workflow i URL servise bez obrnute ovisnosti Autha.
      * EN: Receives Workspace data, ACL, workflow, and URL services without an Auth reverse dependency.
+     *
+     * HR: Prima Workspace podatke, ACL, workflow i URL servise bez obrnute ovisnosti Autha.
      */
     public function __construct(
         private WorkspaceRepository $repository,
@@ -47,8 +49,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Provjerava je li potpuna Workspace shema spremna.
      * EN: Checks whether the complete Workspace schema is ready.
+     *
+     * HR: Provjerava je li potpuna Workspace shema spremna.
      */
     public function tablesReady(): bool
     {
@@ -56,8 +59,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Priprema administratorske vrijednosti i odvojene sigurne izbore za goste i prijavljene.
      * EN: Prepares administrator values and separate safe choices for guests and authenticated users.
+     *
+     * HR: Priprema administratorske vrijednosti i odvojene sigurne izbore za goste i prijavljene.
      *
      * @return array<string, mixed>
      */
@@ -67,8 +71,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Priprema administratorske vrijednosti bez oslanjanja na web sesiju za jezik.
      * EN: Prepares administrator values without relying on the web session for locale.
+     *
+     * HR: Priprema administratorske vrijednosti bez oslanjanja na web sesiju za jezik.
      *
      * @return array<string, mixed>
      */
@@ -88,8 +93,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Validira i sprema administratorsku politiku naslovnice.
      * EN: Validates and stores the administrator homepage policy.
+     *
+     * HR: Validira i sprema administratorsku politiku naslovnice.
      *
      * @param array<string, mixed> $input
      */
@@ -99,8 +105,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Sprema administratorsku politiku uz izričit jezik pozivatelja API-ja ili weba.
      * EN: Stores administrator policy using the API or web caller's explicit locale.
+     *
+     * HR: Sprema administratorsku politiku uz izričit jezik pozivatelja API-ja ili weba.
      *
      * @param array<string, mixed> $input
      */
@@ -136,13 +143,13 @@ final readonly class WorkspaceHomepageService
             $publicTarget,
             $authenticatedTarget,
             $this->boolValue($input['allow_user_selection'] ?? false),
-            $actorUserId,
         );
     }
 
     /**
-     * HR: Priprema osobni odabir samo za trenutačnog prijavljenog korisnika.
      * EN: Prepares personal selection only for the current authenticated user.
+     *
+     * HR: Priprema osobni odabir samo za trenutačnog prijavljenog korisnika.
      *
      * @return array<string, mixed>|null
      */
@@ -152,10 +159,11 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Priprema osobni odabir za izričito zadanog autentificiranog korisnika,
-     *     primjerice vlasnika API ključa, bez oslanjanja na web sesiju.
      * EN: Prepares personal selection for an explicitly supplied authenticated
      *     user, such as an API-key owner, without relying on the web session.
+     *
+     * HR: Priprema osobni odabir za izričito zadanog autentificiranog korisnika,
+     *     primjerice vlasnika API ključa, bez oslanjanja na web sesiju.
      *
      * @param array<string, mixed> $user
      * @return array<string, mixed>|null
@@ -193,8 +201,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Sprema osobni odabir samo ako ga korisnik trenutno smije otvoriti.
      * EN: Stores a personal selection only when the user may currently open it.
+     *
+     * HR: Sprema osobni odabir samo ako ga korisnik trenutno smije otvoriti.
      *
      * @param array<string, mixed>|int $selection
      */
@@ -208,10 +217,11 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Sprema osobni odabir izričito zadanog korisnika nakon ACL provjere,
-     *     bez preuzimanja identiteta iz web sesije.
      * EN: Stores the explicitly supplied user's personal selection after an ACL
      *     check, without taking the identity from the web session.
+     *
+     * HR: Sprema osobni odabir izričito zadanog korisnika nakon ACL provjere,
+     *     bez preuzimanja identiteta iz web sesije.
      *
      * @param array<string, mixed>|int $selection
      * @param array<string, mixed> $user
@@ -250,8 +260,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Vraća kanonsku Workspace putanju prema osobnom, prijavljenom i javnom prioritetu.
      * EN: Returns the canonical Workspace path using personal, authenticated, and public precedence.
+     *
+     * HR: Vraća kanonsku Workspace putanju prema osobnom, prijavljenom i javnom prioritetu.
      */
     public function resolvePath(): ?string
     {
@@ -300,8 +311,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Gradi grupirane opcije objavljenih dokument-stranica koje publika smije vidjeti.
      * EN: Builds grouped options of published document pages visible to the audience.
+     *
+     * HR: Gradi grupirane opcije objavljenih dokument-stranica koje publika smije vidjeti.
      *
      * @param array<string, mixed>|null $user
      * @return list<array{name:string,options:list<array<string,mixed>>}>
@@ -374,8 +386,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Provjerava čvor, područje, ACL i objavljeni jezik prije gradnje internog URL-a.
      * EN: Validates the node, workspace, ACL, and published locale before building an internal URL.
+     *
+     * HR: Provjerava čvor, područje, ACL i objavljeni jezik prije gradnje internog URL-a.
      *
      * @param array<string, mixed>|null $user
      * @param array{type:string,node_id:int,workspace_id:int,show_tree:bool,show_display_options:bool} $target
@@ -466,8 +479,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Bira aktualni, fallback ili prvi objavljeni jezik stranice.
      * EN: Selects the current, fallback, or first published page locale.
+     *
+     * HR: Bira aktualni, fallback ili prvi objavljeni jezik stranice.
      *
      * @param list<array<string, mixed>> $workflows
      */
@@ -495,8 +509,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Vraća jezični prioritet aplikacije bez pretpostavke da su jezici HR i EN.
      * EN: Returns the application locale priority without assuming HR and EN locales.
+     *
+     * HR: Vraća jezični prioritet aplikacije bez pretpostavke da su jezici HR i EN.
      *
      * @return list<string>
      */
@@ -526,8 +541,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Provjerava nalazi li se strukturirani cilj u ACL-filtriranim opcijama.
      * EN: Checks whether a structured target exists in ACL-filtered options.
+     *
+     * HR: Provjerava nalazi li se strukturirani cilj u ACL-filtriranim opcijama.
      *
      * @param list<array{name:string,options:list<array<string,mixed>>}> $groups
      * @param array<string, mixed> $target
@@ -547,8 +563,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Čita strukturirani cilj iz forme uz kompatibilnost sa starim node ID poljima.
-     * EN: Reads a structured form target while remaining compatible with legacy node-ID fields.
+     * EN: Reads the current structured form target.
+     *
+     * HR: Čita aktualni strukturirani cilj iz forme.
      *
      * @param array<string, mixed> $input
      * @return array{type:string,node_id:int,workspace_id:int,show_tree:bool,show_display_options:bool}
@@ -559,11 +576,6 @@ final readonly class WorkspaceHomepageService
         $value = WorkspaceValue::string(
             $input[$fieldPrefix . 'target'] ?? '',
         );
-        if ($value === '') {
-            $legacyNodeId = WorkspaceValue::int($input[$fieldPrefix . 'node_id'] ?? 0);
-            $value = $legacyNodeId > 0 ? 'page:' . $legacyNodeId : 'default';
-        }
-
         $target = $this->defaultTarget();
         if (preg_match('/^(page|shorts):([1-9]\d*)$/', $value, $matches) === 1) {
             $target['type'] = $matches[1];
@@ -583,8 +595,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Normalizira strukturirani cilj i odbacuje nepotpune ID vrijednosti.
      * EN: Normalizes a structured target and rejects incomplete ID values.
+     *
+     * HR: Normalizira strukturirani cilj i odbacuje nepotpune ID vrijednosti.
      *
      * @param array<string, mixed> $target
      * @return array{type:string,node_id:int,workspace_id:int,show_tree:bool,show_display_options:bool}
@@ -611,8 +624,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Pretvara strukturirani cilj u stabilnu vrijednost HTML select kontrole.
      * EN: Converts a structured target into a stable HTML select value.
+     *
+     * HR: Pretvara strukturirani cilj u stabilnu vrijednost HTML select kontrole.
      *
      * @param array{type:string,node_id:int,workspace_id:int,show_tree:bool,show_display_options:bool} $target
      */
@@ -626,8 +640,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Vraća neutralni cilj sa sigurnim zadanim opcijama prikaza.
      * EN: Returns a neutral target with safe default display options.
+     *
+     * HR: Vraća neutralni cilj sa sigurnim zadanim opcijama prikaza.
      *
      * @return array{type:string,node_id:int,workspace_id:int,show_tree:bool,show_display_options:bool}
      */
@@ -643,8 +658,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Čita ID iz normaliziranog Auth session payloada.
      * EN: Reads the ID from a normalized Auth session payload.
+     *
+     * HR: Čita ID iz normaliziranog Auth session payloada.
      *
      * @param array<string, mixed>|null $user
      */
@@ -654,8 +670,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Normalizira checkbox vrijednost.
      * EN: Normalizes a checkbox value.
+     *
+     * HR: Normalizira checkbox vrijednost.
      */
     private function boolValue(mixed $value): bool
     {
@@ -664,8 +681,9 @@ final readonly class WorkspaceHomepageService
     }
 
     /**
-     * HR: Prihvaća samo kratke BCP-47 oznake jezika koje Workspace ruta razumije.
      * EN: Accepts only short BCP-47 locale tags understood by the Workspace route.
+     *
+     * HR: Prihvaća samo kratke BCP-47 oznake jezika koje Workspace ruta razumije.
      */
     private function normalizeLanguage(string $language): string
     {

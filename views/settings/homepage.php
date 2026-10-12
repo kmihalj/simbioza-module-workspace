@@ -5,8 +5,9 @@ declare(strict_types=1);
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
- * HR: Administratorska postavka naslovnice aplikacije unutar grupe Područja.
  * EN: Application-homepage administration inside the Workspaces settings group.
+ *
+ * HR: Administratorska postavka naslovnice aplikacije unutar grupe Područja.
  *
  * @var \HeartPhrame\View\View $this
  * @var string $title

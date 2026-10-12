@@ -14,20 +14,22 @@ use function min;
 use function range;
 
 /**
- * HR: Razdvaja generički popis područja prema prezentacijskim oznakama drugih
- *     modula i straniči samo skup koji se stvarno prikazuje.
  * EN: Splits the generic Workspace list by presentation annotations supplied by
  *     other modules and paginates only the collection that is actually shown.
+ *
+ * HR: Razdvaja generički popis područja prema prezentacijskim oznakama drugih
+ *     modula i straniči samo skup koji se stvarno prikazuje.
  */
 final readonly class WorkspaceIndexService
 {
     public const ITEMS_PER_PAGE = 25;
 
     /**
-     * HR: Zadržava vlastito osobno područje u glavnom popisu, a tuđa dostupna
-     *     osobna područja predaje zasebnom ACL-već-filtriranom izborniku.
      * EN: Keeps the actor's personal Workspace in the primary list and returns
      *     accessible personal Workspaces of other users in a separate menu.
+     *
+     * HR: Zadržava vlastito osobno područje u glavnom popisu, a tuđa dostupna
+     *     osobna područja predaje zasebnom ACL-već-filtriranom izborniku.
      *
      * @param list<array<string,mixed>> $workspaces
      * @param array<string,mixed>|null $user
@@ -102,10 +104,11 @@ final readonly class WorkspaceIndexService
     }
 
     /**
-     * HR: Vraća mali prozor brojeva stranica kako stotine područja ne bi opet
-     *     proizvele stotine navigacijskih elemenata.
      * EN: Returns a compact page-number window so hundreds of Workspaces cannot
      *     produce hundreds of navigation controls again.
+     *
+     * HR: Vraća mali prozor brojeva stranica kako stotine područja ne bi opet
+     *     proizvele stotine navigacijskih elemenata.
      *
      * @return list<int>
      */

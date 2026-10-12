@@ -17,10 +17,11 @@ use RuntimeException;
 final class WorkspaceThemeBridgeTest extends TestCase
 {
     /**
-     * HR: Već razriješene HTTP putanje moraju se vratiti na ugrađene offline
-     *     izvore jer `file://` ne može dohvatiti rutu instalirane aplikacije.
      * EN: Already-resolved HTTP paths must map back to embedded offline sources
      *     because `file://` cannot fetch the installed application's route.
+     *
+     * HR: Već razriješene HTTP putanje moraju se vratiti na ugrađene offline
+     *     izvore jer `file://` ne može dohvatiti rutu instalirane aplikacije.
      */
     public function testResolvedThemeRoutesAreEmbeddedForFileProtocolExports(): void
     {
@@ -50,17 +51,19 @@ final class WorkspaceThemeBridgeTest extends TestCase
     }
 
     /**
-     * HR: Izvoz mora dobiti potpun i čitljiv fallback ugovor kada Theme modul
-     *     nije instaliran; dohvat Theme servisa tada se ne smije ni pokušati.
      * EN: Export must receive a complete readable fallback contract when the
      *     Theme module is absent, without attempting to resolve Theme services.
+     *
+     * HR: Izvoz mora dobiti potpun i čitljiv fallback ugovor kada Theme modul
+     *     nije instaliran; dohvat Theme servisa tada se ne smije ni pokušati.
      */
     public function testMissingThemeModuleReturnsPortableFallbackContract(): void
     {
         $container = new class implements ContainerInterface {
             /**
-             * HR: Test zabranjuje dohvat servisa kada Theme modul nedostaje.
              * EN: The test forbids service resolution while Theme is absent.
+             *
+             * HR: Test zabranjuje dohvat servisa kada Theme modul nedostaje.
              */
             public function get(string $id): never
             {
@@ -68,8 +71,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
             }
 
             /**
-             * HR: Prazni testni container nema registriranih servisa.
              * EN: The empty test container has no registered services.
+             *
+             * HR: Prazni testni container nema registriranih servisa.
              */
             public function has(string $id): bool
             {
@@ -78,8 +82,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
         };
         $composer = new class extends ComposerBridge {
             /**
-             * HR: Simulira instalaciju bez Theme paketa.
              * EN: Simulates an installation without the Theme package.
+             *
+             * HR: Simulira instalaciju bez Theme paketa.
              */
             public function isInstalled(string $packageName): bool
             {
@@ -88,8 +93,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
         };
         $translator = new class implements TranslatorInterface {
             /**
-             * HR: Fallback test vraća ključ jer ovdje provjerava samo strukturu.
              * EN: The fallback test returns the key because it checks structure only.
+             *
+             * HR: Fallback test vraća ključ jer ovdje provjerava samo strukturu.
              *
              * @param array<string, string|int|float> $replace
              */
@@ -99,8 +105,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
             }
 
             /**
-             * HR: Vraća zadani hrvatski jezik testa.
              * EN: Returns the test's default Croatian locale.
+             *
+             * HR: Vraća zadani hrvatski jezik testa.
              */
             public function getLocale(): string
             {
@@ -108,8 +115,9 @@ final class WorkspaceThemeBridgeTest extends TestCase
             }
 
             /**
-             * HR: Testni prevoditelj nema promjenjivo stanje.
              * EN: The test translator has no mutable state.
+             *
+             * HR: Testni prevoditelj nema promjenjivo stanje.
              */
             public function setLocale(string $locale): void
             {

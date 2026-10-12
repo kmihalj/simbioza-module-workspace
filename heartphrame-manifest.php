@@ -35,11 +35,11 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     private const ORM_MODULE_PACKAGE = 'aaieduhr/heartphrame-module-orm';
 
     /**
-     * HR: Provjerava jesu li auth i ORM instalirani i uključeni prije Workspace
-     * modula. Područja će uvijek imati članove i prenosivi ACL model.
-     *
      * EN: Verifies that auth and ORM are installed and enabled before the
      * Workspace module. Workspaces will always have members and a portable ACL model.
+     *
+     * HR: Provjerava jesu li auth i ORM instalirani i uključeni prije Workspace
+     * modula. Područja će uvijek imati članove i prenosivi ACL model.
      */
     public function canLoad(ContainerInterface $container): bool
     {
@@ -75,8 +75,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     }
 
     /**
-     * HR: Odgađa učitavanje dok framework ne registrira obavezne auth i ORM module.
      * EN: Defers loading until the framework has registered the required auth and ORM modules.
+     *
+     * HR: Odgađa učitavanje dok framework ne registrira obavezne auth i ORM module.
      */
     public function requiresDeferredLoading(): bool
     {
@@ -84,8 +85,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     }
 
     /**
-     * HR: Učitava servisne definicije Workspace modula.
      * EN: Loads Workspace module service definitions.
+     *
+     * HR: Učitava servisne definicije Workspace modula.
      */
     public function getServices(): array
     {
@@ -98,8 +100,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     }
 
     /**
-     * HR: Registrira fiksne akcijske i settings rute; javni slug URL-ovi dodaju se kasno.
      * EN: Registers fixed action and settings routes; public slug URLs are added late.
+     *
+     * HR: Registrira fiksne akcijske i settings rute; javni slug URL-ovi dodaju se kasno.
      */
     public function getBaseRoutes(): array
     {
@@ -382,8 +385,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
             ],
         ];
 
-        // HR: Rute se uopće ne registriraju bez opcionalnog Backup modula.
         // EN: Routes are not registered at all without the optional Backup module.
+        //
+        // HR: Rute se uopće ne registriraju bez opcionalnog Backup modula.
         if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupManager::class)) {
             $middleware = [RequireAuthenticatedUserMiddleware::class];
             $routes = [
@@ -435,8 +439,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     }
 
     /**
-     * HR: Registrira helper naredbu za kopiranje jedine početne migracije.
      * EN: Registers the helper command for copying the single initial migration.
+     *
+     * HR: Registrira helper naredbu za kopiranje jedine početne migracije.
      */
     public function getCommands(): array
     {
@@ -451,84 +456,13 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 'Copy initial Workspace migration into the host application.',
                 [\AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class, 'installMigration'],
             ),
-            new CommandDefinition(
-                'workspace:install-homepage-migration',
-                'Copy the Workspace homepage upgrade migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installHomepageMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-homepage-view-options-migration',
-                'Copy the structured Workspace homepage-options migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installHomepageViewOptionsMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-themes-migration',
-                'Copy the Workspace private-theme upgrade migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installThemesMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-backlinks-migration',
-                'Copy the Workspace backlinks upgrade migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installBacklinksMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-node-labels-migration',
-                'Copy the Workspace page-label upgrade migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installNodeLabelsMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-node-properties-migration',
-                'Copy the Workspace structured-page-properties migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installNodePropertiesMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-node-direct-permissions-migration',
-                'Copy the Workspace direct-page-permissions migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installNodeDirectPermissionsMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-remove-owner-migration',
-                'Copy the migration that removes the obsolete Workspace owner.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installRemoveOwnerMigration',
-                ],
-            ),
-            new CommandDefinition(
-                'workspace:install-purge-marker-migration',
-                'Copy the resumable Workspace purge migration into the host application.',
-                [
-                    \AaiEduHr\SimbiozaModuleWorkspace\Command\HpWorkspaceCommand::class,
-                    'installPurgeMarkerMigration',
-                ],
-            ),
         ];
     }
 
     /**
-     * HR: Veže promjene objavljenog sadržaja na sinkronizaciju backlink indeksa.
      * EN: Binds published-content changes to backlink-index synchronization.
+     *
+     * HR: Veže promjene objavljenog sadržaja na sinkronizaciju backlink indeksa.
      *
      * @return EventListener[]
      */
@@ -540,8 +474,9 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
     }
 
     /**
-     * HR: Kasno registrira javne slug rute pa zatim menu stavke koje ih koriste.
      * EN: Registers public slug routes late, followed by menu entries that use them.
+     *
+     * HR: Kasno registrira javne slug rute pa zatim menu stavke koje ih koriste.
      *
      * @return mixed[]
      */
@@ -583,16 +518,18 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                         $registrar->register();
                     }
                 } catch (ContainerExceptionInterface) {
-                    // HR: Simbioza User će ponoviti registraciju ako se učitava nakon Workspacea.
                     // EN: Simbioza User retries the registration when it loads after Workspace.
+                    //
+                    // HR: Simbioza User će ponoviti registraciju ako se učitava nakon Workspacea.
                 }
             },
         ];
     }
 
     /**
-     * HR: Vraća direktorij s prikazima koji pripadaju Workspace modulu.
      * EN: Returns the directory containing views owned by the Workspace module.
+     *
+     * HR: Vraća direktorij s prikazima koji pripadaju Workspace modulu.
      */
     public function getViewsPath(): string
     {

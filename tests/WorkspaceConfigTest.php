@@ -13,42 +13,45 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceConfigTest extends TestCase
 {
     private string $appRoot;
 
     /**
-     * HR: Priprema zaseban aplikacijski config direktorij za provjeru nasljeđivanja.
      * EN: Prepares an isolated application config directory for inheritance tests.
+     *
+     * HR: Priprema zaseban aplikacijski config direktorij za provjeru nasljeđivanja.
      */
     protected function setUp(): void
     {
         $this->appRoot = sys_get_temp_dir() . '/hph_workspace_config_' . uniqid();
-        mkdir($this->appRoot . '/config', 0777, true);
+        mkdir($this->appRoot . '/config/workspace', 0777, true);
         file_put_contents(
-            $this->appRoot . '/config/workspace.php',
-            "<?php return ["
-            . "'defaults' => ['tree_visible' => false, 'contents_visible' => true],"
-            . "'creation' => ['users' => [7, '8', 7, 0], 'groups' => [11, 'bad', 12]],"
-            . "];",
+            $this->appRoot . '/config/workspace/workspace.json',
+            '{"defaults":{"tree_visible":false,"contents_visible":true},'
+            . '"creation":{"users":[7,8,7],"groups":[11,12]}}',
         );
     }
 
     /**
-     * HR: Uklanja samo privremene datoteke ovog testa.
      * EN: Removes only the temporary files created by this test.
+     *
+     * HR: Uklanja samo privremene datoteke ovog testa.
      */
     protected function tearDown(): void
     {
-        unlink($this->appRoot . '/config/workspace.php');
+        unlink($this->appRoot . '/config/workspace/workspace.json');
+        rmdir($this->appRoot . '/config/workspace');
         rmdir($this->appRoot . '/config');
         rmdir($this->appRoot);
     }
 
     /**
-     * HR: Stranica nadjačava područje, a područje nadjačava sistemski fallback.
      * EN: A page overrides its Workspace, and the Workspace overrides the system fallback.
+     *
+     * HR: Stranica nadjačava područje, a područje nadjačava sistemski fallback.
      */
     public function testDisplayPoliciesResolveInPageWorkspaceSystemOrder(): void
     {
@@ -90,12 +93,16 @@ final class WorkspaceConfigTest extends TestCase
         ));
     }
 
-    /** HR: Zadani Sažetci prihvaćaju sve razine i naslovni redoslijed. EN: Shorts defaults accept all levels and title order. */
+    /**
+     * EN: Shorts defaults accept all levels and title order.
+     *
+     * HR: Zadani Sažetci prihvaćaju sve razine i naslovni redoslijed.
+     */
     public function testShortsDefaultsAcceptAllLevelsAndTitleOrder(): void
     {
         file_put_contents(
-            $this->appRoot . '/config/workspace.php',
-            "<?php return ['shorts' => ['depth' => 'all', 'order' => 'title_desc']];",
+            $this->appRoot . '/config/workspace/workspace.json',
+            '{"shorts":{"depth":"all","order":"title_desc"}}',
         );
         $config = new class (new Helper(), [], $this->appRoot) extends Config {
             public function __construct(Helper $helper, array $data, private readonly string $appRoot)
@@ -115,8 +122,9 @@ final class WorkspaceConfigTest extends TestCase
     }
 
     /**
-     * HR: Prioritet javnog sadržaja slijedi odabrani, zadani, engleski i ostale jezike.
      * EN: Public-content priority follows the selected, default, English, and remaining locales.
+     *
+     * HR: Prioritet javnog sadržaja slijedi odabrani, zadani, engleski i ostale jezike.
      */
     public function testContentLanguagePriorityIsDeterministic(): void
     {

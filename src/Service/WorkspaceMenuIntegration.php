@@ -15,14 +15,15 @@ final readonly class WorkspaceMenuIntegration
 {
     private const MENU_PACKAGE = 'aaieduhr/heartphrame-module-menu';
 
-    private const MENU_REPOSITORY = 'AaiEduHr\\HeartPhrameModuleMenu\\Service\\MenuConfigRepository';
+    private const MENU_REPOSITORY = \AaiEduHr\HeartPhrameModuleMenu\Service\MenuConfigRepository::class;
 
     private const MENU_TARGET_REGISTRY =
     'AaiEduHr\\HeartPhrameModuleMenu\\Extension\\MenuNavigationTargetRegistry';
 
     /**
-     * HR: Prima container i konfiguraciju za potpuno opcionalnu module-menu integraciju.
      * EN: Receives the container and configuration for fully optional module-menu integration.
+     *
+     * HR: Prima container i konfiguraciju za potpuno opcionalnu module-menu integraciju.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -31,8 +32,9 @@ final readonly class WorkspaceMenuIntegration
     }
 
     /**
-     * HR: Dodaje glavnu i administratorske Workspace stavke kada je menu modul dostupan.
      * EN: Adds main and administration Workspace entries when the menu module is available.
+     *
+     * HR: Dodaje glavnu i administratorske Workspace stavke kada je menu modul dostupan.
      */
     public function registerMenuItems(): void
     {
@@ -140,10 +142,11 @@ final readonly class WorkspaceMenuIntegration
     }
 
     /**
-     * HR: Registrira lijeno dohvaćanje područja i stranica u zajednički Menu
-     *     katalog. Closure sprječava čitanje baze tijekom bootstrapa aplikacije.
      * EN: Registers lazy workspace and page loading in the shared Menu catalog.
      *     The closure prevents database reads during application bootstrap.
+     *
+     * HR: Registrira lijeno dohvaćanje područja i stranica u zajednički Menu
+     *     katalog. Closure sprječava čitanje baze tijekom bootstrapa aplikacije.
      */
     public function registerNavigationTargets(): void
     {
@@ -173,8 +176,9 @@ final readonly class WorkspaceMenuIntegration
     }
 
     /**
-     * HR: Upisuje ili osvježava skup stavki u jednoj menu sekciji.
      * EN: Inserts or refreshes a set of entries in one menu section.
+     *
+     * HR: Upisuje ili osvježava skup stavki u jednoj menu sekciji.
      *
      * @param list<array<string, mixed>> $desired
      */

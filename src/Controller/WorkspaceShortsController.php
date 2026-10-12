@@ -26,14 +26,16 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Poslužuje javnu, ACL-filtriranu stranicu Sažetaka jednog područja.
  * EN: Serves one Workspace's public, ACL-filtered Shorts page.
+ *
+ * HR: Poslužuje javnu, ACL-filtriranu stranicu Sažetaka jednog područja.
  */
 final readonly class WorkspaceShortsController
 {
     /**
-     * HR: Prima repozitorij, ACL, poslovni servis i zajedničke view/route servise.
      * EN: Receives repository, ACL, business logic, and shared view/route services.
+     *
+     * HR: Prima repozitorij, ACL, poslovni servis i zajedničke view/route servise.
      */
     public function __construct(
         private WorkspaceModuleViewRenderer $viewRenderer,
@@ -50,8 +52,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Prikazuje samo stranice koje korisnik smije vidjeti i koje imaju objavu.
      * EN: Displays only pages the current user may view and that have a publication.
+     *
+     * HR: Prikazuje samo stranice koje korisnik smije vidjeti i koje imaju objavu.
      */
     public function index(ServerRequestInterface $request, string $workspaceSlug): ResponseInterface
     {
@@ -97,8 +100,9 @@ final readonly class WorkspaceShortsController
         $pageDescription = __(
             'Objavljene stranice koje smijete vidjeti, prikazane kao kratki isječci.',
         );
-        // HR: Sažetci nisu naslovnica područja pa zadnji trag ostaje poveznica za izlaz iz prikaza sažetaka.
         // EN: Shorts are not the Workspace homepage, so the last crumb remains a link out of the Shorts view.
+        //
+        // HR: Sažetci nisu naslovnica područja pa zadnji trag ostaje poveznica za izlaz iz prikaza sažetaka.
         $breadcrumbs = $this->breadcrumbs->build($workspace, null, [], $language, '', true);
         $tree = $this->pruneReadableTree(
             WorkspaceValue::rows($model['tree'] ?? null),
@@ -138,13 +142,13 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Za početni prikaz Sažetaka zadržava korijensku i prvu vidljivu
-     *     razinu stabla, a dublje grane ostavlja za ACL-provjereno učitavanje
-     *     tek kada ih korisnik otvori.
-     *
      * EN: Keeps the root and first visible tree level for the initial Shorts
      *     view, leaving deeper branches for ACL-checked loading only when the
      *     user opens them.
+     *
+     * HR: Za početni prikaz Sažetaka zadržava korijensku i prvu vidljivu
+     *     razinu stabla, a dublje grane ostavlja za ACL-provjereno učitavanje
+     *     tek kada ih korisnik otvori.
      *
      * @param list<array<string, mixed>> $tree
      * @return list<array<string, mixed>>
@@ -166,8 +170,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Čita odabrani ili aktivni jezik uz sigurni fallback na zadani jezik sitea.
      * EN: Reads the selected or active locale with a safe site-default fallback.
+     *
+     * HR: Čita odabrani ili aktivni jezik uz sigurni fallback na zadani jezik sitea.
      */
     private function language(ServerRequestInterface $request): string
     {
@@ -182,8 +187,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Čita `1/0`, `true/false`, `yes/no` i `on/off` bez dvosmislenog PHP castanja.
      * EN: Reads `1/0`, `true/false`, `yes/no`, and `on/off` without ambiguous PHP casting.
+     *
+     * HR: Čita `1/0`, `true/false`, `yes/no` i `on/off` bez dvosmislenog PHP castanja.
      */
     private function queryVisibility(mixed $value, bool $fallback): bool
     {
@@ -200,8 +206,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Vraća 403 bez izlaganja sadržaja nedostupnog Područja.
      * EN: Returns 403 without exposing content from an inaccessible Workspace.
+     *
+     * HR: Vraća 403 bez izlaganja sadržaja nedostupnog Područja.
      */
     private function accessDenied(): ResponseInterface
     {
@@ -213,8 +220,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Vraća 404 za nepostojeći ili uklonjeni javni slug Područja.
      * EN: Returns 404 for a missing or removed public Workspace slug.
+     *
+     * HR: Vraća 404 za nepostojeći ili uklonjeni javni slug Područja.
      */
     private function notFound(): ResponseInterface
     {
@@ -226,8 +234,9 @@ final readonly class WorkspaceShortsController
     }
 
     /**
-     * HR: Generira named rutu ili stabilni fallback za nepotpunu instalaciju.
      * EN: Generates a named route or stable fallback for an incomplete installation.
+     *
+     * HR: Generira named rutu ili stabilni fallback za nepotpunu instalaciju.
      */
     private function pathFor(string $routeName, string $fallback): string
     {

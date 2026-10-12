@@ -30,8 +30,8 @@
     "require": {
         "php": ">=8.2",
         "aaieduhr/heartphrame-framework": "^0.0.25",
-        "aaieduhr/heartphrame-module-auth": "^0.1.14",
-        "aaieduhr/heartphrame-module-orm": "^0.1.7"
+        "aaieduhr/heartphrame-module-auth": "^0.3.0",
+        "aaieduhr/heartphrame-module-orm": "^0.3.0"
     },
     "suggest": {
         "aaieduhr/heartphrame-module-backup": "Adds complete site backup and scoped Workspace backup/import with ACL, trees, themes, and related content.",
@@ -43,11 +43,11 @@
         "aaieduhr/heartphrame-module-theme": "Adds isolated per-Workspace themes and includes them in portable HTML exports."
     },
     "conflict": {
-        "aaieduhr/heartphrame-module-backup": "<0.1.4"
+        "aaieduhr/heartphrame-module-backup": "<0.3.0"
     },
     "require-dev": {
-        "aaieduhr/heartphrame-module-api": "^0.1.6",
-        "aaieduhr/heartphrame-module-backup": "^0.1.8",
+        "aaieduhr/heartphrame-module-api": "^0.3.0",
+        "aaieduhr/heartphrame-module-backup": "^0.3.0",
         "phpstan/phpstan": "^2.2.15",
         "phpunit/phpunit": "^10.5.65 || ^11.5.56",
         "rector/rector": "^2.6.7",
@@ -64,6 +64,8 @@
             "AaiEduHr\\SimbiozaModuleWorkspace\\Tests\\": "tests/"
         },
         "exclude-from-classmap": [
+            "tests/Fixtures/OptionalMenuRepository.php",
+            "tests/Fixtures/MenuOwnerContract.php",
             "tests/Fixtures/OptionalNotificationService.php",
             "tests/Fixtures/OptionalEditorBatchService.php"
         ]
@@ -107,7 +109,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.1.x-dev"
+            "dev-main": "0.3.x-dev"
         }
     }
 }

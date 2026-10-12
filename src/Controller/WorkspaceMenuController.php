@@ -20,14 +20,16 @@ use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 /**
- * HR: Omogućuje upravitelju područja uređivanje samo posebnih menija tog područja.
  * EN: Allows a Workspace manager to edit only that Workspace's special menus.
+ *
+ * HR: Omogućuje upravitelju područja uređivanje samo posebnih menija tog područja.
  */
 final readonly class WorkspaceMenuController
 {
     /**
-     * HR: Prima ACL, opcionalni Menu most i renderere potrebne za izolirani editor područja.
      * EN: Receives ACL, the optional Menu bridge, and renderers required for the isolated Workspace editor.
+     *
+     * HR: Prima ACL, opcionalni Menu most i renderere potrebne za izolirani editor područja.
      */
     public function __construct(
         private ResponseFactory $responseFactory,
@@ -42,8 +44,9 @@ final readonly class WorkspaceMenuController
     }
 
     /**
-     * HR: Prikazuje dva odvojena editora kada korisnik ima `manage` pravo za područje.
      * EN: Displays two separated editors when the user has the Workspace `manage` permission.
+     *
+     * HR: Prikazuje dva odvojena editora kada korisnik ima `manage` pravo za područje.
      */
     public function index(ServerRequestInterface $request): ResponseInterface
     {
@@ -85,8 +88,9 @@ final readonly class WorkspaceMenuController
     }
 
     /**
-     * HR: Sprema samo poslani gornji ili lijevi meni nakon ponovne server-side ACL provjere.
      * EN: Saves only the submitted top or left menu after repeating the server-side ACL check.
+     *
+     * HR: Sprema samo poslani gornji ili lijevi meni nakon ponovne server-side ACL provjere.
      */
     public function save(ServerRequestInterface $request): ResponseInterface
     {
@@ -119,8 +123,9 @@ final readonly class WorkspaceMenuController
     }
 
     /**
-     * HR: Provjerava efektivnu `manage` ovlast područja.
      * EN: Checks the effective Workspace `manage` permission.
+     *
+     * HR: Provjerava efektivnu `manage` ovlast područja.
      *
      * @param array<string, mixed> $workspace
      */
@@ -130,8 +135,9 @@ final readonly class WorkspaceMenuController
     }
 
     /**
-     * HR: Razrješava područje isključivo po sigurnom ID-u ili slugu.
      * EN: Resolves a Workspace only by a safe ID or slug.
+     *
+     * HR: Razrješava područje isključivo po sigurnom ID-u ili slugu.
      *
      * @param array<string, mixed> $input
      * @return array<string, mixed>|null
@@ -154,8 +160,9 @@ final readonly class WorkspaceMenuController
     }
 
     /**
-     * HR: Gradi povratnu putanju odvojenog editor-a područja.
      * EN: Builds the separated Workspace-editor return path.
+     *
+     * HR: Gradi povratnu putanju odvojenog editor-a područja.
      *
      * @param array<string, mixed> $workspace
      */

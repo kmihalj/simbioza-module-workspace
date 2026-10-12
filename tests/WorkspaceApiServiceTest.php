@@ -22,14 +22,17 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * HR: Provjerava API-neutralni Workspace ugovor na prijenosnoj ORM shemi.
  * EN: Verifies the API-neutral Workspace contract on a portable ORM schema.
+ *
+ * HR: Provjerava API-neutralni Workspace ugovor na prijenosnoj ORM shemi.
  */
 #[CoversClass(WorkspaceApiService::class)]
 #[CoversClass(WorkspaceApiException::class)]
 #[UsesClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 #[UsesClass(WorkspaceValue::class)]
 #[UsesClass(WorkspaceWorkflowService::class)]
 final class WorkspaceApiServiceTest extends TestCase
@@ -41,8 +44,9 @@ final class WorkspaceApiServiceTest extends TestCase
     private WorkspaceApiService $service;
 
     /**
-     * HR: Priprema čistu SQLite bazu, minimalne Auth zapise i Workspace servis.
      * EN: Prepares a clean SQLite database, minimal Auth records, and the Workspace service.
+     *
+     * HR: Priprema čistu SQLite bazu, minimalne Auth zapise i Workspace servis.
      */
     protected function setUp(): void
     {
@@ -80,8 +84,9 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Prolazi administratorski CRUD, ACL, stablo, brisanje i vraćanje područja.
      * EN: Exercises administrator CRUD, ACL, tree, deletion, and Workspace restoration.
+     *
+     * HR: Prolazi administratorski CRUD, ACL, stablo, brisanje i vraćanje područja.
      */
     public function testAdministratorCanManageCompleteWorkspaceLifecycle(): void
     {
@@ -206,8 +211,9 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da Workspace scope ne zaobilazi stvarna prava običnog korisnika.
      * EN: Proves that a Workspace scope does not bypass a regular user's actual rights.
+     *
+     * HR: Dokazuje da Workspace scope ne zaobilazi stvarna prava običnog korisnika.
      */
     public function testRegularUserCanReadGrantedWorkspaceButCannotManageIt(): void
     {
@@ -256,10 +262,11 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Upravitelj smije promijeniti cjelovitu strukturu stabla, ali mu
-     *     izravno uskraćena stranica ostaje nevidljiva i nedostupna za postavke.
      * EN: A manager may change the complete tree structure, while a directly
      *     denied page remains hidden and unavailable for page settings.
+     *
+     * HR: Upravitelj smije promijeniti cjelovitu strukturu stabla, ali mu
+     *     izravno uskraćena stranica ostaje nevidljiva i nedostupna za postavke.
      */
     public function testManagerCanReorderCompleteTreeWithoutOpeningDeniedPage(): void
     {
@@ -340,10 +347,11 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Objavljivač vidljive stranice smije uređivati njezina ograničenja,
-     *     ali time ne dobiva upravljanje cijelim područjem.
      * EN: A publisher of a visible page may edit its restrictions without
      *     gaining management of the complete Workspace.
+     *
+     * HR: Objavljivač vidljive stranice smije uređivati njezina ograničenja,
+     *     ali time ne dobiva upravljanje cijelim područjem.
      */
     public function testPublisherCanManageVisiblePagePermissionsOnly(): void
     {
@@ -402,8 +410,9 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Vraća administratorski identitet korišten u API servisnim testovima.
      * EN: Returns the administrator identity used by API service tests.
+     *
+     * HR: Vraća administratorski identitet korišten u API servisnim testovima.
      *
      * @return array<string,mixed>
      */
@@ -413,15 +422,17 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Vraća izolirani Auth handler jer servisni testovi prosljeđuju korisnika izričito.
      * EN: Returns an isolated Auth handler because service tests pass users explicitly.
+     *
+     * HR: Vraća izolirani Auth handler jer servisni testovi prosljeđuju korisnika izričito.
      */
     private function authnHandler(): AuthnHandlerInterface
     {
         return new class implements AuthnHandlerInterface {
             /**
-             * HR: Test ne izvodi prijavu i zato uvijek vraća null.
              * EN: The test performs no login and therefore always returns null.
+             *
+             * HR: Test ne izvodi prijavu i zato uvijek vraća null.
              *
              * @return mixed[]|null
              */
@@ -431,16 +442,18 @@ final class WorkspaceApiServiceTest extends TestCase
             }
 
             /**
-             * HR: Test nema sesiju koju treba odjaviti.
              * EN: The test has no session to log out.
+             *
+             * HR: Test nema sesiju koju treba odjaviti.
              */
             public function logout(): void
             {
             }
 
             /**
-             * HR: Izolirani handler nema aktivnog korisnika.
              * EN: The isolated handler has no active user.
+             *
+             * HR: Izolirani handler nema aktivnog korisnika.
              */
             public function check(): bool
             {
@@ -448,8 +461,9 @@ final class WorkspaceApiServiceTest extends TestCase
             }
 
             /**
-             * HR: Izolirani handler ne vraća autentificiranog korisnika.
              * EN: The isolated handler returns no authenticated user.
+             *
+             * HR: Izolirani handler ne vraća autentificiranog korisnika.
              *
              * @return mixed[]|null
              */
@@ -459,8 +473,9 @@ final class WorkspaceApiServiceTest extends TestCase
             }
 
             /**
-             * HR: Izolirani handler ne vraća korisničke podatke.
              * EN: The isolated handler returns no user data.
+             *
+             * HR: Izolirani handler ne vraća korisničke podatke.
              *
              * @return mixed[]|null
              */
@@ -472,8 +487,9 @@ final class WorkspaceApiServiceTest extends TestCase
     }
 
     /**
-     * HR: Kreira minimalne Auth tablice koje Workspace koristi za vlasnike i ACL subjekte.
      * EN: Creates the minimal Auth tables used by Workspace for owners and ACL subjects.
+     *
+     * HR: Kreira minimalne Auth tablice koje Workspace koristi za vlasnike i ACL subjekte.
      */
     private function createAuthSchema(): void
     {

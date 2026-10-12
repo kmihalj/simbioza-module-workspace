@@ -13,10 +13,11 @@ use ReflectionClass;
 final class WorkspaceExportTabsTest extends TestCase
 {
     /**
-     * HR: Cijeli offline izvoz područja mora zadržati tabove, prilagodljivu
-     *     visinu panela te upravljanje mišem i tipkovnicom nakon promjene stranice.
      * EN: The complete offline Workspace export must preserve tabs, content-sized
      *     panels, and mouse/keyboard controls after each page change.
+     *
+     * HR: Cijeli offline izvoz područja mora zadržati tabove, prilagodljivu
+     *     visinu panela te upravljanje mišem i tipkovnicom nakon promjene stranice.
      */
     public function testOfflineExportContainsTabStylesAndRuntime(): void
     {

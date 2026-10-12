@@ -32,8 +32,9 @@ final readonly class WorkspaceEditorBridge
     'AaiEduHr\\HeartPhrameModuleEditorHtml\\Service\\EditorPublishedVersionProviderInterface';
 
     /**
-     * HR: Prima container i router kako bi Workspace koristio editor kao opcionalnu integraciju.
      * EN: Receives the container and router so Workspace can use the editor as an optional integration.
+     *
+     * HR: Prima container i router kako bi Workspace koristio editor kao opcionalnu integraciju.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -43,8 +44,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Provjerava postoji li uključeni HTML editor i njegov glavni servis.
      * EN: Checks whether the enabled HTML editor and its main service are available.
+     *
+     * HR: Provjerava postoji li uključeni HTML editor i njegov glavni servis.
      */
     public function isAvailable(): bool
     {
@@ -52,8 +54,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Vraća dokumente koje editor izlaže za povezivanje s čvorom stabla.
      * EN: Returns documents exposed by the editor for linking to a tree node.
+     *
+     * HR: Vraća dokumente koje editor izlaže za povezivanje s čvorom stabla.
      *
      * @return list<array{id:string,title:string}>
      */
@@ -91,8 +94,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Vraća aktivne privitke dokumenta kao neutralne podatke za nativnu galeriju područja.
      * EN: Returns active document attachments as neutral data for the native Workspace gallery.
+     *
+     * HR: Vraća aktivne privitke dokumenta kao neutralne podatke za nativnu galeriju područja.
      *
      * @return list<array<string,mixed>>
      */
@@ -143,8 +147,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Pretvara samo skalarne vrijednosti opcionalnog modula u tekst.
      * EN: Converts only scalar values received from an optional module to text.
+     *
+     * HR: Pretvara samo skalarne vrijednosti opcionalnog modula u tekst.
      */
     private function scalarString(mixed $value): string
     {
@@ -152,8 +157,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Kreira početni HTML dokument i vraća stabilni document key.
      * EN: Creates an initial HTML document and returns its stable document key.
+     *
+     * HR: Kreira početni HTML dokument i vraća stabilni document key.
      */
     public function createDocument(string $title, string $slug, string $language): string
     {
@@ -174,8 +180,29 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Provjerava može li trenutačni korisnik učitati aktivni editor dokument prije povezivanja.
+     * EN: Applies the document's explicit storage owner after the tree link is saved.
+     * Older or absent Editor modules remain optional; storage failures are not hidden.
+     *
+     * HR: Primjenjuje izričitog vlasnika pohrane dokumenta nakon spremanja veze stabla.
+     * Stariji ili odsutni Editor ostaje opcionalan; pogreške pohrane se ne skrivaju.
+     */
+    public function organizeDocumentPayloads(string $documentKey): void
+    {
+        $service = self::EDITOR_SERVICE_NAMESPACE . 'OrmEditorStorage';
+        if ($documentKey === '' || !$this->container->has($service)) {
+            return;
+        }
+
+        $storage = $this->container->get($service);
+        if (is_object($storage) && method_exists($storage, 'relocateOwnedPayloads')) {
+            $storage->relocateOwnedPayloads([$documentKey]);
+        }
+    }
+
+    /**
      * EN: Checks whether the current user can load an active editor document before it is attached.
+     *
+     * HR: Provjerava može li trenutačni korisnik učitati aktivni editor dokument prije povezivanja.
      */
     public function hasDocument(string $documentKey): bool
     {
@@ -192,11 +219,11 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Dohvaća potpuni Editorov model pregleda dokumenta, uključujući
-     * sadržaj, privitke, jezike, povijest, export i URL-ove akcija.
-     *
      * EN: Retrieves the complete Editor document-view model, including content,
      * attachments, languages, history, export, and action URLs.
+     *
+     * HR: Dohvaća potpuni Editorov model pregleda dokumenta, uključujući
+     * sadržaj, privitke, jezike, povijest, export i URL-ove akcija.
      *
      * @param array<mixed, mixed> $query
      * @return array<string, mixed>|null
@@ -229,10 +256,11 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Vraća broj aktualne radne Editor verzije odabranog jezika, uključujući
-     *     jedini zajednički nacrt.
      * EN: Returns the current working Editor version number for the selected
      *     locale, including the single shared draft.
+     *
+     * HR: Vraća broj aktualne radne Editor verzije odabranog jezika, uključujući
+     *     jedini zajednički nacrt.
      */
     public function latestVersionNumber(string $documentKey, string $language): int
     {
@@ -251,13 +279,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Učitava točno objavljene verzije članaka za Sažetke. Novi Editor
-     *     koristi jedan skupni poziv, a starija kompatibilna verzija sigurno
-     *     pada na pojedinačno učitavanje.
+     * EN: Loads exact published article versions for Shorts through the current batch contract.
      *
-     * EN: Loads exact published article versions for Shorts. A current Editor
-     *     uses one batch call, while an older compatible version safely falls
-     *     back to per-document loading.
+     * HR: Učitava točno objavljene verzije članaka za Sažetke kroz aktualni skupni ugovor.
      *
      * @param array<string, int> $versionNumbersByDocument
      * @return array<string, array{
@@ -276,19 +300,11 @@ final readonly class WorkspaceEditorBridge
         }
 
         try {
-            if (method_exists($editor, 'loadVersions')) {
-                $versions = $editor->loadVersions($versionNumbersByDocument, $language);
-            } elseif (method_exists($editor, 'loadVersion')) {
-                $versions = [];
-                foreach ($versionNumbersByDocument as $documentKey => $versionNumber) {
-                    $version = $editor->loadVersion($documentKey, $language, $versionNumber);
-                    if (is_object($version)) {
-                        $versions[$documentKey] = $version;
-                    }
-                }
-            } else {
-                return [];
+            if (!method_exists($editor, 'loadVersions')) {
+                throw new RuntimeException('HTML Editor must provide the current batch version contract.');
             }
+
+            $versions = $editor->loadVersions($versionNumbersByDocument, $language);
         } catch (Throwable) {
             return [];
         }
@@ -301,12 +317,13 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Učitava objavljene verzije isključivo za interni izvedeni indeks.
-     *     Aktualni Editor za taj pozadinski posao preskače sesijski ACL; stvarni
-     *     Workspace ACL i dalje se obavezno primjenjuje pri prikazu backlinkova.
      * EN: Loads published versions only for the internal derived index. The
      *     current Editor skips session ACL for this background job; the actual
      *     Workspace ACL is still always applied when backlinks are displayed.
+     *
+     * HR: Učitava objavljene verzije isključivo za interni izvedeni indeks.
+     *     Aktualni Editor za taj pozadinski posao preskače sesijski ACL; stvarni
+     *     Workspace ACL i dalje se obavezno primjenjuje pri prikazu backlinkova.
      *
      * @param array<string, int> $versionNumbersByDocument
      * @return array<string, array{
@@ -337,8 +354,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Dohvaća ACL-filtrirane izvore koji dinamički uključuju ciljnu stranicu.
      * EN: Retrieves ACL-filtered sources that dynamically include the target page.
+     *
+     * HR: Dohvaća ACL-filtrirane izvore koji dinamički uključuju ciljnu stranicu.
      *
      * @return list<array{documentKey:string,title:string,language:string}>
      */
@@ -398,8 +416,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Normalizira Editorove modele verzija u stabilni Workspace oblik.
      * EN: Normalizes Editor version models into the stable Workspace shape.
+     *
+     * HR: Normalizira Editorove modele verzija u stabilni Workspace oblik.
      *
      * @param array<mixed,mixed> $versions
      * @return array<string, array{documentId:string,versionNumber:int,title:string,html:string,createdAt:string}>
@@ -441,10 +460,11 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Početnu Editor verziju upravo povezane stranice pretvara u
-     *     neobjavljeni nacrt.
      * EN: Converts the initial Editor version of a newly linked page into an
      *     unpublished draft.
+     *
+     * HR: Početnu Editor verziju upravo povezane stranice pretvara u
+     *     neobjavljeni nacrt.
      */
     public function markVersionDraft(string $documentKey, string $language, int $versionNumber): void
     {
@@ -457,8 +477,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Objavljuje jedini zajednički nacrt kroz Editorov storage servis.
      * EN: Publishes the single shared draft through the Editor storage service.
+     *
+     * HR: Objavljuje jedini zajednički nacrt kroz Editorov storage servis.
      */
     public function publishDraft(string $documentKey, string $language, int $versionNumber): void
     {
@@ -471,8 +492,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Odbacuje jedini zajednički nacrt bez promjene zadnje objave.
      * EN: Discards the single shared draft without changing the last publication.
+     *
+     * HR: Odbacuje jedini zajednički nacrt bez promjene zadnje objave.
      */
     public function discardDraft(string $documentKey, string $language): void
     {
@@ -485,8 +507,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Provjerava nema li Workspace dokument objavu ni na jednom jeziku.
      * EN: Checks whether a Workspace document has no publication in any locale.
+     *
+     * HR: Provjerava nema li Workspace dokument objavu ni na jednom jeziku.
      */
     public function isDocumentNeverPublished(string $documentKey): bool
     {
@@ -499,8 +522,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Trajno briše Editor dokument za novu stranicu bez ijedne objave.
      * EN: Permanently deletes the Editor document for a new page with no publication.
+     *
+     * HR: Trajno briše Editor dokument za novu stranicu bez ijedne objave.
      */
     public function deleteUnpublishedDocumentPermanently(string $documentKey): void
     {
@@ -513,8 +537,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Soft-briše editor dokument kada se briše jedini Workspace čvor koji ga posjeduje.
      * EN: Soft-deletes an editor document when its owning Workspace node is deleted.
+     *
+     * HR: Soft-briše editor dokument kada se briše jedini Workspace čvor koji ga posjeduje.
      */
     public function deleteDocument(string $documentKey): void
     {
@@ -527,8 +552,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Gradi putanju prema WYSIWYG editoru za odabrani dokument.
      * EN: Builds the WYSIWYG editor path for the selected document.
+     *
+     * HR: Gradi putanju prema WYSIWYG editoru za odabrani dokument.
      */
     public function editorPath(string $documentKey, string $language): string
     {
@@ -544,8 +570,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Sigurno dohvaća glavni editor servis bez tvrde Composer ovisnosti.
      * EN: Safely resolves the main editor service without a hard Composer dependency.
+     *
+     * HR: Sigurno dohvaća glavni editor servis bez tvrde Composer ovisnosti.
      */
     private function editorService(): ?object
     {
@@ -564,8 +591,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Sigurno dohvaća zajednički Editorov builder prikaza bez tvrde Composer ovisnosti.
      * EN: Safely resolves the shared Editor view builder without a hard Composer dependency.
+     *
+     * HR: Sigurno dohvaća zajednički Editorov builder prikaza bez tvrde Composer ovisnosti.
      */
     private function documentViewBuilder(): ?object
     {
@@ -583,8 +611,9 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * HR: Dohvaća uski Editorov servis za izvedene indekse bez ovisnosti o sesiji.
      * EN: Resolves the narrow Editor service for session-independent derived indexes.
+     *
+     * HR: Dohvaća uski Editorov servis za izvedene indekse bez ovisnosti o sesiji.
      */
     private function publishedVersionProvider(): ?object
     {

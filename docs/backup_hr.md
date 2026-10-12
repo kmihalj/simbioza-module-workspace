@@ -1,11 +1,8 @@
 # Backup i povrat područja
 
-Workspace je vlasnik tri izvorna providera: potpunih site/component tablica, datoteka privatnih tema područja i selektivnog providera `workspace-scope`. Selektivna arhiva sadrži zapis područja, stablo, prenosive oznake i strukturirana svojstva stranica, ACL čvorova i workflow stanje, postavke naslovnice/prikaza, privatnu temu te prijenosne veze potrebne integracijama editora, kalendara, zadataka, komentara, menija i pretrage.
+Workspace je vlasnik site/component providera baze i globalne JSON konfiguracije, datoteka privatnih tema područja i selektivnog providera `workspace-scope`. Selektivna arhiva sadrži zapis područja, stablo, prenosive oznake i strukturirana svojstva stranica, ACL čvorova i workflow stanje, lokalne postavke naslovnice/prikaza područja, privatnu temu te prijenosne veze potrebne integracijama editora, kalendara, zadataka, komentara, menija i pretrage. Ne zamjenjuje globalnu politiku naslovnice sitea. Potpuni backup konfiguracije prati `HPH_CONFIG_PATH`, dijeli GUI lock i nakon DB importa razrješava ID-ove kreatora/naslovnica; vidi [konfiguraciju](configuration_hr.md).
 
-Automatski završni provideri nakon potpunog ili selektivnog povrata starijeg
-backupa dopunjuju samo nedostajuće visine zaglavlja i glavnog menija privatne
-teme. Dosadašnje vrijednosti od 72 i 56 piksela čuvaju isti izgled, a postojeće
-vrijednosti i sve ostale postavke ostaju netaknute.
+Prihvaćaju se samo aktualni format arhive 2 i točne sheme providera. Privatne teme vraćaju se kako su spremljene, bez povijesnog dopunjavanja zadanih vrijednosti.
 
 ## Ovlasti
 
@@ -30,5 +27,4 @@ Prije povrata koristite preflight. Nedostajući obvezni provider, pogrešan chec
 Selektivni i potpuni backup čuvaju sve jezične varijante naziva i opisa
 područja te naslova stranica. `merge`, `copy` i `replace` prenose mape prijevoda
 zajedno sa stabilnim slugovima; povrat zato ne svodi dvojezično područje na samo
-trenutačno aktivan jezik. Stariji zapis bez prijevodne mape pri učitavanju se
-prikazuje kroz vrijednost primarnog jezika.
+trenutačno aktivan jezik. Mape prijevoda aktualni su domenski podatci, ne pretvorba starih arhiva.

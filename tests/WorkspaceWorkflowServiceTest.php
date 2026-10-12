@@ -22,6 +22,7 @@ use RuntimeException;
 #[CoversClass(WorkspaceWorkflowService::class)]
 #[UsesClass(WorkspaceContentChanged::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 #[UsesClass(WorkspaceValue::class)]
 final class WorkspaceWorkflowServiceTest extends TestCase
 {
@@ -31,10 +32,11 @@ final class WorkspaceWorkflowServiceTest extends TestCase
     private array $events = [];
 
     /**
-     * HR: Priprema prijenosnu SQLite shemu i jednu dokument-stranicu bez
-     *     ovisnosti o host aplikaciji ili stvarnim korisnicima.
      * EN: Prepares a portable SQLite schema and one document page without
      *     depending on the host application or real users.
+     *
+     * HR: Priprema prijenosnu SQLite shemu i jednu dokument-stranicu bez
+     *     ovisnosti o host aplikaciji ili stvarnim korisnicima.
      */
     protected function setUp(): void
     {
@@ -96,10 +98,11 @@ final class WorkspaceWorkflowServiceTest extends TestCase
     }
 
     /**
-     * HR: Dokazuje da novi nacrt ne zamjenjuje javnu verziju dok upravitelj
-     *     izričito ne objavi aktualnu radnu verziju.
      * EN: Proves that a new draft does not replace the public version until a
      *     manager explicitly publishes the current working version.
+     *
+     * HR: Dokazuje da novi nacrt ne zamjenjuje javnu verziju dok upravitelj
+     *     izričito ne objavi aktualnu radnu verziju.
      */
     public function testDraftRetainsLastPublishedVersionUntilRepublished(): void
     {
@@ -135,10 +138,11 @@ final class WorkspaceWorkflowServiceTest extends TestCase
     }
 
     /**
-     * HR: Arhiva skriva objavu, a povratak stvara neobjavljeni nacrt koji se
-     *     mora ponovno objaviti.
      * EN: Archive hides the publication, while restore creates an unpublished
      *     draft that must be published again.
+     *
+     * HR: Arhiva skriva objavu, a povratak stvara neobjavljeni nacrt koji se
+     *     mora ponovno objaviti.
      */
     public function testArchiveAndRestoreRequireAnewPublication(): void
     {
@@ -157,8 +161,9 @@ final class WorkspaceWorkflowServiceTest extends TestCase
     }
 
     /**
-     * HR: Neovlašten prijelaz mora završiti poslovnom greškom bez promjene stanja.
      * EN: An unauthorized transition must fail without changing workflow state.
+     *
+     * HR: Neovlašten prijelaz mora završiti poslovnom greškom bez promjene stanja.
      */
     public function testUnauthorizedTransitionIsRejected(): void
     {

@@ -12,7 +12,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(WorkspaceAdministrationListService::class)]
 final class WorkspaceAdministrationListServiceTest extends TestCase
 {
-    /** HR: Opći popis skriva osobna područja, a održavanje ih zbraja u jedan red. EN: The general list hides personal Workspaces while maintenance aggregates them. */
+    /**
+     * EN: The general list hides personal Workspaces while maintenance aggregates them.
+     *
+     * HR: Opći popis skriva osobna područja, a održavanje ih zbraja u jedan red.
+     */
     public function testPersonalWorkspacesAreRemovedOrAggregatedByContext(): void
     {
         $service = new WorkspaceAdministrationListService($this->translator());

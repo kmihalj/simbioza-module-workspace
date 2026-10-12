@@ -40,10 +40,11 @@ use const PATHINFO_EXTENSION;
 use const PHP_URL_PATH;
 
 /**
- * HR: Povezuje Workspace izvoz s opcionalnim Theme modulom bez tvrde Composer ovisnosti.
- *     Vraća stvarni aktivni CSS, light/dark assete i strukturne renderere teme.
  * EN: Connects Workspace export to the optional Theme module without a hard Composer dependency.
  *     It provides the actual active CSS, light/dark assets, and structural theme renderers.
+ *
+ * HR: Povezuje Workspace izvoz s opcionalnim Theme modulom bez tvrde Composer ovisnosti.
+ *     Vraća stvarni aktivni CSS, light/dark assete i strukturne renderere teme.
  */
 final readonly class WorkspaceThemeBridge
 {
@@ -56,8 +57,9 @@ final readonly class WorkspaceThemeBridge
     private const LAYOUT_RENDERER = 'AaiEduHr\\HeartPhrameModuleTheme\\Service\\ThemeLayoutRenderer';
 
     /**
-     * HR: Prima container i prevoditelj za kasno razrješavanje teme i lokaliziranih elemenata.
      * EN: Receives the container and translator for late theme and localized-element resolution.
+     *
+     * HR: Prima container i prevoditelj za kasno razrješavanje teme i lokaliziranih elemenata.
      */
     public function __construct(
         private ContainerInterface $container,
@@ -67,8 +69,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Priprema CSS i samo odabrane logo/hero datoteke aktivne teme.
      * EN: Prepares CSS and only the selected logo/hero files of the active theme.
+     *
+     * HR: Priprema CSS i samo odabrane logo/hero datoteke aktivne teme.
      *
      * @return array{
      *     css:string,
@@ -135,16 +138,17 @@ final readonly class WorkspaceThemeBridge
                 . '-' . ($base !== '' ? $base : 'asset' . ($extension !== '' ? '.' . $extension : ''));
                 $files[$target] = $content;
                 /*
-                 * HR: Zaglavlje i hero ugrađuju odabrane assete kao data URI. Tako
-                 *     glavna offline stranica ostaje vizualno potpuna i kada se ZIP
-                 *     raspakira na drugom operacijskom sustavu ili otvori preko
-                 *     `file://`. Izvorna datoteka svejedno ostaje u ZIP-u radi
-                 *     transparentnosti i provjere integriteta paketa.
                  * EN: The header and hero embed selected assets as data URIs. This
                  *     keeps the main offline page visually complete when the ZIP is
                  *     extracted on another operating system or opened through
                  *     `file://`. The original file remains in the ZIP for package
                  *     transparency and integrity checks.
+                 *
+                 * HR: Zaglavlje i hero ugrađuju odabrane assete kao data URI. Tako
+                 *     glavna offline stranica ostaje vizualno potpuna i kada se ZIP
+                 *     raspakira na drugom operacijskom sustavu ili otvori preko
+                 *     `file://`. Izvorna datoteka svejedno ostaje u ZIP-u radi
+                 *     transparentnosti i provjere integriteta paketa.
                  */
                 $sources[$reference] = $this->dataUri($extension, $content);
             }
@@ -175,8 +179,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Renderira aktivno zaglavlje teme s offline kontrolama jezika i načina prikaza.
      * EN: Renders the active theme header with offline language and display-mode controls.
+     *
+     * HR: Renderira aktivno zaglavlje teme s offline kontrolama jezika i načina prikaza.
      *
      * @param array<string, string> $assetSources
      */
@@ -226,8 +231,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Renderira hero aktivne teme s lokalnim assetima ZIP paketa.
      * EN: Renders the active theme hero with local ZIP-package assets.
+     *
+     * HR: Renderira hero aktivne teme s lokalnim assetima ZIP paketa.
      *
      * @param array<string, mixed> $context
      * @param array<string, string> $assetSources
@@ -261,10 +267,11 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Vraća iste klase glavnog sadržaja i stagea koje koristi web aplikacija.
-     *     Time offline područje zadržava širinu, gustoću i preklapanje s heroom.
      * EN: Returns the same main-content and stage classes used by the web app.
      *     This preserves width, density, and hero overlap in the offline Workspace.
+     *
+     * HR: Vraća iste klase glavnog sadržaja i stagea koje koristi web aplikacija.
+     *     Time offline područje zadržava širinu, gustoću i preklapanje s heroom.
      *
      * @return array{classes:string,stage_classes:string}
      */
@@ -312,10 +319,11 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Isključeni Theme modul tretira jednako kao nedostupan modul kako
-     *     offline paket ne bi potajno primijenio neaktivnu temu.
      * EN: Treats a disabled Theme module like an unavailable module so the
      *     offline package cannot silently apply an inactive theme.
+     *
+     * HR: Isključeni Theme modul tretira jednako kao nedostupan modul kako
+     *     offline paket ne bi potajno primijenio neaktivnu temu.
      */
     private function rendererEnabled(object $renderer): bool
     {
@@ -331,8 +339,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Pretvara lokalni slikovni asset u samostalni URI siguran za offline HTML.
      * EN: Converts a local image asset into a self-contained URI safe for offline HTML.
+     *
+     * HR: Pretvara lokalni slikovni asset u samostalni URI siguran za offline HTML.
      */
     private function dataUri(string $extension, string $content): string
     {
@@ -350,14 +359,15 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Zamjenjuje i već razriješene web rute logo/hero asseta njihovim
-     *     samostalnim offline izvorom. Ovo je namjerno drugi sigurnosni sloj:
-     *     starija ili dekorirana verzija Theme renderera može prije bridgea
-     *     pretvoriti `@theme-assets/...` u `/theme/assets/library/...`.
      * EN: Replaces already-resolved logo/hero web routes with their standalone
      *     offline source. This deliberately acts as a second safety layer: an
      *     older or decorated Theme renderer may turn `@theme-assets/...` into
      *     `/theme/assets/library/...` before the bridge sees the final HTML.
+     *
+     * HR: Zamjenjuje i već razriješene web rute logo/hero asseta njihovim
+     *     samostalnim offline izvorom. Ovo je namjerno drugi sigurnosni sloj:
+     *     starija ili dekorirana verzija Theme renderera može prije bridgea
+     *     pretvoriti `@theme-assets/...` u `/theme/assets/library/...`.
      *
      * @param array<string, string> $assetSources
      */
@@ -390,10 +400,11 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Povezuje razriješenu aplikacijsku URL putanju s izvornom prijenosnom
-     *     referencom, neovisno o URL prefiksu pod kojim je aplikacija instalirana.
      * EN: Maps a resolved application URL path back to its portable source
      *     reference, independently of the URL prefix used by the installation.
+     *
+     * HR: Povezuje razriješenu aplikacijsku URL putanju s izvornom prijenosnom
+     *     referencom, neovisno o URL prefiksu pod kojim je aplikacija instalirana.
      *
      * @param array<string, string> $assetSources
      */
@@ -415,8 +426,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Pretvara podržanu prijenosnu referencu u stabilni završetak javne rute.
      * EN: Converts a supported portable reference into a stable public-route suffix.
+     *
+     * HR: Pretvara podržanu prijenosnu referencu u stabilni završetak javne rute.
      */
     private function resolvedPathSuffix(string $reference): string
     {
@@ -436,8 +448,9 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Izdvaja jedinstvene reference koje aktivna tema stvarno koristi u zaglavlju i herou.
      * EN: Extracts unique references actually used by the active theme header and hero.
+     *
+     * HR: Izdvaja jedinstvene reference koje aktivna tema stvarno koristi u zaglavlju i herou.
      *
      * @param array<string, mixed> $components
      * @return list<string>
@@ -473,10 +486,11 @@ final readonly class WorkspaceThemeBridge
     }
 
     /**
-     * HR: Jezik i light/dark izbor ostaju dostupni i kada aktivna tema nema
-     *     odgovarajuće kontrolne stavke u vlastitom sastavljivom zaglavlju.
      * EN: Language and light/dark selection remain available when the active
      *     theme lacks matching control items in its composable header.
+     *
+     * HR: Jezik i light/dark izbor ostaju dostupni i kada aktivna tema nema
+     *     odgovarajuće kontrolne stavke u vlastitom sastavljivom zaglavlju.
      */
     private function withRequiredOfflineControls(
         string $html,
@@ -502,17 +516,19 @@ final readonly class WorkspaceThemeBridge
         $augmented = preg_replace('/<\/div>\s*<\/header>\s*$/i', $controls . '</div></header>', $html, 1);
 
         /*
-         * HR: Kontrole se nikada ne dodaju izvan zaglavlja. Prazno zaglavlje
-         *     znači da ih Workspace izvoz treba smjestiti u glavni meni.
          * EN: Controls are never appended outside the header. An empty header
          *     means the Workspace export must place them in the primary menu.
+         *
+         * HR: Kontrole se nikada ne dodaju izvan zaglavlja. Prazno zaglavlje
+         *     znači da ih Workspace izvoz treba smjestiti u glavni meni.
          */
         return is_string($augmented) && $augmented !== $html ? $augmented : $html;
     }
 
     /**
-     * HR: Kasno dohvaća servis Theme modula i sigurno pada na null kada modul nije prisutan.
      * EN: Resolves a Theme service late and safely falls back to null when the module is absent.
+     *
+     * HR: Kasno dohvaća servis Theme modula i sigurno pada na null kada modul nije prisutan.
      */
     private function service(string $serviceId): ?object
     {

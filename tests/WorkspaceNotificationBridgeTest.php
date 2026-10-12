@@ -25,16 +25,19 @@ use RuntimeException;
 #[CoversClass(WorkspaceNotificationBridge::class)]
 #[UsesClass(WorkspaceAccessService::class)]
 #[UsesClass(WorkspaceConfig::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfigurationStore::class)]
 #[UsesClass(WorkspaceRepository::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 #[UsesClass(WorkspaceWorkflowService::class)]
 final class WorkspaceNotificationBridgeTest extends TestCase
 {
     /**
-     * HR: Dokazuje da slanje nacrta na pregled obavještava efektivne
-     *     objavljivače, ali ne i samog autora radnje.
      * EN: Proves that review submission notifies effective publishers while
      *     excluding the action author.
+     *
+     * HR: Dokazuje da slanje nacrta na pregled obavještava efektivne
+     *     objavljivače, ali ne i samog autora radnje.
      */
     public function testPageSubmissionNotifiesOtherPublishers(): void
     {
@@ -83,8 +86,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             public array $calls = [];
 
             /**
-             * HR: Pamti grupnu poruku umjesto stvarnog upisa u inbox.
              * EN: Records a batch message instead of writing to the real inbox.
+             *
+             * HR: Pamti grupnu poruku umjesto stvarnog upisa u inbox.
              *
              * @param list<int> $userIds
              * @param array<string,mixed> $data
@@ -117,16 +121,18 @@ final class WorkspaceNotificationBridgeTest extends TestCase
         };
         $container = new class ($recorder) implements ContainerInterface {
             /**
-             * HR: Prima testni Notification zapisivač.
              * EN: Receives the test Notification recorder.
+             *
+             * HR: Prima testni Notification zapisivač.
              */
             public function __construct(private readonly object $recorder)
             {
             }
 
             /**
-             * HR: Vraća jedini opcionalni servis dostupan u testu.
              * EN: Returns the only optional service available in the test.
+             *
+             * HR: Vraća jedini opcionalni servis dostupan u testu.
              */
             public function get(string $id): object
             {
@@ -138,8 +144,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             }
 
             /**
-             * HR: Potvrđuje dostupnost samo testnog Notification servisa.
              * EN: Confirms availability of only the test Notification service.
+             *
+             * HR: Potvrđuje dostupnost samo testnog Notification servisa.
              */
             public function has(string $id): bool
             {
@@ -175,8 +182,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
     }
 
     /**
-     * HR: Priprema stvarnu prijenosnu Workspace shemu i ACL servis bez web sesije.
      * EN: Prepares the real portable Workspace schema and ACL service without a web session.
+     *
+     * HR: Priprema stvarnu prijenosnu Workspace shemu i ACL servis bez web sesije.
      *
      * @return array{WorkspaceRepository,WorkspaceAccessService,WorkspaceConfig}
      */
@@ -212,8 +220,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
     }
 
     /**
-     * HR: Kreira minimalne Auth tablice i tri aktivna korisnika za ACL izračun.
      * EN: Creates minimal Auth tables and three active users for ACL calculation.
+     *
+     * HR: Kreira minimalne Auth tablice i tri aktivna korisnika za ACL izračun.
      */
     private function createAuthSchema(Database $database): void
     {
@@ -252,15 +261,17 @@ final class WorkspaceNotificationBridgeTest extends TestCase
     }
 
     /**
-     * HR: Vraća prazan Auth handler jer test prava uvijek prosljeđuje izravno.
      * EN: Returns an empty Auth handler because the test supplies permissions directly.
+     *
+     * HR: Vraća prazan Auth handler jer test prava uvijek prosljeđuje izravno.
      */
     private function authnHandler(): AuthnHandlerInterface
     {
         return new class implements AuthnHandlerInterface {
             /**
-             * HR: Test ne izvodi prijavu.
              * EN: The test performs no login.
+             *
+             * HR: Test ne izvodi prijavu.
              *
              * @return mixed[]|null
              */
@@ -270,16 +281,18 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             }
 
             /**
-             * HR: Test nema sesiju za odjavu.
              * EN: The test has no session to log out.
+             *
+             * HR: Test nema sesiju za odjavu.
              */
             public function logout(): void
             {
             }
 
             /**
-             * HR: Izolirani handler nema prijavljenog korisnika.
              * EN: The isolated handler has no authenticated user.
+             *
+             * HR: Izolirani handler nema prijavljenog korisnika.
              */
             public function check(): bool
             {
@@ -287,8 +300,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             }
 
             /**
-             * HR: Izolirani handler ne vraća korisnika.
              * EN: The isolated handler returns no user.
+             *
+             * HR: Izolirani handler ne vraća korisnika.
              *
              * @return mixed[]|null
              */
@@ -298,8 +312,9 @@ final class WorkspaceNotificationBridgeTest extends TestCase
             }
 
             /**
-             * HR: Izolirani handler ne vraća podatke korisnika.
              * EN: The isolated handler returns no user data.
+             *
+             * HR: Izolirani handler ne vraća podatke korisnika.
              *
              * @return mixed[]|null
              */

@@ -15,10 +15,11 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Upravlja procesom objave po stranici i jeziku, od nacrta do arhive.
- *     HTML i njegove nepromjenjive verzije ostaju vlasništvo Editor modula.
  * EN: Manages the publishing workflow per page and locale, from draft through
  *     archive. HTML and its immutable versions remain owned by the Editor module.
+ *
+ * HR: Upravlja procesom objave po stranici i jeziku, od nacrta do arhive.
+ *     HTML i njegove nepromjenjive verzije ostaju vlasništvo Editor modula.
  */
 final readonly class WorkspaceWorkflowService
 {
@@ -38,18 +39,20 @@ final readonly class WorkspaceWorkflowService
     ];
 
     /**
-     * HR: Prima repozitorij koji jedini izravno pristupa workflow tablici.
      * EN: Receives the repository that alone accesses the workflow table directly.
+     *
+     * HR: Prima repozitorij koji jedini izravno pristupa workflow tablici.
      */
     public function __construct(private WorkspaceRepository $repository)
     {
     }
 
     /**
-     * HR: Označava novu Editor verziju nacrtom, ali čuva broj zadnje objavljene
-     *     verzije kako bi je čitatelji nastavili vidjeti do sljedeće objave.
      * EN: Marks a new Editor version as draft while retaining the last published
      *     version number so readers continue seeing it until the next publish.
+     *
+     * HR: Označava novu Editor verziju nacrtom, ali čuva broj zadnje objavljene
+     *     verzije kako bi je čitatelji nastavili vidjeti do sljedeće objave.
      *
      * @return array<string, mixed>|null
      */
@@ -85,10 +88,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Vraća broj verzije koju smije vidjeti čitatelj. Null znači da dokument
-     *     nije Workspace stranica, a nula da objavljeni sadržaj ne postoji.
      * EN: Returns the version number a reader may see. Null means the document is
      *     not a Workspace page, while zero means no published content exists.
+     *
+     * HR: Vraća broj verzije koju smije vidjeti čitatelj. Null znači da dokument
+     *     nije Workspace stranica, a nula da objavljeni sadržaj ne postoji.
      */
     public function publicationVersion(string $documentKey, string $language): ?int
     {
@@ -104,10 +108,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Vraća objavljenu verziju već poznatog čvora bez ponovnog traženja
-     *     dokumenta. Nula znači da objavljeni sadržaj nije dostupan.
      * EN: Returns the published version for an already known node without
      *     looking up the document again. Zero means no published content is available.
+     *
+     * HR: Vraća objavljenu verziju već poznatog čvora bez ponovnog traženja
+     *     dokumenta. Nula znači da objavljeni sadržaj nije dostupan.
      */
     public function publicationVersionForNode(int $nodeId, string $language): int
     {
@@ -127,10 +132,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Provjerava ima li jezična inačica objavljeni sadržaj za čitatelja bez
-     *     prava uređivanja. Nepraćena stranica tretira se kao nacrt.
      * EN: Checks whether a locale has published content for a reader without edit
      *     rights. An untracked page is treated as a draft.
+     *
+     * HR: Provjerava ima li jezična inačica objavljeni sadržaj za čitatelja bez
+     *     prava uređivanja. Nepraćena stranica tretira se kao nacrt.
      */
     public function isReadable(int $nodeId, string $language): bool
     {
@@ -138,8 +144,9 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Provjerava čitljivost već učitanog workflow retka bez dodatnog upita.
      * EN: Checks a preloaded workflow row for readability without another query.
+     *
+     * HR: Provjerava čitljivost već učitanog workflow retka bez dodatnog upita.
      *
      * @param array<string, mixed>|null $workflow
      */
@@ -151,10 +158,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Izvršava dopušteni workflow prijelaz nakon provjere edit/publish/manage prava
-     *     i dostupnosti aktualne nepromjenjive Editor verzije.
      * EN: Executes an allowed workflow transition after checking edit/publish/manage
      *     permission and the availability of the current immutable Editor version.
+     *
+     * HR: Izvršava dopušteni workflow prijelaz nakon provjere edit/publish/manage prava
+     *     i dostupnosti aktualne nepromjenjive Editor verzije.
      *
      * @return array<string, mixed>
      */
@@ -250,10 +258,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Nakon odbacivanja zajedničkog Editor nacrta vraća workflow na zadnju
-     *     objavu ili na prazan neobjavljeni status nove stranice.
      * EN: After discarding the shared Editor draft, returns workflow to the last
      *     publication or to the empty unpublished state of a new page.
+     *
+     * HR: Nakon odbacivanja zajedničkog Editor nacrta vraća workflow na zadnju
+     *     objavu ili na prazan neobjavljeni status nove stranice.
      *
      * @return array<string, mixed>
      */
@@ -286,10 +295,11 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Gradi mali UI model statusa, zadnje objavljene verzije i trenutno
-     *     dopuštenih akcija za otvorenu stranicu.
      * EN: Builds a compact UI model containing status, last published version,
      *     and actions currently allowed for the open page.
+     *
+     * HR: Gradi mali UI model statusa, zadnje objavljene verzije i trenutno
+     *     dopuštenih akcija za otvorenu stranicu.
      *
      * @return array<string, mixed>
      */
@@ -348,8 +358,9 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Normalizira status iz baze na zatvoren podržani skup.
      * EN: Normalizes a database status to the closed supported set.
+     *
+     * HR: Normalizira status iz baze na zatvoren podržani skup.
      */
     private function status(mixed $status): string
     {
@@ -359,8 +370,9 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Vraća lokalizirani prikazni naziv workflow statusa.
      * EN: Returns the localized display name of a workflow status.
+     *
+     * HR: Vraća lokalizirani prikazni naziv workflow statusa.
      */
     private function statusLabel(string $status): string
     {
@@ -373,8 +385,9 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Odabire semantičku Bootstrap boju statusne značke.
      * EN: Selects the semantic Bootstrap color for the status badge.
+     *
+     * HR: Odabire semantičku Bootstrap boju statusne značke.
      */
     private function statusBadge(string $status): string
     {
@@ -387,8 +400,9 @@ final readonly class WorkspaceWorkflowService
     }
 
     /**
-     * HR: Pretvara proizvoljnu DB vrijednost u pozitivan broj verzije ili nulu.
      * EN: Converts an arbitrary database value to a positive version number or zero.
+     *
+     * HR: Pretvara proizvoljnu DB vrijednost u pozitivan broj verzije ili nulu.
      */
     private function positiveInt(mixed $value): int
     {

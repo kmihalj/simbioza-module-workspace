@@ -23,19 +23,25 @@ use function strtolower;
 use function trim;
 
 /**
- * HR: Izdvaja samo interne poveznice na Workspace stranice iz objavljenog HTML-a.
  * EN: Extracts only internal Workspace-page links from published HTML.
+ *
+ * HR: Izdvaja samo interne poveznice na Workspace stranice iz objavljenog HTML-a.
  */
 final readonly class WorkspaceLinkExtractor
 {
-    /** HR: Prima instalacijski neovisnu putanju područja. EN: Receives the installation-independent Workspace path. */
+    /**
+     * EN: Receives the installation-independent Workspace path.
+     *
+     * HR: Prima instalacijski neovisnu putanju područja.
+     */
     public function __construct(private WorkspaceConfig $config)
     {
     }
 
     /**
-     * HR: Vraća slug područja, slug stranice i čitljiv tekst svake interne poveznice.
      * EN: Returns the Workspace slug, page slug, and readable text of every internal link.
+     *
+     * HR: Vraća slug područja, slug stranice i čitljiv tekst svake interne poveznice.
      *
      * @return list<array{workspaceSlug:string,nodeSlug:string,linkText:string}>
      */
@@ -77,8 +83,9 @@ final readonly class WorkspaceLinkExtractor
     }
 
     /**
-     * HR: Prepoznaje rutu neovisno o tome je li aplikacija u web rootu ili poddirektoriju.
      * EN: Recognizes the route whether the application is installed at the web root or in a subdirectory.
+     *
+     * HR: Prepoznaje rutu neovisno o tome je li aplikacija u web rootu ili poddirektoriju.
      *
      * @return array{workspaceSlug:string,nodeSlug:string}|null
      */
@@ -114,7 +121,11 @@ final readonly class WorkspaceLinkExtractor
         ];
     }
 
-    /** HR: Svodi tekst poveznice na jedan red. EN: Collapses link text to one line. */
+    /**
+     * EN: Collapses link text to one line.
+     *
+     * HR: Svodi tekst poveznice na jedan red.
+     */
     private function linkText(DOMElement $anchor): string
     {
         $text = preg_replace('/\s+/u', ' ', trim($anchor->textContent));
