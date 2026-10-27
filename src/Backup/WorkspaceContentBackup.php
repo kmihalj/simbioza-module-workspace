@@ -10,17 +10,27 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext;
 use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentBackupInterface;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry;
 
-/** EN: Keeps extension ownership explicit without importing any business module into Workspace.
+/**
+ * EN: Keeps extension ownership explicit without importing any business module into Workspace.
+ *
  * HR: Čuva izričito vlasništvo proširenja bez uvoza poslovnog modula u Područja.
  */
 final readonly class WorkspaceContentBackup
 {
-    /** EN: Uses only enabled content providers. HR: Koristi samo uključene providere sadržaja. */
+    /**
+     * EN: Uses only enabled content providers.
+     *
+     * HR: Koristi samo uključene providere sadržaja.
+     */
     public function __construct(private ?WorkspaceContentRegistry $types = null)
     {
     }
 
-    /** EN: Resolves the owner or refuses silent loss. HR: Razrješava vlasnika ili odbija tihi gubitak. */
+    /**
+     * EN: Resolves the owner or refuses silent loss.
+     *
+     * HR: Razrješava vlasnika ili odbija tihi gubitak.
+     */
     public function owner(string $type, string $scope): ?string
     {
         if (in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)) {
@@ -36,7 +46,9 @@ final readonly class WorkspaceContentBackup
         return $owner;
     }
 
-    /** EN: Rejects absent, skipped or unselected owners before restoring scaffolding.
+    /**
+     * EN: Rejects absent, skipped or unselected owners before restoring scaffolding.
+     *
      * HR: Odbija odsutne, preskočene ili neodabrane vlasnike prije vraćanja čvorova.
      */
     public function checkImport(string $type, BackupImportContext $context, BackupArchiveReader $reader): void

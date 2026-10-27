@@ -13,16 +13,28 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 interface WorkspaceContentProviderInterface
 {
-    /** EN: Returns a stable node type. HR: Vraća stabilnu vrstu čvora. */
+    /**
+     * EN: Returns a stable node type.
+     *
+     * HR: Vraća stabilnu vrstu čvora.
+     */
     public function type(): string;
 
-    /** EN: Preloads a node batch. HR: Unaprijed učitava skup čvorova.
+    /**
+     * EN: Preloads a node batch.
+     *
+     * HR: Unaprijed učitava skup čvorova.
+     *
      * @param array<string,mixed> $workspace
      * @param list<array<string,mixed>> $nodes
      */
     public function prepare(array $workspace, array $nodes): void;
 
-    /** EN: Adds type-specific base rights before restrictions. HR: Dodaje tipska bazna prava prije ograničenja.
+    /**
+     * EN: Adds type-specific base rights before restrictions.
+     *
+     * HR: Dodaje tipska bazna prava prije ograničenja.
+     *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed> $node
      * @param array<string,mixed>|null $user
@@ -31,7 +43,11 @@ interface WorkspaceContentProviderInterface
      */
     public function permissions(array $workspace, array $node, ?array $user, array $base): array;
 
-    /** EN: Checks publication after effective ACL. HR: Provjerava objavu nakon efektivnih ovlasti.
+    /**
+     * EN: Checks publication after effective ACL.
+     *
+     * HR: Provjerava objavu nakon efektivnih ovlasti.
+     *
      * @param array<string,mixed> $node
      * @param array<string,bool> $permissions
      * @param list<string> $languages
@@ -48,20 +64,32 @@ interface WorkspaceContentProviderInterface
      */
     public function view(ServerRequestInterface $request, array $workspace, array $node): array;
 
-    /** EN: Offers an authorized create action. HR: Nudi ovlaštenu radnju kreiranja.
+    /**
+     * EN: Offers an authorized create action.
+     *
+     * HR: Nudi ovlaštenu radnju kreiranja.
+     *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $user
      * @return array{label:string,href:string,icon?:string}|null
      */
     public function createAction(array $workspace, ?array $user): ?array;
 
-    /** EN: Grants navigation only for this content type. HR: Dopušta navigaciju samo za ovu vrstu sadržaja.
+    /**
+     * EN: Grants navigation only for this content type.
+     *
+     * HR: Dopušta navigaciju samo za ovu vrstu sadržaja.
+     *
      * @param array<string,mixed> $workspace
      * @param array<string,mixed>|null $user
      */
     public function workspaceVisible(array $workspace, ?array $user): bool;
 
-    /** EN: Offers a manager-only membership section. HR: Nudi odjeljak članstva samo upravitelju.
+    /**
+     * EN: Offers a manager-only membership section.
+     *
+     * HR: Nudi odjeljak članstva samo upravitelju.
+     *
      * @param array<string,mixed> $workspace
      * @return array{package:string,view:string,data:array<string,mixed>}|null
      */

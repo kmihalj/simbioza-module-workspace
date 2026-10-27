@@ -2561,8 +2561,11 @@ final readonly class WorkspaceRepository
         return array_map(fn(array $row): int => $this->intValue($row['workspace_id']), $rows);
     }
 
-    /** EN: Selects only active nodes granted to the current user, groups or public audience.
+    /**
+     * EN: Selects only active nodes granted to the current user, groups or public audience.
+     *
      * HR: Odabire samo aktivne čvorove dopuštene trenutačnom korisniku, grupama ili javnoj publici.
+     *
      * @param list<int> $groupIds
      * @return list<array<string,mixed>>
      */
@@ -2571,8 +2574,11 @@ final readonly class WorkspaceRepository
         return $this->directPermissionNodesForWorkspaces([$workspaceId], $userId, $groupIds);
     }
 
-    /** EN: Batch-loads only directly accessible nodes for Workspace discovery.
+    /**
+     * EN: Batch-loads only directly accessible nodes for Workspace discovery.
+     *
      * HR: Paketno učitava samo izravno dostupne čvorove za prikaz područja.
+     *
      * @param list<int> $workspaceIds
      * @param list<int> $groupIds
      * @return list<array<string,mixed>>
@@ -2594,7 +2600,9 @@ final readonly class WorkspaceRepository
         ));
     }
 
-    /** EN: Combines existing user grants and the independently indexed subject exceptions.
+    /**
+     * EN: Combines existing user grants and the independently indexed subject exceptions.
+     *
      * HR: Spaja postojeća korisnička prava i zasebno indeksirane iznimke subjekata.
      */
     private function directSubjectUnion(): string
@@ -2605,8 +2613,11 @@ final readonly class WorkspaceRepository
         . ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS;
     }
 
-    /** EN: Matches current membership with bound parameters; public never means authoring.
+    /**
+     * EN: Matches current membership with bound parameters; public never means authoring.
+     *
      * HR: Uspoređuje važeća članstva vezanim parametrima; javno nikad ne znači uređivanje.
+     *
      * @param list<int> $groupIds
      * @return array{string,list<int|string>}
      */
@@ -3572,7 +3583,11 @@ final readonly class WorkspaceRepository
         throw new RuntimeException(__('Vrsta sadržaja nije dostupna.'));
     }
 
-    /** EN: Resolves a portable enabled node identifier. HR: Razrješava prenosiv identifikator aktivnog čvora.
+    /**
+     * EN: Resolves a portable enabled node identifier.
+     *
+     * HR: Razrješava prenosiv identifikator aktivnog čvora.
+     *
      * @return array<string,mixed>|null
      */
     public function findNodeByUuid(string $uuid): ?array

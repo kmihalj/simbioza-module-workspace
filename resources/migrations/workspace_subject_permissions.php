@@ -8,7 +8,9 @@ use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 
 return new class implements ReversibleMigrationInterface {
-    /** EN: Adds page-only group and audience exceptions without changing existing user grants.
+    /**
+     * EN: Adds page-only group and audience exceptions without changing existing user grants.
+     *
      * HR: Dodaje iznimke grupa i publika samo za stranicu, bez izmjene postojećih korisničkih prava.
      */
     public function up(Database $db): void
@@ -30,7 +32,9 @@ return new class implements ReversibleMigrationInterface {
         }
     }
 
-    /** EN: Refuses to discard configured exceptions on rollback.
+    /**
+     * EN: Refuses to discard configured exceptions on rollback.
+     *
      * HR: Odbija odbacivanje podešenih iznimaka pri povratku.
      */
     public function down(Database $db): void

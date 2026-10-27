@@ -1543,8 +1543,11 @@ final class WorkspaceAccessService
         ];
     }
 
-    /** EN: Unions matching page-only grants; anonymous audiences are always read-only.
+    /**
+     * EN: Unions matching page-only grants; anonymous audiences are always read-only.
+     *
      * HR: Spaja odgovarajuća prava samo za stranicu; anonimne publike uvijek imaju samo čitanje.
+     *
      * @param list<array<string,mixed>> $rows
      * @param list<int> $groupIds
      * @return array<int,array<string,bool>>

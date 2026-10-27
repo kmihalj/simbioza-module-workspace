@@ -7,13 +7,17 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
-/** EN: Both content and extension ACLs share one empty, paged, accessible dropdown template.
+/**
+ * EN: Both content and extension ACLs share one empty, paged, accessible dropdown template.
+ *
  * HR: Ovlasti sadržaja i proširenja dijele isti prazan, straničen i pristupačan predložak padajućeg odabira.
  */
 #[CoversNothing]
 final class WorkspaceSubjectPickerViewTest extends TestCase
 {
-    /** EN: Keeps existing IDs, bounded remote lookup hooks and a real dropdown list rather than inline directory rows.
+    /**
+     * EN: Keeps existing IDs, bounded remote lookup hooks and a real dropdown list rather than inline directory rows.
+     *
      * HR: Čuva postojeće oznake, ograničeni udaljeni dohvat i pravi padajući popis umjesto redaka cijelog imenika.
      */
     public function testSharedUserAndGroupDropdownMarkup(): void

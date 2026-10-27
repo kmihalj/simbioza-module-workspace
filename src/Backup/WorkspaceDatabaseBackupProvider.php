@@ -65,7 +65,9 @@ final class WorkspaceDatabaseBackupProvider extends DatabaseTableBackupProvider 
         parent::export($context, $writer);
     }
 
-    /** EN: Refuses incomplete extension imports before any target changes.
+    /**
+     * EN: Refuses incomplete extension imports before any target changes.
+     *
      * HR: Odbija nepotpuni uvoz proširenja prije ikakve izmjene cilja.
      */
     public function preflight(BackupImportContext $context, BackupArchiveReader $reader): BackupPreflightResult

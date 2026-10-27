@@ -19,7 +19,11 @@ final class WorkspaceContentRegistry
     /** @var array<string,WorkspaceContentProviderInterface> */
     private array $providers = [];
 
-    /** EN: Registers one unique non-core type. HR: Registrira jedinstvenu vrstu izvan jezgre.
+    /**
+     * EN: Registers one unique non-core type.
+     *
+     * HR: Registrira jedinstvenu vrstu izvan jezgre.
+     *
      * @param callable():WorkspaceContentProviderInterface $factory
      */
     public function register(string $type, callable $factory): void
@@ -35,13 +39,21 @@ final class WorkspaceContentRegistry
         unset($this->providers[$type]);
     }
 
-    /** EN: Checks availability without constructing a provider. HR: Provjerava dostupnost bez izrade providera. */
+    /**
+     * EN: Checks availability without constructing a provider.
+     *
+     * HR: Provjerava dostupnost bez izrade providera.
+     */
     public function has(string $type): bool
     {
         return isset($this->factories[$type]);
     }
 
-    /** EN: Resolves only a registered type. HR: Razrješava samo registriranu vrstu. */
+    /**
+     * EN: Resolves only a registered type.
+     *
+     * HR: Razrješava samo registriranu vrstu.
+     */
     public function get(string $type): ?WorkspaceContentProviderInterface
     {
         if (!$this->has($type)) {
@@ -56,7 +68,11 @@ final class WorkspaceContentRegistry
         return $provider;
     }
 
-    /** EN: Lists registered providers lazily. HR: Odgođeno vraća registrirane providere.
+    /**
+     * EN: Lists registered providers lazily.
+     *
+     * HR: Odgođeno vraća registrirane providere.
+     *
      * @return list<WorkspaceContentProviderInterface>
      */
     public function all(): array
@@ -72,7 +88,11 @@ final class WorkspaceContentRegistry
         return $providers;
     }
 
-    /** EN: Recognizes built-in page/link types. HR: Prepoznaje ugrađene vrste stranica i poveznica. */
+    /**
+     * EN: Recognizes built-in page/link types.
+     *
+     * HR: Prepoznaje ugrađene vrste stranica i poveznica.
+     */
     public function isCore(string $type): bool
     {
         return in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true);

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 /**
  * EN: Shared bounded remote user/group combobox for Workspace and optional content ACL forms.
+ *
  * HR: Zajednički ograničeni udaljeni odabir korisnika/grupa za područja i ovlasti opcionalnog sadržaja.
+ *
  * @var \HeartPhrame\View\View $this
  * @var string $workspaceSubjectId
  * @var string $workspaceSubjectResultsId

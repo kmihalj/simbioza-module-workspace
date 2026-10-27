@@ -592,7 +592,9 @@ final class WorkspaceAccessServiceTest extends TestCase
         ));
     }
 
-    /** EN: Public/group exceptions expose only the target; membership and grant revocation hide the Workspace again.
+    /**
+     * EN: Public/group exceptions expose only the target; membership and grant revocation hide the Workspace again.
+     *
      * HR: Javne/grupne iznimke otkrivaju samo cilj; opoziv članstva i prava ponovno skriva područje.
      */
     public function testPublicAndGroupPageExceptionsKeepPrivateNeighboursHidden(): void
