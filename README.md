@@ -73,6 +73,8 @@ Croatian documentation: [README_hr.md](README_hr.md)
 
 Page restrictions only narrow the permissions granted at Workspace level. They
 never grant access to a user or group that is not already a Workspace member.
+Explicit **Direct permissions for users and groups** are a separate page-only exception: users, enabled groups, Public and All signed-in users may read a selected page in a private Workspace. Public is read-only. Its Workspace appears in the list only for readers with base access or a readable page exception; hidden parents, siblings, descendants and attachments remain inaccessible. The same behavior applies to optional Survey nodes. [Page exceptions](docs/page-exceptions_en.md).
+
 Application administrators retain all permissions. The creator receives all six
 permissions through a regular user ACL row, which can later be changed like any
 other grant. Management is the umbrella permission and includes viewing, adding,
@@ -434,6 +436,7 @@ several separate words or phrases, prefix every term with `+`; for example,
 The detailed architecture and beginner-oriented operational guide are in
 [docs/index_en.md](docs/index_en.md).
 Workspace backup and restore are documented in [docs/backup_en.md](docs/backup_en.md).
+The local generic content-type extension is documented in [docs/content-types_en.md](docs/content-types_en.md).
 
 ## Licence
 

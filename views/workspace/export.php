@@ -46,6 +46,7 @@ $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
                         __('Izvoze se samo objavljene stranice koje smijete vidjeti. Offline paket ne sadrži aktivne prijave, API pozive ni mogućnost uređivanja.'),
                     ) ?>
                 </p>
+                <p class="mb-0"><?= $this->escape(__('Ankete se ne izvoze u HTML. Za očuvanje anketa, njihovih odgovora i postavki koristite šifrirani backup područja.')) ?></p>
             </div>
 
             <dl class="row small mb-4">

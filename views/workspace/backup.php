@@ -70,6 +70,12 @@ HTML);
                     . 'posebne menije i obnovu indeksa.',
                 )) ?>
             </p>
+            <p class="text-body-secondary">
+                <?= $this->escape(__(
+                    'Ako područje sadrži ankete, backup uključuje njihove postavke, sve odgovore, privitke i ovlasti. '
+                    . 'Nakon vraćanja rasporede izvještaja treba ponovno uključiti.',
+                )) ?>
+            </p>
             <form method="post" action="<?= $this->escape($createPath) ?>">
                 <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                 <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentProviderInterface;
 use HeartPhrame\Authn\AuthnHandlerInterface;
 
 use function array_key_exists;
@@ -71,7 +72,7 @@ final class WorkspaceAccessService
      *
      * HR: Pamti područja s barem jednom izravno dopuštenom stranicom po korisniku.
      *
-     * @var array<int, array<int, bool>>
+     * @var array<string, array<int, bool>>
      */
     private array $directWorkspaceAccessCache = [];
 
@@ -94,6 +95,7 @@ final class WorkspaceAccessService
         private readonly AuthnHandlerInterface $authnHandler,
         private readonly WorkspaceConfig $config,
         private readonly WorkspaceWorkflowService $workflow,
+        private readonly ?WorkspaceContentRegistry $contentTypes = null,
     ) {
     }
 
@@ -176,13 +178,20 @@ final class WorkspaceAccessService
         $workspaces = $this->repository->activeWorkspaces();
         if (!$this->isAdministrator($user)) {
             $this->preloadWorkspaceAclRows($workspaces);
-            $this->preloadDirectWorkspaceAccess($workspaces, $this->userId($user));
+            $this->preloadDirectWorkspaceAccess(
+                $workspaces,
+                $this->userId($user),
+                $this->groupIds($this->userId($user), $user),
+            );
         }
 
         $visible = [];
         foreach ($workspaces as $workspace) {
             $permissions = $this->workspacePermissions($workspace, $user);
-            if (!$permissions['can_view'] && !$this->hasDirectWorkspaceAccess($workspace, $user)) {
+            if (
+                !$permissions['can_view'] && !$this->hasDirectWorkspaceAccess($workspace, $user)
+                && !$this->hasExtensionAccess($workspace, $user)
+            ) {
                 continue;
             }
 
@@ -206,7 +215,26 @@ final class WorkspaceAccessService
         $user ??= $this->currentUser();
 
         return $this->workspacePermissions($workspace, $user)['can_view']
-        || $this->hasDirectWorkspaceAccess($workspace, $user);
+        || $this->hasDirectWorkspaceAccess($workspace, $user)
+        || $this->hasExtensionAccess($workspace, $user);
+    }
+
+    /**
+     * EN: Does not grant ordinary content rights through extensions.
+     *
+     * HR: Ne dodjeljuje prava običnog sadržaja kroz proširenja.
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed>|null $user
+     */
+    private function hasExtensionAccess(array $workspace, ?array $user): bool
+    {
+        foreach ($this->contentTypes?->all() ?? [] as $provider) {
+            if ($provider->workspaceVisible($workspace, $user)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -297,6 +325,9 @@ final class WorkspaceAccessService
         }
 
         $base = $this->workspacePermissions($workspace, $user);
+        foreach ($this->contentTypes?->all() ?? [] as $provider) {
+            $provider->prepare($workspace, $nodes);
+        }
 
         $nodeIds = [];
         $nodesById = [];
@@ -328,21 +359,18 @@ final class WorkspaceAccessService
             }
         }
 
-        $directByNode = [];
         $groupIds = $this->groupIds($userId, $user);
-        if ($userId > 0) {
-            foreach ($this->repository->nodeDirectPermissionRowsForNodes($nodeIds, $userId) as $row) {
-                $directNodeId = WorkspaceValue::int($row['node_id'] ?? 0);
-                if ($directNodeId > 0) {
-                    $directByNode[$directNodeId] = $this->permissionsFromDirectRow($row);
-                }
-            }
-        }
+        $directByNode = $this->directPermissionsByNode(
+            $this->repository->nodeDirectPermissionRowsForNodes($nodeIds),
+            $userId,
+            $groupIds,
+        );
 
         $permissions = [];
         foreach ($nodeIds as $nodeId) {
             $inherited = $this->restrictPermissionsFromRows(
-                $base,
+                $this->contentTypes?->get(WorkspaceValue::string($nodesById[$nodeId]['node_type'] ?? ''))
+                    ?->permissions($workspace, $nodesById[$nodeId], $user, $base) ?? $base,
                 $this->ancestorIdsFromParentMap($nodeId, $parentIds),
                 $rowsByNode,
                 $userId,
@@ -406,17 +434,7 @@ final class WorkspaceAccessService
             $rowsByNode[WorkspaceValue::int($row['node_id'] ?? 0)][] = $row;
         }
 
-        $directByUser = [];
-        foreach (
-            $this->repository->nodeDirectPermissionRowsForNodes(
-                [WorkspaceValue::int($node['id'] ?? 0)],
-            ) as $row
-        ) {
-            $directUserId = WorkspaceValue::int($row['user_id'] ?? 0);
-            if ($directUserId > 0) {
-                $directByUser[$directUserId] = $this->permissionsFromDirectRow($row);
-            }
-        }
+        $directRows = $this->repository->nodeDirectPermissionRowsForNodes([WorkspaceValue::int($node['id'] ?? 0)]);
 
         $allowedUserIds = [];
         foreach ($users as $user) {
@@ -444,7 +462,8 @@ final class WorkspaceAccessService
                     $this->applyCreatorEditPermission(
                         $this->unionPermissions(
                             $permissions,
-                            $directByUser[$userId] ?? $this->emptyPermissions(),
+                            ($this->directPermissionsByNode($directRows, $userId, $groupsByUser[$userId] ?? []))
+                                [WorkspaceValue::int($node['id'] ?? 0)] ?? $this->emptyPermissions(),
                         ),
                         $node,
                         $userId,
@@ -540,6 +559,7 @@ final class WorkspaceAccessService
             $this->directNodesForWorkspace(
                 $workspaceId,
                 $this->userId($user ?? $this->currentUser()),
+                $this->groupIds($this->userId($user ?? $this->currentUser()), $user ?? $this->currentUser()),
             ),
         );
         $nodes = $this->navigationNodes(
@@ -634,6 +654,14 @@ final class WorkspaceAccessService
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
             $permissions = $permissionsByNode[$nodeId] ?? $this->emptyPermissions();
             if (!$permissions['can_view']) {
+                continue;
+            }
+
+            $type = WorkspaceValue::string($node['node_type'] ?? 'document');
+            if (
+                !in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)
+                && !($this->contentTypes?->get($type)?->visible($node, $permissions, $languages) ?? false)
+            ) {
                 continue;
             }
 
@@ -736,6 +764,7 @@ final class WorkspaceAccessService
         $groupIds = is_array($user['group_ids'] ?? null)
         ? $this->groupIds($userId, $user)
         : ($userId > 0 ? $this->repository->groupIdsForUser($userId) : []);
+        $this->preloadDirectWorkspaceAccess(array_values($workspaces), $userId, $groupIds);
         $workspaceIds = array_map(static fn(array $row): int => WorkspaceValue::int($row['id'] ?? 0), $workspaces);
         $workspaceRows = [];
         foreach ($this->repository->workspaceAclRowsForWorkspaces($workspaceIds) as $row) {
@@ -749,7 +778,8 @@ final class WorkspaceAccessService
             $id = WorkspaceValue::int($workspace['id'] ?? 0);
             $byWorkspace[$id] = $workspace;
             $base[$id] = $this->workspacePermissionsFromRows($workspace, $user, $groupIds, $workspaceRows[$id] ?? []);
-            $visibleWorkspaces[$id] = $base[$id]['can_view'];
+            $visibleWorkspaces[$id] = $base[$id]['can_view'] || $this->hasDirectWorkspaceAccess($workspace, $user)
+            || $this->hasExtensionAccess($workspace, $user);
         }
 
         $byNode = [];
@@ -764,11 +794,11 @@ final class WorkspaceAccessService
                 $restrictions[WorkspaceValue::int($row['node_id'] ?? 0)][] = $row;
             }
 
-            if ($userId > 0) {
-                foreach ($this->repository->nodeDirectPermissionRowsForNodes($ids, $userId) as $row) {
-                    $direct[WorkspaceValue::int($row['node_id'] ?? 0)] = $this->permissionsFromDirectRow($row);
-                }
-            }
+            $direct += $this->directPermissionsByNode(
+                $this->repository->nodeDirectPermissionRowsForNodes($ids),
+                $userId,
+                $groupIds,
+            );
         }
 
         $visibleNodes = [];
@@ -811,6 +841,37 @@ final class WorkspaceAccessService
             $visibleNodes[$id] = $permissions['can_view'];
         }
 
+        // EN: Apply content publication rules as well as ACL to extension targets.
+        //
+        // HR: Na dodatne ciljeve primjenjujemo i pravila objave sadržaja, uz ACL.
+        $extensionRights = [];
+        foreach ($byNode as $id => $node) {
+            $type = WorkspaceValue::string($node['node_type'] ?? '');
+            if (in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)) {
+                continue;
+            }
+
+            $workspaceId = WorkspaceValue::int($node['workspace_id'] ?? 0);
+            $provider = $this->contentTypes?->get($type);
+            $visibleNodes[$id] = false;
+            if (!$provider instanceof WorkspaceContentProviderInterface || !isset($byWorkspace[$workspaceId])) {
+                continue;
+            }
+
+            if (!isset($extensionRights[$workspaceId])) {
+                $siblings = array_values(array_filter($byNode, static fn(array $row): bool =>
+                    WorkspaceValue::int($row['workspace_id'] ?? 0) === $workspaceId));
+                $extensionRights[$workspaceId] = $this->nodePermissionsForNodes(
+                    $byWorkspace[$workspaceId],
+                    $siblings,
+                    $user,
+                );
+            }
+
+            $rights = $extensionRights[$workspaceId][$id] ?? $this->emptyPermissions();
+            $visibleNodes[$id] = $rights['can_view'] && $provider->visible($node, $rights, []);
+        }
+
         return ['workspaces' => $visibleWorkspaces, 'nodes' => $visibleNodes];
     }
 
@@ -820,20 +881,64 @@ final class WorkspaceAccessService
      * HR: Paketno sprema područja s izravnim pravima kako popis područja ne bi radio upit po retku.
      *
      * @param list<array<string, mixed>> $workspaces
+     * @param list<int> $groupIds
      */
-    private function preloadDirectWorkspaceAccess(array $workspaces, int $userId): void
+    private function preloadDirectWorkspaceAccess(array $workspaces, int $userId, array $groupIds = []): void
     {
-        if ($userId <= 0) {
-            return;
-        }
-
         $workspaceIds = array_values(array_filter(array_map(
             static fn(array $workspace): int => WorkspaceValue::int($workspace['id'] ?? 0),
             $workspaces,
         )));
-        $this->directWorkspaceAccessCache[$userId] = [];
-        foreach ($this->repository->workspaceIdsWithDirectPermissionForUser($workspaceIds, $userId) as $workspaceId) {
-            $this->directWorkspaceAccessCache[$userId][$workspaceId] = true;
+        $cacheId = $userId . ":" . implode(",", $groupIds);
+        $this->directWorkspaceAccessCache[$cacheId] ??= [];
+        foreach ($workspaceIds as $workspaceId) {
+            $this->directWorkspaceAccessCache[$cacheId][$workspaceId] = false;
+        }
+
+        $nodes = $this->repository->directPermissionNodesForWorkspaces($workspaceIds, $userId, $groupIds);
+        $nodeIds = array_map(static fn(array $node): int => WorkspaceValue::int($node['id'] ?? 0), $nodes);
+        $rights = $this->directPermissionsByNode(
+            $this->repository->nodeDirectPermissionRowsForNodes($nodeIds),
+            $userId,
+            $groupIds,
+        );
+        $workflows = $this->repository->nodeWorkflowsForNodesAllLanguages($nodeIds);
+        foreach ($workspaces as $workspace) {
+            $wid = WorkspaceValue::int($workspace['id'] ?? 0);
+            foreach ($this->contentTypes?->all() ?? [] as $provider) {
+                $provider->prepare($workspace, $nodes);
+            }
+
+            foreach ($nodes as $node) {
+                if (WorkspaceValue::int($node['workspace_id'] ?? 0) !== $wid) {
+                    continue;
+                }
+
+                $id = WorkspaceValue::int($node['id'] ?? 0);
+                $permissions = $rights[$id] ?? $this->emptyPermissions();
+                if (!$permissions['can_view']) {
+                    continue;
+                }
+
+                $type = WorkspaceValue::string($node['node_type'] ?? 'document');
+                if (
+                    !in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)
+                    && !($this->contentTypes?->get($type)?->visible($node, $permissions, []) ?? false)
+                ) {
+                    continue;
+                }
+
+                if (
+                    $type === 'document' && !$permissions['can_edit'] && !$permissions['can_publish']
+                    && isset($workflows[$id])
+                    && !$this->hasReadableLanguage(WorkspaceValue::rows($workflows[$id]), [], true)
+                ) {
+                    continue;
+                }
+
+                $this->directWorkspaceAccessCache[$cacheId][$wid] = true;
+                break;
+            }
         }
     }
 
@@ -849,15 +954,17 @@ final class WorkspaceAccessService
     {
         $userId = $this->userId($user);
         $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
-        if ($userId <= 0 || $workspaceId <= 0) {
+        if ($workspaceId <= 0) {
             return false;
         }
 
-        if (!array_key_exists($userId, $this->directWorkspaceAccessCache)) {
-            $this->preloadDirectWorkspaceAccess([$workspace], $userId);
+        $groupIds = $this->groupIds($userId, $user);
+        $cacheId = $userId . ':' . implode(',', $groupIds);
+        if (!isset($this->directWorkspaceAccessCache[$cacheId][$workspaceId])) {
+            $this->preloadDirectWorkspaceAccess([$workspace], $userId, $groupIds);
         }
 
-        return (bool)($this->directWorkspaceAccessCache[$userId][$workspaceId] ?? false);
+        return (bool)($this->directWorkspaceAccessCache[$cacheId][$workspaceId] ?? false);
     }
 
     /**
@@ -865,19 +972,21 @@ final class WorkspaceAccessService
      *
      * HR: Dohvaća i predmemorira stranice područja na kojima korisnik ima izravna prava.
      *
+     * @param list<int> $groupIds
      * @return list<array<string, mixed>>
      */
-    private function directNodesForWorkspace(int $workspaceId, int $userId): array
+    private function directNodesForWorkspace(int $workspaceId, int $userId, array $groupIds = []): array
     {
-        if ($workspaceId <= 0 || $userId <= 0) {
+        if ($workspaceId <= 0) {
             return [];
         }
 
-        $key = $workspaceId . '|' . $userId;
+        $key = $workspaceId . '|' . $userId . '|' . implode(',', $groupIds);
         if (!array_key_exists($key, $this->directNodesCache)) {
             $this->directNodesCache[$key] = $this->repository->directPermissionNodesForUser(
                 $workspaceId,
                 $userId,
+                $groupIds,
             );
         }
 
@@ -1432,6 +1541,43 @@ final class WorkspaceAccessService
             'can_delete' => $delete,
             'can_manage' => $manage,
         ];
+    }
+
+    /** EN: Unions matching page-only grants; anonymous audiences are always read-only.
+     * HR: Spaja odgovarajuća prava samo za stranicu; anonimne publike uvijek imaju samo čitanje.
+     * @param list<array<string,mixed>> $rows
+     * @param list<int> $groupIds
+     * @return array<int,array<string,bool>>
+     */
+    private function directPermissionsByNode(array $rows, int $userId, array $groupIds): array
+    {
+        $result = [];
+        foreach ($rows as $row) {
+            $type = WorkspaceValue::string($row['subject_type'] ?? 'user');
+            $id = WorkspaceValue::int($row['subject_id'] ?? $row['user_id'] ?? 0);
+            $matches = match ($type) {
+                'public' => $id === 1,
+                'authenticated' => $id === 1 && $userId > 0,
+                'user' => $userId > 0 && $id === $userId,
+                'group' => $userId > 0 && in_array($id, $groupIds, true),
+                default => false,
+            };
+            if (!$matches) {
+                continue;
+            }
+
+            if ($type === 'public') {
+                $row['can_edit'] = $row['can_publish'] = false;
+            }
+
+            $nodeId = WorkspaceValue::int($row['node_id'] ?? 0);
+            $result[$nodeId] = $this->unionPermissions(
+                $result[$nodeId] ?? $this->emptyPermissions(),
+                $this->permissionsFromDirectRow($row),
+            );
+        }
+
+        return $result;
     }
 
     /**

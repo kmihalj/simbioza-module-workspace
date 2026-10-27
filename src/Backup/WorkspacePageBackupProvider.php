@@ -57,6 +57,7 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         private AuthBackupIdentityResolver $identities,
         private WorkspaceRepository $repository,
         private ?\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig $config = null,
+        private ?WorkspaceContentBackup $contentBackup = null,
     ) {
     }
 
@@ -89,6 +90,14 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
     {
         $writer->setLinkRouteRoot('workspace', $this->config?->rootPath() ?? 'workspace');
         $node = $this->sourceNode($context->scope->identifier);
+        $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+            WorkspaceValue::string($node['node_type']),
+            $context->scope->type,
+        );
+        if ($owner !== null) {
+            $writer->requireProvider($owner);
+        }
+
         $nodeId = BackupValue::integer($node['id'], 'page.id');
         $nodeUuid = BackupValue::string($node['uuid'], 'page.uuid');
         $workspaceId = BackupValue::integer($node['workspace_id'], 'page.workspace_id');
@@ -105,7 +114,7 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
             'slug' => BackupValue::string($node['slug'], 'page.slug'),
             'title' => BackupValue::string($node['title'], 'page.title'),
             'title_translations' => $node['title_translations'] ?? null,
-            'document_key' => BackupValue::string($node['document_key'], 'page.document_key'),
+            'document_key' => BackupValue::nullableString($node['document_key'], 'page.document_key'),
             'permissions_included' => $this->includePermissions($context),
             'history_included' => $this->includeHistory($context),
             'is_tree_hidden' => BackupValue::booleanInteger($node['is_tree_hidden'] ?? false, 'page.is_tree_hidden'),
@@ -187,6 +196,22 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
 
         $errors = [];
         $warnings = [];
+        try {
+            $content = $this->contentBackup ?? new WorkspaceContentBackup();
+            $type = WorkspaceValue::string($page['node_type']);
+            if ($type !== 'document' && $content->owner($type, 'page') === null) {
+                throw new BackupException('Single-page backup requires a document or a registered content owner.');
+            }
+
+            $content->checkImport($type, $context, $reader);
+            $target = $this->targetPage($context);
+            if ($target !== null && $target['node_type'] !== $page['node_type']) {
+                $errors[] = 'Source and replacement page must have the same content type.';
+            }
+        } catch (BackupException $backupException) {
+            $errors[] = $backupException->getMessage();
+        }
+
         if ($this->importPermissions($context) && !($page['permissions_included'] ?? false)) {
             $errors[] = 'This page archive does not contain permissions or restrictions.';
         }
@@ -282,11 +307,12 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         }
 
         $workspaceId = BackupValue::integer($workspace['id'], 'workspace.id');
-        $sourceKey = BackupValue::string($page['document_key'], 'page.document_key');
-        $documentKey = BackupValue::string(
-            $context->state->require('editor.document-key', $sourceKey),
-            'state.editor.document-key',
-        );
+        $documentKey = $page['node_type'] === 'document'
+        ? BackupValue::string($context->state->require(
+            'editor.document-key',
+            BackupValue::string($page['document_key'], 'page.document_key'),
+        ), 'state.editor.document-key')
+        : null;
         $sourceUuid = BackupValue::string($page['uuid'], 'page.uuid');
         $now = date('Y-m-d H:i:s');
         if ($replace && is_array($targetPage)) {
@@ -320,7 +346,7 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
                 'uuid' => $uuid,
                 'workspace_id' => $workspaceId,
                 'parent_id' => $this->targetParentId($context),
-                'node_type' => 'document',
+                'node_type' => BackupValue::string($page['node_type'], 'page.node_type'),
                 'slug' => $slug,
                 'title' => BackupValue::string($page['title'], 'page.title'),
                 'title_translations' => $page['title_translations'] ?? null,
@@ -410,6 +436,20 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
                 'can_publish' => BackupValue::booleanInteger($row['can_publish'], 'acl.can_publish'),
                 'can_delete' => BackupValue::booleanInteger($row['can_delete'], 'acl.can_delete'),
                 'can_manage' => BackupValue::booleanInteger($row['can_manage'], 'acl.can_manage'),
+            ]);
+        }
+
+        foreach ($this->rows(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS, $nodeId, 'id') as $row) {
+            $subject = $this->identities->subjectReference($row['subject_type'] ?? null, $row['subject_id'] ?? null);
+            if ($subject === null) {
+                continue;
+            }
+
+            $writer->writeRecord(self::ID, 'subject-permissions', [
+                'subject_type' => $subject['type'], 'subject_key' => $subject['key'],
+                'can_view' => BackupValue::booleanInteger($row['can_view'], 'subject.can_view'),
+                'can_edit' => BackupValue::booleanInteger($row['can_edit'], 'subject.can_edit'),
+                'can_publish' => BackupValue::booleanInteger($row['can_publish'], 'subject.can_publish'),
             ]);
         }
 
@@ -520,6 +560,24 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
             ]);
         }
 
+        foreach ($reader->records(self::ID, 'subject-permissions') as $row) {
+            $type = BackupValue::string($row['subject_type'], 'subject.type');
+            $id = $this->identities->subjectId($type, BackupValue::string($row['subject_key'], 'subject.key'));
+            if ($id === null || !in_array($type, ['group', 'public', 'authenticated'], true)) {
+                continue;
+            }
+
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)->insert([
+                'node_id' => $nodeId, 'subject_type' => $type, 'subject_id' => $id,
+                'can_view' => BackupValue::booleanInteger($row['can_view'], 'subject.can_view'),
+                'can_edit' => $type === 'public' ? 0
+                    : BackupValue::booleanInteger($row['can_edit'], 'subject.can_edit'),
+                'can_publish' => $type === 'public' ? 0
+                    : BackupValue::booleanInteger($row['can_publish'], 'subject.can_publish'),
+                'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
         foreach ($reader->records(self::ID, 'direct-permissions') as $row) {
             $userId = $this->identities->userIdForKey(BackupValue::string($row['user_key'], 'direct.user_key'));
             if ($userId === null) {
@@ -550,8 +608,16 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         $node = ctype_digit($identifier)
         ? $query->where('id', '=', (int)$identifier)->first()
         : $query->where('uuid', '=', $identifier)->first();
-        if (!is_array($node) || ($node['node_type'] ?? null) !== 'document') {
+        if (!is_array($node)) {
             throw new BackupException('Workspace page does not exist: ' . $identifier);
+        }
+
+        $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+            WorkspaceValue::string($node['node_type']),
+            'page',
+        );
+        if ($node['node_type'] !== 'document' && $owner === null) {
+            throw new BackupException('Single-page backup requires a document or a registered content owner.');
         }
 
         return $node;
@@ -613,7 +679,6 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         $page = WorkspaceValue::stringKeyArray(
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
                 ->where('id', '=', $pageId)
-                ->where('node_type', '=', 'document')
                 ->first(),
         );
         return $page !== [] ? $page : null;
@@ -687,6 +752,8 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
             ->where('node_id', '=', $nodeId)
             ->delete();
+        $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+            ->where('node_id', '=', $nodeId)->delete();
     }
 
     /**

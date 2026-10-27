@@ -125,11 +125,12 @@ final readonly class WorkspaceExportService
             static fn(array $node): int => WorkspaceValue::int($node['id'] ?? 0),
             $flat,
         )));
+        $hasExplicitSelection = $selectedNodeIds !== [];
         $selectedNodeIds = array_values(array_unique(array_filter(
             $selectedNodeIds,
             static fn(int $nodeId): bool => $nodeId > 0 && in_array($nodeId, $availableIds, true),
         )));
-        $includedIds = $selectedNodeIds !== [] ? $selectedNodeIds : $availableIds;
+        $includedIds = $hasExplicitSelection ? $selectedNodeIds : $availableIds;
         $tree = $this->filterSelectedTree($tree, $includedIds);
         $flat = $this->flatten($tree);
         if ($flat === []) {
@@ -974,8 +975,8 @@ final readonly class WorkspaceExportService
             );
             $nodeId = WorkspaceValue::int($node['id'] ?? 0);
             $type = WorkspaceValue::string($node['node_type'] ?? 'document');
-            $readable = $type !== 'document';
-            foreach (WorkspaceValue::rows($workflows[$nodeId] ?? null) as $workflow) {
+            $readable = in_array($type, ['separator', 'internal_link', 'external_link'], true);
+            foreach (WorkspaceValue::rows($type === 'document' ? ($workflows[$nodeId] ?? null) : null) as $workflow) {
                 if ($this->workflow->isReadableWorkflow($workflow)) {
                     $readable = true;
                     break;

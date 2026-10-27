@@ -28,6 +28,7 @@ final readonly class WorkspaceMenuNavigationTargetProvider
         private WorkspaceRepository $repository,
         private WorkspaceConfig $config,
         private UrlGenerator $urlGenerator,
+        private ?WorkspaceContentRegistry $contentTypes = null,
     ) {
     }
 
@@ -105,7 +106,10 @@ final readonly class WorkspaceMenuNavigationTargetProvider
             }
 
             foreach ($nodes as $node) {
-                if (WorkspaceValue::string($node['node_type'] ?? '') !== 'document') {
+                if (
+                    WorkspaceValue::string($node['node_type'] ?? '') !== 'document'
+                    && !($this->contentTypes?->has(WorkspaceValue::string($node['node_type'] ?? '')) ?? false)
+                ) {
                     continue;
                 }
 

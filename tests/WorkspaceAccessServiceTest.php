@@ -592,6 +592,77 @@ final class WorkspaceAccessServiceTest extends TestCase
         ));
     }
 
+    /** EN: Public/group exceptions expose only the target; membership and grant revocation hide the Workspace again.
+     * HR: Javne/grupne iznimke otkrivaju samo cilj; opoziv članstva i prava ponovno skriva područje.
+     */
+    public function testPublicAndGroupPageExceptionsKeepPrivateNeighboursHidden(): void
+    {
+        $workspace = $this->repository->saveWorkspace(
+            ['name' => 'Private fixture', 'slug' => 'private-fixture', 'visibility' => 'restricted'],
+            1,
+        );
+        $wid = (int)$workspace['id'];
+        $root = $this->repository->saveNode($wid, [
+            'title' => 'Hidden root', 'slug' => 'hidden-root', 'document_key' => 'hidden-root',
+        ], 1);
+        $page = $this->repository->saveNode($wid, [
+            'title' => 'Granted page', 'slug' => 'granted-page', 'document_key' => 'granted-page',
+            'parent_id' => $root['id'],
+        ], 1);
+        $child = $this->repository->saveNode($wid, [
+            'title' => 'Hidden child', 'slug' => 'hidden-child', 'document_key' => 'hidden-child',
+            'parent_id' => $page['id'],
+        ], 1);
+        foreach (['group' => 10, 'public' => 1, 'authenticated' => 1] as $type => $id) {
+            $this->repository->replaceNodeDirectPermissions($wid, (int)$page['id'], [], [
+                $type => [$id => ['can_view' => true, 'can_edit' => true, 'can_publish' => true]],
+            ]);
+            $this->authn->login($type === 'public' ? null : ['id' => 2, 'is_admin' => false]);
+            $this->access->clearRequestCache();
+            $this->assertTrue($this->access->canAccessWorkspace($workspace));
+            $this->assertCount(1, $this->access->visibleWorkspaces());
+            $this->assertFalse($this->access->workspacePermissions($workspace)['can_view']);
+            $rights = $this->access->nodePermissions($workspace, $page);
+            $this->assertTrue($rights['can_view']);
+            $this->assertSame($type !== 'public', $rights['can_edit']);
+            $this->assertFalse($rights['can_manage']);
+            $this->assertFalse($this->access->nodePermissions($workspace, $root)['can_view']);
+            $this->assertFalse($this->access->nodePermissions($workspace, $child)['can_view']);
+            $tree = $this->access->visibleTreeWindowForLanguages($workspace, null, []);
+            $this->assertCount(1, $tree);
+            $this->assertSame((int)$page['id'], (int)$tree[0]['id']);
+            $this->assertNull($tree[0]['parent_id']);
+            $batch = $this->access->viewPermissionsForTargets(
+                [$workspace],
+                [$root, $page, $child],
+                $this->access->currentUser(),
+            );
+            $this->assertTrue($batch['workspaces'][$wid]);
+            $this->assertSame([
+                (int)$root['id'] => false, (int)$page['id'] => true, (int)$child['id'] => false,
+            ], $batch['nodes']);
+            if ($type === 'group') {
+                $this->database->table('auth_user_groups')->where('user_id', '=', 2)->delete();
+                $this->access->clearRequestCache();
+                $this->assertCount(0, $this->access->visibleWorkspaces());
+                $this->database->table('auth_user_groups')->insert(['user_id' => 2, 'group_id' => 10]);
+            }
+
+            if ($type === 'public') {
+                $this->database->table('workspace_node_subject_permissions')->where('node_id', '=', $page['id'])
+                    ->update(['can_view' => false, 'can_edit' => true, 'can_publish' => true]);
+                $this->access->clearRequestCache();
+                $this->assertFalse($this->access->nodePermissions($workspace, $page)['can_edit']);
+                $this->assertSame([], $this->access->visibleWorkspaces());
+            }
+
+            $this->repository->replaceNodeDirectPermissions($wid, (int)$page['id'], []);
+            $this->access->clearRequestCache();
+            $this->assertFalse($this->access->canAccessWorkspace($workspace));
+            $this->assertSame([], $this->access->visibleWorkspaces());
+        }
+    }
+
     /**
      * EN: A direct grant opens only its target page and Workspace without
      *     revealing parents or inheriting the grant to descendants.
@@ -1358,7 +1429,7 @@ final class WorkspaceAccessServiceTest extends TestCase
             $batch = $this->access->viewPermissionsForTargets(array_values($workspaces), $nodes, $user);
             foreach ($workspaces as $wid => $workspace) {
                 $this->assertSame(
-                    $this->access->workspacePermissions($workspace, $user)['can_view'],
+                    $this->access->canAccessWorkspace($workspace, $user),
                     $batch['workspaces'][$wid],
                 );
             }
@@ -1381,7 +1452,7 @@ final class WorkspaceAccessServiceTest extends TestCase
         $groupAfter = $this->access->viewPermissionsForTargets([$restricted], $nodes, $member);
         $this->assertFalse($groupAfter['workspaces'][(int)$restricted['id']]);
         $before = $this->access->viewPermissionsForTargets([$restricted], $nodes, $user);
-        $this->assertFalse($before['workspaces'][(int)$restricted['id']]);
+        $this->assertTrue($before['workspaces'][(int)$restricted['id']]);
         $this->assertTrue($before['nodes'][(int)$leaf['id']]);
         $this->repository->replaceNodeDirectPermissions((int)$restricted['id'], (int)$leaf['id'], []);
         $after = $this->access->viewPermissionsForTargets([$restricted], $nodes, $user);

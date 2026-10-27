@@ -29,6 +29,7 @@ use ReflectionClass;
 
 #[CoversClass(WorkspacePageBackupProvider::class)]
 #[UsesClass(WorkspaceRepository::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceContentBackup::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceBackupLinks::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
 final class WorkspacePageBackupProviderTest extends TestCase

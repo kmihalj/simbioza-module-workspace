@@ -126,10 +126,10 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
         <label class="form-label" for="workspace-node-type-<?= $nodeId ?>">
             <?= $this->escape(__('Vrsta stavke')) ?>
         </label>
-        <?php if ($nodeType === 'separator' && $nodeId > 0) : ?>
-            <input type="hidden" name="node_type" value="separator">
+        <?php if ($nodeId > 0 && !in_array($nodeType, ['document', 'internal_link', 'external_link'], true)) : ?>
+            <input type="hidden" name="node_type" value="<?= $this->escape($nodeType) ?>">
             <select id="workspace-node-type-<?= $nodeId ?>" class="form-select" data-workspace-node-type disabled>
-                <option value="separator" selected><?= $this->escape(__('separator')) ?></option>
+                <option value="<?= $this->escape($nodeType) ?>" selected><?= $this->escape(__($nodeType)) ?></option>
             </select>
         <?php else : ?>
             <select

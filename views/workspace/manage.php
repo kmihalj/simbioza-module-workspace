@@ -12,6 +12,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var array<string, mixed>|null $workspace
  * @var array<string, bool> $workspacePermissions
  * @var list<array<string, mixed>> $workspaceAclSubjects
+ * @var list<array{package:string,view:string,data:array<string,mixed>}> $contentMemberSections
  * @var string $savePath
  * @var string $deletePath
  * @var string $aclSavePath
@@ -391,6 +392,8 @@ foreach ($workspaceAclSubjects as $subject) {
                 <h2 id="workspace-acl-title" class="h5 mb-1">
                     <?= $this->escape(__('Članovi i prava')) ?>
                 </h2>
+                <?php if (($contentMemberSections ?? []) !== []) : ?><h3 class="h6"><?= $this->escape(__('Sadržaj')) ?></h3><?php
+                endif; ?>
                 <p class="small text-body-secondary mb-3">
                     <?= $this->escape(
                         __(
@@ -448,44 +451,15 @@ foreach ($workspaceAclSubjects as $subject) {
                                             $category === 'user' ? __('Dodaj korisnika') : __('Dodaj grupu'),
                                         ) ?>
                                     </label>
-                                    <div
-                                        class="workspace-subject-picker"
-                                        data-workspace-subject-picker
-                                        data-workspace-picker-mode="acl"
-                                        data-workspace-min-query-length="2"
-                                        data-workspace-subject-type="<?= $category ?>"
-                                        data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
-                                        data-workspace-id="<?= $workspaceId ?>"
-                                        data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
-                                        data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
-                                        data-workspace-search-error="<?= $this->escape(
-                                            __('Pretraživanje nije uspjelo.'),
-                                        ) ?>"
-                                    >
-                                        <input
-                                            id="workspace-acl-search-<?= $category ?>"
-                                            class="form-control"
-                                            type="search"
-                                            role="combobox"
-                                            autocomplete="off"
-                                            aria-autocomplete="list"
-                                            aria-expanded="false"
-                                            aria-controls="workspace-acl-results-<?= $category ?>"
-                                            placeholder="<?= $this->escape(
-                                                $category === 'user'
-                                                ? __('Pretraži korisnike')
-                                                : __('Pretraži grupe'),
-                                            ) ?>"
-                                            data-workspace-subject-search
-                                        >
-                                        <div
-                                            id="workspace-acl-results-<?= $category ?>"
-                                            class="workspace-subject-results list-group"
-                                            role="listbox"
-                                            data-workspace-subject-results
-                                            hidden
-                                        ></div>
-                                    </div>
+                                    <?php
+                                    $workspaceSubjectId = 'workspace-acl-search-' . $category;
+                                    $workspaceSubjectResultsId = 'workspace-acl-results-' . $category;
+                                    $workspaceSubjectType = $category;
+                                    $workspaceSubjectSearchUrl = $subjectSearchPath;
+                                    $workspaceSubjectWorkspaceId = $workspaceId;
+                                    $workspaceSubjectRealOnly = false;
+                                    require __DIR__ . '/../partials/subject-picker.php';
+                                    ?>
                                 </div>
                                 <div class="col-12 col-lg-7">
                                     <p class="small text-body-secondary mb-1">
@@ -587,6 +561,9 @@ foreach ($workspaceAclSubjects as $subject) {
             </div>
         </section>
 
+        <?php foreach ($contentMemberSections ?? [] as $section) : ?>
+            <?= $this->forModulePartial($section['package'], $section['view'], $section['data']) ?>
+        <?php endforeach; ?>
         <section class="card mb-4" aria-labelledby="workspace-delete-title">
             <div class="card-body">
                 <h2 id="workspace-delete-title" class="h5 mb-2">

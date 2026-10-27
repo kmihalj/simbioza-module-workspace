@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Controller;
 
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentProviderInterface;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentViewed;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceAccessService;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceBacklinkService;
@@ -76,7 +77,57 @@ final readonly class WorkspaceController
         private WorkspaceIndexService $workspaceIndex,
         private EventDispatcherInterface $events,
         private LoggerInterface $logger,
+        private ?\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry $contentTypes = null,
     ) {
+    }
+
+    /** EN: Reuses the standard tree and visibility controls for an authorized content provider.
+     *
+     * HR: Koristi standardno stablo i kontrole vidljivosti za ovlašten provider sadržaja.
+     * @param array<string,mixed> $workspace
+     * @param array<string,mixed> $node
+     * @param array{package:string,view:string,data:array<string,mixed>,title:string} $content
+     */
+    public function renderContent(
+        ServerRequestInterface $request,
+        array $workspace,
+        array $node,
+        array $content,
+    ): ResponseInterface {
+        $permissions = $this->access->nodePermissions($workspace, $node);
+        $type = WorkspaceValue::string($node['node_type'] ?? '');
+        if (!$permissions['can_view'] || !($this->contentTypes?->has($type) ?? false)) {
+            return $this->notFound();
+        }
+
+        $node['permissions'] = $permissions;
+        $language = $this->language($request);
+        $visible = $this->access->visibleTreeWindowForLanguages(
+            $workspace,
+            null,
+            $this->config->contentLanguagePriority($language),
+            WorkspaceValue::int($node['id'] ?? 0),
+            true,
+        );
+        $rows = $this->repository->nodeWorkflowsForNodes($this->treeNodeIds($visible), $language);
+        $tree = $this->decorateTree($visible, $workspace, $rows, $language);
+        $content['data']['workspace_tree_controls'] = true;
+        $content['data']['workspace_tree_visible'] = $this->config->treeVisibleForWorkspace($workspace);
+        $content['data']['workspace_node_dialog_path'] = $this->canManagePagePermissions($workspace, $node)
+        ? $this->pathFor('workspace.node.dialog', '/workspaces/node/dialog') . '?' . http_build_query([
+                'workspace_id' => WorkspaceValue::int($workspace['id'] ?? 0),
+                'node_id' => WorkspaceValue::int($node['id'] ?? 0),
+                'return_node_id' => WorkspaceValue::int($node['id'] ?? 0),
+            ]) : '';
+        $content['data']['workspace_page_path'] = $this->nodePath(
+            WorkspaceValue::string($workspace['slug'] ?? ''),
+            WorkspaceValue::string($node['slug'] ?? ''),
+        );
+        if ($request->getUri()->getPath() === $content['data']['workspace_page_path']) {
+            $content['data']['workspace_page_path'] = '';
+        }
+
+        return $this->renderWorkspace($request, $workspace, $tree, $node, $rows, $content);
     }
 
     /**
@@ -191,7 +242,21 @@ final readonly class WorkspaceController
 
         $node['permissions'] = $nodePermissions;
 
-        if ($this->stringValue($node['node_type'] ?? '') !== 'document') {
+        $type = $this->stringValue($node['node_type'] ?? '');
+        if (($provider = $this->contentTypes?->get($type)) instanceof WorkspaceContentProviderInterface) {
+            $provider->prepare($workspace, [$node]);
+            if (!$provider->visible($node, $nodePermissions, [$language])) {
+                return $this->notFound();
+            }
+
+            return $this->renderContent($request, $workspace, $node, $provider->view($request, $workspace, $node));
+        }
+
+        if (!in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)) {
+            return $this->notFound();
+        }
+
+        if ($type !== 'document') {
             return $this->redirectLinkNode($node);
         }
 
@@ -278,6 +343,10 @@ final readonly class WorkspaceController
                 : [],
             'isAdministrator' => $isAdministrator,
             'currentUser' => $this->access->currentUser(),
+            'contentMemberSections' => is_array($workspace) ? array_values(array_filter(array_map(
+                fn(WorkspaceContentProviderInterface $provider): ?array => $provider->memberSection($workspace),
+                $this->contentTypes?->all() ?? [],
+            ))) : [],
             'savePath' => $this->pathFor('workspace.save', '/workspaces/save'),
             'deletePath' => $this->pathFor('workspace.delete', '/workspaces/delete'),
             'aclSavePath' => $this->pathFor('workspace.acl.save', '/workspaces/acl'),
@@ -478,7 +547,7 @@ final readonly class WorkspaceController
         $node = null;
         if (is_array($workspace)) {
             if (in_array($mode, ['restriction', 'direct-permission'], true)) {
-                if ($category !== WorkspaceRepository::SUBJECT_USER) {
+                if ($mode === 'restriction' && $category !== WorkspaceRepository::SUBJECT_USER) {
                     return $this->responseFactory->json(
                         ['ok' => false, 'error' => __('Ovlasti stranice mogu se zadati samo korisnicima.')],
                         422,
@@ -704,7 +773,8 @@ final readonly class WorkspaceController
         $permissions = $this->access->nodePermissions($workspace, $node);
         $workspacePermissions = $this->access->workspacePermissions($workspace);
         $canEditTreeItem = (bool)($workspacePermissions['can_manage'] ?? false)
-        && (bool)($permissions['can_view'] ?? false);
+        && (bool)($permissions['can_view'] ?? false)
+        && in_array($node['node_type'], ['document', 'separator', 'internal_link', 'external_link'], true);
         $canManagePagePermissions = $this->canManagePagePermissions($workspace, $node);
         if (
             !$canEditTreeItem
@@ -1051,6 +1121,18 @@ final readonly class WorkspaceController
 
         $nodeId = $this->intValue($body['id'] ?? 0);
         $existing = $nodeId > 0 ? $this->repository->findNodeById($nodeId) : null;
+        $submittedType = $this->stringValue($body['node_type'] ?? ($existing['node_type'] ?? 'document'));
+        if (
+            (!is_array($existing) && ($this->contentTypes?->has($submittedType) ?? false))
+            || (is_array($existing) && !in_array(
+                $existing['node_type'],
+                ['document', 'separator', 'internal_link', 'external_link'],
+                true,
+            ))
+        ) {
+            return $this->notFound();
+        }
+
         if (is_array($existing)) {
             if (!array_key_exists('parent_id', $body)) {
                 $body['parent_id'] = $existing['parent_id'] ?? null;
@@ -1416,6 +1498,7 @@ final readonly class WorkspaceController
             $this->intValue($workspace['id'] ?? 0),
             $this->intValue($node['id'] ?? 0),
             is_array($body['direct_permissions'] ?? null) ? $body['direct_permissions'] : [],
+            is_array($body['direct_subjects'] ?? null) ? $body['direct_subjects'] : [],
         );
         $this->access->clearRequestCache();
         $this->success(__('Izravna dopuštenja stranice su spremljena.'));
@@ -1631,6 +1714,7 @@ final readonly class WorkspaceController
      * @param list<array<string, mixed>> $tree
      * @param array<string, mixed>|null $node
      * @param array<int, array<string, mixed>> $workflows
+     * @param array{package:string,view:string,data:array<string,mixed>,title:string}|null $extensionContent
      */
     private function renderWorkspace(
         ServerRequestInterface $request,
@@ -1638,9 +1722,10 @@ final readonly class WorkspaceController
         array $tree,
         ?array $node,
         array $workflows,
+        ?array $extensionContent = null,
     ): ResponseInterface {
         $workspacePermissions = $this->access->workspacePermissions($workspace);
-        if (!$this->access->canAccessWorkspace($workspace)) {
+        if (!$this->access->canAccessWorkspace($workspace) && $extensionContent === null) {
             return $this->accessDenied();
         }
 
@@ -1856,13 +1941,21 @@ final readonly class WorkspaceController
         return $this->viewRenderer->render('workspace/show', [
             'title' => is_array($editorView)
                 ? $this->stringValue($editorView['title'] ?? '')
-                : $this->stringValue($workspace['name'] ?? ''),
+                : ($extensionContent['title'] ?? $this->stringValue($workspace['name'] ?? '')),
             'themeTitleContext' => 'integrated',
             'workspace' => $workspace,
             'workspacePermissions' => $workspacePermissions,
             'tree' => $readableTree,
             'activeNode' => $node,
             'editorView' => $editorView,
+            'extensionContent' => $extensionContent,
+            'contentCreateActions' => array_values(array_filter(array_map(
+                fn(WorkspaceContentProviderInterface $provider): ?array => $provider->createAction(
+                    $workspace,
+                    $this->access->currentUser(),
+                ),
+                $this->contentTypes?->all() ?? [],
+            ))),
             'workflow' => $workflowView,
             'breadcrumbs' => $breadcrumbs,
             'backlinks' => $backlinks,
@@ -2348,7 +2441,12 @@ final readonly class WorkspaceController
                     $this->stringValue($node['slug'] ?? ''),
                 ),
                 'separator' => '',
-                default => $this->linkNodeHref($node),
+                default => ($this->contentTypes?->has($type) ?? false)
+                ? $this->nodePath(
+                    WorkspaceValue::string($workspace['slug'] ?? ''),
+                    WorkspaceValue::string($node['slug'] ?? ''),
+                )
+                : $this->linkNodeHref($node),
             };
             $permissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
             $workflow = $workflows[$this->intValue($node['id'] ?? 0)] ?? null;

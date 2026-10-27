@@ -411,7 +411,7 @@ $hasPermission = static function (
         <hr class="my-4">
         <section aria-labelledby="workspace-node-direct-permissions-title">
             <h3 id="workspace-node-direct-permissions-title" class="h6">
-                <?= $this->escape(__('Izravna dopuštenja korisnicima')) ?>
+                <?= $this->escape(__('Izravna dopuštenja korisnicima i grupama')) ?>
             </h3>
             <p class="small text-body-secondary mb-2">
                 <?= $this->escape(
@@ -425,8 +425,8 @@ $hasPermission = static function (
             <p class="small text-body-secondary mb-3">
                 <?= $this->escape(
                     __(
-                        'Ovdje se dodaju samo korisnici, ne i grupe. Uređivanje i objavljivanje '
-                        . 'automatski uključuju čitanje.',
+                        'Dodajte korisnike, grupe ili publiku Javno. Javno omogućuje samo čitanje ove stranice, '
+                        . 'čak i u privatnom području. Uređivanje i objavljivanje automatski uključuju čitanje.',
                     ),
                 ) ?>
             </p>
@@ -485,9 +485,42 @@ $hasPermission = static function (
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
-                        <p class="small text-body-secondary mb-1">
-                            <?= $this->escape(__('Pretražite po imenu ili korisničkoj oznaci.')) ?>
-                        </p>
+                        <label class="form-label" for="workspace-direct-permission-group-search">
+                            <?= $this->escape(__('Dodaj grupu')) ?>
+                        </label>
+                        <div
+                            class="workspace-subject-picker"
+                            data-workspace-subject-picker
+                            data-workspace-picker-mode="direct-permission"
+                            data-workspace-min-query-length="0"
+                            data-workspace-subject-type="group"
+                            data-workspace-search-url="<?= $this->escape($subjectSearchPath) ?>"
+                            data-workspace-id="<?= $workspaceId ?>"
+                            data-workspace-node-id="<?= $nodeId ?>"
+                            data-workspace-no-results="<?= $this->escape(__('Nema rezultata.')) ?>"
+                            data-workspace-load-more="<?= $this->escape(__('Učitaj još')) ?>"
+                            data-workspace-search-error="<?= $this->escape(__('Pretraživanje nije uspjelo.')) ?>"
+                        >
+                            <input
+                                id="workspace-direct-permission-group-search"
+                                class="form-control"
+                                type="search"
+                                role="combobox"
+                                autocomplete="off"
+                                aria-autocomplete="list"
+                                aria-expanded="false"
+                                aria-controls="workspace-direct-permission-group-results"
+                                placeholder="<?= $this->escape(__('Pretraži grupe')) ?>"
+                                data-workspace-subject-search
+                            >
+                            <div
+                                id="workspace-direct-permission-group-results"
+                                class="workspace-subject-results list-group"
+                                role="listbox"
+                                data-workspace-subject-results
+                                hidden
+                            ></div>
+                        </div>
                     </div>
                 </div>
 
@@ -495,7 +528,7 @@ $hasPermission = static function (
                     <table class="table table-sm align-middle workspace-acl-table">
                         <thead>
                             <tr>
-                                <th scope="col"><?= $this->escape(__('Korisnik')) ?></th>
+                                <th scope="col"><?= $this->escape(__('Korisnik ili grupa')) ?></th>
                                 <?php foreach (['can_view' => __('Čitanje'), 'can_edit' => __('Uređivanje'), 'can_publish' => __('Objavljivanje')] as $permission => $label) : ?>
                                     <th scope="col" class="text-center">
                                         <?= $this->escape($label) ?>
@@ -509,17 +542,21 @@ $hasPermission = static function (
                         <tbody data-workspace-direct-permission-rows>
                             <?php foreach ($directPermissionSubjects as $subject) : ?>
                                 <?php
-                                $userId = WorkspaceValue::int($subject['user_id'] ?? 0);
+                                $userId = WorkspaceValue::int($subject['subject_id'] ?? $subject['user_id'] ?? 0);
+                                $subjectType = WorkspaceValue::string($subject['subject_type'] ?? 'user');
+                                $subjectKey = $subjectType === 'user' ? (string)$userId : $subjectType . ':' . $userId;
+                                $field = $subjectType === 'user' ? 'direct_permissions[' . $userId . ']' : 'direct_subjects[' . $subjectType . '][' . $userId . ']';
                                 $label = WorkspaceValue::string($subject['label'] ?? '');
                                 ?>
-                                <tr data-workspace-direct-permission-row="<?= $userId ?>">
+                                <tr data-workspace-direct-permission-row="<?= $this->escape($subjectKey) ?>">
                                     <th scope="row"><?= $this->escape($label) ?></th>
                                     <?php foreach (['can_view', 'can_edit', 'can_publish'] as $permission) : ?>
                                         <td class="text-center">
                                             <input
                                                 class="form-check-input"
                                                 type="checkbox"
-                                                name="direct_permissions[<?= $userId ?>][<?= $permission ?>]"
+                                                name="<?= $this->escape($field) ?>[<?= $permission ?>]"
+                                                <?= $subjectType === 'public' && $permission !== 'can_view' ? 'disabled' : '' ?>
                                                 value="1"
                                                 <?= (bool)($subject[$permission] ?? false) ? 'checked' : '' ?>
                                                 aria-label="<?= $this->escape(__($permission) . ': ' . $label) ?>"

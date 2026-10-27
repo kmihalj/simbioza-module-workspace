@@ -1413,7 +1413,11 @@
         }
         row.append(heading);
 
-        ['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'].forEach((permission) => {
+        const allowedPermissions = ['can_view', 'can_add', 'can_edit', 'can_publish', 'can_delete', 'can_manage'];
+        const permissionKeys = form.dataset.workspacePermissionKeys
+            ? form.dataset.workspacePermissionKeys.split(',').filter((key) => allowedPermissions.includes(key))
+            : allowedPermissions;
+        permissionKeys.forEach((permission) => {
             const cell = document.createElement('td');
             const checkbox = document.createElement('input');
             cell.className = 'text-center';
@@ -1709,12 +1713,14 @@
      */
     function addDirectPermissionRow(form, subject) {
         const userId = String(subject.id || '');
+        const type = String(subject.type || '');
+        const key = type === 'user' ? userId : type + ':' + userId;
         const label = String(subject.label || '');
         if (
-            String(subject.type || '') !== 'user'
+            !['user', 'group', 'public', 'authenticated'].includes(type)
             || userId === ''
             || label === ''
-            || form.querySelector('[data-workspace-direct-permission-row="' + CSS.escape(userId) + '"]')
+            || form.querySelector('[data-workspace-direct-permission-row="' + CSS.escape(key) + '"]')
         ) {
             return;
         }
@@ -1725,7 +1731,7 @@
         }
 
         const row = document.createElement('tr');
-        row.dataset.workspaceDirectPermissionRow = userId;
+        row.dataset.workspaceDirectPermissionRow = key;
         const heading = document.createElement('th');
         heading.scope = 'row';
         heading.textContent = label;
@@ -1740,7 +1746,8 @@
             cell.className = 'text-center';
             checkbox.className = 'form-check-input';
             checkbox.type = 'checkbox';
-            checkbox.name = 'direct_permissions[' + userId + '][' + permission + ']';
+            checkbox.name = (type === 'user' ? 'direct_permissions[' + userId + ']' : 'direct_subjects[' + type + '][' + userId + ']') + '[' + permission + ']';
+            checkbox.disabled = type === 'public' && permission !== 'can_view';
             checkbox.value = '1';
             checkbox.checked = permission === 'can_view';
             checkbox.setAttribute('aria-label', permissionLabel + ': ' + label);
@@ -1800,15 +1807,18 @@
         }
 
         const visibleSubjects = subjects.filter((subject) => {
+            if (picker.dataset.workspaceRealSubjectsOnly === '1'
+                && (!['user', 'group'].includes(String(subject.type)) || Number(subject.id) <= 0)) {
+                return false;
+            }
             if (!(form instanceof HTMLFormElement)) {
                 return true;
             }
 
             if (mode === 'direct-permission') {
-                const userId = String(subject.id || '');
-                return !form.querySelector(
-                    '[data-workspace-direct-permission-row="' + CSS.escape(userId) + '"]',
-                );
+                const id = String(subject.id || '');
+                const key = subject.type === 'user' ? id : String(subject.type) + ':' + id;
+                return !form.querySelector('[data-workspace-direct-permission-row="' + CSS.escape(key) + '"]');
             }
             if (mode === 'restriction') {
                 const userId = String(subject.id || subject.subject_id || '');
@@ -1892,7 +1902,7 @@
         if (state.controller instanceof AbortController) {
             state.controller.abort();
         }
-        const minimumLength = String(picker.dataset.workspaceSubjectType || '') === 'user'
+        const minimumLength = ['user', 'group'].includes(String(picker.dataset.workspaceSubjectType || ''))
             ? 0
             : Number.parseInt(String(picker.dataset.workspaceMinQueryLength || '0'), 10);
         if (input.value.trim().length < minimumLength) {

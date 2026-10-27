@@ -6,6 +6,12 @@ declare(strict_types=1);
 //
 // HR: Izvorni hrvatski ključevi i prijevodi jezika hr.
 return array (
+  'Sadržaj uređujte u modulu kojem pripada.' => 'Sadržaj uređujte u modulu kojem pripada.',
+  'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.' => 'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.',
+  'survey' => 'Anketa',
+  'Sadržaj' => 'Sadržaj',
+  'Vrsta sadržaja nije dostupna.' => 'Vrsta sadržaja nije dostupna.',
+  'Vrstu sadržaja nije moguće promijeniti.' => 'Vrstu sadržaja nije moguće promijeniti.',
   'Tablica stranica i svojstava' => 'Tablica stranica i svojstava',
   'Dinamički sadržaj područja' => 'Dinamički sadržaj područja',
   'Galerija privitaka' => 'Galerija privitaka',
@@ -711,4 +717,9 @@ return array (
   'Nastavi s odabranom radnjom' => 'Nastavi s odabranom radnjom',
   'Predložak migracije trajnog brisanja nije pronađen.' => 'Predložak migracije trajnog brisanja nije pronađen.',
   'Kreirana je migracija trajnog brisanja područja: ' => 'Kreirana je migracija trajnog brisanja područja: ',
+    'Izravna dopuštenja korisnicima i grupama' => 'Izravna dopuštenja korisnicima i grupama',
+    'Korisnik ili grupa' => 'Korisnik ili grupa',
+    'Dodajte korisnike, grupe ili publiku Javno. Javno omogućuje samo čitanje ove stranice, čak i u privatnom području. Uređivanje i objavljivanje automatski uključuju čitanje.' => 'Dodajte korisnike, grupe ili publiku Javno. Javno omogućuje samo čitanje ove stranice, čak i u privatnom području. Uređivanje i objavljivanje automatski uključuju čitanje.',
+    'Ako područje sadrži ankete, backup uključuje njihove postavke, sve odgovore, privitke i ovlasti. Nakon vraćanja rasporede izvještaja treba ponovno uključiti.' => 'Ako područje sadrži ankete, backup uključuje njihove postavke, sve odgovore, privitke i ovlasti. Nakon vraćanja rasporede izvještaja treba ponovno uključiti.',
+    'Ankete se ne izvoze u HTML. Za očuvanje anketa, njihovih odgovora i postavki koristite šifrirani backup područja.' => 'Ankete se ne izvoze u HTML. Za očuvanje anketa, njihovih odgovora i postavki koristite šifrirani backup područja.',
 );

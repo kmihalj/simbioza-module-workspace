@@ -24,6 +24,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceConfig;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * EN: Portable backup of one workspace, its tree, workflow, ACL, and private
@@ -67,6 +68,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         private readonly WorkspaceConfig $config,
         private readonly BackupFilesystem $filesystem,
         private readonly WorkspaceRepository $repository,
+        private readonly ?WorkspaceContentBackup $contentBackup = null,
     ) {
     }
 
@@ -161,6 +163,14 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         /** @var array<int,string> $nodeUuidById */
         $nodeUuidById = [];
         foreach ($nodes as $node) {
+            $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+                WorkspaceValue::string($node['node_type']),
+                $context->scope->type,
+            );
+            if ($owner !== null) {
+                $writer->requireProvider($owner);
+            }
+
             $nodeUuidById[BackupValue::integer($node['id'], 'node.id')] = BackupValue::string(
                 $node['uuid'],
                 'node.uuid',
@@ -249,6 +259,25 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                 'node-acl',
                 true,
             );
+            $subjectGrants = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                ->where('node_id', '=', $nodeId)->orderBy('id')->get();
+            foreach ($subjectGrants as $grant) {
+                $subject = $this->identities->subjectReference(
+                    $grant['subject_type'] ?? null,
+                    $grant['subject_id'] ?? null,
+                );
+                if ($subject === null) {
+                    throw new BackupException('Unable to serialize page subject permission.');
+                }
+
+                $writer->writeRecord(self::ID, 'node-subject-permissions', [
+                    'node_uuid' => $nodeUuid, 'subject_type' => $subject['type'], 'subject_key' => $subject['key'],
+                    'can_view' => BackupValue::booleanInteger($grant['can_view'], 'subject.can_view'),
+                    'can_edit' => BackupValue::booleanInteger($grant['can_edit'], 'subject.can_edit'),
+                    'can_publish' => BackupValue::booleanInteger($grant['can_publish'], 'subject.can_publish'),
+                ]);
+            }
+
             foreach (
                 $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                 ->where('node_id', '=', $nodeId)
@@ -334,7 +363,19 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         }
 
         $errors = [];
-        foreach (['workspace-acl', 'node-acl'] as $dataset) {
+        foreach ($reader->records(self::ID, 'nodes') as $node) {
+            try {
+                ($this->contentBackup ?? new WorkspaceContentBackup())->checkImport(
+                    WorkspaceValue::string($node['node_type'] ?? ''),
+                    $context,
+                    $reader,
+                );
+            } catch (BackupException $error) {
+                $errors[] = $error->getMessage();
+            }
+        }
+
+        foreach (['workspace-acl', 'node-acl', 'node-subject-permissions'] as $dataset) {
             foreach ($reader->records(self::ID, $dataset) as $acl) {
                 $subjectType = BackupValue::string($acl['subject_type'], $dataset . '.subject_type');
                 if ($dataset === 'node-acl' && $subjectType !== WorkspaceRepository::SUBJECT_USER) {
@@ -421,6 +462,8 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                 ->whereIn('node_id', $nodeIds)
                 ->delete();
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                ->whereIn('node_id', $nodeIds)->delete();
         }
 
         $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
@@ -842,6 +885,32 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
         BackupImportContext $context,
         BackupArchiveReader $reader,
     ): void {
+        foreach ($reader->records(self::ID, 'node-subject-permissions') as $row) {
+            $nodeId = $this->mappedInteger(
+                $context,
+                'workspace.node-id',
+                BackupValue::string($row['node_uuid'], 'subject.node_uuid'),
+            );
+            $type = BackupValue::string($row['subject_type'], 'subject.type');
+            $id = $this->identities->subjectId($type, BackupValue::string($row['subject_key'], 'subject.key'));
+            if ($id === null || !in_array($type, ['group', 'public', 'authenticated'], true)) {
+                throw new BackupException('Unable to resolve page subject permission.');
+            }
+
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                ->where('node_id', '=', $nodeId)->where('subject_type', '=', $type)
+                ->where('subject_id', '=', $id)->delete();
+            $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)->insert([
+                'node_id' => $nodeId, 'subject_type' => $type, 'subject_id' => $id,
+                'can_view' => BackupValue::booleanInteger($row['can_view'], 'subject.can_view'),
+                'can_edit' => $type === 'public' ? 0
+                    : BackupValue::booleanInteger($row['can_edit'], 'subject.can_edit'),
+                'can_publish' => $type === 'public' ? 0
+                    : BackupValue::booleanInteger($row['can_publish'], 'subject.can_publish'),
+                'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
         foreach ($reader->records(self::ID, 'node-direct-permissions') as $row) {
             $nodeId = $this->mappedInteger(
                 $context,

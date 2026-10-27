@@ -7,6 +7,7 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentProviderInterface;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
@@ -71,6 +72,7 @@ final readonly class WorkspaceRepository
         private ?LoggerInterface $logger = null,
         private ?WorkspaceContentChangeBatch $contentChangeBatch = null,
         private ?WorkspaceRepositoryRequestCache $requestCache = null,
+        private ?WorkspaceContentRegistry $contentTypes = null,
     ) {
     }
 
@@ -88,6 +90,7 @@ final readonly class WorkspaceRepository
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODES)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+        && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
         && $schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES);
@@ -468,6 +471,8 @@ final readonly class WorkspaceRepository
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                     ->whereIn('node_id', $nodeIds)
                     ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                    ->whereIn('node_id', $nodeIds)->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS)
                     ->whereIn('node_id', $nodeIds)
                     ->delete();
@@ -2356,6 +2361,8 @@ final readonly class WorkspaceRepository
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                    ->where('node_id', '=', $nodeId)->delete();
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
@@ -2450,7 +2457,7 @@ final readonly class WorkspaceRepository
      * @param list<int> $nodeIds
      * @return list<array<string, mixed>>
      */
-    public function nodeDirectPermissionRowsForNodes(array $nodeIds, int $userId = 0): array
+    public function nodeDirectPermissionRowsForNodes(array $nodeIds): array
     {
         $nodeIds = array_values(array_unique(array_filter(
             $nodeIds,
@@ -2460,13 +2467,17 @@ final readonly class WorkspaceRepository
             return [];
         }
 
-        $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
-            ->whereIn('node_id', $nodeIds);
-        if ($userId > 0) {
-            $query->where('user_id', '=', $userId);
+        $rows = $this->rows($this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
+            ->whereIn('node_id', $nodeIds)->get());
+        foreach ($rows as &$row) {
+            $row['subject_type'] = self::SUBJECT_USER;
+            $row['subject_id'] = $this->intValue($row['user_id'] ?? 0);
         }
 
-        return $this->rows($query->get());
+        unset($row);
+        return [...$rows, ...$this->rows($this->database
+            ->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+            ->whereIn('node_id', $nodeIds)->get())];
     }
 
     /**
@@ -2479,21 +2490,34 @@ final readonly class WorkspaceRepository
     public function nodeDirectPermissionSubjects(int $nodeId): array
     {
         $rows = $this->nodeDirectPermissionRowsForNodes([$nodeId]);
-        $users = $this->usersByIds(array_values(array_map(
-            fn(array $row): int => $this->intValue($row['user_id'] ?? 0),
-            $rows,
-        )));
+        $userIds = [];
+        $groupIds = [];
+        foreach ($rows as $row) {
+            if (($row['subject_type'] ?? '') === self::SUBJECT_USER) {
+                $userIds[] = $this->intValue($row['subject_id'] ?? 0);
+            } elseif (($row['subject_type'] ?? '') === self::SUBJECT_GROUP) {
+                $groupIds[] = $this->intValue($row['subject_id'] ?? 0);
+            }
+        }
+
+        $this->usersByIds($userIds);
+        $this->groupsByIds($groupIds);
         $subjects = [];
         foreach ($rows as $row) {
-            $userId = $this->intValue($row['user_id'] ?? 0);
-            if (!isset($users[$userId])) {
+            $type = $this->stringValue($row['subject_type'] ?? 'user');
+            $id = $this->intValue($row['subject_id'] ?? 0);
+            if (!$this->subjectExists($type, $id)) {
                 continue;
             }
 
-            $subjects[] = [
-                ...$row,
-                'label' => $this->stringValue($users[$userId]['label'] ?? ''),
-            ];
+            $subject = $type === self::SUBJECT_USER ? ($this->usersByIds([$id])[$id] ?? [])
+            : ($type === self::SUBJECT_GROUP ? ($this->groupsByIds([$id])[$id] ?? []) : []);
+            $label = match ($type) {
+                self::SUBJECT_PUBLIC => __('Javno'),
+                self::SUBJECT_AUTHENTICATED => __('Svi prijavljeni'),
+                default => $this->stringValue($subject['label'] ?? $subject['group_name'] ?? ''),
+            };
+            $subjects[] = [...$row, 'label' => $label];
         }
 
         usort(
@@ -2513,56 +2537,95 @@ final readonly class WorkspaceRepository
      * HR: Vraća područja u kojima korisnik ima barem jednu izravno dopuštenu stranicu.
      *
      * @param list<int> $workspaceIds
+     * @param list<int> $groupIds
      * @return list<int>
      */
-    public function workspaceIdsWithDirectPermissionForUser(array $workspaceIds, int $userId): array
-    {
-        $workspaceIds = array_values(array_unique(array_filter(
-            $workspaceIds,
-            static fn(int $workspaceId): bool => $workspaceId > 0,
-        )));
-        if ($workspaceIds === [] || $userId <= 0) {
+    public function workspaceIdsWithDirectPermissionForUser(
+        array $workspaceIds,
+        int $userId,
+        array $groupIds = [],
+    ): array {
+        if ($workspaceIds === []) {
             return [];
         }
 
-        $placeholders = implode(',', array_fill(0, count($workspaceIds), '?'));
+        [$predicate, $parameters] = $this->directSubjectPredicate($userId, $groupIds);
+        $marks = implode(',', array_fill(0, count($workspaceIds), '?'));
         $rows = $this->rows($this->database->fetchAll(
-            'SELECT DISTINCT n.workspace_id FROM '
-            . ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS . ' p'
-            . ' INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n ON n.id = p.node_id'
-            . ' WHERE p.user_id = ? AND n.workspace_id IN (' . $placeholders . ')'
-            . ' AND n.is_enabled = ? AND (p.can_view = ? OR p.can_edit = ? OR p.can_publish = ?)',
-            [$userId, ...$workspaceIds, true, true, true, true],
+            'SELECT DISTINCT n.workspace_id FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n'
+            . ' INNER JOIN (' . $this->directSubjectUnion() . ') p ON p.node_id=n.id'
+            . ' WHERE (' . $predicate . ') AND n.workspace_id IN (' . $marks . ')'
+            . ' AND n.is_enabled=? AND (p.can_view=? OR p.can_edit=? OR p.can_publish=?)',
+            [...$parameters, ...$workspaceIds, true, true, true, true],
         ));
-
-        return array_values(array_unique(array_filter(array_map(
-            fn(array $row): int => $this->intValue($row['workspace_id'] ?? 0),
-            $rows,
-        ))));
+        return array_map(fn(array $row): int => $this->intValue($row['workspace_id']), $rows);
     }
 
-    /**
-     * EN: Loads only a user's directly granted active pages in one Workspace.
-     *
-     * HR: Učitava samo izravno dopuštene aktivne stranice jednog korisnika u području.
-     *
-     * @return list<array<string, mixed>>
+    /** EN: Selects only active nodes granted to the current user, groups or public audience.
+     * HR: Odabire samo aktivne čvorove dopuštene trenutačnom korisniku, grupama ili javnoj publici.
+     * @param list<int> $groupIds
+     * @return list<array<string,mixed>>
      */
-    public function directPermissionNodesForUser(int $workspaceId, int $userId): array
+    public function directPermissionNodesForUser(int $workspaceId, int $userId, array $groupIds = []): array
     {
-        if ($workspaceId <= 0 || $userId <= 0) {
+        return $this->directPermissionNodesForWorkspaces([$workspaceId], $userId, $groupIds);
+    }
+
+    /** EN: Batch-loads only directly accessible nodes for Workspace discovery.
+     * HR: Paketno učitava samo izravno dostupne čvorove za prikaz područja.
+     * @param list<int> $workspaceIds
+     * @param list<int> $groupIds
+     * @return list<array<string,mixed>>
+     */
+    public function directPermissionNodesForWorkspaces(array $workspaceIds, int $userId, array $groupIds = []): array
+    {
+        if ($workspaceIds === []) {
             return [];
         }
 
+        [$predicate, $parameters] = $this->directSubjectPredicate($userId, $groupIds);
+        $marks = implode(',', array_fill(0, count($workspaceIds), '?'));
         return $this->rows($this->database->fetchAll(
-            'SELECT n.* FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n'
-            . ' INNER JOIN ' . ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS
-            . ' p ON p.node_id = n.id'
-            . ' WHERE n.workspace_id = ? AND n.is_enabled = ? AND p.user_id = ?'
-            . ' AND (p.can_view = ? OR p.can_edit = ? OR p.can_publish = ?)'
-            . ' ORDER BY n.sort_order ASC, n.id ASC',
-            [$workspaceId, true, $userId, true, true, true],
+            'SELECT DISTINCT n.* FROM ' . ModuleWorkspace::TABLE_WORKSPACE_NODES . ' n'
+            . ' INNER JOIN (' . $this->directSubjectUnion() . ') p ON p.node_id=n.id'
+            . ' WHERE n.workspace_id IN (' . $marks . ') AND n.is_enabled=? AND (' . $predicate . ')'
+            . ' AND (p.can_view=? OR p.can_edit=? OR p.can_publish=?) ORDER BY n.sort_order,n.id',
+            [...$workspaceIds, true, ...$parameters, true, true, true],
         ));
+    }
+
+    /** EN: Combines existing user grants and the independently indexed subject exceptions.
+     * HR: Spaja postojeća korisnička prava i zasebno indeksirane iznimke subjekata.
+     */
+    private function directSubjectUnion(): string
+    {
+        return "SELECT node_id,'user' AS subject_type,user_id AS subject_id,can_view,can_edit,can_publish FROM "
+        . ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS
+        . ' UNION ALL SELECT node_id,subject_type,subject_id,can_view,can_edit,can_publish FROM '
+        . ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS;
+    }
+
+    /** EN: Matches current membership with bound parameters; public never means authoring.
+     * HR: Uspoređuje važeća članstva vezanim parametrima; javno nikad ne znači uređivanje.
+     * @param list<int> $groupIds
+     * @return array{string,list<int|string>}
+     */
+    private function directSubjectPredicate(int $userId, array $groupIds): array
+    {
+        $sql = "(p.subject_type='public' AND p.subject_id=1)";
+        $parameters = [];
+        if ($userId > 0) {
+            $sql .= " OR (p.subject_type='user' AND p.subject_id=?)"
+            . " OR (p.subject_type='authenticated' AND p.subject_id=1)";
+            $parameters[] = $userId;
+            if ($groupIds !== []) {
+                $sql .= " OR (p.subject_type='group' AND p.subject_id IN ("
+                . implode(',', array_fill(0, count($groupIds), '?')) . '))';
+                array_push($parameters, ...$groupIds);
+            }
+        }
+
+        return [$sql, $parameters];
     }
 
     /**
@@ -2571,11 +2634,13 @@ final readonly class WorkspaceRepository
      * HR: Zamjenjuje izravna prava stranice aktivnim korisnicima i samo dopuštenim operacijama.
      *
      * @param array<int|string, mixed> $permissions
+     * @param array<int|string, mixed> $subjects
      */
     public function replaceNodeDirectPermissions(
         int $workspaceId,
         int $nodeId,
         array $permissions,
+        array $subjects = [],
     ): void {
         $node = $this->findNodeById($nodeId);
         if (!is_array($node) || $this->intValue($node['workspace_id'] ?? 0) !== $workspaceId) {
@@ -2607,13 +2672,39 @@ final readonly class WorkspaceRepository
             ];
         }
 
+        $subjectRows = [];
+        foreach ([self::SUBJECT_GROUP, self::SUBJECT_PUBLIC, self::SUBJECT_AUTHENTICATED] as $type) {
+            foreach (is_array($subjects[$type] ?? null) ? $subjects[$type] : [] as $id => $values) {
+                $id = $this->intValue($id);
+                if (!is_array($values) || !$this->subjectExists($type, $id)) {
+                    continue;
+                }
+
+                $edit = $type !== self::SUBJECT_PUBLIC && (bool)($values['can_edit'] ?? false);
+                $publish = $type !== self::SUBJECT_PUBLIC && (bool)($values['can_publish'] ?? false);
+                $view = (bool)($values['can_view'] ?? false) || $edit || $publish;
+                if ($view) {
+                    $subjectRows[] = ['node_id' => $nodeId, 'subject_type' => $type, 'subject_id' => $id,
+                        'can_view' => true, 'can_edit' => $edit, 'can_publish' => $publish];
+                }
+            }
+        }
+
         $activeUsers = $this->usersByIds(array_keys($requested));
         $now = date('Y-m-d H:i:s');
         $this->database->transaction(
-            function (Database $database) use ($nodeId, $requested, $activeUsers, $now): void {
+            function (Database $database) use ($nodeId, $requested, $activeUsers, $subjectRows, $now): void {
                 $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS)
                     ->where('node_id', '=', $nodeId)
                     ->delete();
+
+                $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)
+                    ->where('node_id', '=', $nodeId)->delete();
+                foreach ($subjectRows as $values) {
+                    $database->table(ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS)->insert([
+                        ...$values, 'created_at' => $now, 'updated_at' => $now,
+                    ]);
+                }
 
                 foreach ($requested as $userId => $values) {
                     if (!isset($activeUsers[$userId])) {
@@ -2810,6 +2901,9 @@ final readonly class WorkspaceRepository
         }
 
         $subjects = [];
+        $contentNode = $this->findNodeById($nodeId);
+        $contentProvider = is_array($contentNode)
+        ? $this->contentTypes?->get($this->stringValue($contentNode['node_type'] ?? '')) : null;
         foreach ($users as $user) {
             $userId = $this->intValue($user['id'] ?? 0);
             if ($userId <= 0) {
@@ -2838,6 +2932,10 @@ final readonly class WorkspaceRepository
                     $permissions[$permission] = $permissions[$permission]
                     || $rowPermissions[$permission];
                 }
+            }
+
+            if ($contentProvider instanceof WorkspaceContentProviderInterface && is_array($contentNode)) {
+                $permissions = $contentProvider->permissions($workspace, $contentNode, $user, $permissions);
             }
 
             if (!$this->hasAnyPermission($permissions)) {
@@ -3460,9 +3558,27 @@ final readonly class WorkspaceRepository
     {
         $type = is_scalar($value) ? strtolower(trim((string)$value)) : '';
 
-        return in_array($type, ['document', 'internal_link', 'external_link', 'separator'], true)
-        ? $type
-        : 'document';
+        if ($type === '') {
+            return 'document';
+        }
+
+        if (
+            in_array($type, ['document', 'internal_link', 'external_link', 'separator'], true)
+            || ($this->contentTypes?->has($type) ?? false)
+        ) {
+            return $type;
+        }
+
+        throw new RuntimeException(__('Vrsta sadržaja nije dostupna.'));
+    }
+
+    /** EN: Resolves a portable enabled node identifier. HR: Razrješava prenosiv identifikator aktivnog čvora.
+     * @return array<string,mixed>|null
+     */
+    public function findNodeByUuid(string $uuid): ?array
+    {
+        return $this->row($this->database->table(ModuleWorkspace::TABLE_WORKSPACE_NODES)
+            ->where('uuid', '=', $uuid)->where('is_enabled', '=', true)->first());
     }
 
     /**

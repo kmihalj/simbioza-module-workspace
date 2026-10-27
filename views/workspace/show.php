@@ -17,6 +17,8 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var list<array<string, mixed>> $tree
  * @var array<string, mixed>|null $activeNode
  * @var array<string, mixed>|null $editorView
+ * @var array{package:string,view:string,data:array<string,mixed>,title:string}|null $extensionContent
+ * @var list<array{href:string,label:string,icon?:string}> $contentCreateActions
  * @var array<string, mixed>|null $workflow
  * @var list<array{label:string,href:string,current:bool,icon?:string}> $breadcrumbs
  * @var list<array{title:string,href:string,workspaceName:string,linkText:string,language:string}> $backlinks
@@ -61,6 +63,7 @@ foreach ($pageParentOptions as $parentOption) {
     }
 }
 $hasTreeActions = WorkspaceValue::string($shortsPath ?? '') !== ''
+    || ($contentCreateActions ?? []) !== []
     || $canCreatePage
     || $canManageWorkspace
     || $reviewQueue !== []
@@ -122,6 +125,10 @@ $workflowIcon = static function (string $action): string {
             . '<path d="M19 6l-1 15H6L5 6"/><path d="M10 11v6M14 11v6"/>',
         'draft' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
             . '<path d="M14 2v6h6"/><path d="M8 15h8M8 11h3"/>',
+        'survey-create' => '<rect x="4" y="3" width="14" height="18" rx="2"/>'
+            . '<path d="m7 8 1 1 2-2M12 8h3M7 13h3M12 13h3M7 17h3M18 15v6M15 18h6"/>',
+        'create' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
+            . '<path d="M14 2v6h6M12 18v-6M9 15h6"/>',
         'view' => '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12"/>'
             . '<circle cx="12" cy="12" r="3"/>',
         'tree' => '<path d="M10 3H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>'
@@ -270,6 +277,13 @@ $workflowIcon = static function (string $action): string {
                                     </span>
                                 </button>
                         <?php endif; ?>
+                        <?php foreach ($contentCreateActions ?? [] as $contentAction) : ?>
+                            <a class="btn btn-outline-primary btn-sm workspace-tree-card-action"
+                                href="<?= $this->escape($contentAction['href']) ?>"
+                                title="<?= $this->escape($contentAction['label']) ?>"
+                                aria-label="<?= $this->escape($contentAction['label']) ?>">
+                                <?= $workflowIcon(WorkspaceValue::string($contentAction['icon'] ?? 'create')) ?></a>
+                        <?php endforeach; ?>
                         <?php if ($canCreatePage) : ?>
                                 <button
                                     class="btn btn-outline-primary btn-sm workspace-tree-card-action"
@@ -559,7 +573,13 @@ $workflowIcon = static function (string $action): string {
             </div>
         <?php endif; ?>
 
-        <?php if (is_array($editorView ?? null)) : ?>
+        <?php if (is_array($extensionContent ?? null)) : ?>
+            <?= $this->forModulePartial(
+                $extensionContent['package'],
+                $extensionContent['view'],
+                $extensionContent['data'],
+            ) ?>
+        <?php elseif (is_array($editorView ?? null)) : ?>
             <?= $this->forModulePartial(
                 'aaieduhr/heartphrame-module-editor-html',
                 'editor/view',

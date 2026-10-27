@@ -21,6 +21,8 @@ final class ModuleWorkspace
 
     public const TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS = 'workspace_node_direct_permissions';
 
+    public const TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS = 'workspace_node_subject_permissions';
+
     public const TABLE_WORKSPACE_NODE_WORKFLOWS = 'workspace_node_workflows';
 
     public const TABLE_WORKSPACE_NODE_LABELS = 'workspace_node_labels';

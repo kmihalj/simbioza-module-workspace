@@ -141,6 +141,9 @@ return new class implements ReversibleMigrationInterface {
             );
         }
 
+        $subjects = require dirname((new \ReflectionClass(ModuleWorkspace::class))->getFileName(), 2) . '/resources/migrations/workspace_subject_permissions.php';
+        $subjects->up($db);
+
         if (!$schema->hasTable(ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS)) {
             $schema->create(
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
@@ -293,7 +296,8 @@ return new class implements ReversibleMigrationInterface {
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_LABELS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_PROPERTIES,
-                ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
+                ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS,
+            ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS,
                 ModuleWorkspace::TABLE_WORKSPACE_NODE_ACL,
                 ModuleWorkspace::TABLE_WORKSPACE_NODES,
                 ModuleWorkspace::TABLE_WORKSPACE_ACL,

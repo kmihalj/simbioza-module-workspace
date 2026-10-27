@@ -73,6 +73,9 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 $services = [
+    // EN: The dependency-free content registry is auto-wired once, never reset by deferred module order.
+    //
+    // HR: Registar sadržaja bez ovisnosti automatski se povezuje jednom, bez poništavanja redoslijedom modula.
     WorkspaceAdministrationListService::class =>
         static fn(ContainerInterface $container): WorkspaceAdministrationListService =>
             new WorkspaceAdministrationListService($container->get(TranslatorInterface::class)),
@@ -94,6 +97,7 @@ $services = [
             $container->get(WorkspacePresentationRegistry::class),
             $container->get(WorkspaceWorkflowService::class),
             $container->get(TranslatorInterface::class),
+            $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
         ),
 
     WorkspaceLookupController::class => static fn(ContainerInterface $container): WorkspaceLookupController =>
@@ -123,6 +127,7 @@ $services = [
             $container->get(LoggerInterface::class),
             $container->get(WorkspaceContentChangeBatch::class),
             $container->get(WorkspaceRepositoryRequestCache::class),
+            $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
         ),
 
     WorkspaceThemeRepository::class => static fn(ContainerInterface $container): WorkspaceThemeRepository =>
@@ -167,6 +172,7 @@ $services = [
             $container->get(AuthnHandlerInterface::class),
             $container->get(WorkspaceConfig::class),
             $container->get(WorkspaceWorkflowService::class),
+            $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
         ),
 
     WorkspaceLinkExtractor::class => static fn(ContainerInterface $container): WorkspaceLinkExtractor =>
@@ -359,6 +365,7 @@ $services = [
                 $container->get(WorkspaceRepository::class),
                 $container->get(WorkspaceConfig::class),
                 $container->get(UrlGenerator::class),
+                $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
             ),
 
     WorkspaceModuleViewRenderer::class => static fn(ContainerInterface $container): WorkspaceModuleViewRenderer =>
@@ -389,6 +396,7 @@ $services = [
             $container->get(WorkspaceIndexService::class),
             $container->get(\Psr\EventDispatcher\EventDispatcherInterface::class),
             $container->get(LoggerInterface::class),
+            $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
         ),
 
     WorkspaceExportController::class => static fn(ContainerInterface $container): WorkspaceExportController =>
@@ -537,6 +545,16 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                         'namespaces' => ['user' => 'auth.user', 'group' => 'auth.group'],
                         'passthrough' => ['public', 'authenticated'],
                     ]]],
+                    ['dataset' => 'node-direct-permissions', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_DIRECT_PERMISSIONS, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'user_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                        ['column' => 'node_id', 'namespace' => 'workspace.node'],
+                        ['column' => 'user_id', 'namespace' => 'auth.user'],
+                    ]],
+                    ['dataset' => 'node-subject-permissions', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_SUBJECT_PERMISSIONS, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'subject_type', 'subject_id'], 'preserve_primary_key' => false, 'foreign_keys' => [
+                        ['column' => 'node_id', 'namespace' => 'workspace.node'],
+                    ], 'polymorphic_foreign_keys' => [[
+                        'column' => 'subject_id', 'type_column' => 'subject_type',
+                        'namespaces' => ['group' => 'auth.group'], 'passthrough' => ['public', 'authenticated'],
+                    ]]],
                     ['dataset' => 'node-workflows', 'table' => \AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace::TABLE_WORKSPACE_NODE_WORKFLOWS, 'primary_key' => 'id', 'conflict_keys' => ['node_id', 'language_code'], 'preserve_primary_key' => false, 'foreign_keys' => [
                         ['column' => 'node_id', 'namespace' => 'workspace.node'],
                         ['column' => 'submitted_by_user_id', 'namespace' => 'auth.user', 'nullable' => true],
@@ -564,6 +582,9 @@ if (class_exists(\AaiEduHr\HeartPhrameModuleBackup\Service\DatabaseTableBackupPr
                     ]],
                 ],
                 $container->get(WorkspaceConfig::class),
+                new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceContentBackup(
+                    $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
+                ),
             );
 }
 
@@ -589,6 +610,9 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(WorkspaceConfig::class),
                 $container->get(\AaiEduHr\HeartPhrameModuleBackup\Service\BackupFilesystem::class),
                 $container->get(WorkspaceRepository::class),
+                new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceContentBackup(
+                    $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
+                ),
             );
 
     // EN: A single page is a portable scope that includes Editor content,
@@ -603,6 +627,9 @@ if (interface_exists(\AaiEduHr\HeartPhrameModuleBackup\Contract\BackupProviderIn
                 $container->get(AuthBackupIdentityResolver::class),
                 $container->get(WorkspaceRepository::class),
                 $container->get(WorkspaceConfig::class),
+                new \AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceContentBackup(
+                    $container->get(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry::class),
+                ),
             );
 
     // EN: Workspace owns its backup-UI ACL rules, so the generic Backup module

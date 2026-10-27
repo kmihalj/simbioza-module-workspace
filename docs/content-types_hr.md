@@ -1,0 +1,15 @@
+# Opcionalne vrste sadržaja
+
+`WorkspaceContentProviderInterface` i `WorkspaceContentRegistry` generičke su točke proširenja. Workspace nema obveznu ovisnost o Surveyu i ne sprema definicije upitnika kao HTML dokumente.
+
+Provider registrira jedinstveni `node_type` izvan jezgre, skupno učitava vlastite metapodatke, dodaje tipska bazna prava **prije** ograničenja područja, provjerava objavu nakon ACL-a, renderira jedan ovlašten modulski prikaz i opcionalno daje radnju kreiranja i odjeljak članstva samo za upravitelja. Obični dokumenti, poveznice i spremnici ponašaju se kao prije kada je registar prazan. Nepoznata vrsta ostaje spremljena, ali nikad se potajno ne tretira kao HTML dokument.
+
+Radnja kreiranja uz `label` i `href` može dati oznaku `icon`. Alatna traka prikazuje samo ugrađenu ikonu iz dopuštenog skupa, nikada proizvoljan HTML/SVG providera; nedostajuća oznaka koristi opću ikonu kreiranja. Naslov i pristupačna oznaka gumba ostaju puni tekst radnje. `partials/subject-picker` zajednički je predložak za korisnike i grupe u ovlastima sadržaja i proširenja: zadržava iste odgođene pretrage, stranice po 25 rezultata i postojeću autoriziranu rutu. I korisnici i grupe otvaraju početnu stranicu pri kliku/fokusu bez upisivanja; skrolanje i Učitaj još omogućuju pregled, a pretraga sužava rezultate. Proširenje može isključiti ugrađene publike bez promjene prava sadržaja.
+
+Registar bez ovisnosti automatski se povezuje i namjerno se ne zamjenjuje servisnom definicijom odgođenog modula. Zato se opcionalni modul može registrirati prije ili nakon pokretanja Workspacea. Tvornice ostaju odgođene i odsutni moduli ne uključuju se automatski. Prije registracije provider mora provjeriti instalirane/uključene preduvjete i spremnost sheme.
+
+`renderContent()` koristi postojeće vidljivo stablo, navigacijsku putanju, most teme, dijalog prava stranice i uključivanje/isključivanje stabla. Provider ne daje paralelni bočni panel ni neovisan ACL područja. Upravljanje samo anketama proširuje uređivanje čvorova anketa, ne `can_manage` područja, obične stranice ni nepovezane resurse. Postojeća izravna korisnička dopuštenja i ograničenja predaka ostaju važeća. Provjere objave providera vrijede i za birače te vidljivost praćenih ciljeva. Odredišta menija koriste obične rute stranica područja i ne dodaju automatski stavke menija.
+
+Izmjene sadržaja pripadaju njegovu modulu, ne generičkom obrascu/API-ju čvora područja. Organizacija stabla i prava stranice ostaju radnje područja. Čvorovi proširenja nisu roditeljski spremnici. Isključivanje providera skriva čvorove bez brisanja podataka.
+
+`WorkspaceContentBackupInterface` određuje vlasnika šifrirane kopije sadržaja proširenja. Obvezni vlasnici moraju biti uključeni; nedostajući ili nepodržani vlasnici odbijaju izvoz/provjeru uvoza umjesto tihog gubitka sadržaja. Kopije anketa uključuju definicije, odgovore, postavke i privitke. Statički HTML izvoz izostavlja ankete umjesto pokušaja rekreiranja mrežnih upitnika. Kopije i HTML izvoz običnih stranica zadržavaju postojeće ponašanje.

@@ -666,6 +666,10 @@ final readonly class WorkspaceApiService
         }
 
         $payload = $this->mergeNodePayload($node, $payload);
+        if (!in_array($node['node_type'], ['document', 'separator', 'internal_link', 'external_link'], true)) {
+            throw $this->invalid(__('Sadržaj uređujte u modulu kojem pripada.'));
+        }
+
         $payload = $this->withTranslationContext($payload);
         $payload['id'] = $nodeId;
 

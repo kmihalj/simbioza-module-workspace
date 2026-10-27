@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\HeartPhrameModuleOrm\Database\LocaleSorter;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentProviderInterface;
 use HeartPhrame\Localization\TranslatorInterface;
 
 /**
@@ -27,6 +28,7 @@ final readonly class WorkspaceLookupService
         private WorkspacePresentationRegistry $presentations,
         private WorkspaceWorkflowService $workflow,
         private TranslatorInterface $translator,
+        private ?WorkspaceContentRegistry $contentTypes = null,
     ) {
     }
 
@@ -122,6 +124,10 @@ final readonly class WorkspaceLookupService
                 WorkspaceValue::string($workspace['primary_language'] ?? 'hr'),
             );
             $permissions = $this->access->nodePermissionsForNodes($workspace, $nodes, $user);
+            foreach ($this->contentTypes?->all() ?? [] as $provider) {
+                $provider->prepare($workspace, $nodes);
+            }
+
             $workflowRows = $publishedOnly
             ? $this->repository->nodeWorkflowsForNodesAllLanguages(array_values(array_filter(array_map(
                 static fn(array $node): int => WorkspaceValue::string($node['node_type'] ?? '') === 'document'
@@ -156,15 +162,24 @@ final readonly class WorkspaceLookupService
                 $title = WorkspaceValue::string($node['title'] ?? '');
                 $slug = WorkspaceValue::string($node['slug'] ?? '');
                 $nodeType = WorkspaceValue::string($node['node_type'] ?? '');
+                $provider = $this->contentTypes?->get($nodeType);
+                $extensionVisible = $provider instanceof WorkspaceContentProviderInterface && !$requireCanAdd
+                && $provider->visible($node, $permissions[$nodeId] ?? [], []);
+                if ($extensionVisible && $publishedOnly) {
+                    $extensionVisible = $provider->visible($node, ['can_view' => true], []);
+                }
+
                 if (
                     $nodeId <= 0
-                    || ($nodeType !== 'document' && (!$includeContainers || $nodeType !== 'separator'))
+                    || ($nodeType !== 'document' && !$extensionVisible
+                        && (!$includeContainers || $nodeType !== 'separator'))
                     || ($excludeNodeId !== null && $nodeId === $excludeNodeId)
                     || !(bool)($node['is_enabled'] ?? false)
                     || ($requireCanAdd
                         ? !(bool)($permissions[$nodeId]['can_add'] ?? false)
                         : !(bool)($permissions[$nodeId]['can_view'] ?? false))
-                    || ($publishedOnly && !$this->hasReadableWorkflow($workflowRows[$nodeId] ?? []))
+                    || ($publishedOnly && $nodeType === 'document'
+                        && !$this->hasReadableWorkflow($workflowRows[$nodeId] ?? []))
                 ) {
                     continue;
                 }

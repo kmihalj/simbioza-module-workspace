@@ -89,6 +89,8 @@ mora sadržavati više zasebnih riječi ili fraza, ispred svakog se pojma dodaje
 
 Ograničenja stranice mogu samo suziti prava dodijeljena na Području. Ne mogu
 dati pristup korisniku ili grupi koji već nemaju prava na Području.
+Zasebna **Izravna dopuštenja korisnicima i grupama** iznimka su samo te stranice: korisnici, uključene grupe, Javno i Svi prijavljeni mogu dobiti pristup odabranoj stranici privatnog područja. Javno daje samo čitanje. Područje se pojavljuje na popisu samo uz opći pristup ili čitljivu iznimku; skriveni roditelji, susjedi, potomci i privitci ostaju nedostupni. Isto vrijedi za opcionalne čvorove anketa. [Iznimke stranice](docs/page-exceptions_hr.md).
+
 Administratori aplikacije zadržavaju sva prava, a kreator novog Područja dobiva
 svih šest prava kroz običan korisnički ACL red. Prava su međusobno neovisna;
 svaka radnja automatski uključuje pregled, ali upravljanje samo po sebi ne daje
@@ -428,6 +430,7 @@ Editora, pa slijede aktivnu temu bez posebnog Workspace vizualnog nadjačavanja.
 Detaljna arhitektura i upute razumljive početnicima nalaze se u
 [docs/index_hr.md](docs/index_hr.md).
 Backup i povrat područja opisani su u [docs/backup_hr.md](docs/backup_hr.md).
+Lokalno generičko proširenje vrsta sadržaja opisano je u [docs/content-types_hr.md](docs/content-types_hr.md).
 
 ## Licenca
 

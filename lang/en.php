@@ -6,6 +6,12 @@ declare(strict_types=1);
 //
 // HR: Izvorni hrvatski ključevi i prijevodi jezika en.
 return array (
+  'Sadržaj uređujte u modulu kojem pripada.' => 'Edit this content in its owning module.',
+  'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.' => 'Export of this content type is not yet available. Select only supported pages.',
+  'survey' => 'Survey',
+  'Sadržaj' => 'Content',
+  'Vrsta sadržaja nije dostupna.' => 'This content type is unavailable.',
+  'Vrstu sadržaja nije moguće promijeniti.' => 'The content type cannot be changed.',
   'Tablica stranica i svojstava' => 'Pages and properties table',
   'Dinamički sadržaj područja' => 'Dynamic Workspace content',
   'Galerija privitaka' => 'Attachment gallery',
@@ -711,4 +717,9 @@ return array (
   'Nastavi s odabranom radnjom' => 'Continue with the selected action',
   'Predložak migracije trajnog brisanja nije pronađen.' => 'The permanent-deletion migration template was not found.',
   'Kreirana je migracija trajnog brisanja područja: ' => 'Created the Workspace permanent-deletion migration: ',
+    'Izravna dopuštenja korisnicima i grupama' => 'Direct permissions for users and groups',
+    'Korisnik ili grupa' => 'User or group',
+    'Dodajte korisnike, grupe ili publiku Javno. Javno omogućuje samo čitanje ove stranice, čak i u privatnom području. Uređivanje i objavljivanje automatski uključuju čitanje.' => 'Add users, groups or the Public audience. Public grants reading of this page only, even in a private Workspace. Editing and publishing automatically include reading.',
+    'Ako područje sadrži ankete, backup uključuje njihove postavke, sve odgovore, privitke i ovlasti. Nakon vraćanja rasporede izvještaja treba ponovno uključiti.' => 'If the Workspace contains surveys, its backup includes their settings, all responses, attachments and permissions. Report schedules must be re-enabled after restoration.',
+    'Ankete se ne izvoze u HTML. Za očuvanje anketa, njihovih odgovora i postavki koristite šifrirani backup područja.' => 'Surveys are excluded from HTML export. Use an encrypted Workspace backup to preserve surveys, their responses and settings.',
 );
