@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 - 2026-10-29
+
+- Reuse batched directory rows for direct page permission labels.
+
 ## 0.1.31 - 2026-09-16
 
 - Makes Manage include edit, publish, add, and delete actions, while Add lets a page

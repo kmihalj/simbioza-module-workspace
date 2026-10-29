@@ -7,6 +7,7 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Migration\ReversibleMigrationInterface;
 use AaiEduHr\HeartPhrameModuleOrm\Database\QueryExecuted;
+use AaiEduHr\HeartPhrameModuleOrm\Database\Schema\Blueprint;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspaceContentChanged;
 use AaiEduHr\SimbiozaModuleWorkspace\Event\WorkspacePagesPermanentlyDeleting;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
@@ -27,6 +28,68 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceDataDirectory::class)]
 final class WorkspaceRepositoryTest extends TestCase
 {
+    /**
+     * EN: Direct page grants reuse batched directory rows instead of querying each subject twice.
+     *
+     * HR: Izravna prava stranica koriste skupno učitane retke imenika umjesto dvostrukog upita za svaki subjekt.
+     */
+    public function testDirectPermissionLabelsUseBatchedDirectoryReads(): void
+    {
+        $database = $this->database();
+        $database->schema()->create('auth_users', static function (Blueprint $table): void {
+            $table->id();
+            $table->string('login_identifier');
+            $table->boolean('is_active');
+        });
+        $database->schema()->create('auth_groups', static function (Blueprint $table): void {
+            $table->id();
+            $table->string('group_name');
+            $table->boolean('is_enabled');
+        });
+        $database->schema()->create('auth_user_attribute_values', static function (Blueprint $table): void {
+            $table->integer('user_id');
+            $table->string('field_key');
+            $table->text('value_text');
+        });
+        foreach (range(1, 20) as $id) {
+            $database->table('auth_users')->insert([
+                'id' => $id, 'login_identifier' => 'User ' . $id, 'is_active' => 1,
+            ]);
+            $database->table('auth_groups')->insert(['id' => $id, 'group_name' => 'Group ' . $id, 'is_enabled' => 1]);
+        }
+
+        $repository = new WorkspaceRepository($database);
+        $workspace = $repository->saveWorkspace([
+            'name' => 'Private', 'slug' => 'private', 'visibility' => 'restricted',
+        ], 1);
+        $node = $repository->saveNode((int)$workspace['id'], ['node_type' => 'external_link',
+            'title' => 'Direct access', 'slug' => 'direct', 'target_url' => 'https://example.test'], 1);
+        $selected = array_fill_keys(range(1, 20), ['can_view' => true]);
+        $repository->replaceNodeDirectPermissions(
+            (int)$workspace['id'],
+            (int)$node['id'],
+            $selected,
+            ['group' => $selected, 'public' => [1 => ['can_view' => true]]],
+        );
+        $database->table('auth_users')->where('id', '=', 20)->update(['is_active' => 0]);
+        $database->table('auth_groups')->where('id', '=', 20)->update(['is_enabled' => 0]);
+        $queries = [];
+        $database->listen(static function (QueryExecuted $event) use (&$queries): void {
+            $queries[] = $event->sql;
+        });
+        $subjects = $repository->nodeDirectPermissionSubjects((int)$node['id']);
+        $database->forgetQueryListeners();
+        $this->assertCount(39, $subjects);
+        $this->assertNotContains('User 20', array_column($subjects, 'label'));
+        $this->assertNotContains('Group 20', array_column($subjects, 'label'));
+        foreach (['auth_users', 'auth_groups', 'auth_user_attribute_values'] as $table) {
+            $this->assertCount(1, array_filter(
+                $queries,
+                static fn(string $sql): bool => str_contains($sql, 'FROM "' . $table . '"'),
+            ));
+        }
+    }
+
     /**
      * EN: Complete derived indexes load document nodes from all Workspaces in
      *     one query and prime the request cache for subsequent reads by ID.

@@ -2500,18 +2500,24 @@ final readonly class WorkspaceRepository
             }
         }
 
-        $this->usersByIds($userIds);
-        $this->groupsByIds($groupIds);
+        $users = $this->usersByIds($userIds);
+        $groups = $this->groupsByIds($groupIds);
         $subjects = [];
         foreach ($rows as $row) {
             $type = $this->stringValue($row['subject_type'] ?? 'user');
             $id = $this->intValue($row['subject_id'] ?? 0);
-            if (!$this->subjectExists($type, $id)) {
+            $exists = match ($type) {
+                self::SUBJECT_USER => isset($users[$id]),
+                self::SUBJECT_GROUP => isset($groups[$id]),
+                self::SUBJECT_PUBLIC, self::SUBJECT_AUTHENTICATED => $id === self::BUILT_IN_SUBJECT_ID,
+                default => false,
+            };
+            if (!$exists) {
                 continue;
             }
 
-            $subject = $type === self::SUBJECT_USER ? ($this->usersByIds([$id])[$id] ?? [])
-            : ($type === self::SUBJECT_GROUP ? ($this->groupsByIds([$id])[$id] ?? []) : []);
+            $subject = $type === self::SUBJECT_USER ? ($users[$id] ?? [])
+            : ($type === self::SUBJECT_GROUP ? ($groups[$id] ?? []) : []);
             $label = match ($type) {
                 self::SUBJECT_PUBLIC => __('Javno'),
                 self::SUBJECT_AUTHENTICATED => __('Svi prijavljeni'),
