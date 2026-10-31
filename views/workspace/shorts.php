@@ -428,7 +428,7 @@ $pagePath = static fn(int $number): string => $shortsPath . '&' . http_build_que
     </main>
 </div>
 
-<script>
+<script nonce="<?= $this->escape(is_string($scriptNonce ?? null) ? $scriptNonce : '') ?>">
     (() => {
         /*
          * HR: Filter pamti stvarno, trenutačno stanje sklopivog stabla i opcija.

@@ -645,9 +645,13 @@ $workflowIcon = static function (string $action): string {
                                     WorkspaceValue::string($action['path'] ?? ''),
                                 ) ?>"
                                 <?php if (WorkspaceValue::string($action['confirm'] ?? '') !== '') : ?>
-                                    onsubmit="return confirm('<?= $this->escape(
+                                    data-hph-confirm="<?= $this->escape(
                                         WorkspaceValue::string($action['confirm'] ?? ''),
-                                    ) ?>')"
+                                    ) ?>" <?php if (!isset($scriptNonce)) :
+?>onsubmit="return confirm('<?= $this->escape(
+    WorkspaceValue::string($action['confirm'] ?? ''),
+) ?>')"<?php
+                                    endif; ?>
                                 <?php endif; ?>
                             >
                                 <?= $this->csrfHandler->generateCsrfTokenInputField() ?>

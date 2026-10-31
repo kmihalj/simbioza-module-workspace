@@ -452,7 +452,7 @@ $imageOptimizationLabelsJson = json_encode([
     </div>
 </div>
 
-<script>
+<script nonce="<?= $this->escape(is_string($scriptNonce ?? null) ? $scriptNonce : '') ?>">
 (() => {
     const form = document.querySelector('[data-image-optimization-form]');
     if (!form) return;

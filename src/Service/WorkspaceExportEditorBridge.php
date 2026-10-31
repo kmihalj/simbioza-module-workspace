@@ -394,6 +394,20 @@ final readonly class WorkspaceExportEditorBridge
                 }
             }
 
+            $scriptsHtml = '';
+            if (method_exists($editor, 'exportScripts')) {
+                $scripts = $editor->exportScripts($html, '../' . trim($assetDirectory, '/') . '/scripts');
+                if (is_array($scripts)) {
+                    $html = is_string($scripts['html'] ?? null) ? $scripts['html'] : $html;
+                    $scriptsHtml = is_string($scripts['scripts'] ?? null) ? $scripts['scripts'] : '';
+                    foreach (is_array($scripts['files'] ?? null) ? $scripts['files'] : [] as $path => $content) {
+                        if (is_string($path) && str_starts_with($path, '../documents/') && is_string($content)) {
+                            $files[substr($path, 3)] = $content;
+                        }
+                    }
+                }
+            }
+
             $rewrittenHtml = $formatter->rewriteAssetUrlsForStandalone($html, $assetHrefs);
             if (is_string($rewrittenHtml)) {
                 $html = $rewrittenHtml;
@@ -426,6 +440,7 @@ final readonly class WorkspaceExportEditorBridge
                 'attachments' => $attachments,
                 'attachments_visible_by_default' => false,
                 'files' => $files,
+                'scripts_html' => $scriptsHtml,
             ];
         } catch (Throwable) {
             return null;
@@ -463,6 +478,7 @@ final readonly class WorkspaceExportEditorBridge
                     $attachmentsHtml,
                     $this->attachmentLabel('Prikaži privitke', 'Show attachments', $language),
                     $this->attachmentLabel('Sakrij privitke', 'Hide attachments', $language),
+                    is_string($snapshot['scripts_html'] ?? null) ? $snapshot['scripts_html'] : '',
                 );
                 if (is_string($document)) {
                     return $document;

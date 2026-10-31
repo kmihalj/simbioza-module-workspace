@@ -475,6 +475,7 @@ final readonly class WorkspaceExportService
         . '</div><div class="editor-html-view-content">'
         . WorkspaceValue::string($snapshot['html'] ?? '') . '</div>'
         . $this->attachmentsHtml(WorkspaceValue::rows($snapshot['attachments'] ?? null), $locale)
+        . '<template data-export-scripts>' . WorkspaceValue::string($snapshot['scripts_html'] ?? '') . '</template>'
         . '</div></article>';
     }
 
@@ -936,6 +937,11 @@ final readonly class WorkspaceExportService
      */
     private function snapshotForRoot(array $snapshot): array
     {
+        $snapshot['scripts_html'] = str_replace(
+            '../documents/',
+            'documents/',
+            WorkspaceValue::string($snapshot['scripts_html'] ?? ''),
+        );
         $snapshot['html'] = str_replace(
             '../documents/',
             'documents/',
@@ -1609,7 +1615,11 @@ CSS;
     };
     let currentPage = Number((location.hash.match(/^#page-(\d+)$/) || [])[1])
         || Number(layout?.dataset.initialPage || 0);
-    let currentLanguage = languageSelect?.value || layout?.dataset.defaultLanguage || 'hr';
+    const requestedLanguage = new URL(location.href).searchParams.get('lang');
+    let currentLanguage = Array.from(languageSelect?.options || []).some((option) => option.value === requestedLanguage)
+        ? requestedLanguage : (languageSelect?.value || layout?.dataset.defaultLanguage || 'hr');
+    let renderedWithScripts = false;
+    let hasRendered = false;
 
     function applyTheme(mode) {
         if (!['auto', 'light', 'dark'].includes(mode)) mode = 'auto';
@@ -1719,13 +1729,47 @@ CSS;
         });
     }
 
+    async function activatePageScripts(container) {
+        const scripts = container.querySelector('[data-export-scripts]');
+        if (!(scripts instanceof HTMLTemplateElement)) return;
+        for (const source of scripts.content.querySelectorAll('link[rel="stylesheet"],script')) {
+            const stylesheet = source.tagName === 'LINK';
+            const script = document.createElement(stylesheet ? 'link' : 'script');
+            for (const attribute of source.attributes) script.setAttribute(attribute.name, attribute.value);
+            if (!stylesheet) script.async = false;
+            await new Promise((resolve) => {
+                script.onload = resolve;
+                script.onerror = resolve;
+                if (!stylesheet) script.textContent = source.textContent;
+                (stylesheet ? document.head : container).append(script);
+                if (!stylesheet && !script.src) resolve();
+            });
+        }
+    }
+
     function renderPage(pageId, language) {
         if (!pageHost) return;
         const pageTemplate = matchingTemplate('page', pageId, language);
         if (!(pageTemplate instanceof HTMLTemplateElement)) return;
+        const scripts = pageTemplate.content.querySelector('[data-export-scripts]');
+        const nextHasScripts = scripts instanceof HTMLTemplateElement
+            && scripts.content.querySelector('script,link[rel="stylesheet"]');
+        // EN: A fresh document prevents global declarations and listeners leaking between scripted pages.
+        // HR: Svježi dokument sprečava prelijevanje globalnih deklaracija i slušatelja među stranicama sa skriptama.
+        if (hasRendered && (renderedWithScripts || nextHasScripts)) {
+            const target = new URL(location.href);
+            target.searchParams.set('lang', language);
+            target.hash = `page-${pageId}`;
+            if (target.href === location.href) location.reload();
+            else location.replace(target.href);
+            return;
+        }
         const title = pageTemplate.dataset.pageTitle || 'Simbioza';
         pageHost.replaceChildren(pageTemplate.content.cloneNode(true));
+        hasRendered = true;
+        renderedWithScripts = Boolean(nextHasScripts);
         initializeTabs(pageHost);
+        activatePageScripts(pageHost);
 
         const outlineTemplate = matchingTemplate('outline', pageId, language);
         if (tocPanel) {

@@ -1,6 +1,6 @@
 # Simbioza Workspace Module
 
-> Release 0.3.0 preparation: the tagged installation commands below apply after coordinated publication of the application and modules. Development verification uses local packages; older releases cannot replace this configuration and schema.
+> Workspace 0.3.3 preserves approved, selected page scripts in HTML exports and supports the host application script policy.
 
 [Croatian version](README_hr.md)
 

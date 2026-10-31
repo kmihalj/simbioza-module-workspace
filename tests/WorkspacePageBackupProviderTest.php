@@ -6,7 +6,6 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Tests;
 
 use AaiEduHr\HeartPhrameModuleAuth\Backup\AuthBackupIdentityResolver;
 use AaiEduHr\HeartPhrameModuleAuth\ModuleAuth;
-use AaiEduHr\HeartPhrameModuleAuth\Service\AuthUserService;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupArchiveReader;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupArchiveWriter;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupConfig;
@@ -125,7 +124,7 @@ final class WorkspacePageBackupProviderTest extends TestCase
         $filesystem = new BackupFilesystem();
         $provider = new WorkspacePageBackupProvider(
             $database,
-            new AuthBackupIdentityResolver($database, new AuthUserService($database)),
+            new AuthBackupIdentityResolver($database),
             new WorkspaceRepository($database),
         );
         $sourceScope = new BackupScope(BackupScope::PAGE, '10');
@@ -228,7 +227,7 @@ final class WorkspacePageBackupProviderTest extends TestCase
         $filesystem = new BackupFilesystem();
         $provider = new WorkspacePageBackupProvider(
             $database,
-            new AuthBackupIdentityResolver($database, new AuthUserService($database)),
+            new AuthBackupIdentityResolver($database),
             new WorkspaceRepository($database),
         );
         $scope = new BackupScope(BackupScope::PAGE, '10');

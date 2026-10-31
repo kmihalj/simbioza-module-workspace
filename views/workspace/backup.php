@@ -177,7 +177,7 @@ HTML);
     </section>
 </div>
 
-<script>
+<script nonce="<?= $this->escape(is_string($scriptNonce ?? null) ? $scriptNonce : '') ?>">
 (() => {
     'use strict';
     const config = <?= json_encode([

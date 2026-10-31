@@ -577,7 +577,8 @@ foreach ($workspaceAclSubjects as $subject) {
                 <form
                     method="post"
                     action="<?= $this->escape($deletePath) ?>"
-                    onsubmit="return confirm('<?= $this->escape(__('Obrisati ovo područje?')) ?>')"
+                    data-hph-confirm="<?= $this->escape(__('Obrisati ovo područje?')) ?>" <?php if (!isset($scriptNonce)) : ?>onsubmit="return confirm('<?= $this->escape(__('Obrisati ovo područje?')) ?>')"<?php
+                                      endif; ?>
                 >
                     <?= $this->csrfHandler->generateCsrfTokenInputField() ?>
                     <input type="hidden" name="workspace_id" value="<?= $workspaceId ?>">

@@ -157,7 +157,7 @@ $workspaceName = WorkspaceValue::string($workspace['name'] ?? '');
     </section>
 </div>
 
-<script>
+<script nonce="<?= $this->escape(is_string($scriptNonce ?? null) ? $scriptNonce : '') ?>">
     /*
      * HR: Checkboxe uključujemo samo za odabrani opseg kako skrivena polja ne bi
      *     slučajno promijenila značenje izvoza cijelog područja.
