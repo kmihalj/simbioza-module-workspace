@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
 use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentProviderInterface;
+use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentPublicationInterface;
 
 /**
  * EN: Holds lazy optional content providers; missing types fail closed.
@@ -86,6 +87,39 @@ final class WorkspaceContentRegistry
         }
 
         return $providers;
+    }
+
+    /**
+     * EN: Resolves actor-aware publication rules while retaining compatibility with existing providers.
+     *
+     * HR: Razrješava pravila objave za korisnika uz kompatibilnost s postojećim providerima.
+     * @param array<string,mixed> $node
+     * @param array<string,bool> $permissions
+     * @param array<string,mixed>|null $user
+     * @param list<string> $languages
+     */
+    public function visible(array $node, array $permissions, ?array $user, array $languages): bool
+    {
+        $provider = $this->get(WorkspaceValue::string($node['node_type'] ?? ''));
+        return $provider instanceof WorkspaceContentPublicationInterface
+        ? $provider->visibleTo($node, $permissions, $user, $languages)
+        : ($provider?->visible($node, $permissions, $languages) ?? false);
+    }
+
+    /**
+     * EN: Returns optional publication metadata without loading definitions or responses.
+     *
+     * HR: Vraća opcionalne podatke o objavi bez učitavanja definicija ili odgovora.
+     * @param array<string,mixed> $node
+     * @param array<string,bool> $permissions
+     * @param array<string,mixed>|null $user
+     * @return array{status:string,is_new_unpublished:bool}|null
+     */
+    public function publicationState(array $node, array $permissions, ?array $user): ?array
+    {
+        $provider = $this->get(WorkspaceValue::string($node['node_type'] ?? ''));
+        return $provider instanceof WorkspaceContentPublicationInterface
+        ? $provider->publicationState($node, $permissions, $user) : null;
     }
 
     /**

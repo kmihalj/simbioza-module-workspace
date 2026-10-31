@@ -660,7 +660,7 @@ final class WorkspaceAccessService
             $type = WorkspaceValue::string($node['node_type'] ?? 'document');
             if (
                 !in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)
-                && !($this->contentTypes?->get($type)?->visible($node, $permissions, $languages) ?? false)
+                && !($this->contentTypes?->visible($node, $permissions, $user, $languages) ?? false)
             ) {
                 continue;
             }
@@ -869,7 +869,7 @@ final class WorkspaceAccessService
             }
 
             $rights = $extensionRights[$workspaceId][$id] ?? $this->emptyPermissions();
-            $visibleNodes[$id] = $rights['can_view'] && $provider->visible($node, $rights, []);
+            $visibleNodes[$id] = $rights['can_view'] && $this->contentTypes->visible($node, $rights, $user, []);
         }
 
         return ['workspaces' => $visibleWorkspaces, 'nodes' => $visibleNodes];
@@ -923,7 +923,12 @@ final class WorkspaceAccessService
                 $type = WorkspaceValue::string($node['node_type'] ?? 'document');
                 if (
                     !in_array($type, ['document', 'separator', 'internal_link', 'external_link'], true)
-                    && !($this->contentTypes?->get($type)?->visible($node, $permissions, []) ?? false)
+                    && !($this->contentTypes?->visible(
+                        $node,
+                        $permissions,
+                        $userId > 0 ? ['id' => $userId] : null,
+                        [],
+                    ) ?? false)
                 ) {
                     continue;
                 }

@@ -1,6 +1,6 @@
 # Simbioza Workspace modul
 
-> Workspace 0.3.3 čuva odobrene i odabrane skripte stranica u HTML izvozu te podržava pravila izvršavanja skripti aplikacije.
+> Workspace 0.3.4 dodaje vidljivost objave prema ovlastima korisnika i oznake nacrta dodatnog sadržaja, primjerice anketa. Kreiranje nove stranice početno prikazuje obvezni naslov na primarnom jeziku.
 
 Javni popis područja prikazuje 25 redaka po stranici. Opcionalni presentation
 provideri mogu označiti osobna područja i dati stabilni ID njihova vlasnika.

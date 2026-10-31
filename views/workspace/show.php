@@ -445,7 +445,7 @@ $workflowIcon = static function (string $action): string {
                         </div>
                         <div class="row g-3 align-items-start">
                             <div class="col-12 col-lg-5">
-                                <label class="form-label" for="workspace-page-title-<?= $activeLanguage ?>">
+                                <label class="form-label" for="workspace-page-title-<?= $primaryLanguage ?>">
                                     <?= $this->escape(__('Naslov stranice')) ?>
                                 </label>
                                 <div class="input-group" data-workspace-translation-group>
@@ -454,10 +454,10 @@ $workflowIcon = static function (string $action): string {
                                         type="button"
                                         data-bs-toggle="dropdown"
                                         data-workspace-translation-button
-                                        data-current-locale="<?= $this->escape($activeLanguage) ?>"
+                                        data-current-locale="<?= $this->escape($primaryLanguage) ?>"
                                         aria-label="<?= $this->escape(__('Jezik naslova')) ?>"
                                     >
-                                        <?= $localeButtonContent($activeLanguage) ?>
+                                        <?= $localeButtonContent($primaryLanguage) ?>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
@@ -479,7 +479,7 @@ $workflowIcon = static function (string $action): string {
                                     <?php foreach ($supportedLanguages as $supportedLanguage) : ?>
                                         <input
                                             id="workspace-page-title-<?= $supportedLanguage ?>"
-                                            class="form-control<?= $supportedLanguage === $activeLanguage
+                                            class="form-control<?= $supportedLanguage === $primaryLanguage
                                                 ? '' : ' d-none' ?>"
                                             name="title_translations[<?= $supportedLanguage ?>]"
                                             data-workspace-translation-panel="<?= $supportedLanguage ?>"

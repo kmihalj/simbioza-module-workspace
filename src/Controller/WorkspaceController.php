@@ -245,7 +245,7 @@ final readonly class WorkspaceController
         $type = $this->stringValue($node['node_type'] ?? '');
         if (($provider = $this->contentTypes?->get($type)) instanceof WorkspaceContentProviderInterface) {
             $provider->prepare($workspace, [$node]);
-            if (!$provider->visible($node, $nodePermissions, [$language])) {
+            if (!$this->contentTypes->visible($node, $nodePermissions, $this->access->currentUser(), [$language])) {
                 return $this->notFound();
             }
 
@@ -2165,7 +2165,10 @@ final readonly class WorkspaceController
     {
         $options = [];
         foreach ($tree as $node) {
-            $permissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
+            $permissions = array_map(
+                static fn(mixed $value): bool => (bool)$value,
+                WorkspaceValue::stringKeyArray($node['permissions'] ?? null),
+            );
             if (
                 $this->stringValue($node['node_type'] ?? '') === 'document'
                 && (bool)($permissions['can_add'] ?? false)
@@ -2448,7 +2451,10 @@ final readonly class WorkspaceController
                 )
                 : $this->linkNodeHref($node),
             };
-            $permissions = WorkspaceValue::stringKeyArray($node['permissions'] ?? null);
+            $permissions = array_map(
+                static fn(mixed $value): bool => (bool)$value,
+                WorkspaceValue::stringKeyArray($node['permissions'] ?? null),
+            );
             $workflow = $workflows[$this->intValue($node['id'] ?? 0)] ?? null;
             if (
                 $type === 'document'
@@ -2474,6 +2480,21 @@ final readonly class WorkspaceController
                 ? __('Novo') . ' · ' . $statusLabel
                 : $statusLabel;
                 $node['is_new_unpublished'] = $isNewUnpublished;
+            }
+
+            $publication = $this->contentTypes?->publicationState($node, $permissions, $this->access->currentUser());
+            if ($publication !== null) {
+                $status = $publication['status'];
+                $statusLabel = match ($status) {
+                    'in_review' => __('Na pregledu'),
+                    'archived' => __('Arhivirano'),
+                    'draft' => __('Nacrt'),
+                    default => '',
+                };
+                $node['workflow_status'] = $status;
+                $node['workflow_label'] = $publication['is_new_unpublished'] && $statusLabel !== ''
+                ? __('Novo') . ' · ' . $statusLabel : $statusLabel;
+                $node['is_new_unpublished'] = $publication['is_new_unpublished'];
             }
 
             $children = WorkspaceValue::rows($node['children'] ?? null);

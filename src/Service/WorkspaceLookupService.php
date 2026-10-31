@@ -164,9 +164,9 @@ final readonly class WorkspaceLookupService
                 $nodeType = WorkspaceValue::string($node['node_type'] ?? '');
                 $provider = $this->contentTypes?->get($nodeType);
                 $extensionVisible = $provider instanceof WorkspaceContentProviderInterface && !$requireCanAdd
-                && $provider->visible($node, $permissions[$nodeId] ?? [], []);
+                && $this->contentTypes->visible($node, $permissions[$nodeId] ?? [], $user, []);
                 if ($extensionVisible && $publishedOnly) {
-                    $extensionVisible = $provider->visible($node, ['can_view' => true], []);
+                    $extensionVisible = $this->contentTypes->visible($node, ['can_view' => true], null, []);
                 }
 
                 if (

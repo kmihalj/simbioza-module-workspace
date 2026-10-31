@@ -1,6 +1,6 @@
 # Simbioza Workspace Module
 
-> Workspace 0.3.3 preserves approved, selected page scripts in HTML exports and supports the host application script policy.
+> Workspace 0.3.4 adds actor-aware publication visibility and draft badges for optional content such as surveys. New-page creation initially shows the required primary-language title.
 
 [Croatian version](README_hr.md)
 
