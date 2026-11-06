@@ -63,8 +63,10 @@ Workspace never writes forced values to HTML Editor's configuration. The Editor
 remains independently usable without Workspace. When Workspace is installed and
 enabled, the existing runtime integration uses Workspace/page outline policy,
 canonical Workspace routes, publication and ACL rules, and owned page creation.
-Standalone Editor settings stay intact and become effective again if Workspace
-is disabled. Do not implement this integration by copying values between JSON
+Standalone Editor settings remain effective for pages outside Workspaces.
+Installing Workspace does not automatically move those pages. The administrator
+may explicitly move them from Editor settings; linked pages then follow the
+destination Workspace ACL and publication workflow. Do not implement this integration by copying values between JSON
 files or making Editor depend on Workspace to read its own configuration.
 
 ## Initial schema and backup

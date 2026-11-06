@@ -288,15 +288,15 @@ Workspace ACL service without declaring a hard dependency.
 
 When Workspace is enabled:
 
-- the editor Settings screen shows that Workspace owns public routes;
-- the standalone editor slug switch is disabled;
+- Workspace owns the canonical routes and publication rules of linked pages;
+- standalone HTML pages keep their configured slug route and separate Editor ACL;
 - a linked document is loaded only when inherited `can_view` succeeds;
 - Workspace embeds Editor's shared complete view in the right column, so theme,
   languages, history, attachments, ZIP export, document outline, and audit are
   identical to the standalone view;
 - edit, upload, metadata, version, and attachment actions require `can_edit`;
 - document deletion requires `can_delete`;
-- menu document URLs point to Workspace pages.
+- menu document URLs for linked pages point to Workspace pages; standalone pages remain standalone destinations.
 
 Workspace neither reads Editor's private tables nor copies its HTML template.
 It requests `EditorDocumentViewBuilder` through the optional service bridge and
@@ -588,13 +588,11 @@ remain available on hover.
 Backlinks use the same themed card, border, link, and muted-text values as other
 cards. Both components fall back to Bootstrap values when Theme is not
 installed.
-
-Existing installations add the two derived tables with:
-
-```bash
-vendor/bin/hph workspace:install-backlinks-migration
-vendor/bin/hph orm-migrate:up
-```
+The current initial schema includes backlinks, page labels, private themes and
+homepage preferences. For an existing Simbioza installation, use its coordinated
+application updater and review `vendor/bin/hph orm-migrate:status`; the removed
+one-off migration commands are not available. Other host applications must
+prepare a reviewed migration for their actual schema after a verified backup.
 
 `workspace_backlinks` and `workspace_backlink_index_state` are excluded from
 backup because they contain no source-of-truth data. Publication updates the
@@ -611,13 +609,6 @@ vendor/bin/hph orm-migrate:up
 
 Register Auth and ORM before Workspace in the enabled module list. The module
 defers loading until those required services are available.
-
-An existing installation adds page-label storage with:
-
-```bash
-vendor/bin/hph workspace:install-node-labels-migration
-vendor/bin/hph orm-migrate:up
-```
 
 Useful URLs with the default configuration:
 
@@ -637,13 +628,6 @@ Useful URLs with the default configuration:
 - `/settings/workspaces/all`: administrator list
 - `/settings/workspaces/deleted`: restore screen
 
-Existing installations add isolated Workspace themes with:
-
-```bash
-vendor/bin/hph workspace:install-themes-migration
-vendor/bin/hph orm-migrate:up
-```
-
 ### Application homepage policy
 
 Workspace owns this feature because every stored target is a Workspace page
@@ -658,21 +642,6 @@ switches. A user who is allowed to personalize the homepage chooses only from
 published pages and Summaries views currently visible to that user. The root resolver applies
 personal → signed-in → public → host fallback and redirects only to a generated
 internal named route, preventing open redirects and stale ACL access.
-
-Existing installations add the personal-selection table with:
-
-```bash
-vendor/bin/hph workspace:install-homepage-migration
-vendor/bin/hph orm-migrate:up
-```
-
-An installation that already has the personal-selection table adds structured Summaries
-targets without replacing existing page choices:
-
-```bash
-vendor/bin/hph workspace:install-homepage-view-options-migration
-vendor/bin/hph orm-migrate:up
-```
 
 A full site backup includes the global JSON policy and
 `workspace_user_homepages`, including target type, Workspace ID, and the two
@@ -708,11 +677,13 @@ enabled, Workspace's `WorkspaceApiExtension` registers the routes and its
 | `PUT .../{slug}/theme/selection` | `workspace:manage` | Selects inheritance or a system theme only for the Workspace |
 | `POST .../{slug}/theme/import` | `workspace:manage` | Imports a ZIP as the Workspace private theme |
 | `GET .../{slug}/theme/export` | `workspace:manage` | Administrator-only private-theme export |
-| `POST/DELETE .../{slug}/theme/assets` | `workspace:manage` | Adds or deletes private-theme files |
+| `POST .../{slug}/theme/assets` | `workspace:manage` | Uploads a private-theme file |
+| `DELETE .../{slug}/theme/assets/{file}` | `workspace:manage` | Deletes one private-theme file |
 | `PUT /api/v1/workspaces/{slug}/tree/order` | `workspace:manage` | Atomically validates the complete arrangement |
 | `GET/PUT /api/v1/workspaces/{slug}/acl` | `workspace:manage` | Reads or replaces the complete Workspace ACL |
 | `GET /api/v1/workspaces/{slug}/acl/subjects` | `workspace:manage` | Bounded `category=user\|group&q=...` search |
-| `POST/PATCH/DELETE .../nodes` | `workspace:manage` | Manages internal/external link nodes only |
+| `POST .../{slug}/nodes` | `workspace:manage` | Creates an internal/external link node |
+| `PATCH/DELETE .../{slug}/nodes/{nodeId}` | `workspace:manage` | Updates metadata or deletes a link node |
 | `GET/PUT .../nodes/{nodeId}/acl` | `workspace:manage` | Reads or replaces direct inherited restrictions |
 | `GET /api/v1/workspaces/deleted` | `workspace:manage` | Administrator only |
 | `POST /api/v1/workspaces/deleted/{id}/restore` | `workspace:manage` | Administrator only, resolves slug conflicts |
@@ -722,6 +693,14 @@ service then evaluates the same owner, administrator, Workspace ACL, group
 membership, archive, and inherited node restrictions used by the web UI.
 Missing view permission is concealed as `404`; a visible resource without
 management permission returns `403`.
+
+Workspace and deleted-Workspace lists use the shared cursor pagination: `page[limit]`
+defaults to 50 and is capped at 100; follow `links.next` for the next window.
+Shorts retain their own documented page/per-page filters. Before `PATCH` or
+`DELETE` of a Workspace, read it with `GET` and send its `ETag` as `If-Match`.
+The default API policy returns `428 if_match_required` for a missing header
+and `412 resource_changed` for a stale value. Reconcile changes after rereading
+the resource instead of blindly overwriting another manager’s update.
 
 Workspace DTOs include `tree_visibility` and `contents_visibility`; node DTOs
 include `contents_visibility`, `labels`, and `properties`. Node `PATCH` accepts
@@ -759,8 +738,11 @@ Workspace.” The user who owns that key must still be allowed to perform the
 specific operation.
 
 Document pages and attachments are intentionally absent from this contract.
-The HTML Editor API will own `page:*` and `attachment:*`, while Workspace
-integration will add its effective page ACL when both modules are installed.
+The installed HTML Editor API owns `page:read`, `page:write`,
+`attachment:read` and `attachment:write` through `/api/v1/pages` and its
+attachment routes. Workspace integration applies the effective page ACL and
+publication workflow to linked documents. Use Editor endpoints for page content
+and attachments, and Workspace endpoints for tree and Workspace management.
 
 ## 11. Developer checks
 

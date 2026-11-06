@@ -327,7 +327,7 @@ editorova dokumenta kroz opcionalni servisni most.
 Kada su oba modula uključena:
 
 - Workspace putanje i nasljedni ACL upravljaju pristupom povezanom dokumentu;
-- samostalna javna slug putanja editora je isključena;
+- povezane stranice koriste kanonske Workspace putanje; postojeće samostalne HTML stranice zadržavaju podešene slug putanje i vlastita pravila pristupa;
 - ovlašteni članovi mogu dodavati, uređivati i brisati povezane stranice;
 - obični urednik automatski kreira novi dokument i ne može pogađanjem ključa
   povezati tuđi postojeći dokument; povezivanje postojećih dokumenata dostupno
@@ -355,8 +355,13 @@ Kada su oba modula uključena:
 - jedan editor dokument može pripadati samo jednoj aktivnoj Workspace stranici.
 
 HTML editor nastavlja samostalno raditi kada Workspace modul nije instaliran.
-Njegov samostalni pregled uvijek koristi aktualnu verziju editora i ne prikazuje
-Workspace kontrole procesa objave.
+Njegov samostalni pregled koristi aktualnu verziju editora i ne prikazuje
+Workspace kontrole procesa objave. Instalacija Workspacea sama ne premješta niti
+ponovno objavljuje postojeće samostalne stranice. Administrator može odabrane
+stranice premjestiti u područje kroz **Postavke → HTML Editor → Stranice izvan
+područja**. Editor premješta upravljani sadržaj i privitke te prepisuje podržane
+interne reference; nakon premještanja provjerite odredišne ovlasti i poveznice.
+Obični urednici ne mogu pokrenuti ovo premještanje.
 
 ## Prenosivi HTML izvoz Područja
 

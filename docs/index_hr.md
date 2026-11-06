@@ -282,15 +282,15 @@ Workspace ACL bez tvrde Composer ovisnosti.
 
 Kada je Workspace uključen:
 
-- postavke editora pokazuju da Područja upravljaju javnim putanjama;
-- samostalni editor slug prekidač je isključen;
+- Područja upravljaju kanonskim putanjama i pravilima objave povezanih stranica;
+- samostalne HTML stranice zadržavaju podešenu slug putanju i zasebni Editor ACL;
 - povezani dokument učitava se samo uz nasljedno `can_view` pravo;
 - Workspace u desnom stupcu ugrađuje Editorov zajednički potpuni pregled, pa su
   tema, jezici, povijest, privitci, ZIP export, sadržaj dokumenta i audit
   identični samostalnom pregledu;
 - uređivanje, upload, metapodaci, verzije i privitci traže `can_edit`;
 - brisanje dokumenta traži `can_delete`;
-- URL-ovi dokumenata u Menu modulu vode na Workspace stranice.
+- URL-ovi povezanih dokumenata u Menu modulu vode na Workspace stranice; samostalne stranice ostaju zasebna odredišta.
 
 Workspace ne čita Editorove privatne tablice i ne kopira njegov HTML predložak.
 Kroz opcionalni servisni most traži `EditorDocumentViewBuilder`, a zatim
@@ -576,13 +576,12 @@ hijerarhija skraćuje unutar širine sadržaja kako ne bi prekrivala kartice; pu
 nazivi ostaju dostupni prelaskom pokazivača. Povratne poveznice koriste iste kartične,
 rubne, link i prigušene vrijednosti kao ostale tematske kartice. Bez Theme
 modula obje komponente koriste Bootstrap vrijednosti.
-
-Postojeća instalacija dodaje dvije izvedene tablice naredbama:
-
-```bash
-vendor/bin/hph workspace:install-backlinks-migration
-vendor/bin/hph orm-migrate:up
-```
+Aktualna početna shema uključuje povratne poveznice, oznake stranica, privatne
+teme i osobne naslovnice. Postojeću Simbiozu nadogradite njezinim usklađenim
+aplikacijskim updaterom i provjerite `vendor/bin/hph orm-migrate:status`; stare
+jednokratne migracijske naredbe više nisu dostupne. Druge host aplikacije trebaju
+pripremiti pregledanu migraciju za stvarno stanje svoje sheme nakon provjerenog
+backupa.
 
 Tablice `workspace_backlinks` i `workspace_backlink_index_state` ne ulaze u
 backup jer ne sadrže izvorne podatke. Objavljivanje ciljano osvježava izvor,
@@ -599,13 +598,6 @@ vendor/bin/hph orm-migrate:up
 
 Auth i ORM moraju biti uključeni prije Workspace paketa. Modul odgađa
 učitavanje dok obavezni servisi nisu dostupni.
-
-Postojeća instalacija dodaje oznake stranica naredbama:
-
-```bash
-vendor/bin/hph workspace:install-node-labels-migration
-vendor/bin/hph orm-migrate:up
-```
 
 Korisne putanje sa zadanom konfiguracijom:
 
@@ -625,13 +617,6 @@ Korisne putanje sa zadanom konfiguracijom:
 - `/settings/workspaces/all`: administratorski popis
 - `/settings/workspaces/deleted`: vraćanje obrisanih Područja
 
-Postojeća instalacija dodaje izolirane teme Područja naredbama:
-
-```bash
-vendor/bin/hph workspace:install-themes-migration
-vendor/bin/hph orm-migrate:up
-```
-
 ### Politika naslovnice aplikacije
 
 Workspace posjeduje ovu funkcionalnost jer je svaki spremljeni cilj Workspace
@@ -646,21 +631,6 @@ kojem je dopušten osobni izbor vidi samo objavljene stranice i Sažetke kojima
 trenutačno smije pristupiti. Resolver početne rute primjenjuje osobna →
 prijavljena → javna → host naslovnica i preusmjerava samo na generiranu internu
 named rutu, čime sprječava otvoreni redirect i pristup kroz zastarjeli ACL.
-
-Postojeća instalacija dodaje tablicu osobnih izbora naredbama:
-
-```bash
-vendor/bin/hph workspace:install-homepage-migration
-vendor/bin/hph orm-migrate:up
-```
-
-Instalacija koja već ima tablicu osobnih izbora dodaje strukturirane ciljeve Sažetaka
-bez zamjene postojećih izbora stranica:
-
-```bash
-vendor/bin/hph workspace:install-homepage-view-options-migration
-vendor/bin/hph orm-migrate:up
-```
 
 Potpuni backup sitea obuhvaća globalnu JSON politiku i
 `workspace_user_homepages`, uključujući vrstu cilja, ID Područja i oba
@@ -696,11 +666,13 @@ Workspaceov `WorkspaceApiExtension` registrira rute, a
 | `PUT .../{slug}/theme/selection` | `workspace:manage` | Bira nasljeđivanje ili sistemsku temu samo za područje |
 | `POST .../{slug}/theme/import` | `workspace:manage` | Uvozi ZIP u privatnu temu područja |
 | `GET .../{slug}/theme/export` | `workspace:manage` | Samo administrator izvozi privatnu temu |
-| `POST/DELETE .../{slug}/theme/assets` | `workspace:manage` | Dodaje ili briše datoteke privatne teme |
+| `POST .../{slug}/theme/assets` | `workspace:manage` | Dodaje datoteku privatne teme |
+| `DELETE .../{slug}/theme/assets/{file}` | `workspace:manage` | Briše datoteku privatne teme |
 | `PUT /api/v1/workspaces/{slug}/tree/order` | `workspace:manage` | Atomski provjerava potpuni raspored |
 | `GET/PUT /api/v1/workspaces/{slug}/acl` | `workspace:manage` | Čita ili zamjenjuje potpuni ACL područja |
 | `GET /api/v1/workspaces/{slug}/acl/subjects` | `workspace:manage` | Ograničena pretraga `category=user\|group&q=...` |
-| `POST/PATCH/DELETE .../nodes` | `workspace:manage` | Upravlja samo internim i vanjskim linkovima |
+| `POST .../{slug}/nodes` | `workspace:manage` | Dodaje samo interne i vanjske linkove |
+| `PATCH/DELETE .../{slug}/nodes/{nodeId}` | `workspace:manage` | Mijenja ili briše samo interne i vanjske linkove |
 | `GET/PUT .../nodes/{nodeId}/acl` | `workspace:manage` | Čita ili mijenja izravna ograničenja |
 | `GET /api/v1/workspaces/deleted` | `workspace:manage` | Samo administrator |
 | `POST /api/v1/workspaces/deleted/{id}/restore` | `workspace:manage` | Samo administrator, rješava sukob sluga |
@@ -709,6 +681,15 @@ Scope ključa je prva zaštita, a nikada konačna odluka. Servis zatim računa i
 prava vlasnika, administratora, Workspace ACL-a, grupa, arhive i naslijeđenih
 ograničenja koja koristi web sučelje. Nedostatak prava pregleda skriva se kao
 `404`, a vidljiv resurs bez prava upravljanja vraća `403`.
+
+Popisi područja i obrisanih područja koriste zajedničku paginaciju kursorom:
+`page[limit]` zadano je 50, a najviše 100; za sljedeću skupinu slijedite
+`links.next`. Kratke objave zadržavaju vlastite dokumentirane filtre stranice
+i broja stavki. Prije `PATCH` ili `DELETE` područja dohvatite ga zahtjevom
+`GET` i pošaljite dobiveni `ETag` kao `If-Match`. Zadana API pravila vraćaju
+`428 if_match_required` za izostavljeno zaglavlje, odnosno `412 resource_changed`
+za zastarjelu vrijednost. Ponovno dohvatite područje i uskladite promjene umjesto
+da prepišete tuđu izmjenu bez provjere.
 
 DTO područja sadrži `tree_visibility` i `contents_visibility`, a DTO čvora
 sadrži `contents_visibility`, `labels` i `properties`. `PATCH` čvora prihvaća
@@ -746,8 +727,11 @@ upravljanje područjem”. Korisnik kojem ključ pripada i dalje mora imati prav
 izvršiti konkretnu operaciju.
 
 Dokument-stranice i privici namjerno nisu dio ovog ugovora. HTML Editor API
-posjedovat će `page:*` i `attachment:*`, a Workspace integracija će dodati
-efektivni ACL stranice kada su oba modula instalirana.
+već posjeduje `page:read`, `page:write`, `attachment:read` i `attachment:write`
+kroz `/api/v1/pages` i pripadajuće putanje privitaka. Workspace integracija
+primjenjuje efektivni ACL stranice i proces objave na povezane dokumente.
+Editorove putanje koristite za sadržaj stranica i privitke, a Workspaceove za
+stablo i upravljanje Područjem.
 
 ## 11. Razvojne provjere
 

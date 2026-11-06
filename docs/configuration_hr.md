@@ -63,8 +63,10 @@ Workspace nikada ne zapisuje nametnute vrijednosti u konfiguraciju HTML Editora.
 Editor samostalno radi bez Workspacea. Kada je Workspace instaliran i uključen,
 postojeća integracija pri izvršavanju koristi politiku sadržaja Područja/stranice,
 kanonske Workspace rute, pravila objave/ACL-a i kreiranje vlasničkih stranica.
-Samostalne postavke Editora ostaju netaknute i ponovno se primjenjuju kada se
-Workspace isključi. Integracija ne kopira vrijednosti između JSON datoteka niti
+Samostalne postavke Editora ostaju aktivne za stranice izvan Područja.
+Instalacija Workspacea ne premješta te stranice automatski. Administrator ih može
+izričito premjestiti iz postavki Editora; povezane stranice tada koriste ACL i
+proces objave odredišnog Područja. Integracija ne kopira vrijednosti između JSON datoteka niti
 čini Editor ovisnim o Workspaceu za čitanje vlastite konfiguracije.
 
 ## Početna shema i backup

@@ -324,7 +324,7 @@ stable document key through an optional service bridge.
 When both modules are enabled:
 
 - Workspace routes and inherited ACL own linked document access;
-- the editor's standalone public slug route is disabled;
+- linked pages use canonical Workspace routes; existing standalone HTML pages retain their configured slug routes and their separate access rules;
 - authorized Workspace members can add, edit, and delete linked pages;
 - a regular editor automatically creates a new document and cannot attach
   somebody else's existing document by guessing its key; attaching existing
@@ -352,8 +352,13 @@ When both modules are enabled:
 - an editor document can belong to only one active Workspace page.
 
 The HTML editor continues to work independently when Workspaces are absent.
-Its standalone view always uses the current editor version and does not expose
-Workspace workflow controls.
+Its standalone view uses the current editor version and does not expose
+Workspace workflow controls. Installing Workspace does not move or republish
+existing standalone pages. An administrator may move selected standalone pages
+from **Settings → HTML Editor → Pages outside workspaces** into a target Workspace.
+The Editor moves managed content and attachments and rewrites supported internal
+references; verify destination permissions and links after the move. Ordinary
+editors cannot run this migration.
 
 ## Portable Workspace HTML export
 
