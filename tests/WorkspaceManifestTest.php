@@ -54,7 +54,7 @@ final class WorkspaceManifestTest extends TestCase
             $routesByName[$route[3]] = $route;
         }
 
-        $this->assertCount(52, $routesByName);
+        $this->assertCount(53, $routesByName);
         $this->assertSame(
             ['GET', '/workspaces', WorkspaceController::class . '@index', 'workspace.index', []],
             $routesByName['workspace.index'],
@@ -247,6 +247,12 @@ final class WorkspaceManifestTest extends TestCase
         $this->assertSame([], $routesByName['workspace.theme.asset'][4]);
         $this->assertSame(WorkspaceMenuController::class . '@index', $routesByName['workspace.menu'][2]);
         $this->assertSame(WorkspaceMenuController::class . '@save', $routesByName['workspace.menu.save'][2]);
+        $this->assertSame(WorkspaceMenuController::class . '@targets', $routesByName['workspace.menu.targets'][2]);
+        $this->assertSame('/workspaces/menu/targets/{workspaceSlug}', $routesByName['workspace.menu.targets'][1]);
+        $this->assertContains(
+            RequireAuthenticatedUserMiddleware::class,
+            $routesByName['workspace.menu.targets'][4],
+        );
         $this->assertContains(
             RequireAuthenticatedUserMiddleware::class,
             $routesByName['workspace.menu.save'][4],

@@ -88,6 +88,45 @@ final readonly class WorkspaceMenuController
     }
 
     /**
+     * EN: Offers ACL-filtered destinations only after checking management of the path-scoped Workspace.
+     *
+     * HR: Nudi odredišta filtrirana ovlastima tek nakon provjere upravljanja područjem iz putanje.
+     */
+    public function targets(ServerRequestInterface $request, string $workspaceSlug): ResponseInterface
+    {
+        $workspace = $this->repository->findWorkspaceBySlug($workspaceSlug);
+        if (!is_array($workspace)) {
+            return $this->responseFactory->json(['ok' => false, 'items' => []], 404);
+        }
+
+        if (!$this->canManage($workspace)) {
+            return $this->responseFactory->json(['ok' => false, 'items' => []], 403);
+        }
+
+        if (!$this->menus->isAvailable()) {
+            return $this->responseFactory->json(['ok' => false, 'items' => []], 404);
+        }
+
+        $query = WorkspaceValue::stringKeyArray($request->getQueryParams());
+        $kind = WorkspaceValue::string($query['kind'] ?? '');
+        if (!in_array($kind, ['workspace', 'page'], true)) {
+            return $this->responseFactory->json(['ok' => false, 'items' => []], 422);
+        }
+
+        return $this->responseFactory->json([
+            'ok' => true,
+            ...$this->menus->targetPage(
+                $this->access,
+                $kind,
+                WorkspaceValue::int($query['workspace_id'] ?? 0),
+                mb_substr(WorkspaceValue::string($query['q'] ?? ''), 0, 512),
+                WorkspaceValue::int($query['page'] ?? 1),
+                WorkspaceValue::int($query['per_page'] ?? 25),
+            ),
+        ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
      * EN: Saves only the submitted top or left menu after repeating the server-side ACL check.
      *
      * HR: Sprema samo poslani gornji ili lijevi meni nakon ponovne server-side ACL provjere.

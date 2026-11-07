@@ -13,6 +13,14 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var array<string, mixed> $property
  */
 $property = is_array($property ?? null) ? $property : [];
+$propertyTypeLabels = [
+    'text' => 'Tekst',
+    'status' => 'Status',
+    'number' => 'Broj',
+    'date' => 'Datum',
+    'user' => 'Korisnik',
+    'link' => 'Poveznica',
+];
 ?>
 <div class="row g-2 align-items-end" data-workspace-page-property-row>
     <div class="col-12 col-md-4">
@@ -29,12 +37,12 @@ $property = is_array($property ?? null) ? $property : [];
         <label class="form-label small w-100 mb-0">
             <span class="d-block mb-2"><?= $this->escape(__('Vrsta')) ?></span>
             <select class="form-select" name="properties[type][]">
-                <?php foreach (['text', 'status', 'number', 'date', 'user', 'link'] as $type) : ?>
+                <?php foreach ($propertyTypeLabels as $type => $label) : ?>
                     <option
                         value="<?= $type ?>"
                     <?= WorkspaceValue::string($property['type'] ?? 'text') === $type ? 'selected' : '' ?>
                     >
-                    <?= $this->escape(__($type)) ?>
+                    <?= $this->escape(__($label)) ?>
                     </option>
                 <?php endforeach; ?>
             </select>

@@ -65,6 +65,8 @@
         },
         "exclude-from-classmap": [
             "tests/Fixtures/OptionalMenuRepository.php",
+            "tests/Fixtures/OptionalMenuCatalog.php",
+            "tests/Fixtures/OptionalMenuNavigationCatalog.php",
             "tests/Fixtures/MenuOwnerContract.php",
             "tests/Fixtures/OptionalNotificationService.php",
             "tests/Fixtures/OptionalEditorBatchService.php"

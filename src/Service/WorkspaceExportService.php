@@ -1732,17 +1732,19 @@ CSS;
     async function activatePageScripts(container) {
         const scripts = container.querySelector('[data-export-scripts]');
         if (!(scripts instanceof HTMLTemplateElement)) return;
-        for (const source of scripts.content.querySelectorAll('link[rel="stylesheet"],script')) {
-            const stylesheet = source.tagName === 'LINK';
-            const script = document.createElement(stylesheet ? 'link' : 'script');
-            for (const attribute of source.attributes) script.setAttribute(attribute.name, attribute.value);
-            if (!stylesheet) script.async = false;
+        // EN: Package-owned inline table styles are inert inside templates and must be activated with their runtime.
+        // HR: Ugrađeni stilovi tablica ne djeluju u predlošcima pa ih treba aktivirati zajedno s njihovim kodom.
+        for (const source of scripts.content.querySelectorAll('link[rel="stylesheet"],style,script')) {
+            const stylesheet = source.tagName !== 'SCRIPT';
+            const asset = document.createElement(source.tagName.toLowerCase());
+            for (const attribute of source.attributes) asset.setAttribute(attribute.name, attribute.value);
+            if (!stylesheet) asset.async = false;
             await new Promise((resolve) => {
-                script.onload = resolve;
-                script.onerror = resolve;
-                if (!stylesheet) script.textContent = source.textContent;
-                (stylesheet ? document.head : container).append(script);
-                if (!stylesheet && !script.src) resolve();
+                asset.onload = resolve;
+                asset.onerror = resolve;
+                asset.textContent = source.textContent;
+                (stylesheet ? document.head : container).append(asset);
+                if (source.tagName === 'STYLE' || (!stylesheet && !asset.src)) resolve();
             });
         }
     }
@@ -1753,7 +1755,7 @@ CSS;
         if (!(pageTemplate instanceof HTMLTemplateElement)) return;
         const scripts = pageTemplate.content.querySelector('[data-export-scripts]');
         const nextHasScripts = scripts instanceof HTMLTemplateElement
-            && scripts.content.querySelector('script,link[rel="stylesheet"]');
+            && scripts.content.querySelector('script,style,link[rel="stylesheet"]');
         // EN: A fresh document prevents global declarations and listeners leaking between scripted pages.
         // HR: Svježi dokument sprečava prelijevanje globalnih deklaracija i slušatelja među stranicama sa skriptama.
         if (hasRendered && (renderedWithScripts || nextHasScripts)) {

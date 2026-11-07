@@ -36,5 +36,12 @@ final class WorkspaceExportTabsTest extends TestCase
         $this->assertStringContainsString("['ArrowLeft', 'ArrowRight', 'Home', 'End']", $javascript);
         $this->assertStringContainsString('[data-export-theme] option', $javascript);
         $this->assertStringContainsString('data-export-label-${language}', $javascript);
+        // EN: Native table CSS accompanies its script; styles inside templates do not apply automatically.
+        //
+        // HR: Izvorni CSS tablice prati skriptu; stilovi unutar predložaka ne primjenjuju se sami.
+        $this->assertStringContainsString('link[rel="stylesheet"],style,script', $javascript);
+        $this->assertStringContainsString('document.createElement(source.tagName.toLowerCase())', $javascript);
+        $this->assertStringContainsString('asset.textContent = source.textContent', $javascript);
+        $this->assertStringContainsString("source.tagName === 'STYLE' ||", $javascript);
     }
 }

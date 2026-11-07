@@ -4,6 +4,7 @@ parameters:
 		- tests/Fixtures/MenuOwnerContract.php
 		- tests/Fixtures/MenuWorkspaceOwnerContract.php
 		- tests/Fixtures/OptionalMenuRepository.php
+		- tests/Fixtures/OptionalMenuNavigationCatalog.php
 	level: 10
 	paths:
 		- src

@@ -874,7 +874,14 @@ final readonly class WorkspaceResourceController
         }
 
         $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        if (!is_array($decoded) || array_is_list($decoded)) {
+        // EN: Associative decoding makes {} and [] identical; retain the object token and named-field contract.
+        //
+        // HR: Asocijativno dekodiranje izjednačuje {} i []; zadrži objektni token i ugovor imenovanih polja.
+        if (
+            !is_array($decoded)
+            || !str_starts_with($raw, '{')
+            || array_filter(array_keys($decoded), is_int(...)) !== []
+        ) {
             throw new JsonException(__('JSON tijelo mora biti objekt.'));
         }
 

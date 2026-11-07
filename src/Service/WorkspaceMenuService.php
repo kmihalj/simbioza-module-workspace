@@ -37,7 +37,7 @@ final readonly class WorkspaceMenuService
 
     private const REPOSITORY = \AaiEduHr\HeartPhrameModuleMenu\Service\MenuConfigRepository::class;
 
-    private const NAVIGATION_CATALOG = 'AaiEduHr\\HeartPhrameModuleMenu\\Service\\MenuNavigationCatalog';
+    private const NAVIGATION_CATALOG = \AaiEduHr\HeartPhrameModuleMenu\Service\MenuNavigationCatalog::class;
 
     private const VIEW_RENDERER = 'AaiEduHr\\HeartPhrameModuleMenu\\Service\\MenuModuleViewRenderer';
 
@@ -112,9 +112,9 @@ final readonly class WorkspaceMenuService
                 : (method_exists($catalog, 'targets') ? $catalog->targets() : []),
             'contextTargets' => [],
             'scopeTargets' => [],
-            'targetLookupPath' => $this->urlGenerator->namedRouteExists('menu.settings.targets')
-                ? $this->urlGenerator->getPathFor('menu.settings.targets')
-                : '/settings/menu/targets',
+            'targetLookupPath' => $this->urlGenerator->getPathFor('workspace.menu.targets', [
+                'workspaceSlug' => WorkspaceValue::string($workspace['slug'] ?? ''),
+            ]),
             'jsonPath' => '',
             'configurationError' => null,
             'embedded' => true,
@@ -122,6 +122,114 @@ final readonly class WorkspaceMenuService
             'savePathOverride' => $savePath,
             'workspaceSlug' => WorkspaceValue::string($workspace['slug'] ?? ''),
         ]));
+    }
+
+    /**
+     * EN: Filters readable destinations before counting and paging; private labels never leave the server.
+     *
+     * HR: Filtrira čitljiva odredišta prije brojanja i straničenja; privatni nazivi ne izlaze s poslužitelja.
+     *
+     * @return array{items:list<array<string,mixed>>,page:int,perPage:int,total:int,hasMore:bool}
+     */
+    public function targetPage(
+        WorkspaceAccessService $access,
+        string $kind,
+        int $workspaceId = 0,
+        string $search = '',
+        int $page = 1,
+        int $perPage = 25,
+    ): array {
+        $catalog = $this->requiredService(self::NAVIGATION_CATALOG);
+        if (!method_exists($catalog, 'targets')) {
+            throw new RuntimeException('Menu navigation targets are unavailable.');
+        }
+
+        $targets = $catalog->targets();
+        $targets = is_array($targets) ? WorkspaceValue::rows($targets) : [];
+
+        $visibleWorkspaces = [];
+        $visibleNodes = [];
+        $user = $access->currentUser();
+        foreach ($access->visibleWorkspaces($user) as $workspace) {
+            $id = WorkspaceValue::int($workspace['id'] ?? 0);
+            $visibleWorkspaces[$id] = true;
+            if ($kind !== 'page' || ($workspaceId > 0 && $workspaceId !== $id)) {
+                continue;
+            }
+
+            if ($access->workspacePermissions($workspace, $user)['can_manage']) {
+                $nodes = $this->workspaceRepository->nodesForWorkspace($id);
+                $rights = $access->nodePermissionsForNodes($workspace, $nodes, $user);
+                foreach ($nodes as $node) {
+                    $nodeId = WorkspaceValue::int($node['id'] ?? 0);
+                    if ($rights[$nodeId]['can_view'] ?? false) {
+                        $visibleNodes[$nodeId] = true;
+                    }
+                }
+            } else {
+                $tree = $access->visibleTreeForLanguages(
+                    $workspace,
+                    $user,
+                    $this->config->supportedLanguages(),
+                    true,
+                );
+                $this->collectVisibleTargetNodes($tree, $visibleNodes);
+            }
+        }
+
+        $search = mb_strtolower(trim($search));
+        $filtered = [];
+        foreach ($targets as $target) {
+            $targetWorkspaceId = WorkspaceValue::int($target['workspace_id'] ?? 0);
+            if (
+                WorkspaceValue::string($target['kind'] ?? '') !== $kind
+                || !isset($visibleWorkspaces[$targetWorkspaceId])
+                || ($kind === 'page' && $workspaceId > 0 && $targetWorkspaceId !== $workspaceId)
+            ) {
+                continue;
+            }
+
+            if ($kind === 'page') {
+                $id = WorkspaceValue::string($target['id'] ?? '');
+                if (
+                    preg_match('/\Aworkspace\.[0-9]+\.page\.([0-9]+)\z/D', $id, $matches) !== 1
+                    || !isset($visibleNodes[(int)$matches[1]])
+                ) {
+                    continue;
+                }
+            }
+
+            $label = WorkspaceValue::string($target['label'] ?? '');
+            $itemLabel = WorkspaceValue::string($target['item_label'] ?? '');
+            if ($search !== '' && !str_contains(mb_strtolower($label . ' ' . $itemLabel), $search)) {
+                continue;
+            }
+
+            $target['picker_label'] = $kind === 'page' && $workspaceId > 0 && $itemLabel !== '' ? $itemLabel : $label;
+            $filtered[] = $target;
+        }
+
+        $page = max(1, min(1000000, $page));
+        $perPage = max(1, min(25, $perPage));
+        $total = count($filtered);
+        return ['items' => array_slice($filtered, ($page - 1) * $perPage, $perPage), 'page' => $page,
+            'perPage' => $perPage, 'total' => $total, 'hasMore' => $page * $perPage < $total];
+    }
+
+    /**
+     * EN: Reuses publication-aware, ACL-filtered trees for destinations outside the managed Workspace.
+     *
+     * HR: Za odredišta izvan upravljanog područja koristi stabla filtrirana objavom i ovlastima.
+     *
+     * @param list<array<string,mixed>> $nodes
+     * @param array<int,bool> $visible
+     */
+    private function collectVisibleTargetNodes(array $nodes, array &$visible): void
+    {
+        foreach ($nodes as $node) {
+            $visible[WorkspaceValue::int($node['id'] ?? 0)] = true;
+            $this->collectVisibleTargetNodes(WorkspaceValue::rows($node['children'] ?? []), $visible);
+        }
     }
 
     /**

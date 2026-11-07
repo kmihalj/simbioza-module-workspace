@@ -249,6 +249,13 @@ return new class extends \HeartPhrame\Module\AbstractModuleManifest {
                 [RequireAuthenticatedUserMiddleware::class],
             ],
             [
+                'GET',
+                '/workspaces/menu/targets/{workspaceSlug}',
+                WorkspaceMenuController::class . '@targets',
+                'workspace.menu.targets',
+                [RequireAuthenticatedUserMiddleware::class],
+            ],
+            [
                 'POST',
                 '/workspaces/menu',
                 WorkspaceMenuController::class . '@save',
