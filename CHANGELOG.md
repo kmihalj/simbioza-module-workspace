@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.7 - 2026-11-16
+
+- Allow at least 900 seconds of PHP execution for authorized HTML exports from
+  the Workspace form and API when the web runtime permits it. The limit covers
+  preparing the archive and sending the response.
+- Document PHP, web server and proxy settings for large downloads.
+
 ## 0.3.2 - 2026-10-29
 
 - Reuse batched directory rows for direct page permission labels.

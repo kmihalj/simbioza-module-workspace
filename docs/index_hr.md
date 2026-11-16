@@ -389,6 +389,53 @@ stabla, sadržaja dokumenta i privitaka rade lokalno bez Bootstrap JavaScripta.
 Kada Theme modul nije instaliran ili je isključen, ista struktura paketa ostaje
 funkcionalna uz minimalno čitljivo fallback zaglavlje, hero i raspored.
 
+#### Rješavanje problema s velikim izvozom
+
+Izvoz iz obrasca i HTML izvoz putem API-ja pripremaju i šalju ZIP u istom HTTP
+zahtjevu. Ako se prijenos prekine nakon primitka zaglavlja, usporedite preuzeti
+broj bajtova s vrijednošću `Content-Length` te za taj zahtjev pregledajte
+zapise PHP-a, web poslužitelja i proxyja. Odgovor može imati status HTTP 200
+i kada se veza zatvori prije nego što stigne cijela arhiva.
+
+Za odobreni HTTP izvoz modul postavlja ograničenje izvršavanja PHP-a na
+najmanje 900 sekundi ako web okruženje dopušta izmjenu. Modul zadržava višu
+pozitivnu vrijednost, a kada je očitana vrijednost `0`, postavlja izričitih
+900 sekundi. Način mjerenja vremena ovisi o izgradnji PHP-a i platformi.
+Ukupno trajanje HTTP zahtjeva može biti drukčije.
+[PHP priručnik](https://www.php.net/manual/en/info.configuration.php#ini.max-execution-time).
+
+Provjerite stvarnu vrijednost `max_execution_time` i učitanu konfiguraciju
+PHP-a koji poslužuje dotično web sjedište. U zaštićenoj web dijagnostici
+očitajte `PHP_SAPI`, `php_ini_loaded_file()` i `ini_get('max_execution_time')`.
+Naredbe poput `php -i` prikazuju okruženje naredbenog retka. Ako PHP onemogućuje
+aplikaciji izmjenu, postavite vrijednost u odgovarajućoj web konfiguraciji.
+Na primjer, uz mod_php zadajte `php_value max_execution_time 900` u Apacheovu
+bloku `<Directory>` aplikacije ili izmijenite postojeći `php_admin_value`
+ako on zaključava postavku. Uz PHP-FPM zadajte
+`php_admin_value[max_execution_time] = 900` u namjenskom poolu aplikacije.
+Zadržite višu vrijednost ako je instalaciji već potrebna.
+[PHP konfiguracija](https://www.php.net/manual/en/configuration.changes.php),
+[postavke PHP-FPM poola](https://www.php.net/manual/en/install.fpm.configuration.php).
+
+Provjerite zasebna vremenska ograničenja na putu zahtjeva.
+
+- PHP-FPM `request_terminate_timeout` može zaustaviti proces kad istekne
+  vrijeme za cijeli zahtjev. Za to ograničenje i svako ukupno ograničenje
+  zahtjeva na proxyju ili pristupniku uzmite u obzir pripremu i cijeli prijenos.
+- Apacheovi `TimeOut` i `ProxyTimeout` ograničavaju čekanje na ulaz ili izlaz
+  podataka. Nginxovi `fastcgi_read_timeout` i `proxy_read_timeout` ograničavaju
+  čekanje između čitanja s pozadinskog poslužitelja. Uzmite u obzir čekanje
+  na prvi bajt dok se ZIP izrađuje i razmake tijekom prijenosa.
+  [Apache `TimeOut`](https://httpd.apache.org/docs/2.4/mod/core.html#timeout),
+  [Apache `ProxyTimeout`](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#proxytimeout),
+  [Nginx `fastcgi_read_timeout`](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_read_timeout),
+  [Nginx `proxy_read_timeout`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout).
+
+Ako preglednik ponovno pošalje obrazac i poslužitelj vrati 403 zbog nevažećeg
+CSRF tokena, ponovno otvorite obrazac za izvoz i pošaljite ga. Nakon preuzimanja
+velikog izvoza usporedite veličinu datoteke s najavljenom veličinom ZIP-a i prije
+raspakiravanja provjerite arhivu naredbom `unzip -t putanja/do/izvoza.zip`.
+
 ## 7. Proces objave
 
 Stanje objave pripada dokument-čvoru i jeziku. Workspace sprema samo status,

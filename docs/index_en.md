@@ -399,6 +399,53 @@ do not require Bootstrap JavaScript. When the Theme module is absent or
 disabled, the same package structure remains functional with a minimal readable
 fallback header, hero, and layout.
 
+#### Troubleshooting large exports
+
+The form submission and the API HTML export each build and send the ZIP in a
+single HTTP request. If the transfer stops after the headers arrive, compare
+the downloaded byte count with `Content-Length` and check the PHP, web server
+and proxy logs for that request. A response can show HTTP 200 even when the
+connection closes before the full archive arrives.
+
+For an authorized HTTP export, the module sets a PHP execution limit of at
+least 900 seconds when the web runtime allows it. It keeps a higher positive
+limit and sets an explicit 900-second limit when the reported value is `0`.
+The PHP build and platform determine how execution time is measured. The
+duration of the whole HTTP request can differ.
+[PHP runtime manual](https://www.php.net/manual/en/info.configuration.php#ini.max-execution-time).
+
+Check the effective `max_execution_time` and loaded configuration in the PHP
+runtime serving the affected site. Use restricted web diagnostics to read
+`PHP_SAPI`, `php_ini_loaded_file()` and `ini_get('max_execution_time')`.
+Commands such as `php -i` report the CLI environment. If PHP blocks the
+application's adjustment, set the value in the relevant web configuration.
+With mod_php, for example, set `php_value max_execution_time 900` in the
+application's Apache `<Directory>` block, or edit the existing
+`php_admin_value` directive if it locks the setting. With PHP-FPM, set
+`php_admin_value[max_execution_time] = 900` in its dedicated pool. Keep any
+higher value that the installation already requires.
+[PHP configuration manual](https://www.php.net/manual/en/configuration.changes.php),
+[PHP-FPM pool configuration](https://www.php.net/manual/en/install.fpm.configuration.php).
+
+Check the separate limits on the request path.
+
+- PHP-FPM `request_terminate_timeout` can stop a worker after the elapsed
+  duration of a request. Size this limit and any total request limit at a
+  proxy or gateway for both archive preparation and the full transfer.
+- Apache `TimeOut` and `ProxyTimeout` govern I/O waits. Nginx
+  `fastcgi_read_timeout` and `proxy_read_timeout` apply between upstream
+  reads. Allow for the wait before the first byte while the ZIP is built and
+  for pauses during transfer.
+  [Apache `TimeOut`](https://httpd.apache.org/docs/2.4/mod/core.html#timeout),
+  [Apache `ProxyTimeout`](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#proxytimeout),
+  [Nginx `fastcgi_read_timeout`](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_read_timeout),
+  [Nginx `proxy_read_timeout`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout).
+
+If the browser's retry repeats a form submission and the server returns 403
+for an invalid CSRF token, reopen the export form and submit it again. After
+downloading a large export, compare its size with the advertised ZIP size and
+run `unzip -t path/to/export.zip` to check the archive before extracting it.
+
 ## 7. Publishing workflow
 
 Publication state belongs to a document node and a language. Workspace stores

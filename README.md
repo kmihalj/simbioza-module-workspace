@@ -369,6 +369,8 @@ list. Its localized tooltip and accessible name explain the action. The form exp
 page or an explicit page selection. A selected-page export rebuilds the tree so
 it contains only HTML pages that are actually present in the package.
 
+For interrupted ZIP downloads, see [Troubleshooting large exports](docs/index_en.md#troubleshooting-large-exports).
+
 The download is a ZIP transport package. Extract it and open the root
 `index.html`; no PHP or web server is required. This file is the single themed
 offline shell: it keeps the same header, active light/dark branding, hero,

@@ -19,8 +19,10 @@ use function class_exists;
 use function count;
 use function date;
 use function file_get_contents;
+use function function_exists;
 use function htmlspecialchars;
 use function in_array;
+use function ini_get;
 use function is_array;
 use function is_string;
 use function json_encode;
@@ -29,6 +31,7 @@ use function number_format;
 use function preg_replace;
 use function preg_split;
 use function rawurlencode;
+use function set_time_limit;
 use function strlen;
 use function strtolower;
 use function strtoupper;
@@ -43,6 +46,7 @@ use const JSON_PRETTY_PRINT;
 use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
 use const JSON_UNESCAPED_UNICODE;
+use const PHP_SAPI;
 use const PREG_SPLIT_NO_EMPTY;
 
 /**
@@ -54,6 +58,8 @@ use const PREG_SPLIT_NO_EMPTY;
  */
 final readonly class WorkspaceExportService
 {
+    private const WEB_EXPORT_TIME_LIMIT_SECONDS = 900;
+
     /**
      * EN: Receives the owners of the tree, workflow, Editor snapshots, and active theme.
      *
@@ -111,6 +117,20 @@ final readonly class WorkspaceExportService
     ): WorkspaceExport {
         if (!class_exists(ZipArchive::class)) {
             throw new RuntimeException(__('PHP ZIP ekstenzija nije instalirana.'));
+        }
+
+        /*
+         * EN: Keep the extended limit in effect for the rest of the HTTP request.
+         *     PHP sends the ZIP body after this service returns it to the caller.
+         * HR: Zadrži produljeno ograničenje do kraja HTTP zahtjeva.
+         *     PHP šalje tijelo ZIP-a nakon što ga servis vrati pozivatelju.
+         */
+        if (
+            PHP_SAPI !== 'cli'
+            && function_exists('set_time_limit')
+            && (int)ini_get('max_execution_time') < self::WEB_EXPORT_TIME_LIMIT_SECONDS
+        ) {
+            set_time_limit(self::WEB_EXPORT_TIME_LIMIT_SECONDS);
         }
 
         $languages = array_keys($this->editor->languageLabels());

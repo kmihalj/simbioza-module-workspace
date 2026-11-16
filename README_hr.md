@@ -372,6 +372,8 @@ područja**. Lokalizirani tooltip i pristupačni naziv objašnjavaju radnju. Obr
 ili izričito odabrane stranice. Kod djelomičnog izvoza stablo se ponovno gradi i
 sadrži samo HTML stranice koje se zaista nalaze u paketu.
 
+Za prekinuta preuzimanja ZIP-a pogledajte [rješavanje problema s velikim izvozom](docs/index_hr.md#rje%C5%A1avanje-problema-s-velikim-izvozom).
+
 Download je transportni ZIP paket. Nakon raspakiravanja otvara se korijenski
 `index.html`; PHP ni web poslužitelj nisu potrebni. Ta je datoteka jedina
 tematizirana offline ljuska: zadržava isto zaglavlje, aktivni svijetli/tamni
