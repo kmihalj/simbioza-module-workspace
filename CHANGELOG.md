@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.8 - 2026-11-16
+
+- Format the export timeout comment for Simbioza's bilingual documentation check.
+
 ## 0.3.7 - 2026-11-16
 
 - Allow at least 900 seconds of PHP execution for authorized HTML exports from
