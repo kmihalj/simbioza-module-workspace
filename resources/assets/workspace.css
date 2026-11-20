@@ -1291,6 +1291,40 @@
 }
 
 @media (min-width: 992px) {
+    /* EN: Keep three fifths for the page when either sidebar is visible.
+     * HR: Stranici ostavi tri petine širine kad je vidljiva bilo koja bočna kartica. */
+    .workspace-page-shell {
+        --workspace-page-tree-width: calc((100% - 1rem) * .4);
+        container-type: inline-size;
+        grid-template-columns: var(--workspace-page-tree-width) minmax(0, 1fr);
+    }
+
+    .workspace-page-shell:has([data-editor-html-document-column].col-lg-9) {
+        --workspace-page-tree-width: calc((100% - 2.5rem) / 5);
+    }
+
+    .workspace-page-shell .workspace-breadcrumb-nav {
+        --workspace-tree-width: var(--workspace-page-tree-width);
+    }
+
+    .workspace-page-shell .editor-html-toc-column,
+    .workspace-page-shell [data-workspace-backlinks-column].col-lg-9 {
+        --workspace-page-toc-column-width: calc((100cqw - 1.5rem) * .4 + 1.5rem);
+    }
+
+    .workspace-page-shell:has(> .workspace-sidebar:is(.show, .collapsing)) .editor-html-toc-column,
+    .workspace-page-shell:has(> .workspace-sidebar:is(.show, .collapsing)) [data-workspace-backlinks-column].col-lg-9 {
+        --workspace-page-toc-column-width: calc((100cqw - 2.5rem) / 5 + 1.5rem);
+    }
+
+    .workspace-page-shell .editor-html-toc-column {
+        --editor-html-toc-width: var(--workspace-page-toc-column-width);
+    }
+
+    .workspace-page-shell [data-workspace-backlinks-column].col-lg-9 {
+        width: calc(100% - var(--workspace-page-toc-column-width));
+    }
+
     .workspace-sidebar.collapse:not(.show) {
         display: none;
     }

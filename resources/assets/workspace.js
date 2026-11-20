@@ -1107,7 +1107,7 @@
     function initializeAdaptiveTreeWidths() {
         const desktopQuery = window.matchMedia('(min-width: 992px)');
 
-        document.querySelectorAll('.workspace-shell').forEach((shell) => {
+        document.querySelectorAll('.workspace-shell:not(.workspace-page-shell)').forEach((shell) => {
             if (!(shell instanceof HTMLElement)) {
                 return;
             }

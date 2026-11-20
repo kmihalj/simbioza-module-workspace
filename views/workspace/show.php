@@ -154,7 +154,7 @@ $workflowIcon = static function (string $action): string {
 <link rel="stylesheet" href="<?= $this->escape($assetsCssPath) ?>">
 <script src="<?= $this->escape($assetsJsPath) ?>" defer></script>
 
-<div class="workspace-shell">
+<div class="workspace-shell workspace-page-shell">
     <?php if ($breadcrumbs !== []) : ?>
         <nav
             class="workspace-breadcrumb-nav"
