@@ -1107,7 +1107,7 @@
     function initializeAdaptiveTreeWidths() {
         const desktopQuery = window.matchMedia('(min-width: 992px)');
 
-        document.querySelectorAll('.workspace-shell:not(.workspace-page-shell)').forEach((shell) => {
+        document.querySelectorAll('.workspace-shell').forEach((shell) => {
             if (!(shell instanceof HTMLElement)) {
                 return;
             }
@@ -1121,9 +1121,10 @@
                 return;
             }
 
+            const pageLayout = shell.classList.contains('workspace-page-shell');
             const synchronizeWidth = () => {
-                shell.style.removeProperty('--workspace-tree-width');
-                if (!desktopQuery.matches) {
+                if (!pageLayout && !desktopQuery.matches) {
+                    shell.style.removeProperty('--workspace-tree-width');
                     return;
                 }
 
@@ -1167,7 +1168,7 @@
                     const statusWidth = status instanceof HTMLElement
                         ? status.getBoundingClientRect().width
                         : 0;
-                    const titleWidth = workspaceTreeTitleNaturalWidth(title);
+                    const titleWidth = workspaceTreeTitleNaturalWidth(title) * (pageLayout ? .65 : 1);
 
                     // EN: A small allowance covers the flex gap and a possible scrollbar.
                     //
@@ -1180,7 +1181,13 @@
                 });
 
                 const resolvedWidth = Math.min(maximum, Math.max(minimum, requiredWidth));
-                shell.style.setProperty('--workspace-tree-width', `${Math.ceil(resolvedWidth)}px`);
+                const measuredWidth = `${Math.ceil(resolvedWidth)}px`;
+                if (shell.style.getPropertyValue('--workspace-tree-width') !== measuredWidth) {
+                    shell.style.setProperty('--workspace-tree-width', measuredWidth);
+                    if (pageLayout) {
+                        document.dispatchEvent(new Event('workspace:sidebar-measurement'));
+                    }
+                }
             };
 
             synchronizeWidth();
@@ -1188,6 +1195,85 @@
             window.addEventListener('resize', synchronizeWidth, { passive: true });
             document.fonts?.ready.then(synchronizeWidth).catch(() => {});
         });
+    }
+
+    /**
+     * EN: Shares two fifths of the available page width between the visible sidebars.
+     *     Use drawers when that space cannot accommodate their measured labels.
+     * HR: Dijeli dvije petine raspoložive širine stranice između vidljivih bočnih kartica.
+     *     Otvara ih u panelima kad nema mjesta za njihove izmjerene nazive.
+     */
+    function initializeResponsivePageLayout() {
+        const shell = document.querySelector('.workspace-page-shell');
+        if (!(shell instanceof HTMLElement)) {
+            return;
+        }
+
+        const root = document.documentElement;
+        const tree = shell.querySelector('.workspace-sidebar');
+        const outline = shell.querySelector('[data-editor-html-toc-column]');
+        const layout = shell.querySelector('[data-editor-html-view-layout]');
+        const supportsOutlineDrawer = !outline || layout?.hasAttribute('data-workspace-responsive-outline');
+        const viewport = window.matchMedia('(max-width: 991.98px)');
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            const treeVisible = tree?.matches('.show, .collapsing') ?? false;
+            const outlineVisible = outline?.matches('.show, .collapsing') ?? false;
+            const treeGap = treeVisible ? Number.parseFloat(getComputedStyle(shell).columnGap) || 0 : 0;
+            const outlineGap = outlineVisible && layout instanceof HTMLElement
+                ? workspaceCssLengthInPixels(layout, getComputedStyle(layout).getPropertyValue('--bs-gutter-x').trim() || '0px')
+                : 0;
+            const treeMinimum = treeVisible
+                ? workspaceCssLengthInPixels(shell, getComputedStyle(shell).getPropertyValue('--workspace-tree-width').trim())
+                : 0;
+            const outlineMinimum = outlineVisible && layout instanceof HTMLElement
+                ? Math.max(0, workspaceCssLengthInPixels(
+                    layout,
+                    getComputedStyle(layout).getPropertyValue('--editor-html-toc-width').trim(),
+                ) - outlineGap)
+                : 0;
+            const available = shell.getBoundingClientRect().width - treeGap - outlineGap;
+            const sidebarBudget = available * .4;
+            const minimumDocumentWidth = workspaceCssLengthInPixels(shell, '33rem');
+            const sidebarsFit = sidebarBudget >= treeMinimum + outlineMinimum
+                && available * .6 >= minimumDocumentWidth;
+            const compact = viewport.matches || supportsOutlineDrawer
+                && (treeVisible || outlineVisible) && !sidebarsFit;
+
+            shell.classList.toggle('workspace-page-sidebar-widths', !compact && sidebarsFit);
+            if (!compact && sidebarsFit) {
+                const treeWidth = treeVisible && outlineVisible
+                    ? Math.max(treeMinimum, Math.min(sidebarBudget / 2, sidebarBudget - outlineMinimum))
+                    : sidebarBudget;
+                const outlineWidth = (treeVisible ? sidebarBudget - treeWidth : sidebarBudget) + outlineGap;
+                shell.style.setProperty('--workspace-page-tree-width', `${treeWidth}px`);
+                shell.style.setProperty('--workspace-page-toc-width', `${outlineWidth}px`);
+            }
+
+            if (root.classList.contains('workspace-panels-compact') !== compact) {
+                root.classList.toggle('workspace-panels-compact', compact);
+                document.dispatchEvent(new Event('workspace:panels-layout'));
+            }
+        };
+        const scheduleUpdate = () => {
+            if (!frame) {
+                frame = requestAnimationFrame(update);
+            }
+        };
+
+        [tree, outline].forEach((panel) => {
+            panel?.addEventListener('shown.bs.collapse', scheduleUpdate);
+            panel?.addEventListener('hidden.bs.collapse', scheduleUpdate);
+        });
+        viewport.addEventListener('change', scheduleUpdate);
+        document.addEventListener('workspace:sidebar-measurement', scheduleUpdate);
+        new ResizeObserver(scheduleUpdate).observe(shell);
+        update();
+    }
+
+    function workspaceUsesDrawers() {
+        return document.documentElement.classList.contains('workspace-panels-compact');
     }
 
     /**
@@ -2656,7 +2742,6 @@
             return;
         }
 
-        const mobileQuery = window.matchMedia('(max-width: 991.98px)');
         const openButtons = document.querySelectorAll('[data-workspace-mobile-panel-open="tree"]');
         const closeButtons = panel.querySelectorAll('[data-workspace-mobile-panel-close="tree"]');
         const shell = panel.parentElement;
@@ -2677,7 +2762,7 @@
                 return;
             }
 
-            if (mobileQuery.matches) {
+            if (workspaceUsesDrawers()) {
                 openButtons.forEach((button) => document.body.appendChild(button));
                 document.body.appendChild(backdrop);
                 document.body.appendChild(panel);
@@ -2703,10 +2788,10 @@
          */
         const setOpen = (open) => {
             synchronizePortal();
-            const mobileOpen = mobileQuery.matches && open;
+            const mobileOpen = workspaceUsesDrawers() && open;
             panel.classList.toggle('workspace-mobile-panel-open', mobileOpen);
-            panel.inert = mobileQuery.matches && !mobileOpen;
-            panel.toggleAttribute('aria-hidden', mobileQuery.matches && !mobileOpen);
+            panel.inert = workspaceUsesDrawers() && !mobileOpen;
+            panel.toggleAttribute('aria-hidden', workspaceUsesDrawers() && !mobileOpen);
             backdrop.hidden = !mobileOpen;
             document.body.classList.toggle('workspace-mobile-panel-active', mobileOpen);
             openButtons.forEach((button) => {
@@ -2744,7 +2829,7 @@
 
         panel.querySelectorAll('a[href]').forEach((link) => {
             link.addEventListener('click', () => {
-                if (mobileQuery.matches) {
+                if (workspaceUsesDrawers()) {
                     setOpen(false);
                 }
             });
@@ -2759,7 +2844,7 @@
             const target = event.target instanceof Element
                 ? event.target.closest('[data-bs-target="#workspace-page-tree"]')
                 : null;
-            if (!(target instanceof HTMLElement) || !mobileQuery.matches) {
+            if (!(target instanceof HTMLElement) || !workspaceUsesDrawers()) {
                 return;
             }
 
@@ -2775,12 +2860,18 @@
             }
         });
 
-        mobileQuery.addEventListener('change', () => {
+        document.addEventListener('workspace:panels-layout', () => setOpen(false));
+        if (!shell?.classList.contains('workspace-page-shell')) {
+            const viewport = window.matchMedia('(max-width: 991.98px)');
+            const synchronize = () => {
+                document.documentElement.classList.toggle('workspace-panels-compact', viewport.matches);
+                setOpen(false);
+            };
+            viewport.addEventListener('change', synchronize);
+            synchronize();
+        } else {
             setOpen(false);
-            synchronizePortal();
-        });
-        synchronizePortal();
-        setOpen(false);
+        }
     }
 
     /**
@@ -2801,7 +2892,6 @@
         }
 
         const tocColumn = document.querySelector('[data-editor-html-toc-column]');
-        const mobileQuery = window.matchMedia('(max-width: 991.98px)');
 
         /**
          * EN: Returns the actual desktop state of the table-of-contents column.
@@ -2823,7 +2913,7 @@
          * @returns {void}
          */
         const synchronizeWidth = (visible) => {
-            const useNarrowColumn = !mobileQuery.matches && visible;
+            const useNarrowColumn = !workspaceUsesDrawers() && visible;
             backlinkColumn.classList.toggle('col-lg-9', useNarrowColumn);
             backlinkColumn.classList.toggle('col-12', !useNarrowColumn);
         };
@@ -2839,7 +2929,7 @@
             });
         }
 
-        mobileQuery.addEventListener('change', () => {
+        document.addEventListener('workspace:panels-layout', () => {
             synchronizeWidth(tableOfContentsIsVisible());
         });
     }
@@ -2866,6 +2956,7 @@
         initializeHomepageTargets();
         initializeMobilePanels();
         initializeBacklinkLayout();
+        initializeResponsivePageLayout();
         initializeLookupPickers();
         initializeWorkspacePurge();
     }
