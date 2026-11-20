@@ -1198,10 +1198,11 @@
     }
 
     /**
-     * EN: Shares two fifths of the available page width between the visible sidebars.
-     *     Use drawers when that space cannot accommodate their measured labels.
-     * HR: Dijeli dvije petine raspoložive širine stranice između vidljivih bočnih kartica.
-     *     Otvara ih u panelima kad nema mjesta za njihove izmjerene nazive.
+     * EN: Leaves the remaining width to the document after fitting the visible sidebars.
+     *     Uses drawers when the remaining space is too narrow for the document.
+     *
+     * HR: Stranici daje prostor preostao nakon smještanja vidljivih bočnih kartica.
+     *     Otvara kartice u panelima kad taj prostor nije dovoljan za stranicu.
      */
     function initializeResponsivePageLayout() {
         const shell = document.querySelector('.workspace-page-shell');
@@ -1221,34 +1222,27 @@
             const treeVisible = tree?.matches('.show, .collapsing') ?? false;
             const outlineVisible = outline?.matches('.show, .collapsing') ?? false;
             const treeGap = treeVisible ? Number.parseFloat(getComputedStyle(shell).columnGap) || 0 : 0;
-            const outlineGap = outlineVisible && layout instanceof HTMLElement
-                ? workspaceCssLengthInPixels(layout, getComputedStyle(layout).getPropertyValue('--bs-gutter-x').trim() || '0px')
+            const treeWidth = treeVisible
+                ? workspaceCssLengthInPixels(
+                    shell,
+                    getComputedStyle(shell).getPropertyValue('--workspace-tree-width').trim(),
+                )
                 : 0;
-            const treeMinimum = treeVisible
-                ? workspaceCssLengthInPixels(shell, getComputedStyle(shell).getPropertyValue('--workspace-tree-width').trim())
-                : 0;
-            const outlineMinimum = outlineVisible && layout instanceof HTMLElement
-                ? Math.max(0, workspaceCssLengthInPixels(
+            const outlineWidth = outlineVisible && layout instanceof HTMLElement
+                ? workspaceCssLengthInPixels(
                     layout,
                     getComputedStyle(layout).getPropertyValue('--editor-html-toc-width').trim(),
-                ) - outlineGap)
+                )
                 : 0;
-            const available = shell.getBoundingClientRect().width - treeGap - outlineGap;
-            const sidebarBudget = available * .4;
+            const documentWidth = shell.getBoundingClientRect().width - treeGap - treeWidth - outlineWidth;
             const minimumDocumentWidth = workspaceCssLengthInPixels(shell, '33rem');
-            const sidebarsFit = sidebarBudget >= treeMinimum + outlineMinimum
-                && available * .6 >= minimumDocumentWidth;
             const compact = viewport.matches || supportsOutlineDrawer
-                && (treeVisible || outlineVisible) && !sidebarsFit;
+                && (treeVisible || outlineVisible) && documentWidth < minimumDocumentWidth;
 
-            shell.classList.toggle('workspace-page-sidebar-widths', !compact && sidebarsFit);
-            if (!compact && sidebarsFit) {
-                const treeWidth = treeVisible && outlineVisible
-                    ? Math.max(treeMinimum, Math.min(sidebarBudget / 2, sidebarBudget - outlineMinimum))
-                    : sidebarBudget;
-                const outlineWidth = (treeVisible ? sidebarBudget - treeWidth : sidebarBudget) + outlineGap;
-                shell.style.setProperty('--workspace-page-tree-width', `${treeWidth}px`);
+            if (!compact && outlineVisible) {
                 shell.style.setProperty('--workspace-page-toc-width', `${outlineWidth}px`);
+            } else {
+                shell.style.removeProperty('--workspace-page-toc-width');
             }
 
             if (root.classList.contains('workspace-panels-compact') !== compact) {

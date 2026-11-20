@@ -1296,25 +1296,13 @@
         --workspace-tree-max-width: 19rem;
     }
 
-    .workspace-page-shell.workspace-page-sidebar-widths {
-        grid-template-columns: var(--workspace-page-tree-width) minmax(0, 1fr);
-    }
-
-    .workspace-page-shell.workspace-page-sidebar-widths .workspace-breadcrumb-nav {
-        --workspace-tree-width: var(--workspace-page-tree-width);
-    }
-
     .workspace-page-shell [data-editor-html-view-layout] {
         --editor-html-toc-min-width: 14.5rem;
         --editor-html-toc-max-width: 18rem;
     }
 
-    .workspace-page-shell.workspace-page-sidebar-widths .editor-html-toc-column {
-        --editor-html-toc-width: var(--workspace-page-toc-width);
-    }
-
-    .workspace-page-shell.workspace-page-sidebar-widths [data-workspace-backlinks-column].col-lg-9 {
-        width: calc(100% - var(--workspace-page-toc-width));
+    .workspace-page-shell [data-workspace-backlinks-column].col-lg-9 {
+        width: calc(100% - var(--workspace-page-toc-width, 25%));
     }
 
     .workspace-sidebar.collapse:not(.show) {
