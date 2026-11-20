@@ -31,6 +31,7 @@ use ReflectionClass;
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceContentBackup::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Backup\WorkspaceBackupLinks::class)]
 #[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue::class)]
+#[UsesClass(\AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge::class)]
 final class WorkspacePageBackupProviderTest extends TestCase
 {
     private string $temporaryRoot = '';
