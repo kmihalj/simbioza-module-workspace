@@ -84,7 +84,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             ModuleWorkspace::PACKAGE_NAME,
             2,
             ['hr' => 'Područje, prava i privatna tema', 'en' => 'Workspace, permissions and private theme'],
-            ['editor-html-workspace'],
+            [],
             [BackupScope::WORKSPACE],
             true,
             true,
@@ -162,8 +162,15 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
             ->get();
         /** @var array<int,string> $nodeUuidById */
         $nodeUuidById = [];
+        $contentBackup = $this->contentBackup ?? new WorkspaceContentBackup();
         foreach ($nodes as $node) {
-            $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+            /*
+             * EN: Checks each page selected for export so a backup cannot silently omit its content.
+             *
+             * HR: Provjerava svaku stranicu odabranu za izvoz kako kopija ne bi prešutno izostavila njezin sadržaj.
+             */
+            $contentBackup->requireDocument($node, $context->scope->type, $writer);
+            $owner = $contentBackup->owner(
                 WorkspaceValue::string($node['node_type']),
                 $context->scope->type,
             );
@@ -369,6 +376,7 @@ final class WorkspaceScopedBackupProvider implements BackupProviderInterface, Ba
                     WorkspaceValue::string($node['node_type'] ?? ''),
                     $context,
                     $reader,
+                    WorkspaceValue::string($node['document_key'] ?? ''),
                 );
             } catch (BackupException $error) {
                 $errors[] = $error->getMessage();

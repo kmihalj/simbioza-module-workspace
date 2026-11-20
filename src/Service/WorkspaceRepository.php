@@ -128,6 +128,26 @@ final readonly class WorkspaceRepository
     }
 
     /**
+     * EN: Searches active workspaces for the standalone page transfer picker.
+     *
+     * HR: Pretražuje aktivna područja za odabir odredišta samostalne stranice.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function standaloneEditorDestinations(string $search, int $page): array
+    {
+        $this->assertTablesReady();
+        $query = $this->database->table(ModuleWorkspace::TABLE_WORKSPACES)->select(['slug', 'name', 'visibility'])
+            ->where('is_deleted', '=', false)->where('is_archived', '=', false);
+        if ($search !== '') {
+            $term = '%' . strtr(mb_strtolower($search), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+            $query->whereRaw("(LOWER(name) LIKE ? ESCAPE '!' OR LOWER(slug) LIKE ? ESCAPE '!')", [$term, $term]);
+        }
+
+        return $this->rows($query->orderBy('name')->orderBy('id')->limit(26)->offset(($page - 1) * 25)->get());
+    }
+
+    /**
      * EN: Returns soft-deleted workspaces for administrator restoration.
      *
      * HR: Vraća soft-obrisana područja za administratorsko vraćanje.

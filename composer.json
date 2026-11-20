@@ -25,6 +25,10 @@
         {
             "type": "vcs",
             "url": "https://gitlab.opencode.hr/srce/aai-eduhr/heartphrame/heartphrame-module-api.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://gitlab.opencode.hr/srce/aai-eduhr/heartphrame/heartphrame-module-md-editor.git"
         }
     ],
     "require": {
@@ -40,7 +44,8 @@
         "aaieduhr/heartphrame-module-menu": "Adds Workspace entries to the application and settings menus.",
         "aaieduhr/heartphrame-module-notification": "Notifies publishers about review requests and authors about publication.",
         "aaieduhr/heartphrame-module-email": "Sends optional e-mail copies through the Notification module.",
-        "aaieduhr/heartphrame-module-theme": "Adds isolated per-Workspace themes and includes them in portable HTML exports."
+        "aaieduhr/heartphrame-module-theme": "Adds isolated per-Workspace themes and includes them in portable HTML exports.",
+        "aaieduhr/heartphrame-module-editor-md": "Enables Workspace-owned Markdown pages, publishing, backup, and export."
     },
     "conflict": {
         "aaieduhr/heartphrame-module-backup": "<0.3.2"
@@ -48,11 +53,12 @@
     "require-dev": {
         "aaieduhr/heartphrame-module-api": "^0.3.0",
         "aaieduhr/heartphrame-module-backup": "^0.3.2",
+        "aaieduhr/heartphrame-module-editor-md": "^0.3.0",
         "phpstan/phpstan": "^2.2.15",
         "phpunit/phpunit": "^10.5.65 || ^11.5.56",
         "rector/rector": "^2.6.7",
-        "squizlabs/php_codesniffer": "^3.13.6",
-        "slevomat/coding-standard": "^8.22.1"
+        "slevomat/coding-standard": "^8.22.1",
+        "squizlabs/php_codesniffer": "^3.13.6"
     },
     "autoload": {
         "psr-4": {

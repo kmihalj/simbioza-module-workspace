@@ -6,9 +6,13 @@ namespace AaiEduHr\SimbiozaModuleWorkspace\Backup;
 
 use AaiEduHr\HeartPhrameModuleBackup\Exception\BackupException;
 use AaiEduHr\HeartPhrameModuleBackup\Service\BackupArchiveReader;
+use AaiEduHr\HeartPhrameModuleBackup\Service\BackupArchiveWriter;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupImportContext;
+use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
 use AaiEduHr\SimbiozaModuleWorkspace\Contract\WorkspaceContentBackupInterface;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
 /**
  * EN: Keeps extension ownership explicit without importing any business module into Workspace.
@@ -18,12 +22,45 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceContentRegistry;
 final readonly class WorkspaceContentBackup
 {
     /**
-     * EN: Uses only enabled content providers.
+     * EN: Uses registered content providers for extension-owned nodes.
      *
-     * HR: Koristi samo uključene providere sadržaja.
+     * HR: Za čvorove kojima upravljaju proširenja koristi registrirane pružatelje sadržaja.
      */
     public function __construct(private ?WorkspaceContentRegistry $types = null)
     {
+    }
+
+    /**
+     * EN: Requires the Markdown provider when a document belongs to the Markdown editor.
+     *
+     * HR: Zahtijeva pružatelja Markdown sadržaja kad dokument pripada Markdown editoru.
+     *
+     * @param array<string, mixed> $node
+     */
+    public function requireDocument(array $node, string $scope, BackupArchiveWriter $writer): void
+    {
+        $provider = $this->documentProvider(WorkspaceValue::string($node['document_key'] ?? ''), $scope);
+        if ($provider !== null) {
+            $writer->requireProvider($provider);
+        }
+    }
+
+    /**
+     * EN: Resolves the Markdown backup provider for the requested scope.
+     *
+     * HR: Za traženi opseg određuje pružatelja sigurnosne kopije Markdown sadržaja.
+     */
+    private function documentProvider(string $key, string $scope): ?string
+    {
+        if (!WorkspaceEditorBridge::isMarkdown($key)) {
+            return null;
+        }
+
+        if (in_array($scope, [BackupScope::PAGE, BackupScope::WORKSPACE], true)) {
+            return 'editor-md-workspace';
+        }
+
+        return 'editor-md';
     }
 
     /**
@@ -51,9 +88,14 @@ final readonly class WorkspaceContentBackup
      *
      * HR: Odbija odsutne, preskočene ili neodabrane vlasnike prije vraćanja čvorova.
      */
-    public function checkImport(string $type, BackupImportContext $context, BackupArchiveReader $reader): void
-    {
-        $owner = $this->owner($type, $context->scope->type);
+    public function checkImport(
+        string $type,
+        BackupImportContext $context,
+        BackupArchiveReader $reader,
+        string $documentKey = '',
+    ): void {
+        $scope = $context->scope->type;
+        $owner = $this->documentProvider($documentKey, $scope) ?? $this->owner($type, $scope);
         if ($owner === null) {
             return;
         }

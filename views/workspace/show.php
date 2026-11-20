@@ -38,6 +38,7 @@ use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
  * @var list<array{id:int,label:string}> $pageParentOptions
  * @var int $defaultPageParentId
  * @var bool $canCreatePage
+ * @var array<string, string> $documentFormats
  * @var bool $canOrganizeTree
  * @var bool $canOpenNodeDialog
  * @var string $nodeSavePath
@@ -108,10 +109,14 @@ $localeButtonContent = function (string $locale) use ($flagPathForLocale): strin
 $editorOutlinedDocument = is_array($editorView ?? null)
     ? ($editorView['outlinedDocument'] ?? null)
     : null;
-$backlinksUseNarrowColumn = is_object($editorOutlinedDocument)
-    && property_exists($editorOutlinedDocument, 'headings')
-    && is_array($editorOutlinedDocument->headings)
-    && $editorOutlinedDocument->headings !== []
+/*
+ * EN: Applies the same sidebar layout when either editor supplies headings for the outline.
+ *
+ * HR: Primjenjuje isti raspored bočnog stupca kad bilo koji uređivač dostavi naslove za sadržaj.
+ */
+$htmlHeadings = is_object($editorOutlinedDocument) ? ($editorOutlinedDocument->headings ?? []) : [];
+$editorHeadings = $editorView['headings'] ?? $htmlHeadings;
+$backlinksUseNarrowColumn = is_array($editorHeadings) && $editorHeadings !== []
     && (bool)($editorView['showTableOfContents'] ?? false);
 $workflowIcon = static function (string $action): string {
     $paths = match ($action) {
@@ -430,7 +435,9 @@ $workflowIcon = static function (string $action): string {
                             <div>
                                 <h2 class="h5 mb-1"><?= $this->escape(__('Nova stranica')) ?></h2>
                                 <p class="small text-body-secondary mb-0">
-                                    <?= $this->escape(__('Nakon kreiranja otvorit će se HTML editor.')) ?>
+                                    <?= $this->escape(count($documentFormats ?? []) > 1
+                                        ? __('Nakon kreiranja otvorit će se uređivač odabranog formata.')
+                                        : __('Nakon kreiranja otvorit će se uređivač stranice.')) ?>
                                 </p>
                             </div>
                             <button
@@ -562,6 +569,20 @@ $workflowIcon = static function (string $action): string {
                                 require __DIR__ . '/../partials/lookup-picker.php';
                                 ?>
                             </div>
+                            <?php if (count($documentFormats ?? []) > 1) : ?>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label" for="workspace-page-format">
+                                        <?= $this->escape(__('Format stranice')) ?>
+                                    </label>
+                                    <select class="form-select" id="workspace-page-format" name="document_format">
+                                        <?php foreach ($documentFormats as $format => $label) : ?>
+                                            <option value="<?= $this->escape($format) ?>">
+                                                <?= $this->escape($label) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            <?php endif; ?>
                             <div class="col-12 d-flex justify-content-end">
                                 <button class="btn btn-primary" type="submit">
                                     <?= $this->escape(__('Kreiraj i uredi')) ?>
@@ -581,8 +602,9 @@ $workflowIcon = static function (string $action): string {
             ) ?>
         <?php elseif (is_array($editorView ?? null)) : ?>
             <?= $this->forModulePartial(
-                'aaieduhr/heartphrame-module-editor-html',
-                'editor/view',
+                ($editorView['documentFormat'] ?? '') === 'md'
+                    ? 'aaieduhr/heartphrame-module-editor-md' : 'aaieduhr/heartphrame-module-editor-html',
+                ($editorView['documentFormat'] ?? '') === 'md' ? 'editor/read' : 'editor/view',
                 $editorView,
             ) ?>
         <?php elseif (is_array($activeNode ?? null)) : ?>

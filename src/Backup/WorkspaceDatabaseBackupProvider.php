@@ -50,8 +50,20 @@ final class WorkspaceDatabaseBackupProvider extends DatabaseTableBackupProvider 
     public function export(BackupExportContext $context, BackupArchiveWriter $writer): void
     {
         if ($this->database->schema()->hasTable('workspace_nodes')) {
+            $contentBackup = $this->contentBackup ?? new WorkspaceContentBackup();
+            /*
+             * EN: Requires Markdown content whenever the workspace dataset includes Markdown nodes.
+             *
+             * HR: Zahtijeva Markdown sadržaj kad skup podataka područja uključuje Markdown čvorove.
+             */
+            $markdownNodes = $this->database->table('workspace_nodes')->select(['document_key'])
+                ->where('document_key', 'LIKE', 'md:%')->get();
+            foreach ($markdownNodes as $node) {
+                $contentBackup->requireDocument($node, $context->scope->type, $writer);
+            }
+
             foreach ($this->database->table('workspace_nodes')->select(['node_type'])->distinct()->get() as $node) {
-                $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+                $owner = $contentBackup->owner(
                     WorkspaceValue::string($node['node_type']),
                     $context->scope->type,
                 );
@@ -80,6 +92,7 @@ final class WorkspaceDatabaseBackupProvider extends DatabaseTableBackupProvider 
                     WorkspaceValue::string($node['node_type'] ?? ''),
                     $context,
                     $reader,
+                    WorkspaceValue::string($node['document_key'] ?? ''),
                 );
             } catch (\AaiEduHr\HeartPhrameModuleBackup\Exception\BackupException $error) {
                 $errors[] = $error->getMessage();

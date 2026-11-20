@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AaiEduHr\SimbiozaModuleWorkspace\Service;
 
+use AaiEduHr\HeartPhrameModuleEditorMd\Service\MarkdownEditor;
 use HeartPhrame\Bridge\ComposerBridge;
 use HeartPhrame\Routing\UrlGenerator;
 use Psr\Container\ContainerInterface;
@@ -51,6 +52,52 @@ final readonly class WorkspaceEditorBridge
     public function isAvailable(): bool
     {
         return $this->editorService() !== null;
+    }
+
+    /**
+     * EN: Returns page formats offered by currently available editors.
+     *
+     * HR: Vraća formate stranice koje nude trenutačno dostupni uređivači.
+     *
+     * @return array<string, string>
+     */
+    public function formats(): array
+    {
+        $formats = $this->isAvailable() && $this->urlGenerator->namedRouteExists('editor-html.index')
+        ? ['html' => 'HTML'] : [];
+        if ($this->markdown() instanceof MarkdownEditor) {
+            $formats['md'] = 'Markdown';
+        }
+
+        return $formats;
+    }
+
+    /**
+     * EN: Identifies the Markdown owner encoded in the opaque document key.
+     *
+     * HR: Prepoznaje vlasnika Markdown sadržaja iz neprozirnog ključa dokumenta.
+     */
+    public static function isMarkdown(string $key): bool
+    {
+        return preg_match('/^md:[a-f0-9]{32}$/D', $key) === 1;
+    }
+
+    /**
+     * EN: Resolves Markdown only when the module routes and storage are active.
+     *
+     * HR: Razrješava Markdown samo kad su rute modula i pohrana aktivne.
+     */
+    public function markdown(): ?MarkdownEditor
+    {
+        if (
+            !$this->urlGenerator->namedRouteExists('editor-md.index')
+            || !$this->container->has(MarkdownEditor::class)
+        ) {
+            return null;
+        }
+
+        $editor = $this->container->get(MarkdownEditor::class);
+        return $editor instanceof MarkdownEditor && $editor->available() ? $editor : null;
     }
 
     /**
@@ -157,12 +204,21 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * EN: Creates an initial HTML document and returns its stable document key.
+     * EN: Creates the initial document in the selected editor and returns its stable key.
      *
-     * HR: Kreira početni HTML dokument i vraća stabilni document key.
+     * HR: Izrađuje početni dokument u odabranom uređivaču i vraća njegov stabilni ključ.
      */
-    public function createDocument(string $title, string $slug, string $language): string
+    public function createDocument(string $title, string $slug, string $language, string $format = 'html'): string
     {
+        if ($format === 'md') {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            return $editor->create($title, $language, true);
+        }
+
+        if ($format !== 'html') {
+            throw new RuntimeException(__('Nepodržani format stranice.'));
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'create')) {
             throw new RuntimeException(__('HTML editor nije dostupan.'));
@@ -180,14 +236,16 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * EN: Applies the document's explicit storage owner after the tree link is saved.
-     * Older or absent Editor modules remain optional; storage failures are not hidden.
+     * EN: Organizes HTML payloads after the tree link is saved. Markdown manages its own revision storage.
      *
-     * HR: Primjenjuje izričitog vlasnika pohrane dokumenta nakon spremanja veze stabla.
-     * Stariji ili odsutni Editor ostaje opcionalan; pogreške pohrane se ne skrivaju.
+     * HR: Organizira HTML datoteke nakon spremanja veze u stablu. Markdown sam upravlja pohranom svojih revizija.
      */
     public function organizeDocumentPayloads(string $documentKey): void
     {
+        if (self::isMarkdown($documentKey)) {
+            return;
+        }
+
         $service = self::EDITOR_SERVICE_NAMESPACE . 'OrmEditorStorage';
         if ($documentKey === '' || !$this->container->has($service)) {
             return;
@@ -206,6 +264,12 @@ final readonly class WorkspaceEditorBridge
      */
     public function hasDocument(string $documentKey): bool
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown();
+            $document = $editor?->store->document($documentKey);
+            return is_array($document) && $editor->canRead($document);
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'load')) {
             return false;
@@ -235,6 +299,16 @@ final readonly class WorkspaceEditorBridge
         bool $canEditDocument,
         bool $canPreviewDraft = false,
     ): ?array {
+        if (self::isMarkdown($documentKey)) {
+            return $this->markdown()?->workspaceView(
+                $documentKey,
+                $language,
+                $query,
+                $canEditDocument,
+                $canPreviewDraft,
+            );
+        }
+
         $builder = $this->documentViewBuilder();
         if ($builder === null || !method_exists($builder, 'build')) {
             return null;
@@ -264,6 +338,14 @@ final readonly class WorkspaceEditorBridge
      */
     public function latestVersionNumber(string $documentKey, string $language): int
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown();
+            $document = $editor?->store->document($documentKey);
+            return is_array($document)
+            ? WorkspaceValue::int($editor->store->version($document, $language)['version_number'] ?? 0)
+            : 0;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'currentVersionNumber')) {
             return 0;
@@ -294,9 +376,10 @@ final readonly class WorkspaceEditorBridge
      */
     public function publishedVersions(array $versionNumbersByDocument, string $language): array
     {
+        $markdown = $this->markdownVersions($versionNumbersByDocument, $language, true);
         $editor = $this->editorService();
         if ($editor === null) {
-            return [];
+            return $markdown;
         }
 
         try {
@@ -306,14 +389,14 @@ final readonly class WorkspaceEditorBridge
 
             $versions = $editor->loadVersions($versionNumbersByDocument, $language);
         } catch (Throwable) {
-            return [];
+            return $markdown;
         }
 
         if (!is_array($versions)) {
-            return [];
+            return $markdown;
         }
 
-        return $this->normalizedVersions($versions);
+        return $markdown + $this->normalizedVersions($versions);
     }
 
     /**
@@ -336,9 +419,10 @@ final readonly class WorkspaceEditorBridge
      */
     public function publishedVersionsForIndexing(array $versionNumbersByDocument, string $language): array
     {
+        $markdown = $this->markdownVersions($versionNumbersByDocument, $language, false);
         $provider = $this->publishedVersionProvider();
         if ($provider === null || !method_exists($provider, 'loadPublishedVersionsForIndexing')) {
-            return $this->publishedVersions($versionNumbersByDocument, $language);
+            return $markdown + $this->publishedVersions($versionNumbersByDocument, $language);
         }
 
         try {
@@ -347,10 +431,30 @@ final readonly class WorkspaceEditorBridge
                 $language,
             );
         } catch (Throwable) {
+            return $markdown;
+        }
+
+        return $markdown + (is_array($versions) ? $this->normalizedVersions($versions) : []);
+    }
+
+
+    /**
+     * EN: Resolves Markdown versions using the same publication and ACL rules as Workspace views.
+     *
+     * HR: Razrješava Markdown revizije prema istim pravilima objave i ovlasti kao prikazi Područja.
+     *
+     * @param array<string, int> $keys
+     * @return array<string, array{documentId:string,versionNumber:int,title:string,html:string,createdAt:string}>
+     */
+    private function markdownVersions(array &$keys, string $language, bool $checkAcl): array
+    {
+        $markdown = array_filter($keys, self::isMarkdown(...), ARRAY_FILTER_USE_KEY);
+        if ($markdown === []) {
             return [];
         }
 
-        return is_array($versions) ? $this->normalizedVersions($versions) : [];
+        $keys = array_diff_key($keys, $markdown);
+        return $this->markdown()?->workspaceVersions($markdown, $language, $checkAcl) ?? [];
     }
 
     /**
@@ -468,6 +572,12 @@ final readonly class WorkspaceEditorBridge
      */
     public function markVersionDraft(string $documentKey, string $language, int $versionNumber): void
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            $editor->store->publication($documentKey, $language, $versionNumber, false);
+            return;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'markVersionDraft')) {
             throw new RuntimeException(__('HTML editor ne podržava nacrte područja.'));
@@ -483,6 +593,12 @@ final readonly class WorkspaceEditorBridge
      */
     public function publishDraft(string $documentKey, string $language, int $versionNumber): void
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            $editor->publishRevision($documentKey, $language, $versionNumber);
+            return;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'publishDraft')) {
             throw new RuntimeException(__('HTML editor ne podržava objavljivanje nacrta.'));
@@ -498,6 +614,12 @@ final readonly class WorkspaceEditorBridge
      */
     public function discardDraft(string $documentKey, string $language): void
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            $editor->discardRevision($documentKey, $language);
+            return;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'discardDraft')) {
             throw new RuntimeException(__('HTML editor ne podržava odbacivanje nacrta.'));
@@ -513,6 +635,11 @@ final readonly class WorkspaceEditorBridge
      */
     public function isDocumentNeverPublished(string $documentKey): bool
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown();
+            return $editor instanceof MarkdownEditor && !$editor->store->hasPublication($documentKey);
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'isDocumentNeverPublished')) {
             return false;
@@ -522,12 +649,24 @@ final readonly class WorkspaceEditorBridge
     }
 
     /**
-     * EN: Permanently deletes the Editor document for a new page with no publication.
+     * EN: Removes the document of a new page after checking that it has never been published.
+     * HTML deletes it permanently. Markdown records the removal in its document store.
      *
-     * HR: Trajno briše Editor dokument za novu stranicu bez ijedne objave.
+     * HR: Uklanja dokument nove stranice nakon provjere da nikada nije bio objavljen.
+     * HTML ga trajno briše. Markdown bilježi uklanjanje u svojoj pohrani dokumenata.
      */
     public function deleteUnpublishedDocumentPermanently(string $documentKey): void
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            if ($editor->store->hasPublication($documentKey)) {
+                throw new RuntimeException(__('Stranica ima objavljenu reviziju.'));
+            }
+
+            $editor->store->remove($documentKey);
+            return;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'deleteUnpublishedDocumentPermanently')) {
             throw new RuntimeException(__('HTML editor ne podržava trajno brisanje neobjavljenog dokumenta.'));
@@ -543,6 +682,11 @@ final readonly class WorkspaceEditorBridge
      */
     public function deleteDocument(string $documentKey): void
     {
+        if (self::isMarkdown($documentKey)) {
+            $this->markdown()?->store->remove($documentKey);
+            return;
+        }
+
         $editor = $this->editorService();
         if ($editor === null || !method_exists($editor, 'deleteDocument')) {
             return;
@@ -558,6 +702,11 @@ final readonly class WorkspaceEditorBridge
      */
     public function editorPath(string $documentKey, string $language): string
     {
+        if (self::isMarkdown($documentKey)) {
+            $editor = $this->markdown() ?? throw new RuntimeException(__('Markdown Editor nije dostupan.'));
+            return $editor->editorPath($documentKey, $language);
+        }
+
         if ($this->urlGenerator->namedRouteExists('editor-html.index')) {
             return $this->urlGenerator->getPathFor(
                 'editor-html.index',

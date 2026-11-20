@@ -677,7 +677,19 @@ final readonly class WorkspaceController
                 $primaryLanguage,
             );
             $slug = $this->stringValue($body['slug'] ?? '');
-            $documentKey = $this->editor->createDocument($title, $slug, $language);
+            /*
+             * EN: Validates the submitted format against the same editors offered in the creation form.
+             *
+             * HR: Provjerava poslani format prema istim uređivačima koji se nude u obrascu za izradu stranice.
+             */
+            $formats = $this->editor->formats();
+            $format = $this->stringValue($body['document_format'] ?? array_key_first($formats));
+            if (!array_key_exists($format, $formats)) {
+                $this->failure(__('Odabrani format stranice nije dostupan.'));
+                return $this->responseFactory->redirect($workspacePath);
+            }
+
+            $documentKey = $this->editor->createDocument($title, $slug, $language, $format);
             $node = $this->repository->saveNode(
                 $this->intValue($workspace['id'] ?? 0),
                 [
@@ -1984,7 +1996,8 @@ final readonly class WorkspaceController
             'pageParentOptions' => $this->pageParentOptions($tree),
             'defaultPageParentId' => $defaultParentId,
             'canCreatePage' => (bool)($workspacePermissions['can_add'] ?? false)
-                && $this->editor->isAvailable(),
+                && $this->editor->formats() !== [],
+            'documentFormats' => $this->editor->formats(),
             'canOrganizeTree' => $canOrganizeTree,
             'canOpenNodeDialog' => $canOrganizeTree || $canOpenCurrentNodeDialog,
             'nodeSavePath' => $this->pathFor('workspace.node.save', '/workspaces/node/save'),
@@ -2115,7 +2128,7 @@ final readonly class WorkspaceController
      */
     private function canCreatePageUnderParent(array $workspace, int $parentId): bool
     {
-        if (!$this->editor->isAvailable() || !$this->canAddUnderParent($workspace, $parentId)) {
+        if ($this->editor->formats() === [] || !$this->canAddUnderParent($workspace, $parentId)) {
             return false;
         }
 

@@ -84,26 +84,35 @@ final readonly class WorkspaceExportEditorBridge
     }
 
     /**
-     * EN: Returns Bootstrap, Editor, Calendar, and Task CSS snapshots without web routes.
+     * EN: Returns CSS for Bootstrap, Calendar, Task and the available document editors without web routes.
      *
-     * HR: Vraća Bootstrap, Editor, Calendar i Task CSS snapshotove bez web ruta.
+     * HR: Vraća CSS za Bootstrap, Calendar, Task i dostupne uređivače dokumenata bez web ruta.
      *
      * @return array<string, string>
      */
     public function stylesheetContents(): array
     {
+        $result = [];
+        $markdownPackage = 'aaieduhr/heartphrame-module-editor-md';
+        if ($this->composerBridge->isInstalled($markdownPackage)) {
+            $root = $this->composerBridge->getInstallPath($markdownPackage);
+            $path = is_string($root) ? $root . '/resources/assets/editor.css' : '';
+            if (is_file($path)) {
+                $result['editor-md.css'] = (string)file_get_contents($path);
+            }
+        }
+
         $assets = $this->service('EditorHtmlStandaloneAssets');
         if ($assets === null || !method_exists($assets, 'assetContents')) {
-            return [];
+            return $result;
         }
 
         try {
             $contents = $assets->assetContents();
         } catch (Throwable) {
-            return [];
+            return $result;
         }
 
-        $result = [];
         foreach (is_array($contents) ? $contents : [] as $name => $content) {
             if (is_string($name) && is_string($content)) {
                 $result[$name] = $content;
@@ -146,7 +155,8 @@ final readonly class WorkspaceExportEditorBridge
      *     headings:list<array{level:int,id:string,text:string}>,
      *     attachments:list<array{name:string,mime_type:string,file_size:int,path:string}>,
      *     attachments_visible_by_default:bool,
-     *     files:array<string,string>
+     *     files:array<string,string>,
+     *     file_paths?:array<string,string>
      * }|null
      */
     public function snapshot(
@@ -156,6 +166,19 @@ final readonly class WorkspaceExportEditorBridge
         string $assetDirectory,
         ?array $actor = null,
     ): ?array {
+        if (WorkspaceEditorBridge::isMarkdown($documentKey)) {
+            $workspaceEditor = $this->container->get(WorkspaceEditorBridge::class);
+            return $workspaceEditor instanceof WorkspaceEditorBridge
+            ? $workspaceEditor->markdown()?->workspaceSnapshot(
+                $documentKey,
+                $language,
+                $versionNumber,
+                $assetDirectory,
+                $actor,
+            )
+            : null;
+        }
+
         $actorContext = $this->service('EditorApiActorContext');
         if ($actorContext !== null && method_exists($actorContext, 'runAs') && is_numeric($actor['id'] ?? null)) {
             try {
@@ -490,11 +513,18 @@ final readonly class WorkspaceExportEditorBridge
             }
         }
 
+        $links = '';
+        foreach ($stylesheetHrefs as $href) {
+            $escapedHref = htmlspecialchars($href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $links .= '<link rel="stylesheet" href="' . $escapedHref . '">';
+        }
+
         return '<!doctype html><html lang="' . htmlspecialchars($language, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
         . '"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        . '<title>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</title></head>'
-        . '<body><main id="editor-html-standalone-content">' . $html . '</main>'
-        . $attachmentsHtml . '</body></html>';
+        . '<title>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</title>' . $links . '</head>'
+        . '<body><main id="editor-html-standalone-content"><h1>'
+        . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>' . $html . '</main>'
+        . $attachmentsHtml . WorkspaceValue::string($snapshot['scripts_html'] ?? '') . '</body></html>';
     }
 
     /**

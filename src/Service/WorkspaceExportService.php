@@ -179,6 +179,7 @@ final readonly class WorkspaceExportService
         $homepageId = $this->homepageId($documentNodes);
         $themeBundle = $this->theme->bundle();
         $entries = $this->baseEntries($themeBundle);
+        $files = [];
         /** @var array<string, array<int, array{snapshot:array<string,mixed>,source_language:string}>> $localized */
         $localized = [];
         foreach ($languages as $locale) {
@@ -195,11 +196,17 @@ final readonly class WorkspaceExportService
                 $sourceLanguage = strtolower(WorkspaceValue::string($workflow['language_code'] ?? ''));
                 $versionNumber = WorkspaceValue::int($workflow['published_version_number'] ?? 0);
                 $documentKey = WorkspaceValue::string($node['document_key'] ?? '');
+                /*
+                 * EN: Uses a URL-safe directory for exported Markdown keys so links also resolve in local files.
+                 *
+                 * HR: Izvezene Markdown ključeve prilagođava URL-u kako bi poveznice radile i iz lokalnih datoteka.
+                 */
                 $snapshot = $this->editor->snapshot(
                     $documentKey,
                     $sourceLanguage,
                     $versionNumber,
-                    'documents/' . rawurlencode($documentKey)
+                    'documents/' . rawurlencode(WorkspaceEditorBridge::isMarkdown($documentKey)
+                        ? str_replace(':', '-', $documentKey) : $documentKey)
                     . '/' . rawurlencode($sourceLanguage)
                     . '/v' . $versionNumber,
                     $user,
@@ -215,6 +222,17 @@ final readonly class WorkspaceExportService
                 foreach (WorkspaceValue::stringKeyArray($snapshot['files']) as $path => $content) {
                     if (is_string($content)) {
                         $entries[$path] = $content;
+                    }
+                }
+
+                /*
+                 * EN: Keeps file-backed attachments on disk until the ZIP writer adds them.
+                 *
+                 * HR: Privitke s datotečnom pohranom zadržava na disku dok ih ZIP zapis ne doda u arhivu.
+                 */
+                foreach (WorkspaceValue::stringKeyArray($snapshot['file_paths'] ?? null) as $path => $source) {
+                    if (is_string($source)) {
+                        $files[$path] = $source;
                     }
                 }
             }
@@ -239,6 +257,7 @@ final readonly class WorkspaceExportService
             '../assets/css/calendar.css',
             '../assets/css/tasks.css',
             '../assets/css/editor-html-standalone.css',
+            '../assets/css/editor-md.css',
         ];
         foreach ($languages as $locale) {
             $snapshots = $localized[$locale] ?? [];
@@ -294,7 +313,7 @@ final readonly class WorkspaceExportService
 
         return new WorkspaceExport(
             $this->zipFileName($workspace),
-            $this->zip($entries),
+            $this->zip($entries, $files),
         );
     }
 
@@ -328,6 +347,7 @@ final readonly class WorkspaceExportService
         $entries['assets/css/calendar.css'] ??= '';
         $entries['assets/css/tasks.css'] ??= '';
         $entries['assets/css/editor-html-standalone.css'] ??= '';
+        $entries['assets/css/editor-md.css'] ??= '';
         $workspaceCssPath = $this->config->moduleRoot() . '/resources/assets/workspace.css';
         $workspaceCss = file_get_contents($workspaceCssPath);
         $entries['assets/css/workspace.css'] = is_string($workspaceCss) ? $workspaceCss : '';
@@ -458,6 +478,7 @@ final readonly class WorkspaceExportService
         . "    <link rel=\"stylesheet\" href=\"assets/css/tasks.css\">\n"
         . "    <link rel=\"stylesheet\" href=\"assets/css/workspace.css\">\n"
         . "    <link rel=\"stylesheet\" href=\"assets/css/workspace-export.css\">\n"
+        . "    <link rel=\"stylesheet\" href=\"assets/css/editor-md.css\">\n"
         . "</head>\n<body>\n"
         . '<a class="hph-skip-link" href="#main-content">'
         . $this->localizedText('Preskoči na glavni sadržaj', $languages, $locale) . '</a>'
@@ -1193,8 +1214,9 @@ final readonly class WorkspaceExportService
      * HR: Piše ZIP PHP ekstenzijom i vraća binarni sadržaj bez trajne privremene datoteke.
      *
      * @param array<string, string> $entries
+     * @param array<string, string> $files
      */
-    private function zip(array $entries): string
+    private function zip(array $entries, array $files): string
     {
         $temporaryFile = tempnam(sys_get_temp_dir(), 'workspace-export-');
         if (!is_string($temporaryFile)) {
@@ -1213,12 +1235,25 @@ final readonly class WorkspaceExportService
                     throw new RuntimeException(__('ZIP export nije moguće pripremiti.'));
                 }
             }
+
+            foreach ($files as $path => $source) {
+                if (!$zip->addFile($source, $path)) {
+                    throw new RuntimeException(__('ZIP export nije moguće pripremiti.'));
+                }
+            }
+
+            if (!$zip->close()) {
+                throw new RuntimeException(__('ZIP export nije moguće pripremiti.'));
+            }
+
+            $content = file_get_contents($temporaryFile);
+        } catch (\Throwable $throwable) {
+            unset($zip);
+            throw $throwable;
         } finally {
-            $zip->close();
+            @unlink($temporaryFile);
         }
 
-        $content = file_get_contents($temporaryFile);
-        @unlink($temporaryFile);
         if (!is_string($content)) {
             throw new RuntimeException(__('ZIP export nije moguće pripremiti.'));
         }

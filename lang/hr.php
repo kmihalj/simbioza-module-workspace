@@ -6,8 +6,16 @@ declare(strict_types=1);
 //
 // HR: Izvorni hrvatski ključevi i prijevodi jezika hr.
 return array (
+  'Odaberite aktivno odredišno područje.' => 'Odaberite aktivno odredišno područje.',
+  'Format stranice' => 'Format stranice',
+  'Markdown Editor nije dostupan.' => 'Markdown Editor nije dostupan.',
+  'Nakon kreiranja otvorit će se uređivač odabranog formata.' => 'Nakon kreiranja otvorit će se uređivač odabranog formata.',
+  'Nakon kreiranja otvorit će se uređivač stranice.' => 'Nakon kreiranja otvorit će se uređivač stranice.',
+  'Nepodržani format stranice.' => 'Nepodržani format stranice.',
+  'Odabrani format stranice nije dostupan.' => 'Odabrani format stranice nije dostupan.',
   'Sadržaj uređujte u modulu kojem pripada.' => 'Sadržaj uređujte u modulu kojem pripada.',
   'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.' => 'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.',
+  'Stranica ima objavljenu reviziju.' => 'Stranica ima objavljenu reviziju.',
   'survey' => 'Anketa',
   'Sadržaj' => 'Sadržaj',
   'Vrsta sadržaja nije dostupna.' => 'Vrsta sadržaja nije dostupna.',

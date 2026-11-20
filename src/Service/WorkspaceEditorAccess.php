@@ -478,6 +478,54 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * EN: Links a standalone document with its existing language titles and publication states.
+     *
+     * HR: Povezuje samostalni dokument sa zatečenim naslovima jezika i stanjima objave.
+     *
+     * @param array<string, string> $titles
+     * @param array<string, array{published?: int, current: int}> $states
+     * @return array<string, mixed>
+     */
+    public function adoptStandaloneDocument(
+        string $workspaceSlug,
+        string $documentKey,
+        string $title,
+        string $slug,
+        array $titles,
+        array $states,
+    ): array {
+        $user = $this->access->currentUser();
+        $workspace = $this->repository->findWorkspaceBySlug($workspaceSlug);
+        if (
+            !is_array($user) || !is_array($workspace) || !empty($workspace['is_archived'])
+            || !$this->canCreateDocumentForUser($workspaceSlug, 0, $user)
+            || !($this->access->workspacePermissions($workspace, $user)['can_manage'] ?? false)
+        ) {
+            throw new \InvalidArgumentException(__('Odaberite aktivno odredišno područje.'));
+        }
+
+        $actor = WorkspaceValue::int($user['id'] ?? 0);
+        $workspaceId = WorkspaceValue::int($workspace['id'] ?? 0);
+        $primary = $this->config->siteDefaultLanguage();
+        $node = $this->repository->saveNode($workspaceId, [
+            'node_type' => 'document', 'document_key' => $documentKey, 'slug' => $slug,
+            'title' => $title, 'title_translations' => $titles + [$primary => $title],
+            'primary_language' => $primary, 'supported_languages' => $this->config->supportedLanguages(),
+            'is_homepage' => !$this->workspaceHasHomepage($workspaceId),
+        ], $actor);
+        foreach ($states as $language => $versions) {
+            $published = (int)($versions['published'] ?? 0);
+            $this->repository->saveNodeWorkflow(WorkspaceValue::int($node['id'] ?? 0), $language, [
+                'status' => $published === $versions['current'] ? 'published' : 'draft',
+                'current_version_number' => $versions['current'],
+                'published_version_number' => $published > 0 ? $published : null,
+            ], $actor);
+        }
+
+        return $node;
+    }
+
+    /**
      * EN: Saves a localized page title for the user in the current web session.
      *
      * HR: Sprema naslov jezične varijante za korisnika trenutačne web-sesije.
@@ -665,6 +713,20 @@ final class WorkspaceEditorAccess
     }
 
     /**
+     * EN: Returns the node's slug to editors without duplicating Workspace metadata in the editor.
+     *
+     * HR: Vraća uređivačima slug čvora bez dupliciranja metapodataka Područja u uređivaču.
+     */
+    public function documentSlug(string $documentKey): string
+    {
+        if (!$this->canEditDocument($documentKey)) {
+            return '';
+        }
+
+        return WorkspaceValue::string($this->documentContext($documentKey)['node']['slug'] ?? '');
+    }
+
+    /**
      * EN: Returns ACL-safe Workspace metadata for grouping pages in optional
      *     Editor selectors. A document without read permission exposes neither
      *     its Workspace name nor slug.
@@ -719,6 +781,28 @@ final class WorkspaceEditorAccess
         }
 
         return $result;
+    }
+
+    /**
+     * EN: Returns a bounded page of destinations with their actual reader visibility.
+     *
+     * HR: Vraća ograničenu stranicu odredišta s njihovom stvarnom vidljivošću čitateljima.
+     *
+     * @return array{items: list<array{id: string, label: string, visibility: string}>, more: bool}
+     */
+    public function standaloneMoveDestinations(string $search, int $page): array
+    {
+        if (!$this->access->isAdministrator()) {
+            return ['items' => [], 'more' => false];
+        }
+
+        $rows = $this->repository->standaloneEditorDestinations($search, max(1, $page));
+        $items = array_map(static fn(array $row): array => [
+            'id' => WorkspaceValue::string($row['slug'] ?? ''),
+            'label' => WorkspaceValue::string($row['name'] ?? ''),
+            'visibility' => WorkspaceValue::string($row['visibility'] ?? ''),
+        ], array_slice($rows, 0, 25));
+        return ['items' => $items, 'more' => count($rows) > 25];
     }
 
     /**

@@ -6,8 +6,16 @@ declare(strict_types=1);
 //
 // HR: Izvorni hrvatski ključevi i prijevodi jezika en.
 return array (
+  'Odaberite aktivno odredišno područje.' => 'Choose an active destination workspace.',
+  'Format stranice' => 'Page format',
+  'Markdown Editor nije dostupan.' => 'The Markdown editor is unavailable.',
+  'Nakon kreiranja otvorit će se uređivač odabranog formata.' => 'The editor for the selected format opens after the page is created.',
+  'Nakon kreiranja otvorit će se uređivač stranice.' => 'The page editor opens after the page is created.',
+  'Nepodržani format stranice.' => 'Unsupported page format.',
+  'Odabrani format stranice nije dostupan.' => 'The selected page format is unavailable.',
   'Sadržaj uređujte u modulu kojem pripada.' => 'Edit this content in its owning module.',
   'Izvoz ove vrste sadržaja još nije dostupan. Odaberite samo podržane stranice.' => 'Export of this content type is not yet available. Select only supported pages.',
+  'Stranica ima objavljenu reviziju.' => 'The page has a published revision.',
   'survey' => 'Survey',
   'Sadržaj' => 'Content',
   'Vrsta sadržaja nije dostupna.' => 'This content type is unavailable.',

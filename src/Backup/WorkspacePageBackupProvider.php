@@ -18,6 +18,7 @@ use AaiEduHr\HeartPhrameModuleBackup\Value\BackupScope;
 use AaiEduHr\HeartPhrameModuleBackup\Value\BackupValue;
 use AaiEduHr\HeartPhrameModuleOrm\Database\Database;
 use AaiEduHr\SimbiozaModuleWorkspace\ModuleWorkspace;
+use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceEditorBridge;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceRepository;
 use AaiEduHr\SimbiozaModuleWorkspace\Service\WorkspaceValue;
 
@@ -73,7 +74,7 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
             ModuleWorkspace::PACKAGE_NAME,
             1,
             ['hr' => 'Stranica, jezici, povijest i privitci', 'en' => 'Page, languages, history, and attachments'],
-            ['editor-html-workspace'],
+            [],
             [BackupScope::PAGE],
             true,
             true,
@@ -90,7 +91,15 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
     {
         $writer->setLinkRouteRoot('workspace', $this->config?->rootPath() ?? 'workspace');
         $node = $this->sourceNode($context->scope->identifier);
-        $owner = ($this->contentBackup ?? new WorkspaceContentBackup())->owner(
+        $contentBackup = $this->contentBackup ?? new WorkspaceContentBackup();
+        /*
+         * EN: Checks that the page content can be backed up before writing its metadata.
+         *
+         * HR: Prije zapisivanja metapodataka provjerava može li izraditi sigurnosnu kopiju sadržaja stranice.
+         */
+        $contentBackup->requireDocument($node, $context->scope->type, $writer);
+
+        $owner = $contentBackup->owner(
             WorkspaceValue::string($node['node_type']),
             $context->scope->type,
         );
@@ -203,9 +212,15 @@ final readonly class WorkspacePageBackupProvider implements BackupProviderInterf
                 throw new BackupException('Single-page backup requires a document or a registered content owner.');
             }
 
-            $content->checkImport($type, $context, $reader);
+            $sourceKey = WorkspaceValue::string($page['document_key'] ?? '');
+            $content->checkImport($type, $context, $reader, $sourceKey);
             $target = $this->targetPage($context);
-            if ($target !== null && $target['node_type'] !== $page['node_type']) {
+            $targetKey = WorkspaceValue::string($target['document_key'] ?? '');
+            if (
+                $target !== null
+                && ($target['node_type'] !== $page['node_type']
+                    || WorkspaceEditorBridge::isMarkdown($targetKey) !== WorkspaceEditorBridge::isMarkdown($sourceKey))
+            ) {
                 $errors[] = 'Source and replacement page must have the same content type.';
             }
         } catch (BackupException $backupException) {
